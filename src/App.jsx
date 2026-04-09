@@ -342,17 +342,6 @@ function App() {
   }
 
   const completeOnboarding = async () => {
-    const walletInput = document.getElementById('onboard-wallet')
-    if (walletInput) {
-      const val = parseFloat(walletInput.value)
-      if (!isNaN(val) && val > 0) {
-        const newBalance = parseFloat(val.toFixed(2))
-        setStartingBalance(newBalance)
-        try {
-          await storage.set('xau-starting-balance', JSON.stringify(newBalance))
-        } catch {}
-      }
-    }
     localStorage.setItem('xau-onboarded', '1')
     setShowOnboarding(false)
     toast('Welcome! Log your first trade below.', 'success')
@@ -388,38 +377,29 @@ function App() {
               <div className="onboard-step">
                 <div className="onboard-num">1</div>
                 <div className="onboard-step-text">
-                  <strong>Set your starting balance</strong> so your wallet tracks your real progress
+                  <strong>Log every trade</strong> — wins, losses, and everything in between
                 </div>
               </div>
               <div className="onboard-step">
                 <div className="onboard-num">2</div>
                 <div className="onboard-step-text">
-                  <strong>Log every trade</strong> — wins, losses, and everything in between
+                  <strong>Write in your journal</strong> — emotions and mindset matter as much as charts
                 </div>
               </div>
               <div className="onboard-step">
                 <div className="onboard-num">3</div>
                 <div className="onboard-step-text">
-                  <strong>Write in your journal</strong> — emotions and mindset matter as much as charts
+                  <strong>Track your progress</strong> with analytics and equity curves
                 </div>
               </div>
             </div>
 
-            <div className="onboard-wallet-row">
-              <div className="field">
-                <label>Your starting balance ($)</label>
-                <input
-                  type="number"
-                  id="onboard-wallet"
-                  placeholder="e.g. 1000.00"
-                  step="0.01"
-                />
-              </div>
+            <div className="onboard-login-row">
+              <button className="onboard-btn" onClick={completeOnboarding}>
+                Get Started ✦
+              </button>
+              <p className="onboard-login-note">Save your trades instantly with cloud sync</p>
             </div>
-
-            <button className="onboard-btn" onClick={completeOnboarding}>
-              Start journaling ✦
-            </button>
             <div className="onboard-skip" onClick={dismissOnboarding}>
               Skip for now
             </div>
