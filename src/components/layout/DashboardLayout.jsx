@@ -1,5 +1,21 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { 
+  XMarkIcon, 
+  HomeIcon, 
+  ClockIcon, 
+  CalendarIcon, 
+  ChartBarIcon, 
+  BookOpenIcon,
+  SparklesIcon,
+  ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline';
+import { 
+  HomeIcon as HomeIconSolid, 
+  ClockIcon as ClockIconSolid, 
+  CalendarIcon as CalendarIconSolid, 
+  ChartBarIcon as ChartBarIconSolid, 
+  BookOpenIcon as BookOpenIconSolid 
+} from '@heroicons/react/24/solid';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -9,41 +25,56 @@ import { useWallet } from '../../hooks/useWallet';
 
 export function DashboardLayout({ user, plan, setShowPricingModal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
+  const location = useLocation();
   
   const { trades, isLoadingTrades, addTrade, removeTrade, editTrade } = useTrades(user);
   const { journals, isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { startingBalance, updateBalance } = useWallet();
 
   const navigation = [
-    { id: '', name: 'Log' },
-    { id: 'history', name: 'History' },
-    { id: 'calendar', name: 'Calendar' },
-    { id: 'analytics', name: 'Analytics' },
-    { id: 'journal', name: 'Journal' }
+    { id: '', name: 'Log', icon: HomeIcon, iconSolid: HomeIconSolid },
+    { id: 'history', name: 'History', icon: ClockIcon, iconSolid: ClockIconSolid },
+    { id: 'calendar', name: 'Calendar', icon: CalendarIcon, iconSolid: CalendarIconSolid },
+    { id: 'analytics', name: 'Analytics', icon: ChartBarIcon, iconSolid: ChartBarIconSolid },
+    { id: 'journal', name: 'Journal', icon: BookOpenIcon, iconSolid: BookOpenIconSolid }
   ];
 
+  const activeIndex = navigation.findIndex(item => 
+    item.id === '' ? location.pathname === '/' : location.pathname.startsWith(`/${item.id}`)
+  );
+
   return (
-    <div className="min-h-screen bg-background transition-colors duration-500">
+    <div className="min-h-screen bg-background transition-colors duration-500 pb-20 md:pb-0 selection:bg-primary/20">
       {/* Top Navbar */}
-      <nav className="sticky top-0 z-50 glass border-b border-border/40">
+      <nav className="sticky top-0 z-50 glass border-b border-border/40 safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-8">
-              <div className="flex-shrink-0 flex items-center gap-2 cursor-default">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-primary/20">XAU</div>
+              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-primary/30 group-hover:rotate-6 transition-transform">XAU</div>
                 <span className="font-bold tracking-tight hidden sm:block">Journal</span>
               </div>
               
-              <div className="hidden md:flex items-center gap-1">
+              {/* Desktop Sliding Nav */}
+              <div className="hidden md:flex relative bg-muted/40 p-1.5 rounded-full border border-border/20">
+                {/* Sliding Pill */}
+                <div 
+                  className="absolute top-1.5 bottom-1.5 left-1.5 bg-background shadow-sm border border-border/50 rounded-full transition-all duration-500 ease-[var(--spring-bounce)]"
+                  style={{ 
+                    width: '90px',
+                    transform: `translateX(calc(${activeIndex} * 90px))`
+                  }}
+                />
+                
                 {navigation.map((item) => (
                   <NavLink
                     key={item.name}
                     to={`/${item.id}`}
                     className={({ isActive }) => 
-                      `px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                        (item.id === '' ? window.location.pathname === '/' || window.location.pathname === '' : isActive)
-                          ? 'bg-primary/10 text-primary shadow-sm' 
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      `relative z-10 w-[90px] py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-center transition-colors duration-300 ${
+                        (item.id === '' ? location.pathname === '/' : isActive)
+                          ? 'text-primary' 
+                          : 'text-muted-foreground hover:text-foreground'
                       }`
                     }
                   >
@@ -53,19 +84,31 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Upgrade Button (Minimal) */}
+              {plan === 'free' && (
+                <button 
+                  onClick={() => setShowPricingModal(true)}
+                  className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all active:scale-95"
+                >
+                  <SparklesIcon className="w-3.5 h-3.5 text-primary group-hover:animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Upgrade</span>
+                </button>
+              )}
+
+              {/* Theme Toggle */}
               <button 
                 onClick={toggleTheme} 
                 className={`
-                  relative w-12 h-6 rounded-full p-1 transition-all duration-500 ease-in-out border border-border/50 shadow-inner
+                  relative w-11 h-5 rounded-full p-1 transition-all duration-500 ease-in-out border border-border/40 shadow-inner
                   ${isLightMode ? 'bg-muted/80' : 'bg-primary/20'}
                 `}
                 aria-label="Toggle theme"
               >
                 <div 
                   className={`
-                    absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center transition-all duration-500 transform
-                    ${isLightMode ? 'translate-x-0 bg-white shadow-sm' : 'translate-x-6 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'}
+                    absolute top-0.5 left-0.5 w-4 h-4 rounded-full flex items-center justify-center transition-all duration-500 transform
+                    ${isLightMode ? 'translate-x-0 bg-white shadow-sm' : 'translate-x-6 bg-primary'}
                   `}
                 >
                   {isLightMode ? (
@@ -76,29 +119,31 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                 </div>
               </button>
 
-              <div className="flex items-center gap-3 pl-4 border-l border-border/40">
-                <div className="flex flex-col items-end hidden sm:flex">
-                  <span className="text-xs font-semibold">{user?.email?.split('@')[0]}</span>
-                  <button 
-                    onClick={() => setShowPricingModal(true)}
-                    className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wider hover:bg-primary/20 transition-colors"
-                  >
-                    {plan}
-                  </button>
+              {/* User Profile Area */}
+              <div className="flex items-center gap-3 sm:gap-4 ml-2 pl-4 border-l border-border/20">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-[10px] font-black uppercase tracking-tight text-foreground/70 leading-none mb-1">
+                    {auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]}
+                  </span>
+                  <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tight leading-none ${plan === 'free' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
+                    {plan === 'free' ? 'Standard' : 'Pro Asset'}
+                  </span>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-muted to-border border border-border overflow-hidden flex items-center justify-center shadow-inner">
-                  {user?.photoURL ? (
-                    <img src={user.photoURL} alt="avatar" className="w-full h-full object-cover" />
+                
+                <div className="w-8 h-8 rounded-xl bg-muted border border-border/50 flex items-center justify-center text-xs font-black text-primary uppercase shadow-inner active:scale-90 transition-transform cursor-pointer overflow-hidden">
+                  {auth.currentUser?.photoURL ? (
+                    <img src={auth.currentUser.photoURL} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-sm font-bold text-muted-foreground">{user?.email?.[0].toUpperCase()}</span>
+                    auth.currentUser?.email?.[0] || 'U'
                   )}
                 </div>
+
                 <button 
-                  onClick={() => signOut(auth)} 
-                  className="p-2 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                  title="Logout"
+                  onClick={() => auth.signOut()}
+                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all active:scale-75"
+                  title="Secure Logout"
                 >
-                  <XMarkIcon className="w-5 h-5" />
+                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -107,14 +152,43 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
       </nav>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <Outlet context={{ 
-          user, plan, setShowPricingModal,
-          trades, isLoadingTrades, addTrade, removeTrade, editTrade,
-          journals, isLoadingJournals, saveJournalEntry, deleteEntry,
-          startingBalance, updateBalance
-        }} />
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 mb-4">
+        <div key={location.pathname} className="animate-in fade-in slide-in-from-bottom-5 duration-700 ease-[var(--spring-bounce)]">
+          <Outlet context={{ 
+            user, plan, setShowPricingModal,
+            trades, isLoadingTrades, addTrade, removeTrade, editTrade,
+            journals, isLoadingJournals, saveJournalEntry, deleteEntry,
+            startingBalance, updateBalance
+          }} />
+        </div>
       </main>
+
+      {/* Premium Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2">
+        <div className="bg-background/80 backdrop-blur-2xl border border-border/50 rounded-[2.5rem] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] h-20 flex items-center justify-around px-4">
+          {navigation.map((item, idx) => {
+            const isActive = item.id === '' ? location.pathname === '/' : location.pathname.startsWith(`/${item.id}`);
+            const Icon = isActive ? item.iconSolid : item.icon;
+            
+            return (
+              <NavLink
+                key={item.name}
+                to={`/${item.id}`}
+                className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 active:scale-75 ${
+                  isActive ? 'text-primary scale-110' : 'text-muted-foreground'
+                }`}
+              >
+                <div className={`p-2 rounded-2xl transition-all duration-500 scale-100 ${isActive ? 'bg-primary/10 shadow-inner' : ''}`}>
+                  <Icon className="w-6 h-6 transition-transform" />
+                </div>
+                <span className={`text-[10px] font-black uppercase tracking-tighter transition-all duration-300 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}>
+                  {item.name}
+                </span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

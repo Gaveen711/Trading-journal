@@ -29,6 +29,7 @@ function Login() {
       setLoading(false);
     }
   };
+  
 
   const handleGoogle = async () => {
     setError('');
@@ -44,20 +45,20 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background selection:bg-primary/30">
-      <div className="w-full max-w-[420px] animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="w-full max-w-[400px] animate-in fade-in slide-in-from-bottom-12 duration-1000 ease-[var(--spring-bounce)]">
         
-        <div className="card-premium p-10 space-y-8 shadow-2xl shadow-primary/5">
+        <div className="card-premium p-8 sm:p-10 space-y-8 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)]">
           {/* Logo & Header */}
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-400 rounded-xl mx-auto flex items-center justify-center text-white text-xl font-black shadow-lg shadow-primary/20">
+          <div className="text-center space-y-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary to-purple-500 rounded-2xl mx-auto flex items-center justify-center text-white text-xl font-black shadow-xl shadow-primary/30 rotate-3 hover:rotate-0 transition-transform duration-500">
               XAU
             </div>
             <div className="space-y-1">
-              <h1 className="text-2xl font-black text-gradient">
-                {isSignUp ? 'Join XAU Elite' : 'Welcome to XAU'}
+              <h1 className="text-2xl font-black text-gradient uppercase tracking-tight">
+                {isSignUp ? 'Initialize Terminal' : 'Access Granted'}
               </h1>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
-                Professional Trading Journal
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
+                Institutional Intel Documentation
               </p>
             </div>
           </div>
@@ -67,79 +68,84 @@ function Login() {
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="w-full h-11 flex items-center justify-center gap-3 bg-muted/50 border border-border/50 rounded-xl text-sm font-bold hover:bg-muted transition-all active:scale-[0.98] disabled:opacity-50"
+              className="w-full h-12 flex items-center justify-center gap-3 bg-muted/40 border border-border/50 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-muted/60 transition-all active:scale-95 disabled:opacity-50 group"
             >
-              <svg width="18" height="18" viewBox="0 0 18 18">
+              <svg width="18" height="18" viewBox="0 0 18 18" className="group-hover:rotate-12 transition-transform">
                 <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
                 <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
                 <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
                 <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
               </svg>
-              <span>Continue with Google</span>
+              <span>Verify with Google</span>
             </button>
 
             <div className="flex items-center gap-4">
-              <div className="flex-1 h-px bg-border/40" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Or Secure Login</span>
-              <div className="flex-1 h-px bg-border/40" />
+              <div className="flex-1 h-[1px] bg-border/30" />
+              <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">Secure Node</span>
+              <div className="flex-1 h-[1px] bg-border/30" />
             </div>
 
             {/* Email Form */}
             <form onSubmit={handleEmailAuth} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground ml-1">Terminal Email</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Protocol Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="name@xau.com"
+                  placeholder="agent@xau.intel"
                   required
-                  className="input-premium h-11"
+                  className="input-premium h-12 text-sm font-bold"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground ml-1">Access Key</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Access Cipher</label>
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="input-premium h-11"
+                  className="input-premium h-12 text-sm font-bold"
                 />
               </div>
 
               {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-[11px] font-bold animate-in shake-1">
-                  {error}
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[11px] font-black uppercase tracking-tight animate-in shake-1">
+                  Cipher Mismatch: {error}
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full h-11 text-sm font-bold shadow-primary/20"
+                className="btn-primary w-full h-12 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95 transition-all"
               >
-                {loading ? 'Decrypting Access...' : isSignUp ? 'Initialize Terminal' : 'Access Journal'}
+                {loading ? 'Decrypting Access...' : isSignUp ? 'Generate Node' : 'Authorize Signal'}
               </button>
             </form>
           </div>
 
-          <div className="text-center">
+          <div className="text-center pt-2">
             <button
               onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
-              className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
+              className="text-[10px] font-black text-muted-foreground/60 hover:text-primary transition-all uppercase tracking-widest"
             >
-              {isSignUp ? 'Already authorized? Sign in' : "New User? Create account"}
+              {isSignUp ? 'Authorized Personnel? Sign In' : "New Asset? Create Account"}
             </button>
           </div>
         </div>
         
-        <p className="text-[10px] text-center text-muted-foreground mt-8 uppercase tracking-[0.2em] font-medium opacity-50">
-          Encrypted SECURE ACCESS ONLY
-        </p>
+        <div className="flex items-center justify-center gap-4 mt-8 opacity-30">
+           <div className="h-[1px] w-8 bg-muted-foreground" />
+           <p className="text-[9px] text-center text-muted-foreground uppercase tracking-[0.3em] font-black">
+              End-to-End Encrypted
+           </p>
+           <div className="h-[1px] w-8 bg-muted-foreground" />
+        </div>
       </div>
     </div>
+
   );
 }
 

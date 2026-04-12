@@ -130,52 +130,63 @@ export function HistoryPage() {
             No trades match the current filters.
           </div>
         ) : (
-          <div className="space-y-3">
-            {filtered.map(t => (
+          <div className="space-y-4">
+            {filtered.map((t, idx) => (
               <div 
                 key={t.id} 
-                className="card-premium p-4 cursor-pointer group hover:bg-muted/30" 
+                className="card-premium p-4 sm:p-5 cursor-pointer group hover:bg-muted/30 animate-in slide-in-from-bottom-2 duration-500 ease-[var(--apple-ease)]" 
+                style={{ animationDelay: `${idx * 50}ms`, animationFillMode: 'both' }}
                 onClick={() => setExpandedNotes(prev => ({ ...prev, [t.id]: !prev[t.id] }))}
               >
-                <div className="flex flex-wrap items-center gap-4 sm:gap-8">
-                  <div className={`w-14 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase tracking-widest ${t.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                    {t.direction}
-                  </div>
-                  
-                  <div className="flex flex-col min-w-[100px]">
-                    <span className="text-xs font-bold">{t.date}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase">{t.session} · {t.setup}</span>
-                  </div>
-
-                  <div className="flex flex-col min-w-[120px]">
-                    <span className="text-xs font-medium font-mono">{t.entry} → {t.exit}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase">{t.lots} Lots · ${t.amount || 0}</span>
-                  </div>
-
-                  <div className="ml-auto flex items-center gap-6">
-                    <div className="flex flex-col items-end">
-                      <span className={`text-sm font-black ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toFixed(2)}
-                      </span>
-                      {t.rr && <span className="text-[10px] text-muted-foreground">RR {t.rr}</span>}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center justify-between sm:justify-start gap-4">
+                    <div className={`w-14 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase tracking-widest ${t.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+                      {t.direction}
                     </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black tracking-tight">{t.date}</span>
+                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter opacity-70">{t.session} · {t.setup}</span>
+                    </div>
+                    
                     <button 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" 
+                      className="sm:hidden w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors text-xl" 
                       onClick={e => { e.stopPropagation(); onDeleteTrade(t.id); }}
                     >×</button>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-start gap-8 flex-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold font-mono text-foreground/80">{t.entry} → {t.exit}</span>
+                      <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">{t.lots} Lots · ${t.amount || 0}</span>
+                    </div>
+
+                    <div className="sm:ml-auto flex items-center gap-6">
+                      <div className="flex flex-col items-end">
+                        <span className={`text-lg sm:text-base font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toFixed(2)}
+                        </span>
+                        {t.rr && <span className="text-[10px] font-black text-muted-foreground/60 tracking-widest uppercase">R:R {t.rr}</span>}
+                      </div>
+                      
+                      <button 
+                        className="hidden sm:flex w-8 h-8 rounded-full items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 active:scale-90" 
+                        onClick={e => { e.stopPropagation(); onDeleteTrade(t.id); }}
+                      >×</button>
+                    </div>
                   </div>
                 </div>
                 
                 {expandedNotes[t.id] && (
-                  <div className="mt-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 duration-300">
-                    <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                      {t.note || <span className="text-muted-foreground italic">No notes provided for this trade.</span>}
+                  <div className="mt-4 pt-4 border-t border-border/40 animate-in slide-in-from-top-2 duration-500 ease-[var(--apple-ease)]">
+                    <div className="text-sm font-medium text-foreground/70 leading-relaxed whitespace-pre-wrap px-1">
+                      {t.note || <span className="text-muted-foreground/50 italic font-normal">No intelligence brief provided for this operation.</span>}
                     </div>
                     {t.screenshots && t.screenshots.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mt-4 flex flex-wrap gap-3">
                         {t.screenshots.map((s, i) => (
-                          <div key={i} className="rounded-lg border border-border overflow-hidden bg-muted">
-                            <img src={s} alt="screenshot" className="max-w-[200px] hover:scale-105 transition-transform cursor-zoom-in" />
+                          <div key={i} className="rounded-xl border border-border/50 overflow-hidden bg-muted/50 shadow-inner group/img">
+                            <img src={s} alt="screenshot" className="max-w-[180px] sm:max-w-[240px] hover:scale-110 transition-transform duration-700 cursor-zoom-in" />
                           </div>
                         ))}
                       </div>
