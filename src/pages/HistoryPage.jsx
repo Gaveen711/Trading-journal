@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
+import { Download, Search, XLg } from 'react-bootstrap-icons';
 
 const HistorySkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -76,8 +77,8 @@ export function HistoryPage() {
           <h1 className="text-3xl font-black text-gradient">Trade History</h1>
           <p className="text-muted-foreground text-sm">A comprehensive log of your past performance.</p>
         </div>
-        <button onClick={onExportCSV} className="btn-secondary gap-2 text-xs">
-          <span>↓</span> Export Data
+        <button onClick={onExportCSV} className="btn-secondary gap-2 text-[11px] font-black uppercase tracking-widest px-5 h-10">
+          <Download className="w-3.5 h-3.5" /> Export Data
         </button>
       </header>
       
@@ -125,9 +126,11 @@ export function HistoryPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="card-premium p-12 text-center text-muted-foreground italic flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-2">🔍</div>
-            No trades match the current filters.
+          <div className="card-premium p-12 text-center text-muted-foreground italic flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-2 shadow-inner">
+              <Search className="w-6 h-6 text-muted-foreground/40" />
+            </div>
+            <span className="text-xs font-black uppercase tracking-widest opacity-40">No operations match the current filter</span>
           </div>
         ) : (
           <div className="space-y-4">
@@ -150,9 +153,11 @@ export function HistoryPage() {
                     </div>
                     
                     <button 
-                      className="sm:hidden w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors text-xl" 
+                      className="sm:hidden w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors" 
                       onClick={e => { e.stopPropagation(); onDeleteTrade(t.id); }}
-                    >×</button>
+                    >
+                      <XLg className="w-4 h-4" />
+                    </button>
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-start gap-8 flex-1">
@@ -172,7 +177,9 @@ export function HistoryPage() {
                       <button 
                         className="hidden sm:flex w-8 h-8 rounded-full items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100 active:scale-90" 
                         onClick={e => { e.stopPropagation(); onDeleteTrade(t.id); }}
-                      >×</button>
+                      >
+                        <XLg className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 </div>

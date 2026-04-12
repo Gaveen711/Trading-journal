@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { todayStr } from '../lib/tradeUtils';
+import { PencilSquare, XLg } from 'react-bootstrap-icons';
 
 export function JournalPage() {
   const { journals, saveJournalEntry, deleteEntry, plan, setShowPricingModal } = useOutletContext();
@@ -143,8 +144,10 @@ export function JournalPage() {
           
           <div className="space-y-4">
             {entries.length === 0 ? (
-              <div className="card-premium p-20 flex flex-col items-center justify-center text-muted-foreground gap-5">
-                <div className="w-20 h-20 rounded-[2.5rem] bg-muted/50 border border-border/50 flex items-center justify-center text-3xl shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">✍️</div>
+              <div className="card-premium p-20 flex flex-col items-center justify-center text-muted-foreground gap-6">
+                <div className="w-20 h-20 rounded-[2.5rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <PencilSquare className="w-8 h-8 text-muted-foreground/40" />
+                </div>
                 <div className="text-center space-y-1">
                   <span className="text-sm font-bold text-foreground opacity-80 uppercase tracking-tight">Encryption Empty</span>
                   <p className="text-[10px] uppercase tracking-widest opacity-40 leading-relaxed px-8">Initialize cognitive reflections to begin documentation.</p>
@@ -174,9 +177,11 @@ export function JournalPage() {
                       </div>
                     </div>
                     <button 
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-75 sm:opacity-0 group-hover:opacity-100 text-xl" 
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-75 sm:opacity-0 group-hover:opacity-100" 
                       onClick={() => onDeleteEntry(date)}
-                    >×</button>
+                    >
+                      <XLg className="w-4 h-4" />
+                    </button>
                   </div>
                   <div className="text-sm font-medium text-foreground/70 leading-relaxed line-clamp-4 whitespace-pre-wrap italic border-l-2 border-primary/20 pl-5 py-1 group-hover:border-primary transition-colors">
                     "{entry.text}"

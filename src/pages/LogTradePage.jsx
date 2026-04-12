@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { calcPnl, todayStr } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
+import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icons';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
@@ -344,8 +345,10 @@ export function LogTradePage() {
                 {trades.length > 0 ? (
                   <Line data={chartData} options={chartOptions} />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-4">
-                    <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center text-2xl shadow-inner rotate-3">📊</div>
+                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-6">
+                    <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
+                      <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
+                    </div>
                     <div className="text-center space-y-1">
                       <span className="text-sm font-bold text-foreground opacity-80">No Intel Data Available</span>
                       <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log operations to begin analyzing your performance curve.</p>
@@ -365,7 +368,9 @@ export function LogTradePage() {
                   +{avgProfit === 0 ? '$0.00' : `$${avgProfit.toFixed(2)}`}
                 </p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-green-500/5 flex items-center justify-center text-green-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-green-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">↗</div>
+              <div className="w-14 h-14 rounded-2xl bg-green-500/5 flex items-center justify-center text-green-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-green-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">
+                <ArrowUpRight className="w-6 h-6" />
+              </div>
             </div>
             <div className="card-premium p-6 flex items-center justify-between group hover:border-red-500/30 transition-all duration-500">
               <div className="space-y-1.5">
@@ -374,7 +379,9 @@ export function LogTradePage() {
                   {avgLoss === 0 ? '$0.00' : `-$${Math.abs(avgLoss).toFixed(2)}`}
                 </p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-red-500/5 flex items-center justify-center text-red-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">↘</div>
+              <div className="w-14 h-14 rounded-2xl bg-red-500/5 flex items-center justify-center text-red-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">
+                <ArrowDownRight className="w-6 h-6" />
+              </div>
             </div>
           </div>
         </div>

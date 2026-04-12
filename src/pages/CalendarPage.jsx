@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { pad2 } from '../lib/tradeUtils';
+import { ChevronLeft, ChevronRight, Calendar3 } from 'react-bootstrap-icons';
 
 export function CalendarPage() {
   const { trades, plan } = useOutletContext();
@@ -87,11 +88,15 @@ export function CalendarPage() {
           <p className="text-muted-foreground text-sm font-medium">Visualize your daily market impact and discipline.</p>
         </div>
         <div className="flex bg-muted/50 p-1 rounded-full border border-border/40 shadow-inner w-full sm:w-auto justify-between sm:justify-start">
-          <button onClick={() => changeMonth(-1)} className="p-2.5 hover:bg-background rounded-full transition-all active:scale-90">‹</button>
+          <button onClick={() => changeMonth(-1)} className="p-2.5 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">
+            <ChevronLeft className="w-3 h-3" />
+          </button>
           <span className="px-4 py-2 text-[10px] font-black min-w-[140px] text-center uppercase tracking-[0.2em] self-center text-foreground/70">
             {new Date(calYear, calMonth, 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
           </span>
-          <button onClick={() => changeMonth(1)} className="p-2.5 hover:bg-background rounded-full transition-all active:scale-90">›</button>
+          <button onClick={() => changeMonth(1)} className="p-2.5 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">
+            <ChevronRight className="w-3 h-3" />
+          </button>
         </div>
       </header>
 
@@ -162,8 +167,10 @@ export function CalendarPage() {
               </div>
             </div>
           ) : (
-            <div className="py-16 flex flex-col items-center justify-center text-muted-foreground gap-4 h-full">
-              <div className="w-20 h-20 rounded-[2.5rem] bg-muted/50 border border-border/50 flex items-center justify-center text-3xl shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500 cursor-default">📅</div>
+            <div className="py-16 flex flex-col items-center justify-center text-muted-foreground gap-5 h-full">
+              <div className="w-20 h-20 rounded-[2.5rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500 cursor-default">
+                <Calendar3 className="w-8 h-8 text-muted-foreground/40" />
+              </div>
               <div className="text-center space-y-1 px-4">
                 <span className="text-sm font-bold text-foreground opacity-80 uppercase tracking-tight">Select Operation Date</span>
                 <p className="text-[10px] uppercase tracking-widest opacity-40 leading-relaxed">Intercept calendar signals to view performance intelligence.</p>

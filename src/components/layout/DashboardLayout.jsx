@@ -1,21 +1,21 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { 
-  XMarkIcon, 
-  HomeIcon, 
-  ClockIcon, 
-  CalendarIcon, 
-  ChartBarIcon, 
-  BookOpenIcon,
-  SparklesIcon,
-  ArrowRightOnRectangleIcon
-} from '@heroicons/react/24/outline';
-import { 
-  HomeIcon as HomeIconSolid, 
-  ClockIcon as ClockIconSolid, 
-  CalendarIcon as CalendarIconSolid, 
-  ChartBarIcon as ChartBarIconSolid, 
-  BookOpenIcon as BookOpenIconSolid 
-} from '@heroicons/react/24/solid';
+  House, 
+  HouseFill,
+  ClockHistory, 
+  ClockFill,
+  Calendar3, 
+  Calendar3Fill,
+  BarChartLine, 
+  BarChartLineFill,
+  Book,
+  BookFill,
+  Stars,
+  BoxArrowRight,
+  SunFill,
+  MoonStarsFill,
+  XLg
+} from 'react-bootstrap-icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -32,11 +32,11 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
   const { startingBalance, updateBalance } = useWallet();
 
   const navigation = [
-    { id: '', name: 'Log', icon: HomeIcon, iconSolid: HomeIconSolid },
-    { id: 'history', name: 'History', icon: ClockIcon, iconSolid: ClockIconSolid },
-    { id: 'calendar', name: 'Calendar', icon: CalendarIcon, iconSolid: CalendarIconSolid },
-    { id: 'analytics', name: 'Analytics', icon: ChartBarIcon, iconSolid: ChartBarIconSolid },
-    { id: 'journal', name: 'Journal', icon: BookOpenIcon, iconSolid: BookOpenIconSolid }
+    { id: '', name: 'Log', icon: House, iconSolid: HouseFill },
+    { id: 'history', name: 'History', icon: ClockHistory, iconSolid: ClockFill },
+    { id: 'calendar', name: 'Calendar', icon: Calendar3, iconSolid: Calendar3Fill },
+    { id: 'analytics', name: 'Analytics', icon: BarChartLine, iconSolid: BarChartLineFill },
+    { id: 'journal', name: 'Journal', icon: Book, iconSolid: BookFill }
   ];
 
   const activeIndex = navigation.findIndex(item => 
@@ -50,7 +50,7 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-8">
-              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300">
+              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group hover:scale-105 transition-transform duration-300" onClick={() => (window.location.href = '/')}>
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-primary/30 group-hover:rotate-6 transition-transform">XAU</div>
                 <span className="font-bold tracking-tight hidden sm:block">Journal</span>
               </div>
@@ -61,26 +61,27 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                 <div 
                   className="absolute top-1.5 bottom-1.5 left-1.5 bg-background shadow-sm border border-border/50 rounded-full transition-all duration-500 ease-[var(--spring-bounce)]"
                   style={{ 
-                    width: '90px',
-                    transform: `translateX(calc(${activeIndex} * 90px))`
+                    width: '115px',
+                    transform: `translateX(calc(${activeIndex} * 115px))`
                   }}
                 />
                 
-                {navigation.map((item) => (
-                  <NavLink
-                    key={item.name}
-                    to={`/${item.id}`}
-                    className={({ isActive }) => 
-                      `relative z-10 w-[90px] py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-center transition-colors duration-300 ${
-                        (item.id === '' ? location.pathname === '/' : isActive)
-                          ? 'text-primary' 
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`
-                    }
-                  >
-                    {item.name}
-                  </NavLink>
-                ))}
+                {navigation.map((item) => {
+                  const isActive = item.id === '' ? location.pathname === '/' : location.pathname.startsWith(`/${item.id}`);
+                  const Icon = isActive ? item.iconSolid : item.icon;
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={`/${item.id}`}
+                      className={`relative z-10 w-[115px] py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors duration-300 ${
+                        isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 transition-transform duration-500 ${isActive ? 'scale-110' : 'scale-100'}`} />
+                      {item.name}
+                    </NavLink>
+                  );
+                })}
               </div>
             </div>
 
@@ -91,7 +92,7 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                   onClick={() => setShowPricingModal(true)}
                   className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all active:scale-95"
                 >
-                  <SparklesIcon className="w-3.5 h-3.5 text-primary group-hover:animate-pulse" />
+                  <Stars className="w-3.5 h-3.5 text-primary group-hover:animate-pulse" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-primary">Upgrade</span>
                 </button>
               )}
@@ -112,9 +113,9 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                   `}
                 >
                   {isLightMode ? (
-                    <svg className="w-2.5 h-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+                    <SunFill className="w-2.5 h-2.5 text-amber-500" />
                   ) : (
-                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+                    <MoonStarsFill className="w-2.5 h-2.5 text-white" />
                   )}
                 </div>
               </button>
@@ -143,7 +144,7 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                   className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all active:scale-75"
                   title="Secure Logout"
                 >
-                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                  <BoxArrowRight className="w-5 h-5" />
                 </button>
               </div>
             </div>

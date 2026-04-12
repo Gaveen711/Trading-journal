@@ -1,4 +1,5 @@
 import { useOutletContext } from 'react-router-dom';
+import { BarChartLine } from 'react-bootstrap-icons';
 
 const AnalyticsSkeleton = () => (
   <div className="space-y-8 animate-pulse">
@@ -110,8 +111,10 @@ export function AnalyticsPage() {
               </div>
             );
           }) : (
-            <div className="py-20 flex flex-col items-center justify-center text-muted-foreground gap-4">
-              <div className="w-20 h-20 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center text-3xl shadow-inner rotate-6">📊</div>
+            <div className="py-20 flex flex-col items-center justify-center text-muted-foreground gap-6">
+              <div className="w-20 h-20 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-6">
+                <BarChartLine className="w-8 h-8 text-muted-foreground/40" />
+              </div>
               <div className="text-center space-y-1">
                 <span className="text-sm font-bold text-foreground opacity-80 uppercase tracking-tight">No Monthly Logs Identified</span>
                 <p className="text-[10px] uppercase tracking-widest opacity-40 leading-relaxed px-8">Initialize operations to begin synthesizing monthly performance curves.</p>
