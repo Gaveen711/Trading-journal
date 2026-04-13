@@ -3,6 +3,14 @@
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    },
+    {
+      "crons": [
+    {
+      "path": "/api/cron/remind-expiry",
+      "schedule": "0 0 * * *" 
     }
+  ]
+  }
   ]
 }

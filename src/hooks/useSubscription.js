@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
 
 import { db } from '../firebase';
 import { useToast } from '../components/ToastContext';
-
 
 export function useSubscription(user) {
   const [subscription, setSubscription] = useState({ plan: 'free', expiry: null, isLoading: true });
@@ -21,12 +20,36 @@ export function useSubscription(user) {
         const now = new Date();
         const expiryDate = data.planExpiry ? new Date(data.planExpiry) : null;
 
-        // Auto-revert if expired
-        if (data.plan === 'pro' && expiryDate && now > expiryDate) {
-          updateDoc(doc(db, "users", user.uid), { plan: 'free' });
-          toast("Your Pro subscription has expired. Reverting to Free plan.", "warn");
-          setSubscription({ plan: 'free', expiry: data.planExpiry, isLoading: false });
+        // Configuration for Grace Period (4 days in milliseconds)
+        const GRACE_PERIOD_MS = 4 * 24 * 60 * 60 * 1000;
+
+        if (data.plan === 'pro' && expiryDate) {
+          const cutoffDate = new Date(expiryDate.getTime() + GRACE_PERIOD_MS);
+
+          if (now > cutoffDate) {
+            // 1. HARD EXPIRE: Current time is beyond Expiry + 4 Days
+            updateDoc(doc(db, "users", user.uid), { plan: 'free' });
+            toast("Your Pro subscription and grace period have expired. Reverting to Free plan.", "warn");
+            setSubscription({ plan: 'free', expiry: data.planExpiry, isLoading: false });
+          } else if (now > expiryDate) {
+            // 2. SOFT EXPIRE: Plan is technically over, but within the 4-day grace period
+            // We keep the plan as 'pro' so they can still log their XAU trades
+            setSubscription({ 
+              plan: 'pro', 
+              expiry: data.planExpiry, 
+              isLoading: false,
+              isGracePeriod: true 
+            });
+          } else {
+            // 3. ACTIVE: Plan is still valid
+            setSubscription({ 
+              plan: 'pro', 
+              expiry: data.planExpiry, 
+              isLoading: false 
+            });
+          }
         } else {
+          // Fallback for Free users
           setSubscription({ 
             plan: data.plan || 'free', 
             expiry: data.planExpiry || null, 
@@ -78,7 +101,6 @@ export function useSubscription(user) {
         })
       });
       
-      // Check if response is JSON
       const contentType = resp.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         const text = await resp.text();
@@ -97,7 +119,6 @@ export function useSubscription(user) {
       toast(error.message || "Could not open management portal.", "error");
     }
   };
-
 
   return { ...subscription, startCheckout, openPortal };
 }
