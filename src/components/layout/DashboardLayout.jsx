@@ -212,6 +212,56 @@ export function DashboardLayout({ user, plan, setShowPricingModal, openPortal })
         </div>
       </main>
 
+      {/* Premium Footer */}
+      <footer className="w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-border/10 bg-muted/5 mt-auto relative overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white font-black text-[10px] shadow-lg shadow-primary/20">My</div>
+              <span className="text-sm font-black uppercase tracking-widest text-foreground/80">Journal</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground max-w-[280px] text-center md:text-left leading-relaxed font-medium uppercase tracking-tight">
+              Hand Crafted for you to track your trades.
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-center md:items-end gap-3">
+            <div className="flex flex-col items-center md:items-end gap-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/50 leading-none">
+                © {new Date().getFullYear()} XAU Journal
+              </p>
+              <p className="text-[12px] font-bold text-foreground/50 tracking-tight leading-loose">
+                All Rights Reserved.
+              </p>
+            </div>
+            <div className="h-px w-12 bg-border/40 my-1 hidden md:block"></div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2 cursor-default">
+              Curated by
+              <style>{`
+                @keyframes rgbCycle {
+                  0%   { color: #ff0000; }
+                  16%  { color: #ff8000; }
+                  33%  { color: #ffff00; }
+                  50%  { color: #00ff00; }
+                  66%  { color: #0080ff; }
+                  83%  { color: #8000ff; }
+                  100% { color: #ff0000; }
+                }
+              `}</style>
+              <span style={{
+                animation: "rgbCycle 3s linear infinite",              
+                textUnderlineOffset: "4px",
+                cursor: "default",
+                userSelect: "none"
+              }}>Skywalker Productions</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Decorative background element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+      </footer>
+
       {/* Premium Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2">
         <div className="bg-background/80 backdrop-blur-2xl border border-border/50 rounded-[2.5rem] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] h-20 flex items-center justify-around px-4">
@@ -241,4 +291,3 @@ export function DashboardLayout({ user, plan, setShowPricingModal, openPortal })
     </div>
   );
 }
-
