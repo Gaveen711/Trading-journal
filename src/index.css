@@ -15,7 +15,7 @@
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 220.9 39.3% 11%;
     --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
+    --muted-foreground: 220 8.9% 35%; /* Darker for better visibility */
     --accent: 262.1 83.3% 57.8%;
     --accent-foreground: 220.9 39.3% 11%;
     --destructive: 0 84.2% 60.2%;
@@ -45,7 +45,7 @@
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 20% 98%;
     --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
+    --muted-foreground: 217.9 10.6% 75%; /* Brighter for better visibility on dark */
     --accent: 263.4 70% 50.4%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
@@ -65,8 +65,18 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 350;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Global Font Weight Override - Allowing slightly more weight for emphasized content */
+  .font-black, .font-bold, .font-black-force {
+    font-weight: 500 !important;
+  }
+  
+  .font-semibold, .font-medium {
+    font-weight: 450 !important;
   }
 }
 
@@ -115,7 +125,7 @@
 
 /* Typography Enhancements */
 h1, h2, h3, h4, h5, h6 {
-  @apply tracking-tight font-bold;
+  @apply tracking-tight font-[500]; /* Slightly more weight for headings for readability */
 }
 
 .text-gradient {

@@ -73,8 +73,8 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                     <NavLink
                       key={item.name}
                       to={`/${item.id}`}
-                      className={`relative z-10 w-[115px] py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors duration-300 ${
-                        isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                      className={`relative z-10 w-[115px] py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 transition-all duration-300 ${
+                        isActive ? 'text-primary' : 'text-foreground/50 hover:text-foreground hover:bg-white/5'
                       }`}
                     >
                       <Icon className={`w-3.5 h-3.5 transition-transform duration-500 ${isActive ? 'scale-110' : 'scale-100'}`} />
@@ -141,7 +141,7 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
 
                 <button 
                   onClick={() => auth.signOut()}
-                  className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-all active:scale-75"
+                  className="p-2 text-muted-foreground hover:text-white hover:bg-destructive/20 rounded-full transition-all active:scale-75"
                   title="Secure Logout"
                 >
                   <BoxArrowRight className="w-5 h-5" />
@@ -176,7 +176,7 @@ export function DashboardLayout({ user, plan, setShowPricingModal }) {
                 key={item.name}
                 to={`/${item.id}`}
                 className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-300 active:scale-75 ${
-                  isActive ? 'text-primary scale-110' : 'text-muted-foreground'
+                  isActive ? 'text-primary scale-110' : 'text-foreground/40 hover:text-foreground'
                 }`}
               >
                 <div className={`p-2 rounded-2xl transition-all duration-500 scale-100 ${isActive ? 'bg-primary/10 shadow-inner' : ''}`}>

@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-
+import { getFunctions } from "firebase/functions";
 
 const firebase= {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,17 +11,16 @@ const firebase= {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
- 
 };
 
 const app = initializeApp(firebase);
 
-// ✅ Create db FIRST
 const db = getFirestore(app);
-
-// Exports
 const auth = getAuth(app);
-export { db, auth };
+const functions = getFunctions(app);
+
+export { db, auth, functions };
 export const googleProvider = new GoogleAuthProvider();
 export default app;
+
   

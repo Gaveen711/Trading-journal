@@ -4,6 +4,7 @@ import { Line } from 'react-chartjs-2';
 import { calcPnl, todayStr } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icons';
+import { DatePicker } from '../components/ui/DatePicker';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
@@ -22,6 +23,7 @@ export function LogTradePage() {
   const [saving, setSaving] = useState(false);
   const [equityPeriod, setEquityPeriod] = useState('all');
 
+  const [date, setDate] = useState(todayStr());
   const [entry, setEntry] = useState('');
   const [exit, setExit] = useState('');
   const [lots, setLots] = useState('0.10');
@@ -29,6 +31,7 @@ export function LogTradePage() {
   const [sl, setSl] = useState('');
   const [tp, setTp] = useState('');
   const [note, setNote] = useState('');
+  const [leverage, setLeverage] = useState('');
 
   const pnlData = calcPnl(
     parseFloat(entry) || 0, parseFloat(exit) || 0,
@@ -58,6 +61,8 @@ export function LogTradePage() {
     const noteVal = formData.get('note').trim();
     const session = formData.get('session');
     const setup = formData.get('setup');
+    const market = formData.get('market');
+    const leverageVal = formData.get('leverage');
 
     if (!date || !direction || isNaN(entryVal) || isNaN(exitVal) || (!amountVal && isNaN(lotsVal))) {
       toast('Please fill in date, direction, prices and lot size.', 'error');
@@ -77,16 +82,16 @@ export function LogTradePage() {
     }
 
     const tradeData = {
-      date, direction, entry: entryVal, exit: exitVal, lots: isNaN(lotsVal) ? 0 : lotsVal, amount: amountVal, sl: slVal, tp: tpVal, rr, session, setup,
+      date, direction, entry: entryVal, exit: exitVal, lots: isNaN(lotsVal) ? 0 : lotsVal, amount: amountVal, sl: slVal, tp: tpVal, rr, session, setup, market, leverage: leverageVal,
       pnl: parseFloat(pnl.toFixed(2)), outcome, note: noteVal, timestamp: new Date()
     };
 
     try {
       await addTrade(tradeData);
       e.target.reset();
-      e.target.date.value = todayStr();
       setDirection(null);
-      setEntry(''); setExit(''); setLots('0.10'); setAmount(''); setSl(''); setTp(''); setNote('');
+      setDate(todayStr());
+      setEntry(''); setExit(''); setLots('0.10'); setAmount(''); setSl(''); setTp(''); setNote(''); setLeverage('');
       const icon = outcome === 'WIN' ? '🟢' : outcome === 'LOSS' ? '🔴' : '🟡';
       toast(`${icon} Trade saved — ${outcome} ${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
     } catch (error) {
@@ -151,6 +156,7 @@ export function LogTradePage() {
   };
 
   const totalPnl = trades.reduce((s,t)=>s+t.pnl,0);
+  const currentWalletBalance = (startingBalance || 0) + totalPnl;
   const winRate = trades.length ? (trades.filter(t => t.outcome === 'WIN').length / trades.length * 100).toFixed(0) : 0;
 
   const wins = trades.filter(t => t.pnl > 0);
@@ -165,13 +171,17 @@ export function LogTradePage() {
           <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Performance Terminal</h1>
           <p className="text-muted-foreground text-sm font-medium">Welcome back, Agent. Analyze your market impact.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
           <div className="card-premium p-4 flex flex-col gap-1 min-w-[120px] bg-muted/30">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Win Rate</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Wallet Balance</span>
+            <span className="text-xl font-black">${currentWalletBalance.toFixed(2)}</span>
+          </div>
+          <div className="card-premium p-4 flex flex-col gap-1 min-w-[120px] bg-muted/30">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Win Rate</span>
             <span className="text-xl font-black">{winRate}%</span>
           </div>
           <div className="card-premium p-4 flex flex-col gap-1 min-w-[120px] bg-muted/30">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Absolute P&L</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">Absolute P&L</span>
             <span className={`text-xl font-black ${totalPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {totalPnl >= 0 ? '+' : ''}${Math.abs(totalPnl).toFixed(0)}
             </span>
@@ -179,8 +189,8 @@ export function LogTradePage() {
         </div>
       </header>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-12 xl:col-span-5 space-y-6">
           {plan === 'free' && (
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 flex justify-between items-center group animate-in zoom-in-95 duration-500 delay-150">
               <div className="space-y-1">
@@ -196,20 +206,29 @@ export function LogTradePage() {
             </div>
           )}
           
-          <div className="card-premium p-6 sm:p-8 space-y-6 animate-in slide-in-from-left-4 duration-700 delay-100">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+          <div className="card-premium p-8 sm:p-10 space-y-8 animate-in slide-in-from-left-4 duration-700 delay-100">
+            <h3 className="text-xl font-bold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               New Operation
             </h3>
             <form onSubmit={saveTradeForm} className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Date</label>
-                  <input type="date" name="date" defaultValue={todayStr()} className="input-premium h-11" />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Date</label>
+                  <DatePicker name="date" value={date} onChange={setDate} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Session</label>
-                  <select name="session" className="input-premium h-11">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Market</label>
+                  <select name="market" className="input-premium h-12">
+                    <option value="GOLD">Gold (XAU/USD)</option>
+                    <option value="FOREX">Forex</option>
+                    <option value="CRYPTO">Crypto</option>
+                    <option value="STOCKS">Stocks / Indices</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Session</label>
+                  <select name="session" className="input-premium h-12">
                     <option value="">Select...</option>
                     <option value="Asian">Asian</option>
                     <option value="London">London</option>
@@ -219,9 +238,9 @@ export function LogTradePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Direction</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Direction</label>
                   <div className="flex bg-muted rounded-xl p-1 gap-1 border border-border/50 h-11">
                     <button 
                       type="button"
@@ -236,8 +255,8 @@ export function LogTradePage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Setup</label>
-                  <select name="setup" className="input-premium h-11">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Setup</label>
+                  <select name="setup" className="input-premium h-12">
                     <option value="">Select...</option>
                     <option value="A+ Setup">A+ Setup</option>
                     <option value="Breakout">Breakout</option>
@@ -246,35 +265,39 @@ export function LogTradePage() {
                     <option value="Trend">Trend</option>
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Leverage</label>
+                  <input type="text" name="leverage" value={leverage} onChange={e => setLeverage(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="e.g. 1:Unlimited" />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Entry Price</label>
-                  <input type="number" name="entry" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-11 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="entry" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Exit Price</label>
-                  <input type="number" name="exit" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-11 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="exit" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Lot Size</label>
-                  <input type="number" name="lots" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-11 text-sm font-bold" placeholder="0.10" />
+                  <input type="number" name="lots" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.10" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Stop Loss</label>
-                  <input type="number" name="sl" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-11 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="sl" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Take Profit</label>
-                  <input type="number" name="tp" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-11 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="tp" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Risk Amt ($)</label>
-                  <input type="number" name="amount" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="input-premium h-11 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="amount" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
               </div>
 
@@ -295,7 +318,7 @@ export function LogTradePage() {
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Intelligence Brief</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Intelligence Brief</label>
                 <textarea name="note" value={note} onChange={e => setNote(e.target.value)} className="input-premium h-24 resize-none text-xs leading-relaxed p-4" placeholder="Market conditions, emotional state, pattern recognized..."></textarea>
               </div>
 
@@ -325,10 +348,10 @@ export function LogTradePage() {
           </div>
         </div>
         
-        <div className="lg:col-span-2 space-y-8 animate-in slide-in-from-right-4 duration-700 delay-200">
-          <div className="card-premium p-6 sm:p-8 h-[350px] sm:h-[450px] flex flex-col relative overflow-hidden">
+        <div className="lg:col-span-12 xl:col-span-7 space-y-8 animate-in slide-in-from-right-4 duration-700 delay-200">
+          <div className="card-premium p-6 sm:p-8 h-[400px] sm:h-[550px] flex flex-col relative overflow-hidden">
             <div className="flex justify-between items-center mb-6 relative z-10">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-xl font-bold flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 Equity Intelligence
               </h3>

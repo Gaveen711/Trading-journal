@@ -44,6 +44,10 @@ export function AnalyticsPage() {
     if (dd > maxDD) maxDD = dd;
   });
 
+  const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
+  const currentWalletBalance = (startingBalance || 0) + totalPnl;
+  const winRatePercent = trades.length ? (wins.length / trades.length * 100).toFixed(0) : 0;
+
   const monthMap = {};
   trades.forEach(t => {
     const key = t.date.substring(0, 7);
@@ -53,12 +57,12 @@ export function AnalyticsPage() {
   const maxAbs = months.length ? Math.max(...months.map(m => Math.abs(monthMap[m]))) : 1;
 
   const statCards = [
+    { label: 'Wallet Balance', value: `$${currentWalletBalance.toFixed(2)}`, sub: 'Current Liquidity', color: 'text-primary' },
+    { label: 'Win Rate', value: `${winRatePercent}%`, sub: `${wins.length} successful`, color: 'text-green-500' },
     { label: 'Expectancy', value: trades.length ? `${expectancy >= 0 ? '+' : ''}$${expectancy.toFixed(2)}` : '—', sub: 'Average per trade', color: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : '' },
     { label: 'Avg Win', value: wins.length ? `+$${avgWin.toFixed(2)}` : '—', sub: `${wins.length} winners`, color: 'text-green-500' },
     { label: 'Avg Loss', value: losses.length ? `-$${Math.abs(avgLoss).toFixed(2)}` : '—', sub: `${losses.length} losers`, color: 'text-red-500' },
     { label: 'Profit Factor', value: pf !== null ? pf.toFixed(2) : '—', sub: 'Gross Profit / Loss', color: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : '' },
-    { label: 'Avg R:R', value: avgRR !== null ? avgRR.toFixed(2) : '—', sub: 'Realized Risk/Reward', color: 'text-primary' },
-    { label: 'Max Drawdown', value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '—', sub: 'Peak to valley', color: 'text-red-500' },
   ];
 
   return (
@@ -75,10 +79,10 @@ export function AnalyticsPage() {
             className="card-premium p-4 sm:p-5 flex flex-col justify-between h-28 sm:h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both"
             style={{ animationDelay: `${i * 75}ms` }}
           >
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 group-hover:text-primary transition-colors">{stat.label}</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/50 group-hover:text-primary transition-colors">{stat.label}</span>
             <div className="space-y-1">
               <div className={`text-xl sm:text-2xl font-black tracking-tighter ${stat.color}`}>{stat.value}</div>
-              <div className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-tighter truncate">{stat.sub}</div>
+              <div className="text-[10px] text-foreground/60 font-black uppercase tracking-tighter truncate">{stat.sub}</div>
             </div>
           </div>
         ))}
@@ -97,7 +101,7 @@ export function AnalyticsPage() {
             return (
               <div key={month} className="group animate-in slide-in-from-right-4 duration-700" style={{ animationDelay: `${700 + (idx * 100)}ms` }}>
                 <div className="flex justify-between items-center mb-2 px-1">
-                  <span className="text-xs font-black uppercase tracking-[0.15em] text-foreground/70">{label}</span>
+                  <span className="text-xs font-black uppercase tracking-[0.15em] text-foreground/90">{label}</span>
                   <span className={`text-sm font-black tracking-tight ${value >= 0 ? 'text-green-500 shadow-green-500/20' : 'text-red-500 shadow-red-500/20'}`}>
                     {value >= 0 ? '+' : ''}${Math.abs(value).toFixed(0)}
                   </span>

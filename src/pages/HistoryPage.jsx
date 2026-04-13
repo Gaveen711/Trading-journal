@@ -75,7 +75,7 @@ export function HistoryPage() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-gradient">Trade History</h1>
-          <p className="text-muted-foreground text-sm">A comprehensive log of your past performance.</p>
+          <p className="text-muted-foreground text-sm font-medium">A comprehensive log of your past performance.</p>
         </div>
         <button onClick={onExportCSV} className="btn-secondary gap-2 text-[11px] font-black uppercase tracking-widest px-5 h-10">
           <Download className="w-3.5 h-3.5" /> Export Data
@@ -149,7 +149,7 @@ export function HistoryPage() {
                     
                     <div className="flex flex-col">
                       <span className="text-xs font-black tracking-tight">{t.date}</span>
-                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter opacity-70">{t.session} · {t.setup}</span>
+                      <span className="text-[10px] text-foreground/50 font-bold uppercase tracking-tighter">{t.session} · {t.setup}</span>
                     </div>
                     
                     <button 
@@ -163,7 +163,7 @@ export function HistoryPage() {
                   <div className="flex items-center justify-between sm:justify-start gap-8 flex-1">
                     <div className="flex flex-col">
                       <span className="text-xs font-bold font-mono text-foreground/80">{t.entry} → {t.exit}</span>
-                      <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">{t.lots} Lots · ${t.amount || 0}</span>
+                      <span className="text-[10px] text-foreground/50 font-black uppercase tracking-widest">{t.lots} Lots · ${t.amount || 0}</span>
                     </div>
 
                     <div className="sm:ml-auto flex items-center gap-6">
@@ -171,7 +171,7 @@ export function HistoryPage() {
                         <span className={`text-lg sm:text-base font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                           {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toFixed(2)}
                         </span>
-                        {t.rr && <span className="text-[10px] font-black text-muted-foreground/60 tracking-widest uppercase">R:R {t.rr}</span>}
+                        {t.rr && <span className="text-[10px] font-black text-foreground/40 tracking-widest uppercase">R:R {t.rr}</span>}
                       </div>
                       
                       <button 

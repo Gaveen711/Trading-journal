@@ -1,6 +1,6 @@
 import { XLg, CheckCircleFill, CheckCircle } from 'react-bootstrap-icons';
 
-export function PricingModal({ plan, onClose }) {
+export function PricingModal({ plan, expiry, onSubscribe, onClose }) {
   const SUB_LIMITS = { freeTrades: 5, freeJournals: 10 };
   
   return (
@@ -65,7 +65,7 @@ export function PricingModal({ plan, onClose }) {
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-primary">XAU Pro Elite</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black">$12</span>
+                <span className="text-3xl font-black">$29.99</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
               </div>
             </div>
@@ -84,9 +84,25 @@ export function PricingModal({ plan, onClose }) {
               ))}
             </ul>
             
-            <button className="btn-primary w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/10 active:scale-95 transition-all">
-              Pre-Order Now
-            </button>
+            {plan === 'pro' ? (
+              <div className="space-y-2">
+                <button disabled className="w-full py-3.5 rounded-2xl bg-primary/10 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
+                  Elite Active
+                </button>
+                {expiry && (
+                  <p className="text-[9px] text-center text-primary/60 font-black uppercase tracking-widest">
+                    Renews: {new Date(expiry).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={onSubscribe}
+                className="btn-primary w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/10 active:scale-95 transition-all"
+              >
+                Upgrade to Elite
+              </button>
+            )}
           </div>
         </div>
         

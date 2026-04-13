@@ -76,12 +76,12 @@ export function JournalPage() {
             </h3>
             <div className="space-y-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Entry Date</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Entry Date</label>
                 <input type="date" value={journalDate} onChange={e => setJournalDate(e.target.value)} className="input-premium h-11" />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Market Mood</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Market Mood</label>
                 <div className="flex justify-between bg-muted/40 rounded-[1.25rem] p-1.5 gap-1 border border-border/40">
                   {moods.slice(1).map((emoji, index) => (
                     <button 
@@ -97,7 +97,7 @@ export function JournalPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Cognitive Brief</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Cognitive Brief</label>
                 <textarea 
                   className="input-premium h-48 resize-none text-sm leading-relaxed p-4" 
                   value={journalText} 
@@ -120,7 +120,7 @@ export function JournalPage() {
 
               {plan === 'free' && (
                 <div className="space-y-2 pt-2 border-t border-border/30">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-foreground/60 ml-1">
                     <span>Journal Capacity</span>
                     <span>{Object.keys(journals).length} / {SUB_LIMITS.freeJournals} Entries</span>
                   </div>
@@ -170,10 +170,10 @@ export function JournalPage() {
                         <div className="w-12 h-12 rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-center text-lg text-muted-foreground">?</div>
                       )}
                       <div className="flex flex-col">
-                        <span className="text-sm font-black tracking-tight text-foreground/80">
+                        <span className="text-sm font-black tracking-tight text-foreground/90">
                           {new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(date + 'T00:00:00'))}
                         </span>
-                        <span className="text-[10px] font-black text-muted-foreground uppercase opacity-50 tracking-[0.1em]">{new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' })}</span>
+                        <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.1em]">{new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' })}</span>
                       </div>
                     </div>
                     <button 
@@ -183,7 +183,7 @@ export function JournalPage() {
                       <XLg className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="text-sm font-medium text-foreground/70 leading-relaxed line-clamp-4 whitespace-pre-wrap italic border-l-2 border-primary/20 pl-5 py-1 group-hover:border-primary transition-colors">
+                  <div className="text-sm font-medium text-foreground/80 leading-relaxed line-clamp-4 whitespace-pre-wrap italic border-l-2 border-primary/20 pl-5 py-1 group-hover:border-primary transition-colors">
                     "{entry.text}"
                   </div>
                 </div>

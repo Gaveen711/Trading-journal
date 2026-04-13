@@ -39,21 +39,22 @@ export function CalendarPage() {
       cells.push(
         <button 
           key={`day-${d}`} 
-          className={`relative aspect-square rounded-xl transition-all duration-300 flex flex-col items-center justify-center gap-1 border ${
-            isSelected ? 'ring-2 ring-primary border-primary shadow-lg scale-105 z-10' : 
-            hasTrades ? (isWin ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/20' : isLoss ? 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20' : 'bg-muted border-border hover:bg-muted/80') :
-            'bg-muted/30 border-transparent hover:bg-muted/50'
+          className={`relative aspect-square rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 flex flex-col items-center justify-center gap-2 border group ${
+            isSelected ? 'ring-2 ring-primary border-primary shadow-[0_0_30px_rgba(139,92,246,0.4)] scale-110 z-10 bg-primary/10' : 
+            hasTrades ? (isWin ? 'bg-green-500/5 border-green-500/20 hover:bg-green-500/10 hover:border-green-500/40 hover:scale-105' : isLoss ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 hover:scale-105' : 'bg-muted/50 border-border hover:bg-muted hover:scale-105') :
+            'bg-muted/10 border-transparent hover:bg-muted/30 hover:scale-105'
           }`}
           onClick={() => setSelectedCalDay(d)}
         >
-          <span className={`text-xs font-bold ${isToday ? 'bg-primary text-white w-5 h-5 flex items-center justify-center rounded-full' : isSelected ? 'text-primary' : 'text-foreground'}`}>
+          <span className={`text-sm sm:text-base font-black transition-all duration-500 group-hover:scale-110 ${isToday ? 'bg-primary text-white w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full shadow-lg shadow-primary/40' : isSelected ? 'text-primary' : 'text-foreground/90'}`}>
             {d}
           </span>
           {hasTrades && (
-            <div className={`text-[10px] font-black ${isWin ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-muted-foreground'}`}>
+            <div className={`text-[10px] sm:text-[12px] font-black tracking-tighter transition-all duration-300 ${isWin ? 'text-green-500' : isLoss ? 'text-red-500' : 'text-muted-foreground/80'}`}>
               {pnl >= 0 ? '+' : '-'}${Math.abs(pnl).toFixed(0)}
             </div>
           )}
+          {isSelected && <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-ping" />}
         </button>
       );
     }
@@ -101,13 +102,13 @@ export function CalendarPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 card-premium p-4 sm:p-8 animate-in slide-in-from-left-4 duration-700">
-          <div className="grid grid-cols-7 gap-1 sm:gap-4 mb-6">
+        <div className="lg:col-span-2 card-premium p-6 sm:p-12 animate-in slide-in-from-left-4 duration-700">
+          <div className="grid grid-cols-7 gap-2 sm:gap-6 mb-8">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} className="text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{d}</div>
+              <div key={d} className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1 sm:gap-4">
+          <div className="grid grid-cols-7 gap-2 sm:gap-6">
             {renderCells().map((cell, idx) => (
               <div 
                 key={idx} 
@@ -133,12 +134,18 @@ export function CalendarPage() {
           </h3>
           {selectedCalDay ? (
             <div className="space-y-6">
-              <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 shadow-inner space-y-2 animate-in fade-in zoom-in-95 duration-500">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{fmtDate(selectedDate)}</span>
-                <div className="flex justify-between items-center text-foreground/80">
-                  <span className="text-xs font-bold uppercase tracking-tight">{selectedTrades.length} Operations</span>
-                  <span className={`text-xl font-black ${selectedTotal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {selectedTotal >= 0 ? '+' : '-'}${Math.abs(selectedTotal).toFixed(2)}
+              <div className="p-5 rounded-[2rem] bg-muted/40 border border-border/50 shadow-inner space-y-3 animate-in fade-in zoom-in-95 duration-700">
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-black text-foreground uppercase tracking-[0.2em] opacity-60">{fmtDate(selectedDate)}</span>
+                  <div className={`w-2 h-2 rounded-full ${selectedTotal >= 0 ? 'bg-green-500 animate-pulse' : 'bg-red-500 animate-pulse'}`} />
+                </div>
+                <div className="flex justify-between items-end text-foreground/90">
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-black tracking-tighter text-foreground">${Math.abs(selectedTotal).toFixed(2)}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-foreground/60">{selectedTotal >= 0 ? 'Net Profit' : 'Net Loss'}</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-background/50 border border-border/50">
+                    {selectedTrades.length} Signals
                   </span>
                 </div>
               </div>
@@ -147,21 +154,24 @@ export function CalendarPage() {
                 {selectedTrades.map((trade, idx) => (
                   <div 
                     key={trade.id} 
-                    className="flex items-center justify-between p-3.5 rounded-2xl border border-border/40 hover:bg-muted/50 transition-all group animate-in slide-in-from-bottom-2 duration-500"
+                    className="flex items-center justify-between p-4 rounded-[1.5rem] border border-border/40 hover:bg-muted/30 transition-all group animate-in slide-in-from-bottom-2 duration-700"
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${trade.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                        {trade.direction}
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-transform group-hover:rotate-12 ${trade.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+                        {trade.direction[0]}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-mono font-black text-foreground/70">{trade.entry} → {trade.exit}</span>
-                        <span className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-tighter">{trade.setup || 'Direct Execution'}</span>
+                        <span className="text-sm font-black text-foreground/80 tracking-tight">{trade.market || 'GOLD'}</span>
+                        <span className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-[0.1em]">{trade.setup || 'Direct Execution'}</span>
                       </div>
                     </div>
-                    <span className={`text-sm font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {trade.pnl >= 0 ? '+' : '-'}${Math.abs(trade.pnl).toFixed(2)}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className={`text-sm font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {trade.pnl >= 0 ? '+' : '-'}${Math.abs(trade.pnl).toFixed(2)}
+                      </span>
+                      <span className="text-[8px] font-black text-muted-foreground/30 uppercase">{trade.session}</span>
+                    </div>
                   </div>
                 ))}
               </div>

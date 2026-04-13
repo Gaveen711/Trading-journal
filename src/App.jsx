@@ -11,6 +11,9 @@ import { HistoryPage } from './pages/HistoryPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { JournalPage } from './pages/JournalPage';
+import { useSubscription } from './hooks/useSubscription';
+import { CheckoutSuccess } from './pages/CheckoutSuccess';
+import { CheckoutCancel } from './pages/CheckoutCancel';
 
 import { PricingModal } from './components/PricingModal';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -19,7 +22,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [plan] = useState('free');
+  const { plan, expiry, startCheckout, isLoading: isSubLoading } = useSubscription(user);
   const toast = useToast();
 
   useEffect(() => {
@@ -52,10 +55,12 @@ function AuthenticatedApp({ user }) {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/journal" element={<JournalPage />} />
+          <Route path="/checkout-success" element={<CheckoutSuccess />} />
+          <Route path="/checkout-cancel" element={<CheckoutCancel />} />
         </Route>
       </Routes>
 
-      {showPricingModal && <PricingModal plan={plan} onClose={() => setShowPricingModal(false)} />}
+      {showPricingModal && <PricingModal plan={plan} expiry={expiry} onSubscribe={startCheckout} onClose={() => setShowPricingModal(false)} />}
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onClose={dismissOnboarding} />}
     </>
   );
