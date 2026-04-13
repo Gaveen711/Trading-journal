@@ -39,10 +39,10 @@ export function CalendarPage() {
       cells.push(
         <button 
           key={`day-${d}`} 
-          className={`relative aspect-square rounded-[1.5rem] sm:rounded-[2rem] transition-all duration-500 flex flex-col items-center justify-center gap-2 border group ${
-            isSelected ? 'ring-2 ring-primary border-primary shadow-[0_0_30px_rgba(139,92,246,0.4)] scale-110 z-10 bg-primary/10' : 
-            hasTrades ? (isWin ? 'bg-green-500/5 border-green-500/20 hover:bg-green-500/10 hover:border-green-500/40 hover:scale-105' : isLoss ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 hover:scale-105' : 'bg-muted/50 border-border hover:bg-muted hover:scale-105') :
-            'bg-muted/10 border-transparent hover:bg-muted/30 hover:scale-105'
+          className={`relative aspect-square rounded-[1.6rem] sm:rounded-[2rem] transition-all duration-500 flex flex-col items-center justify-center p-2 gap-1 group ${
+            isSelected ? 'border-2 ring-2 ring-primary border-primary shadow-[0_0_30px_rgba(139,92,246,0.4)] scale-110 z-10 bg-primary/10' : 
+            hasTrades ? (isWin ? 'bg-green-500/10 border-2 border-green-500/40 shadow-sm shadow-green-500/10 hover:bg-green-500/20 hover:border-green-500/60 hover:scale-105' : isLoss ? 'bg-red-500/10 border-2 border-red-500/40 shadow-sm shadow-red-500/10 hover:bg-red-500/20 hover:border-red-500/60 hover:scale-105' : 'bg-muted/50 border-2 border-border hover:bg-muted hover:scale-105') :
+            'bg-muted/10 border border-transparent hover:bg-muted/30 hover:scale-105'
           }`}
           onClick={() => setSelectedCalDay(d)}
         >
@@ -108,7 +108,7 @@ export function CalendarPage() {
               <div key={d} className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-2 sm:gap-6">
+          <div className="grid grid-cols-7 gap-4 sm:gap-8">
             {renderCells().map((cell, idx) => (
               <div 
                 key={idx} 
@@ -121,9 +121,9 @@ export function CalendarPage() {
           </div>
           
           <div className="mt-8 pt-8 border-t border-border/30 flex flex-wrap gap-x-6 gap-y-3 text-[10px] uppercase font-black tracking-widest text-muted-foreground/80">
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-md bg-green-500/10 border border-green-500/30"></div> Profit Day</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-md bg-red-500/10 border border-red-500/30"></div> Loss Day</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-md bg-muted/50 border border-border/50"></div> No Operations</div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-md bg-green-500/10 border-2 border-green-500/40"></div> Profit Day</div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-md bg-red-500/10 border-2 border-red-500/40"></div> Loss Day</div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-md bg-muted/50 border-2 border-border"></div> No Operations</div>
           </div>
         </div>
 

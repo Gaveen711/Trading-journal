@@ -23,7 +23,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { plan, expiry, startCheckout, isLoading: isSubLoading } = useSubscription(user);
+  const { plan, expiry, startCheckout, openPortal, isLoading: isSubLoading } = useSubscription(user);
   const toast = useToast();
 
   useEffect(() => {
@@ -50,7 +50,7 @@ function AuthenticatedApp({ user }) {
   return (
     <>
       <Routes>
-        <Route element={<DashboardLayout user={user} plan={plan} setShowPricingModal={setShowPricingModal} />}>
+        <Route element={<DashboardLayout user={user} plan={plan} setShowPricingModal={setShowPricingModal} openPortal={openPortal} />}>
           <Route path="/" element={<LogTradePage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/calendar" element={<CalendarPage />} />

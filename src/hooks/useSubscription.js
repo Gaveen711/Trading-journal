@@ -67,6 +67,37 @@ export function useSubscription(user) {
     }
   };
 
+  const openPortal = async () => {
+    try {
+      const resp = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: user.uid,
+          origin: window.location.origin
+        })
+      });
+      
+      // Check if response is JSON
+      const contentType = resp.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await resp.text();
+        console.error("API Error (Not JSON):", text);
+        throw new Error(resp.status === 404 ? "Portal API not found. If testing locally, use 'vercel dev'." : "Server returned an invalid response.");
+      }
 
-  return { ...subscription, startCheckout };
+      const data = await resp.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Failed to create portal session');
+      }
+    } catch (error) {
+      console.error("Portal Error:", error);
+      toast(error.message || "Could not open management portal.", "error");
+    }
+  };
+
+
+  return { ...subscription, startCheckout, openPortal };
 }

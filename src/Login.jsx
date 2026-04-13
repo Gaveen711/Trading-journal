@@ -55,11 +55,9 @@ function Login() {
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl font-black text-gradient uppercase tracking-tight">
-                {isSignUp ? 'Initialize Terminal' : 'Access Granted'}
+                {isSignUp ? 'Welcome Traders' : 'Access Granted'}
               </h1>
-              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
-                Institutional Intel Documentation
-              </p>
+              
             </div>
           </div>
 
@@ -76,7 +74,7 @@ function Login() {
                 <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
                 <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
               </svg>
-              <span>Verify with Google</span>
+              <span>Sign In With Google</span>
             </button>
 
             <div className="flex items-center gap-4">
@@ -88,23 +86,23 @@ function Login() {
             {/* Email Form */}
             <form onSubmit={handleEmailAuth} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Protocol Email</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="agent@xau.intel"
+                  placeholder=""
                   required
                   className="input-premium h-12 text-sm font-bold"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Access Cipher</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-1">Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder=""
                   required
                   className="input-premium h-12 text-sm font-bold"
                 />
@@ -121,7 +119,7 @@ function Login() {
                 disabled={loading}
                 className="btn-primary w-full h-12 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95 transition-all"
               >
-                {loading ? 'Decrypting Access...' : isSignUp ? 'Generate Node' : 'Authorize Signal'}
+                {loading ? 'Decrypting Access...' : isSignUp ? 'Sign in' : 'Authorize Signal'}
               </button>
             </form>
           </div>
@@ -131,7 +129,7 @@ function Login() {
               onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
               className="text-[10px] font-black text-muted-foreground/60 hover:text-primary transition-all uppercase tracking-widest"
             >
-              {isSignUp ? 'Authorized Personnel? Sign In' : "New Asset? Create Account"}
+              {isSignUp ? 'Already Logged? Sign In' : "New User? Create Account"}
             </button>
           </div>
         </div>
