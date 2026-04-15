@@ -75,7 +75,8 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose }) {
                 "Unlimited trades & entries",
                 "Advanced smart analytics",
                 "High-res equity curves",
-                "CSV Batch export & import"
+                "CSV Batch export & import",
+                "MT5/TradingView Auto-Sync"
               ].map(feat => (
                 <li key={feat} className="text-xs flex items-center gap-3 font-bold text-foreground/90">
                   <CheckCircleFill className="text-primary w-4 h-4 flex-shrink-0 shadow-sm" /> {feat}
