@@ -18,7 +18,7 @@
 #property version   "1.00"
 
 input string ApiKey       = "";         // XAU Journal API Key
-input string EndpointURL  = "";         // Cloud Function URL (from XAU Journal settings)
+input string EndpointURL  = "";         // Cloud Function URL e.g. https://xaujournal.vercel.app/api/sync-trade
 input string TrackSymbols = "XAUUSD";  // Comma-separated symbols, blank = ALL
 input bool   DebugLogs    = false;      // Show verbose logs in Experts tab
 
