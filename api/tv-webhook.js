@@ -38,11 +38,26 @@ const now = () => admin.firestore.FieldValue.serverTimestamp();
 
 // ── Helpers (same open/close logic as sync-trade) ────────────────────────────
 
+// ── Shared plan guard ───────────────────────────────────────────────────────
+function isSyncAllowed(userData) {
+  const { plan, planExpiry, graceUntil } = userData || {};
+  const nowMs = Date.now();
+  if (plan === 'pro' && planExpiry && new Date(planExpiry).getTime() > nowMs) return true;
+  if (graceUntil && new Date(graceUntil).getTime() > nowMs) return true;
+  return false;
+}
+
 async function resolveKey(apiKey) {
   if (!apiKey) return null;
   const doc = await db.collection('apiKeys').doc(apiKey).get();
   if (!doc.exists) return null;
-  return doc.data().uid || null;
+  const uid = doc.data().uid;
+  if (!uid) return null;
+
+  const userDoc = await db.collection('users').doc(uid).get();
+  if (!isSyncAllowed(userDoc.data())) return null;
+
+  return uid;
 }
 
 async function handleOpen(tradeRef, payload) {
@@ -131,7 +146,7 @@ export default async function handler(req, res) {
   const body   = req.body;
   const apiKey = body?.apiKey || req.headers['x-api-key'];
   const uid    = await resolveKey(apiKey);
-  if (!uid) return res.status(403).json({ error: 'Invalid API key' });
+  if (!uid) return res.status(403).json({ error: 'Invalid API key or subscription expired' });
 
   const { event, positionId, symbol } = body;
   if (!event || !positionId || !symbol)

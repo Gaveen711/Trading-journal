@@ -185,9 +185,15 @@ export function DashboardLayout({ user, plan, totalTrades, totalJournals, setSho
                     </button>
                   )}
 
-                  {/* MT5 SYNC CREDENTIALS */}
+                  {/* MT5 SYNC CREDENTIALS — Pro & grace only */}
+                  {(plan === 'pro' || plan === 'grace') && (
                   <div className="px-3 py-3 border-t border-border/20 mt-1 space-y-2">
                     <p className="text-[10px] font-black uppercase text-foreground/80 mb-2">MT5 Auto-Sync</p>
+                    {plan === 'grace' && (
+                      <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                        ⚠ Grace period active
+                      </p>
+                    )}
                     <div className="space-y-1.5">
                       <p className="text-[9px] uppercase tracking-widest text-foreground/60">Your User ID</p>
                       <button
@@ -208,6 +214,7 @@ export function DashboardLayout({ user, plan, totalTrades, totalJournals, setSho
                       </p>
                     )}
                   </div>
+                  )}
 
 
 

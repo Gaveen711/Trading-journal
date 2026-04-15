@@ -1,18 +1,10 @@
 // api/generate-api-key.js
 // XAU Journal — Generate a per-user MT5/TradingView sync API key
-// Called from the React Settings page with a valid Firebase ID token.
-//
-// Request:
-//   POST /api/generate-api-key
-//   Authorization: Bearer <Firebase ID Token>
-//
-// Response:
-//   { apiKey: "xau_..." }   (returns existing key if one already exists)
+// PRO ONLY — returns 403 if user is on free plan or grace period has lapsed.
 
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
-// ── Firebase Admin init ───────────────────────────────────────────────────────
 let db;
 try {
   if (!admin.apps.length) {
@@ -26,7 +18,21 @@ try {
 
 const now = () => admin.firestore.FieldValue.serverTimestamp();
 
-// ── Handler ───────────────────────────────────────────────────────────────────
+// ── Plan guard ────────────────────────────────────────────────────────────────
+// Returns true if the user doc allows MT5 sync access.
+// Allows: active Pro, OR within the 1.5-week grace period after expiry.
+function isSyncAllowed(userData) {
+  const { plan, planExpiry, graceUntil } = userData || {};
+  const nowMs = Date.now();
+
+  if (plan === 'pro' && planExpiry && new Date(planExpiry).getTime() > nowMs) {
+    return true; // Active Pro
+  }
+  if (graceUntil && new Date(graceUntil).getTime() > nowMs) {
+    return true; // Within grace period
+  }
+  return false;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -34,7 +40,6 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'POST only' });
 
-  // Verify Firebase ID token from Authorization header
   const authHeader = req.headers['authorization'] || '';
   const idToken    = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!idToken) return res.status(401).json({ error: 'Missing Authorization header' });
@@ -48,7 +53,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Return existing key if the user already has one
+    // ── Pro plan gate ──
+    const userDoc  = await db.collection('users').doc(uid).get();
+    const userData = userDoc.data() || {};
+
+    if (!isSyncAllowed(userData)) {
+      return res.status(403).json({
+        error: 'Pro subscription required',
+        message: 'MT5/TradingView Auto-Sync is a Pro feature. Upgrade to generate an API key.',
+      });
+    }
+
+    // Return existing key if one already exists
     const existing = await db.collection('apiKeys')
       .where('uid', '==', uid).limit(1).get();
 

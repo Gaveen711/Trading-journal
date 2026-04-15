@@ -14,6 +14,8 @@ import {
   Lightning,
   InfoCircle,
   ChevronRight,
+  LockFill,
+  ExclamationTriangleFill,
 } from "react-bootstrap-icons";
 
 // ── Vercel endpoint URLs ──────────────────────────────────────────────────────
@@ -44,13 +46,23 @@ async function callApi(path) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function MT5SyncSetup() {
-  const [apiKey,  setApiKey]  = useState(null);
-  const [loading, setLoading] = useState(false);
+export default function MT5SyncSetup({ plan = 'free', planExpiry = null, graceUntil = null, onUpgrade }) {
+  const [apiKey,   setApiKey]   = useState(null);
+  const [loading,  setLoading]  = useState(false);
   const [revoking, setRevoking] = useState(false);
-  const [copied,  setCopied]  = useState("");
-  const [tab,     setTab]     = useState("mt5"); // "mt5" | "tv"
-  const [error,   setError]   = useState(null);
+  const [copied,   setCopied]   = useState("");
+  const [tab,      setTab]      = useState("mt5");
+  const [error,    setError]    = useState(null);
+
+  // ── Plan status helpers ─────────────────────────────────────────────────
+  const nowMs        = Date.now();
+  const isActivePro  = plan === 'pro'  && planExpiry  && new Date(planExpiry).getTime()  > nowMs;
+  const isGrace      = plan === 'grace' && graceUntil && new Date(graceUntil).getTime() > nowMs;
+  const isSyncAllowed = isActivePro || isGrace;
+
+  const graceEndsIn = isGrace
+    ? Math.ceil((new Date(graceUntil).getTime() - nowMs) / (1000 * 60 * 60 * 24))
+    : 0;
 
   async function handleGenerate() {
     setLoading(true);
@@ -120,7 +132,57 @@ export default function MT5SyncSetup() {
   return (
     <div className="space-y-6 max-w-2xl">
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* ── Free-user gate ──────────────────────────────────────────────── */}
+      {!isSyncAllowed && (
+        <div className="rounded-2xl border border-border/40 bg-card p-8 flex flex-col items-center text-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted border border-border/40 flex items-center justify-center">
+            <LockFill className="w-5 h-5 text-foreground/30" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-foreground/80">Pro Feature</h3>
+            <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed max-w-xs">
+              MT5 & TradingView Auto-Sync is available on the Pro plan.
+              Upgrade to connect your terminal and sync trades automatically.
+            </p>
+          </div>
+          {onUpgrade && (
+            <button
+              onClick={onUpgrade}
+              className="btn-primary flex items-center gap-2 text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl"
+            >
+              <Lightning className="w-3.5 h-3.5" />
+              Upgrade to Pro
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Grace period warning ────────────────────────────────────────── */}
+      {isGrace && (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+          <ExclamationTriangleFill className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-wide text-amber-500">
+              Grace Period — {graceEndsIn} day{graceEndsIn !== 1 ? 's' : ''} remaining
+            </p>
+            <p className="text-[10px] text-amber-500/70 mt-0.5 leading-relaxed">
+              Your Pro subscription has lapsed. Your API key still works for {graceEndsIn} more day{graceEndsIn !== 1 ? 's' : ''}.
+              After that, your key will be revoked and syncing will stop.
+            </p>
+            {onUpgrade && (
+              <button
+                onClick={onUpgrade}
+                className="mt-2 text-[10px] font-black uppercase tracking-widest text-amber-500 underline underline-offset-2 hover:text-amber-400 transition-colors"
+              >
+                Renew Pro →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Rest of UI only shown when sync is allowed ──────────────────── */}
+      {isSyncAllowed && (<>
       <div className="flex items-start gap-4 p-5 rounded-2xl border border-primary/20 bg-primary/5">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
           <Lightning className="w-5 h-5 text-white" />
@@ -421,6 +483,7 @@ export default function MT5SyncSetup() {
           )}
         </>
       )}
+      </>)}
     </div>
   );
 }

@@ -1,11 +1,10 @@
 // api/sync-trade.js
 // XAU Journal — MT5 EA Sync Endpoint
-// Receives trade open/close events from the MT5 Expert Advisor.
-// Auth: x-api-key header resolved against Firestore "apiKeys" collection.
+// PRO ONLY: rejects API keys belonging to users whose subscription
+// has expired beyond the 1.5-week grace period.
 
 import admin from 'firebase-admin';
 
-// ── Firebase Admin init (shared pattern across all api/ handlers) ────────────
 let db;
 try {
   if (!admin.apps.length) {
@@ -19,13 +18,30 @@ try {
 
 const now = () => admin.firestore.FieldValue.serverTimestamp();
 
+// ── Shared plan guard (same logic as generate-api-key) ───────────────────────
+function isSyncAllowed(userData) {
+  const { plan, planExpiry, graceUntil } = userData || {};
+  const nowMs = Date.now();
+  if (plan === 'pro' && planExpiry && new Date(planExpiry).getTime() > nowMs) return true;
+  if (graceUntil && new Date(graceUntil).getTime() > nowMs) return true;
+  return false;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Resolves API key → uid, or null if invalid / plan lapsed
 async function resolveKey(apiKey) {
   if (!apiKey) return null;
   const doc = await db.collection('apiKeys').doc(apiKey).get();
   if (!doc.exists) return null;
-  return doc.data().uid || null;
+  const uid = doc.data().uid;
+  if (!uid) return null;
+
+  // Check plan status
+  const userDoc  = await db.collection('users').doc(uid).get();
+  if (!isSyncAllowed(userDoc.data())) return null; // expired beyond grace
+
+  return uid;
 }
 
 async function handleOpen(tradeRef, payload) {
@@ -59,17 +75,14 @@ async function handleClose(tradeRef, payload) {
   const swap       = Number(payload.swap)       || 0;
   const netPnl     = brokerPnl + commission + swap;
 
-  // XAUUSD pip convention: 1 pip = $0.10
-  const PIP_SIZE = 0.1;
+  const PIP_SIZE = 0.1; // XAUUSD: 1 pip = $0.10
   let pips = null;
 
   if (snap.exists) {
     const openPrice  = snap.data().openPrice || 0;
     const direction  = snap.data().direction || payload.direction;
     const closePrice = Number(payload.price) || 0;
-    const diff = direction === 'buy'
-      ? closePrice - openPrice
-      : openPrice  - closePrice;
+    const diff = direction === 'buy' ? closePrice - openPrice : openPrice - closePrice;
     pips = Math.round(diff / PIP_SIZE);
 
     await tradeRef.update({
@@ -77,15 +90,11 @@ async function handleClose(tradeRef, payload) {
       closePrice:      Number(payload.price) || 0,
       closeTime:       payload.time,
       pnl:             brokerPnl,
-      commission,
-      swap,
-      netPnl,
-      pips,
+      commission, swap, netPnl, pips,
       status:          'closed',
       updatedAt:       now(),
     });
   } else {
-    // EA installed after trade opened — create a partial record
     await tradeRef.set({
       positionId:      payload.positionId,
       closeDealTicket: payload.ticket || null,
@@ -95,9 +104,7 @@ async function handleClose(tradeRef, payload) {
       closePrice:      Number(payload.price) || 0,
       closeTime:       payload.time,
       pnl:             brokerPnl,
-      commission,
-      swap,
-      netPnl,
+      commission, swap, netPnl,
       status:          'closed',
       partial:         true,
       source:          payload.source || 'mt5',
@@ -118,7 +125,7 @@ export default async function handler(req, res) {
 
   const apiKey = req.headers['x-api-key'] || req.body?.apiKey;
   const uid    = await resolveKey(apiKey);
-  if (!uid) return res.status(403).json({ error: 'Invalid API key' });
+  if (!uid) return res.status(403).json({ error: 'Invalid API key or subscription expired' });
 
   const { event, positionId, symbol } = req.body;
   if (!event || !positionId || !symbol)

@@ -1,30 +1,32 @@
+// api/webhook.js
+// XAU Journal — Stripe Webhook Handler
+//
+// Events handled:
+//   checkout.session.completed       → upgrade user to Pro
+//   invoice.payment_failed           → start 1.5-week grace period
+//   customer.subscription.deleted   → start 1.5-week grace period
+//   invoice.paid                     → renew Pro (reset expiry + clear grace)
+
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
 
-// Self-contained Firebase Admin Initialization to avoid import path issues in Vercel
 let db;
 try {
   if (!admin.apps.length) {
     if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-      console.error("❌ CRITICAL: FIREBASE_SERVICE_ACCOUNT is missing");
+      console.error('❌ CRITICAL: FIREBASE_SERVICE_ACCOUNT is missing');
     } else {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-      console.log("✅ FIREBASE ADMIN INITIALIZED IN WEBHOOK");
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      console.log('✅ FIREBASE ADMIN INITIALIZED IN WEBHOOK');
     }
   }
   db = admin.firestore();
 } catch (initError) {
-  console.error("🔥 FIREBASE INIT ERROR:", initError.message);
+  console.error('🔥 FIREBASE INIT ERROR:', initError.message);
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const config = { api: { bodyParser: false } };
 
 const getRawBody = async (readable) => {
   const chunks = [];
@@ -34,83 +36,141 @@ const getRawBody = async (readable) => {
   return Buffer.concat(chunks);
 };
 
+// 1.5 weeks = 10.5 days in ms
+const GRACE_MS = 10.5 * 24 * 60 * 60 * 1000;
+
+// ── Helper: find userId by stripeCustomerId ───────────────────────────────────
+async function findUserByCustomer(customerId) {
+  if (!customerId) return null;
+  const snap = await db.collection('users')
+    .where('stripeCustomerId', '==', customerId).limit(1).get();
+  if (snap.empty) return null;
+  return snap.docs[0].id;
+}
+
+// ── Helper: start grace period for a user ────────────────────────────────────
+async function startGracePeriod(uid, reason) {
+  const graceUntil = new Date(Date.now() + GRACE_MS).toISOString();
+  await db.collection('users').doc(uid).set({
+    plan:            'grace',
+    graceUntil,
+    graceReason:     reason,
+    mt5SyncEnabled:  true, // still allowed during grace
+    updatedAt:       admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+  console.log(`⏳ Grace period started for uid=${uid} until ${graceUntil} (${reason})`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default async function handler(req, res) {
-  console.log("➡️ WEBHOOK INVOCATION START");
+  console.log('➡️ WEBHOOK INVOCATION START');
 
   try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     const { STRIPE_SECRET, STRIPE_WEBHOOK_SECRET } = process.env;
-
     if (!STRIPE_SECRET || !STRIPE_WEBHOOK_SECRET) {
-      console.error("❌ MISSING STRIPE VARS");
-      return res.status(500).json({ 
-        error: "Configuration Error", 
-        details: "Stripe keys are missing in environment variables" 
-      });
+      console.error('❌ MISSING STRIPE VARS');
+      return res.status(500).json({ error: 'Configuration Error' });
     }
 
     const stripe = new Stripe(STRIPE_SECRET);
-    const sig = req.headers['stripe-signature'];
-    
-    if (!sig) {
-      console.error("❌ MISSING STRIPE SIGNATURE");
-      return res.status(400).json({ error: "Missing stripe-signature header" });
-    }
+    const sig    = req.headers['stripe-signature'];
+    if (!sig) return res.status(400).json({ error: 'Missing stripe-signature header' });
 
     const rawBody = await getRawBody(req);
 
     let event;
     try {
       event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET);
-      console.log("⚓ EVENT VERIFIED:", event.type);
+      console.log('⚓ EVENT VERIFIED:', event.type);
     } catch (err) {
       console.error('❌ SIGNATURE ERROR:', err.message);
       return res.status(400).json({ error: `Webhook Signature Error: ${err.message}` });
     }
 
+    if (!db) {
+      console.error('❌ DB NOT AVAILABLE');
+      return res.status(500).json({ error: 'Database not initialized' });
+    }
+
+    // ── checkout.session.completed → upgrade to Pro ──────────────────────────
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const userId = session.metadata?.userId;
-      
-      console.log("👤 PROCESSING UPGRADE FOR:", userId);
+      const userId  = session.metadata?.userId;
 
-      if (!userId) {
-        console.error("⚠️ NO USERID IN METADATA");
-        return res.status(200).json({ status: 'ignored_no_user' });
-      }
-
-      if (!db) {
-        console.error("❌ DB NOT AVAILABLE");
-        return res.status(500).json({ error: "Database not initialized. Check FIREBASE_SERVICE_ACCOUNT." });
-      }
+      console.log('👤 PROCESSING UPGRADE FOR:', userId);
+      if (!userId) return res.status(200).json({ status: 'ignored_no_user' });
 
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 30);
 
-      try {
-        await db.collection('users').doc(userId).set({
-          plan: 'pro',
-          planExpiry: expiryDate.toISOString(),
-          stripeCustomerId: session.customer,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      await db.collection('users').doc(userId).set({
+        plan:            'pro',
+        planExpiry:      expiryDate.toISOString(),
+        graceUntil:      null,   // clear any existing grace
+        graceReason:     null,
+        mt5SyncEnabled:  true,
+        stripeCustomerId: session.customer,
+        updatedAt:       admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      console.log('💎 USER UPGRADED SUCCESSFULLY');
+    }
+
+    // ── invoice.paid → renewal — extend Pro + clear grace ───────────────────
+    else if (event.type === 'invoice.paid') {
+      const invoice    = event.data.object;
+      const customerId = invoice.customer;
+      const uid        = await findUserByCustomer(customerId);
+      if (!uid) { console.log('⚠️ No user for customer:', customerId); }
+      else {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30);
+
+        await db.collection('users').doc(uid).set({
+          plan:           'pro',
+          planExpiry:     expiryDate.toISOString(),
+          graceUntil:     null,
+          graceReason:    null,
+          mt5SyncEnabled: true,
+          updatedAt:      admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
-        console.log("💎 USER UPGRADED SUCCESSFULLY");
-      } catch (dbError) {
-        console.error("❌ FIRESTORE ERROR:", dbError.message);
-        return res.status(500).json({ error: "Database Upgrade Failed", message: dbError.message });
+
+        console.log(`✅ Renewal processed for uid=${uid}`);
+      }
+    }
+
+    // ── invoice.payment_failed → start grace period ──────────────────────────
+    else if (event.type === 'invoice.payment_failed') {
+      const invoice    = event.data.object;
+      const customerId = invoice.customer;
+      const uid        = await findUserByCustomer(customerId);
+      if (!uid) { console.log('⚠️ No user for customer:', customerId); }
+      else {
+        await startGracePeriod(uid, 'payment_failed');
+      }
+    }
+
+    // ── customer.subscription.deleted → start grace period ──────────────────
+    else if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object;
+      const customerId   = subscription.customer;
+      const uid          = await findUserByCustomer(customerId);
+      if (!uid) { console.log('⚠️ No user for customer:', customerId); }
+      else {
+        await startGracePeriod(uid, 'subscription_cancelled');
       }
     }
 
     return res.status(200).json({ received: true });
+
   } catch (globalError) {
-    console.error("💀 GLOBAL WEBHOOK ERROR:", globalError);
-    return res.status(500).json({ 
-      error: "Internal Server Error", 
+    console.error('💀 GLOBAL WEBHOOK ERROR:', globalError);
+    return res.status(500).json({
+      error:   'Internal Server Error',
       message: globalError.message,
-      stack: globalError.stack 
     });
   }
 }
