@@ -187,19 +187,19 @@ export function DashboardLayout({ user, plan, totalTrades, totalJournals, setSho
 
                   {/* MT5 SYNC CREDENTIALS */}
                   <div className="px-3 py-3 border-t border-border/20 mt-1 space-y-2">
-                    <p className="text-[10px] font-black uppercase text-foreground/40 mb-2">MT5 Auto-Sync</p>
+                    <p className="text-[10px] font-black uppercase text-foreground/80 mb-2">MT5 Auto-Sync</p>
                     <div className="space-y-1.5">
-                      <p className="text-[9px] uppercase tracking-widest text-foreground/40">Your User ID</p>
+                      <p className="text-[9px] uppercase tracking-widest text-foreground/60">Your User ID</p>
                       <button
                         onClick={copyUid}
                         className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-muted/50 border border-border/40 hover:border-primary/40 hover:bg-primary/5 transition-all group"
                       >
-                        <span className="text-[10px] font-mono text-foreground/70 truncate max-w-[140px]">{user?.uid}</span>
-                        <span className={`text-[9px] font-black uppercase shrink-0 ml-2 transition-colors ${copied ? 'text-green-500' : 'text-primary/60 group-hover:text-primary'}`}>
+                        <span className="text-[10px] font-mono text-foreground truncate max-w-[140px]">{user?.uid}</span>
+                        <span className={`text-[9px] font-black uppercase shrink-0 ml-2 transition-colors ${copied ? 'text-green-500' : 'text-primary group-hover:text-primary/80'}`}>
                           {copied ? '✓ Copied' : 'Copy'}
                         </span>
                       </button>
-                      <p className="text-[9px] text-foreground/30 leading-relaxed">Paste into MT5 EA inputs to enable live sync.</p>
+                      <p className="text-[9px] text-foreground/60 leading-relaxed">Paste into MT5 EA inputs to enable live sync.</p>
                     </div>
                     {lastMT5Sync && (
                       <p className="text-[9px] text-green-500 font-black uppercase tracking-widest flex items-center gap-1">
