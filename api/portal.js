@@ -71,12 +71,25 @@ export default async function handler(req, res) {
     }
 
     // Create a portal session
-    const session = await stripe.billingPortal.sessions.create({
-      customer: stripeCustomerId,
-      return_url: safeOrigin,
-    });
-
-    return res.status(200).json({ url: session.url });
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: stripeCustomerId,
+        return_url: safeOrigin,
+      });
+      return res.status(200).json({ url: session.url });
+    } catch (stripeError) {
+      console.error("STRIPE PORTAL ERROR:", stripeError.message);
+      
+      // Handle the case where the customer was deleted or missing in Stripe
+      if (stripeError.code === 'resource_missing') {
+        // Optionally clear it from Firestore so they can restart checkout
+        await db.collection('users').doc(userId).update({ stripeCustomerId: admin.firestore.FieldValue.delete() });
+        return res.status(400).json({ 
+          error: "Your billing record is out of sync or was removed. Please click 'Upgrade' to refresh your account." 
+        });
+      }
+      throw stripeError;
+    }
   } catch (error) {
     console.error("PORTAL CRITICAL ERROR:", error);
     return res.status(500).json({ error: `Critical Portal Failure: ${error.message}` });
