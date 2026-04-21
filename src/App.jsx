@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Login from "./Login.jsx";
 
 import { ToastProvider, useToast } from './components/ToastContext';
@@ -17,6 +17,7 @@ import { useAppTheme } from './hooks/useAppTheme';
 import { CheckoutSuccess } from './pages/CheckoutSuccess';
 import { CheckoutCancel } from './pages/CheckoutCancel';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { LandingPage } from './pages/LandingPage';
 
 import { PricingModal } from './components/PricingModal';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -58,15 +59,14 @@ function AuthenticatedApp({ user }) {
     <>
       <Routes>
         <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openPortal={openPortal} />}>
-          <Route path="/" element={<LogTradePage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/journal" element={<JournalPage />} />
-          <Route path="/sync" element={<MT5SyncSetup />} />
-          <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          <Route path="/checkout-success" element={<CheckoutSuccess />} />
-          <Route path="/checkout-cancel" element={<CheckoutCancel />} />
+          <Route index element={<LogTradePage />} />
+          <Route path="history" element={<HistoryPage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="journal" element={<JournalPage />} />
+          <Route path="sync" element={<MT5SyncSetup />} />
+          <Route path="checkout-success" element={<CheckoutSuccess />} />
+          <Route path="checkout-cancel" element={<CheckoutCancel />} />
         </Route>
       </Routes>
 
@@ -158,7 +158,18 @@ function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        {user ? <AuthenticatedApp user={user} /> : <Login />}
+        <Routes>
+          {/* Public Website Flow */}
+          <Route path="/" element={user ? <Navigate to="/app" /> : <LandingPage />} />
+          <Route path="/login" element={user ? <Navigate to="/app" /> : <Login />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          
+          {/* Protected App Flow */}
+          <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login" />} />
+          
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </ToastProvider>
     </ErrorBoundary>
   );

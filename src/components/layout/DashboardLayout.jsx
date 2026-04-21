@@ -81,7 +81,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
   ];
 
   const activeIndex = navigation.findIndex(item => 
-    item.id === '' ? location.pathname === '/' : location.pathname.startsWith(`/${item.id}`)
+    item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`)
   );
 
   return (
@@ -93,7 +93,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
           <div className="flex h-16 items-center justify-between">
 
             <div className="flex items-center gap-8">
-              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group transition-all duration-300" onClick={() => (window.location.href = '/')}>
+              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group transition-all duration-300" onClick={() => (window.location.href = '/app')}>
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white font-black text-xs shadow-lg shadow-primary/30 group-hover:rotate-12 group-hover:scale-110 transition-all duration-500">My</div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold tracking-tight hidden sm:block group-hover:text-primary transition-colors duration-300">Journal</span>
@@ -109,19 +109,19 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                   className="absolute top-1.5 bottom-1.5 left-1.5 bg-background shadow-lg border border-border/50 rounded-full transition-all duration-500 ease-[var(--spring-bounce)]"
                   style={{ 
                     width: '115px', 
-                    transform: `translateX(calc(${activeIndex} * 115px))`,
+                    transform: `translateX(calc(${activeIndex === -1 ? 0 : activeIndex} * 115px))`,
                     opacity: activeIndex === -1 ? 0 : 1,
                     visibility: activeIndex === -1 ? 'hidden' : 'visible'
                   }}
                 />
                 
                 {navigation.map((item) => {
-                  const isActive = item.id === '' ? location.pathname === '/' : location.pathname.startsWith(`/${item.id}`);
+                  const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
                   const Icon = isActive ? item.iconSolid : item.icon;
                   return (
                     <NavLink
                       key={item.name}
-                      to={`/${item.id}`}
+                      to={`/app/${item.id}`}
                       className={`relative z-10 w-[115px] py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${
                         isActive ? 'text-primary' : 'text-foreground/50 hover:text-foreground hover:scale-105'
                       }`}
@@ -337,13 +337,13 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
           {navigation.map((item) => {
             const isActive =
               item.id === ''
-                ? location.pathname === '/'
-                : location.pathname.startsWith(`/${item.id}`);
+                ? (location.pathname === '/app' || location.pathname === '/app/')
+                : location.pathname.startsWith(`/app/${item.id}`);
 
             const Icon = isActive ? item.iconSolid : item.icon;
 
             return (
-              <NavLink key={item.name} to={`/${item.id}`} className={`flex flex-col items-center gap-1.5 transition-all duration-300 active:scale-90 ${isActive ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
+              <NavLink key={item.name} to={`/app/${item.id}`} className={`flex flex-col items-center gap-1.5 transition-all duration-300 active:scale-90 ${isActive ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
                 <Icon className={`w-5 h-5 transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                 <span className="text-[9px] font-black uppercase tracking-widest">{item.name}</span>
               </NavLink>
