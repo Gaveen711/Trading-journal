@@ -42,7 +42,7 @@ export function LandingPage() {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-[11px] font-black uppercase tracking-widest text-foreground/60">
-          <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+          <a href="#the-system" className="hover:text-foreground transition-colors">The System</a>
           <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
           <NavLink to="/privacy" className="hover:text-foreground transition-colors">Privacy</NavLink>
         </div>
@@ -86,10 +86,10 @@ export function LandingPage() {
               Start Your Journey
             </button>
             <a 
-              href="#features"
+              href="#the-system"
               className="w-full sm:w-auto px-8 py-4 rounded-full text-foreground/60 border border-border/50 text-[11px] font-black uppercase tracking-[0.2em] hover:bg-muted hover:text-foreground transition-all text-center glass"
             >
-              View Features
+              Discover The System
             </a>
           </div>
         </div>
@@ -132,51 +132,77 @@ export function LandingPage() {
         </div>
       </main>
 
-      {/* Features Bento Box */}
-      <section id="features" className="relative z-10 py-32 px-4 sm:px-6 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-16 reveal-on-scroll">
-          <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-foreground mb-4">Precision Engineering</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto font-medium tracking-wide">Everything you need to master your psychology and analyze your edge.</p>
+      {/* Scroll Storytelling Narrative (Replaces Bento Box) */}
+      <section id="the-system" className="relative z-10 w-full pb-32">
+        {/* Chapter 1 */}
+        <div className="min-h-[80vh] flex flex-col items-center justify-center py-20 px-4 sm:px-6 relative reveal-on-scroll">
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-12 sm:gap-24">
+            <div className="flex-1 space-y-6 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-background border border-border/50 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.1em]">
+                 <LightningFill className="w-3 h-3" /> Step 1
+              </div>
+              <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-none">The Era of <br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-primary to-purple-500">Manual Entry is Dead.</span></h2>
+              <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed max-w-lg mx-auto md:mx-0">
+                You are a trader, not an accountant. We've built an exclusive EA that sits on your MT5 terminal, listening silently. The very second you close a position, it synchronizes securely to the cloud. Zero manual input. Absolute precision.
+              </p>
+            </div>
+            <div className="flex-1 w-full relative group">
+              <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full group-hover:bg-primary/30 transition-all duration-700" />
+              <div className="relative aspect-square w-full max-w-xs mx-auto rounded-3xl bg-background/50 border border-white/10 shadow-2xl glass flex items-center justify-center p-8 overflow-hidden transform group-hover:rotate-6 transition-all duration-700">
+                {/* Visual Representation */}
+                <div className="space-y-4 w-full">
+                   <div className="w-full h-12 bg-white/5 rounded-xl border border-white/5 flex items-center px-4 animate-pulse">
+                     <div className="w-4 h-4 rounded-full bg-green-500/50 mr-4"/> <div className="h-2 bg-white/20 rounded w-1/2"/>
+                   </div>
+                   <div className="w-full h-12 bg-white/5 rounded-xl border border-white/5 flex items-center px-4">
+                     <div className="w-4 h-4 rounded-full bg-red-500/50 mr-4"/> <div className="h-2 bg-white/10 rounded w-2/3"/>
+                   </div>
+                   <div className="w-full h-2 rounded bg-primary/20 mt-8 overflow-hidden">
+                     <div className="w-full h-full bg-primary animate-[translate-x-full]" />
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* Large Card */}
-          <div className="md:col-span-2 rounded-[2rem] bg-muted/20 border border-border/50 p-8 flex flex-col justify-between relative overflow-hidden group reveal-on-scroll glass">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] group-hover:bg-primary/20 transition-colors duration-700" />
-            <div className="relative z-10 space-y-4 mt-12 md:mt-24">
-              <div className="w-12 h-12 rounded-xl bg-background border border-border/50 flex items-center justify-center shadow-lg">
-                <LightningFill className="w-5 h-5 text-primary" />
+        {/* Chapter 2 */}
+        <div className="min-h-[80vh] flex flex-col items-center justify-center py-20 px-4 sm:px-6 relative reveal-on-scroll">
+          <div className="max-w-4xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12 sm:gap-24">
+            <div className="flex-1 space-y-6 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-background border border-border/50 rounded-full text-purple-500 text-[10px] font-black uppercase tracking-[0.1em]">
+                 <BarChartLineFill className="w-3 h-3" /> Step 2
               </div>
-              <h3 className="text-2xl font-black uppercase tracking-tight">Zero Input. Absolute Sync.</h3>
-              <p className="text-sm text-muted-foreground font-medium max-w-sm">Connect your MT5 account once. Our EA handles real-time synchronization of all positions natively.</p>
+              <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-none">Find Your <br/><span className="text-foreground">Statistical Edge.</span></h2>
+              <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed max-w-lg mx-auto md:mx-0">
+                Raw data is useless without interpretation. Uncover deep behavioral patterns in your trading footprint. Visualize drawdown clusters, win-rate heatmaps, and precise session statistics natively integrated into one dashboard.
+              </p>
+            </div>
+            <div className="flex-1 w-full relative group">
+              <div className="absolute inset-0 bg-purple-500/20 blur-[80px] rounded-full group-hover:bg-purple-500/30 transition-all duration-700" />
+              <div className="relative aspect-square w-full max-w-xs mx-auto rounded-3xl bg-background/50 border border-white/10 shadow-2xl glass flex items-end justify-center gap-2 p-8 overflow-hidden transform group-hover:-translate-y-4 transition-all duration-700">
+                {/* Visual Representation */}
+                <div className="w-8 bg-purple-500/30 rounded-t-sm h-[40%] border-t border-purple-500" />
+                <div className="w-8 bg-purple-500/50 rounded-t-sm h-[70%] border-t border-purple-500" />
+                <div className="w-8 bg-primary/80 rounded-t-sm h-[90%] border-t border-primary" />
+                <div className="w-8 bg-purple-500/40 rounded-t-sm h-[50%] border-t border-purple-500" />
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-[2rem] bg-muted/20 border border-border/50 p-8 flex flex-col justify-end relative overflow-hidden group reveal-on-scroll glass delay-100">
-            <div className="relative z-10 space-y-4 mt-24">
-              <div className="w-12 h-12 rounded-xl bg-background border border-border/50 flex items-center justify-center shadow-lg">
-                <BarChartLineFill className="w-5 h-5 text-purple-500" />
-              </div>
-              <h3 className="text-xl font-black uppercase tracking-tight">Deep Analytics</h3>
-              <p className="text-sm text-muted-foreground font-medium">Session heatmaps, drawdowns, and setup scoring.</p>
-            </div>
+        {/* Chapter 3 */}
+        <div className="min-h-[60vh] flex flex-col items-center justify-center py-20 px-4 sm:px-6 relative reveal-on-scroll text-center max-w-3xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-2xl mb-8 mx-auto -rotate-12 hover:rotate-12 transition-transform duration-700">
+             <LayersFill className="w-8 h-8 text-white" />
           </div>
-
-          <div className="rounded-[2rem] bg-muted/20 border border-border/50 p-8 flex flex-col justify-end relative overflow-hidden group reveal-on-scroll glass delay-200">
-            <div className="relative z-10 space-y-4 mt-24">
-              <div className="w-12 h-12 rounded-xl bg-background border border-border/50 flex items-center justify-center shadow-lg">
-                <LayersFill className="w-5 h-5 text-blue-500" />
-              </div>
-              <h3 className="text-xl font-black uppercase tracking-tight">Aura Themes</h3>
-              <p className="text-sm text-muted-foreground font-medium">Dynamic aesthetics that match your exact trading mood.</p>
-            </div>
-          </div>
-
-          <div className="md:col-span-2 rounded-[2rem] bg-gradient-to-br from-primary/5 to-purple-500/5 border border-border/50 p-8 flex flex-col justify-center items-center text-center relative overflow-hidden reveal-on-scroll glass delay-300">
-             <h3 className="text-2xl font-black uppercase tracking-tight mb-2">Automate Your Growth</h3>
-             <p className="text-sm text-muted-foreground mb-6">Stop manual data entry. Start trading.</p>
-             <button onClick={() => navigate('/login')} className="px-6 py-3 rounded-full bg-foreground text-background text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Create Account</button>
-          </div>
+          <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-none mb-6">Aesthetics That <br/><span className="text-muted-foreground text-3xl sm:text-5xl">Match Your Emotion.</span></h2>
+          <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed mb-12">
+            The market alters your cognitive state, and your environment should reflect it. Experience the Dynamic Aura Framework that effortlessly transitions between vibrant neon hues or muted dark modes, aligning directly with your psychological state.
+          </p>
+          <button onClick={() => navigate('/login')} className="px-10 py-4 rounded-full bg-foreground text-background text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-all">
+            Enter The Application
+          </button>
         </div>
       </section>
 
