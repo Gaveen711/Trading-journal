@@ -1,223 +1,290 @@
-import React, { useEffect, useRef } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Stars, LightningFill, BarChartLineFill, LayersFill } from 'react-bootstrap-icons';
-import { useAppTheme } from '../hooks/useAppTheme';
+import { useEffect, useRef } from 'react';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 
+/* ─── Gold accent constants ──────────────────────────────────────── */
+const GOLD      = '#C9A84C';
+const GOLD_DIM  = 'rgba(201,168,76,0.12)';
+const GOLD_LINE = 'rgba(201,168,76,0.28)';
+
+/* ─── Scroll-reveal hook ─────────────────────────────────────────── */
+function useReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-reveal]');
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) {
+          const delay = Number(e.target.dataset.delay || 0);
+          setTimeout(() => {
+            e.target.style.opacity = '1';
+            e.target.style.transform = 'translateY(0)';
+          }, delay);
+          io.unobserve(e.target);
+        }
+      }),
+      { threshold: 0.08, rootMargin: '0px 0px -48px 0px' }
+    );
+    els.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)';
+      io.observe(el);
+    });
+    return () => io.disconnect();
+  }, []);
+}
+
+/* ─── Nav scroll transparency hook ──────────────────────────────── */
+function useNavScroll(ref) {
+  useEffect(() => {
+    const nav = ref.current;
+    if (!nav) return;
+    const onScroll = () => {
+      if (window.scrollY > 20) {
+        nav.style.background = 'rgba(3,3,10,0.84)';
+        nav.style.backdropFilter = 'blur(24px) saturate(160%)';
+        nav.style.borderBottomColor = 'rgba(255,255,255,0.06)';
+      } else {
+        nav.style.background = 'transparent';
+        nav.style.backdropFilter = 'none';
+        nav.style.borderBottomColor = 'transparent';
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [ref]);
+}
+
+/* ─── Data ───────────────────────────────────────────────────────── */
+const FEATURES = [
+  {
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
+    title: 'Instant MT5 Sync',
+    body: 'Our Expert Advisor watches your terminal and pushes every closed position to the cloud the moment it happens. Zero manual entry, absolute precision.',
+  },
+  {
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
+    title: 'Deep Analytics',
+    body: 'Win-rate by session, drawdown clusters, streak analysis, and behavioural heatmaps — every metric purpose-built for gold.',
+  },
+  {
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
+    title: 'Trade Calendar',
+    body: 'A month-view calendar shows your P&L heat at a glance. Identify your best and worst days in a single look.',
+  },
+  {
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+    title: 'Trade Journal',
+    body: 'Attach thoughts, emotions, and notes to each trade. Build an annotated playbook straight from your own history.',
+  },
+  {
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    title: 'Bank-Grade Security',
+    body: 'Firestore row-level security rules mean your data is yours alone. Nobody — including us — can access your trades.',
+  },
+  {
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+    title: 'Session Intelligence',
+    body: 'London, New York, Tokyo — see exactly which session your edge lives in and schedule your trading around it.',
+  },
+];
+
+const STEPS = [
+  { n: '01', title: 'Install the EA', body: 'Drop our MQL5 Expert Advisor onto any XAUUSD chart in MT5. It runs silently and requires no manual action from you.' },
+  { n: '02', title: 'Trade normally', body: 'The moment you close a position, the EA captures price, lot, P&L, and duration — and syncs everything to your dashboard.' },
+  { n: '03', title: 'Find your edge', body: 'Review analytics, annotate trades, and study your calendar. Turn raw executions into actionable intelligence.' },
+];
+
+const STATS = [
+  { value: 'XAUUSD', label: 'Built exclusively for gold' },
+  { value: '< 1s',   label: 'MT5 sync latency' },
+  { value: '100%',   label: 'Your data, your control' },
+];
+
+/* ═══════════════════════════════════════════════════════════════════ */
 export function LandingPage() {
   const navigate = useNavigate();
-  const { isLightMode } = useAppTheme();
-  
-  // Parallax / Scroll animations effect
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate-in', 'fade-in', 'slide-in-from-bottom-8');
-          entry.target.style.opacity = 1;
-        }
-      });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
-      el.style.opacity = 0;
-      observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
+  const navRef   = useRef(null);
+  useReveal();
+  useNavScroll(navRef);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden selection:bg-primary/20 flex flex-col">
-      {/* Dynamic Background Blurs */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-primary/10 blur-[120px] animate-[spin_60s_linear_infinite]" />
-        <div className="absolute top-[40%] -right-[10%] w-[40vw] h-[40vw] rounded-full bg-purple-500/10 blur-[100px] animate-[spin_40s_linear_infinite_reverse]" />
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
+
+      {/* ── Ambient blobs ─────────────────────────────────────── */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <div style={{ position:'absolute', top:'-8%', left:'-4%', width:'44vw', height:'44vw', borderRadius:'50%', background:'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)', filter:'blur(60px)' }} />
+        <div style={{ position:'absolute', bottom:'8%', right:'-4%', width:'38vw', height:'38vw', borderRadius:'50%', background:`radial-gradient(circle, ${GOLD_DIM} 0%, transparent 70%)`, filter:'blur(80px)' }} />
       </div>
 
-      {/* Glassmorphic Navbar */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl z-50 glass border border-white/10 rounded-full px-6 py-3 flex items-center justify-between transition-all duration-500 ease-[var(--apple-ease)] shadow-2xl backdrop-blur-3xl bg-background/40">
-        <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white font-black text-[10px] group-hover:rotate-12 transition-transform duration-500">My</div>
-          <span className="font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">Journal</span>
-        </div>
-
-        <div className="hidden md:flex items-center gap-8 text-[11px] font-black uppercase tracking-widest text-foreground/60">
-          <a href="#the-system" className="hover:text-foreground transition-colors">The System</a>
-          <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
-          <NavLink to="/privacy" className="hover:text-foreground transition-colors">Privacy</NavLink>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <NavLink to="/login" className="text-[11px] font-black uppercase tracking-widest text-foreground/60 hover:text-foreground transition-colors hidden sm:block">
-            Sign In
-          </NavLink>
-          <button 
-            onClick={() => navigate('/login')}
-            className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]"
-          >
-            Get Started
+      {/* ── Nav ───────────────────────────────────────────────── */}
+      <header>
+        <nav ref={navRef} role="navigation" aria-label="Main navigation" style={{
+          position:'fixed', top:0, left:0, right:0, zIndex:100, height:64,
+          display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 2rem',
+          background:'transparent', borderBottom:'1px solid transparent',
+          transition:'background 0.4s cubic-bezier(0.22,1,0.36,1), border-color 0.4s',
+        }}>
+          <button onClick={() => window.scrollTo({top:0,behavior:'smooth'})} aria-label="Go to top"
+            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.5rem', padding:0, color:'hsl(var(--foreground))' }}>
+            <span style={{ width:30, height:30, borderRadius:7, background:`linear-gradient(135deg,${GOLD},#7B5A1A)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', fontWeight:900, color:'#000', letterSpacing:'-0.01em' }}>XAU</span>
+            <span style={{ fontSize:'1rem', fontWeight:800, letterSpacing:'-0.03em' }}>Gold Journal</span>
           </button>
-        </div>
-      </nav>
 
-      {/* Hero Section */}
-      <main className="relative z-10 flex-col items-center justify-center pt-40 pb-20 px-4 sm:px-6">
-        <div className="text-center max-w-4xl mx-auto space-y-8 reveal-on-scroll duration-1000">
-          
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-            <Stars className="w-3 h-3" />
-            Designed exclusively for XAUUSD
+          <ul className="hidden md:flex" style={{ alignItems:'center', gap:'0.125rem', listStyle:'none', margin:0, padding:0 }}>
+            {[{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'},{to:'/privacy',l:'Privacy'}].map(({to,l})=>(
+              <li key={to}><NavLink to={to} style={{ textDecoration:'none', fontSize:'0.8125rem', fontWeight:500, padding:'0.375rem 0.875rem', borderRadius:6, color:'hsl(var(--muted-foreground))', display:'block', transition:'color 0.2s' }}
+                onMouseOver={e=>e.currentTarget.style.color='hsl(var(--foreground))'}
+                onMouseOut={e=>e.currentTarget.style.color='hsl(var(--muted-foreground))'}>{l}</NavLink></li>
+            ))}
+          </ul>
+
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            <NavLink to="/login" className="hidden sm:block" style={{ textDecoration:'none', fontSize:'0.8125rem', fontWeight:500, color:'hsl(var(--muted-foreground))', transition:'color 0.2s' }}
+              onMouseOver={e=>e.currentTarget.style.color='hsl(var(--foreground))'}
+              onMouseOut={e=>e.currentTarget.style.color='hsl(var(--muted-foreground))'}>Sign in</NavLink>
+            <button onClick={()=>navigate('/login')} style={{ background:GOLD, color:'#000', border:'none', fontSize:'0.8rem', fontWeight:800, letterSpacing:'0.03em', padding:'0.5rem 1.25rem', borderRadius:7, cursor:'pointer', transition:'all 0.22s cubic-bezier(0.22,1,0.36,1)' }}
+              onMouseOver={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow=`0 4px 20px ${GOLD_LINE}`;}}
+              onMouseOut={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>Get started free</button>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        {/* ── Hero ──────────────────────────────────────────────── */}
+        <section aria-label="Hero" style={{ position:'relative', zIndex:1, minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'8rem 2rem 6rem', textAlign:'center' }}>
+
+          <div data-reveal data-delay="0" style={{ display:'inline-flex', alignItems:'center', gap:'0.5rem', padding:'0.375rem 1rem', borderRadius:999, border:`1px solid ${GOLD_LINE}`, background:GOLD_DIM, fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:GOLD, marginBottom:'2.5rem' }}>
+            <span style={{ width:5, height:5, borderRadius:'50%', background:GOLD, display:'inline-block' }} />
+            Built exclusively for XAUUSD
           </div>
 
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tighter leading-[1.1] text-foreground">
-            The Ultimate Intelligence <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">For Gold Traders.</span>
+          <h1 data-reveal data-delay="80" style={{ fontSize:'clamp(2.75rem,7vw,6rem)', fontWeight:900, lineHeight:1.03, letterSpacing:'-0.04em', maxWidth:820, margin:'0 auto 1.5rem' }}>
+            The trading journal<br /><span className="text-gradient">gold deserves.</span>
           </h1>
 
-          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed tracking-wide">
-            Automated MT5 syncing, real-time advanced analytics, and elite performance tracking flawlessly forged into one extremely aesthetic platform.
+          <p data-reveal data-delay="160" style={{ fontSize:'clamp(1rem,2vw,1.125rem)', fontWeight:400, color:'hsl(var(--muted-foreground))', lineHeight:1.75, maxWidth:540, margin:'0 auto 3rem' }}>
+            Automated MT5 sync, deep analytics, and a beautiful calendar —
+            everything a XAUUSD trader needs, nothing they don't.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <button 
-              onClick={() => navigate('/login')}
-              className="w-full sm:w-auto px-8 py-4 rounded-full bg-foreground text-background text-[11px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
-            >
-              Start Your Journey
-            </button>
-            <a 
-              href="#the-system"
-              className="w-full sm:w-auto px-8 py-4 rounded-full text-foreground/60 border border-border/50 text-[11px] font-black uppercase tracking-[0.2em] hover:bg-muted hover:text-foreground transition-all text-center glass"
-            >
-              Discover The System
-            </a>
+          <div data-reveal data-delay="240" style={{ display:'flex', flexWrap:'wrap', gap:'0.875rem', justifyContent:'center' }}>
+            <button onClick={()=>navigate('/login')} style={{ background:'hsl(var(--foreground))', color:'hsl(var(--background))', border:'none', borderRadius:8, cursor:'pointer', fontSize:'0.8125rem', fontWeight:800, letterSpacing:'0.04em', padding:'0.9rem 2.25rem', transition:'all 0.22s cubic-bezier(0.22,1,0.36,1)' }}
+              onMouseOver={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.opacity='0.9';}}
+              onMouseOut={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.opacity='1';}}>Start journaling free</button>
+            <Link to="/pricing" style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem', textDecoration:'none', color:'hsl(var(--muted-foreground))', border:'1px solid hsl(var(--border))', borderRadius:8, fontSize:'0.8125rem', fontWeight:500, padding:'0.9rem 2rem', transition:'all 0.22s' }}
+              onMouseOver={e=>{e.currentTarget.style.borderColor=GOLD_LINE;e.currentTarget.style.color=GOLD;e.currentTarget.style.background=GOLD_DIM;}}
+              onMouseOut={e=>{e.currentTarget.style.borderColor='hsl(var(--border))';e.currentTarget.style.color='hsl(var(--muted-foreground))';e.currentTarget.style.background='transparent';}}>
+              See pricing <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
           </div>
+
+          {/* Stats strip */}
+          <div data-reveal data-delay="320" style={{ display:'flex', flexWrap:'wrap', justifyContent:'center', gap:'3rem', marginTop:'5.5rem' }}>
+            {STATS.map(s=>(
+              <div key={s.label} style={{ textAlign:'center' }}>
+                <div style={{ fontSize:'1.5rem', fontWeight:900, letterSpacing:'-0.04em', color:GOLD }}>{s.value}</div>
+                <div style={{ fontSize:'0.72rem', fontWeight:500, color:'hsl(var(--muted-foreground))', marginTop:'0.25rem', letterSpacing:'0.07em', textTransform:'uppercase' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Divider */}
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:'0 2rem' }}>
+          <div style={{ height:1, background:'linear-gradient(90deg,transparent,hsl(var(--border)),transparent)' }} />
         </div>
 
-        {/* Dashboard Mockup Showcase */}
-        <div className="mt-24 max-w-6xl mx-auto relative reveal-on-scroll duration-1000 delay-200">
-          {/* Aesthetic glow behind the image */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent blur-[100px] -z-10" />
-          
-          <div className="relative rounded-[2rem] border border-white/10 bg-background/50 p-2 sm:p-4 shadow-2xl backdrop-blur-xl overflow-hidden group">
-            {/* We use a glassy grid as a placeholder if no image exists, but ideally we'd show a screenshot here */}
-            <div className="aspect-video w-full rounded-[1.5rem] bg-muted/30 border border-white/5 flex items-center justify-center relative overflow-hidden">
-               {/* Decorative App UI Mockup Elements */}
-               <div className="absolute top-0 left-0 right-0 h-12 border-b border-white/5 flex items-center px-6 gap-2 bg-background/40 backdrop-blur-md">
-                 <div className="w-3 h-3 rounded-full bg-red-500/50" />
-                 <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-                 <div className="w-3 h-3 rounded-full bg-green-500/50" />
-               </div>
-               <div className="flex w-full h-full pt-12">
-                 <div className="w-48 border-r border-white/5 hidden md:block p-4 space-y-4">
-                   <div className="w-full h-8 rounded bg-white/5" />
-                   <div className="w-3/4 h-8 rounded bg-white/5" />
-                   <div className="w-5/6 h-8 rounded bg-white/5" />
-                 </div>
-                 <div className="flex-1 p-8 flex flex-col gap-8">
-                   <div className="flex gap-4">
-                     <div className="w-1/3 h-24 rounded-2xl bg-white/5" />
-                     <div className="w-1/3 h-24 rounded-2xl bg-white/5" />
-                     <div className="w-1/3 h-24 rounded-2xl bg-white/5" />
-                   </div>
-                   <div className="flex-1 rounded-2xl bg-gradient-to-tr from-primary/10 to-transparent border border-white/5" />
-                 </div>
-               </div>
+        {/* ── Features ──────────────────────────────────────────── */}
+        <section id="features" aria-label="Features" style={{ position:'relative', zIndex:1, padding:'8rem 2rem' }}>
+          <div style={{ maxWidth:1100, margin:'0 auto' }}>
+            <div data-reveal style={{ marginBottom:'4rem', maxWidth:520 }}>
+              <p style={{ fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:GOLD, marginBottom:'1rem' }}>The system</p>
+              <h2 style={{ fontSize:'clamp(1.875rem,4vw,3rem)', fontWeight:900, lineHeight:1.1, letterSpacing:'-0.03em', margin:'0 0 1rem' }}>Every tool you need.<br />Nothing you don't.</h2>
+              <p style={{ fontSize:'1rem', color:'hsl(var(--muted-foreground))', lineHeight:1.75, fontWeight:400, margin:0 }}>Designed from the ground up for gold traders — not a generic journal with a XAUUSD filter applied.</p>
             </div>
-            
-            {/* Absolute overlay elements floating */}
-            <div className="absolute -left-6 top-1/3 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute -right-6 bottom-1/3 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl animate-[pulse_3s_ease-in-out_infinite]" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'1px', background:'hsl(var(--border))', borderRadius:16, overflow:'hidden', border:'1px solid hsl(var(--border))' }}>
+              {FEATURES.map((f,i)=>(
+                <FeatureCard key={f.title} {...f} delay={i*55} />
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* ── How it works ──────────────────────────────────────── */}
+        <section aria-label="How it works" style={{ position:'relative', zIndex:1, padding:'8rem 2rem', background:'hsl(var(--card))' }}>
+          <div style={{ maxWidth:1100, margin:'0 auto' }}>
+            <div data-reveal style={{ textAlign:'center', marginBottom:'5rem' }}>
+              <p style={{ fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:GOLD, marginBottom:'1rem' }}>How it works</p>
+              <h2 style={{ fontSize:'clamp(1.875rem,4vw,3rem)', fontWeight:900, letterSpacing:'-0.03em', lineHeight:1.1, margin:0 }}>Three steps to full clarity</h2>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:'1.5rem' }}>
+              {STEPS.map((step,i)=>(
+                <div key={step.n} data-reveal data-delay={i*100} style={{ padding:'2.5rem', borderRadius:14, border:'1px solid hsl(var(--border))', background:'hsl(var(--background))', position:'relative', overflow:'hidden' }}>
+                  <div style={{ position:'absolute', top:'1.5rem', right:'1.75rem', fontSize:'3rem', fontWeight:900, letterSpacing:'-0.06em', color:'hsl(var(--border))', lineHeight:1, userSelect:'none' }}>{step.n}</div>
+                  <div style={{ width:36, height:2, background:GOLD, borderRadius:1, marginBottom:'1.5rem' }} />
+                  <h3 style={{ fontSize:'1.0625rem', fontWeight:700, marginBottom:'0.625rem', letterSpacing:'-0.02em' }}>{step.title}</h3>
+                  <p style={{ fontSize:'0.875rem', color:'hsl(var(--muted-foreground))', lineHeight:1.75, fontWeight:400, margin:0 }}>{step.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA ───────────────────────────────────────────────── */}
+        <section aria-label="Call to action" style={{ position:'relative', zIndex:1, padding:'10rem 2rem', textAlign:'center' }}>
+          <div aria-hidden="true" style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:500, height:300, background:`radial-gradient(ellipse, ${GOLD_DIM} 0%, transparent 70%)`, filter:'blur(50px)', pointerEvents:'none' }} />
+          <div data-reveal style={{ maxWidth:580, margin:'0 auto', position:'relative' }}>
+            <p style={{ fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:GOLD, marginBottom:'1.25rem' }}>Start today — it's free</p>
+            <h2 style={{ fontSize:'clamp(2rem,5vw,3.75rem)', fontWeight:900, letterSpacing:'-0.04em', lineHeight:1.05, margin:'0 0 1.5rem' }}>
+              Stop guessing.<br /><span className="text-gradient">Start knowing.</span>
+            </h2>
+            <p style={{ fontSize:'1rem', color:'hsl(var(--muted-foreground))', lineHeight:1.75, fontWeight:400, marginBottom:'2.5rem' }}>
+              Free forever. Upgrade to Pro for unlimited trades and the full analytics suite.
+            </p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'0.875rem', justifyContent:'center' }}>
+              <button onClick={()=>navigate('/login')} style={{ background:GOLD, color:'#000', border:'none', borderRadius:8, cursor:'pointer', fontSize:'0.8125rem', fontWeight:800, letterSpacing:'0.04em', padding:'0.9rem 2.25rem', transition:'all 0.22s cubic-bezier(0.22,1,0.36,1)' }}
+                onMouseOver={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 8px 32px ${GOLD_LINE}`;}}
+                onMouseOut={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none';}}>Create free account</button>
+              <Link to="/pricing" style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem', textDecoration:'none', color:'hsl(var(--muted-foreground))', border:'1px solid hsl(var(--border))', borderRadius:8, fontSize:'0.8125rem', fontWeight:500, padding:'0.9rem 2rem', transition:'all 0.2s' }}
+                onMouseOver={e=>{e.currentTarget.style.color='hsl(var(--foreground))';e.currentTarget.style.borderColor=GOLD_LINE;}}
+                onMouseOut={e=>{e.currentTarget.style.color='hsl(var(--muted-foreground))';e.currentTarget.style.borderColor='hsl(var(--border))';}}>View pricing</Link>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* Scroll Storytelling Narrative (Replaces Bento Box) */}
-      <section id="the-system" className="relative z-10 w-full pb-32">
-        {/* Chapter 1 */}
-        <div className="min-h-[80vh] flex flex-col items-center justify-center py-20 px-4 sm:px-6 relative reveal-on-scroll">
-          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-12 sm:gap-24">
-            <div className="flex-1 space-y-6 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-background border border-border/50 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.1em]">
-                 <LightningFill className="w-3 h-3" /> Step 1
-              </div>
-              <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-none">The Era of <br/><span className="text-transparent bg-clip-text bg-gradient-to-br from-primary to-purple-500">Manual Entry is Dead.</span></h2>
-              <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed max-w-lg mx-auto md:mx-0">
-                You are a trader, not an accountant. We've built an exclusive EA that sits on your MT5 terminal, listening silently. The very second you close a position, it synchronizes securely to the cloud. Zero manual input. Absolute precision.
-              </p>
-            </div>
-            <div className="flex-1 w-full relative group">
-              <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full group-hover:bg-primary/30 transition-all duration-700" />
-              <div className="relative aspect-square w-full max-w-xs mx-auto rounded-3xl bg-background/50 border border-white/10 shadow-2xl glass flex items-center justify-center p-8 overflow-hidden transform group-hover:rotate-6 transition-all duration-700">
-                {/* Visual Representation */}
-                <div className="space-y-4 w-full">
-                   <div className="w-full h-12 bg-white/5 rounded-xl border border-white/5 flex items-center px-4 animate-pulse">
-                     <div className="w-4 h-4 rounded-full bg-green-500/50 mr-4"/> <div className="h-2 bg-white/20 rounded w-1/2"/>
-                   </div>
-                   <div className="w-full h-12 bg-white/5 rounded-xl border border-white/5 flex items-center px-4">
-                     <div className="w-4 h-4 rounded-full bg-red-500/50 mr-4"/> <div className="h-2 bg-white/10 rounded w-2/3"/>
-                   </div>
-                   <div className="w-full h-2 rounded bg-primary/20 mt-8 overflow-hidden">
-                     <div className="w-full h-full bg-primary animate-[translate-x-full]" />
-                   </div>
-                </div>
-              </div>
-            </div>
+      {/* ── Footer ────────────────────────────────────────────────── */}
+      <footer style={{ borderTop:'1px solid hsl(var(--border))', padding:'3rem 2rem' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:'1.5rem' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            <span style={{ width:24, height:24, borderRadius:5, background:`linear-gradient(135deg,${GOLD},#7B5A1A)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.58rem', fontWeight:900, color:'#000' }}>XAU</span>
+            <span style={{ fontSize:'0.875rem', fontWeight:800, letterSpacing:'-0.02em' }}>Gold Journal</span>
           </div>
-        </div>
-
-        {/* Chapter 2 */}
-        <div className="min-h-[80vh] flex flex-col items-center justify-center py-20 px-4 sm:px-6 relative reveal-on-scroll">
-          <div className="max-w-4xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12 sm:gap-24">
-            <div className="flex-1 space-y-6 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-background border border-border/50 rounded-full text-purple-500 text-[10px] font-black uppercase tracking-[0.1em]">
-                 <BarChartLineFill className="w-3 h-3" /> Step 2
-              </div>
-              <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-none">Find Your <br/><span className="text-foreground">Statistical Edge.</span></h2>
-              <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed max-w-lg mx-auto md:mx-0">
-                Raw data is useless without interpretation. Uncover deep behavioral patterns in your trading footprint. Visualize drawdown clusters, win-rate heatmaps, and precise session statistics natively integrated into one dashboard.
-              </p>
-            </div>
-            <div className="flex-1 w-full relative group">
-              <div className="absolute inset-0 bg-purple-500/20 blur-[80px] rounded-full group-hover:bg-purple-500/30 transition-all duration-700" />
-              <div className="relative aspect-square w-full max-w-xs mx-auto rounded-3xl bg-background/50 border border-white/10 shadow-2xl glass flex items-end justify-center gap-2 p-8 overflow-hidden transform group-hover:-translate-y-4 transition-all duration-700">
-                {/* Visual Representation */}
-                <div className="w-8 bg-purple-500/30 rounded-t-sm h-[40%] border-t border-purple-500" />
-                <div className="w-8 bg-purple-500/50 rounded-t-sm h-[70%] border-t border-purple-500" />
-                <div className="w-8 bg-primary/80 rounded-t-sm h-[90%] border-t border-primary" />
-                <div className="w-8 bg-purple-500/40 rounded-t-sm h-[50%] border-t border-purple-500" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Chapter 3 */}
-        <div className="min-h-[60vh] flex flex-col items-center justify-center py-20 px-4 sm:px-6 relative reveal-on-scroll text-center max-w-3xl mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-2xl mb-8 mx-auto -rotate-12 hover:rotate-12 transition-transform duration-700">
-             <LayersFill className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter leading-none mb-6">Aesthetics That <br/><span className="text-muted-foreground text-3xl sm:text-5xl">Match Your Emotion.</span></h2>
-          <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed mb-12">
-            The market alters your cognitive state, and your environment should reflect it. Experience the Dynamic Aura Framework that effortlessly transitions between vibrant neon hues or muted dark modes, aligning directly with your psychological state.
-          </p>
-          <button onClick={() => navigate('/login')} className="px-10 py-4 rounded-full bg-foreground text-background text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-all">
-            Enter The Application
-          </button>
-        </div>
-      </section>
-
-      {/* Minimal Footer */}
-      <footer className="mt-auto py-12 px-6 border-t border-border/10">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-primary font-black text-[8px]">My</div>
-            <span className="font-bold text-sm tracking-tight text-foreground/60">Journal</span>
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-foreground/40">
-            © {new Date().getFullYear()} XAU Journal. Curated by Gaveen Perera.
-          </p>
+          <nav aria-label="Footer navigation">
+            <ul style={{ display:'flex', flexWrap:'wrap', gap:'1.5rem', listStyle:'none', margin:0, padding:0 }}>
+              {[{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'},{to:'/privacy',l:'Privacy'}].map(({to,l})=>(
+                <li key={to}><NavLink to={to} style={{ textDecoration:'none', fontSize:'0.8125rem', color:'hsl(var(--muted-foreground))', transition:'color 0.2s' }}
+                  onMouseOver={e=>e.currentTarget.style.color='hsl(var(--foreground))'}
+                  onMouseOut={e=>e.currentTarget.style.color='hsl(var(--muted-foreground))'}>{l}</NavLink></li>
+              ))}
+            </ul>
+          </nav>
+          <p style={{ fontSize:'0.75rem', color:'hsl(var(--muted-foreground))', margin:0 }}>© {new Date().getFullYear()} XAU Journal · Curated by Gaveen Perera</p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ─── Feature card ───────────────────────────────────────────────── */
+function FeatureCard({ icon, title, body, delay }) {
+  return (
+    <div data-reveal data-delay={delay} style={{ padding:'2rem', background:'hsl(var(--background))', transition:'background 0.2s', cursor:'default' }}
+      onMouseOver={e=>e.currentTarget.style.background='hsl(var(--card))'}
+      onMouseOut={e=>e.currentTarget.style.background='hsl(var(--background))'}>
+      <div style={{ width:42, height:42, borderRadius:10, background:GOLD_DIM, border:`1px solid ${GOLD_LINE}`, display:'flex', alignItems:'center', justifyContent:'center', color:GOLD, marginBottom:'1.25rem' }}>{icon}</div>
+      <h3 style={{ fontSize:'0.9375rem', fontWeight:700, marginBottom:'0.5rem', letterSpacing:'-0.02em' }}>{title}</h3>
+      <p style={{ fontSize:'0.875rem', color:'hsl(var(--muted-foreground))', lineHeight:1.7, fontWeight:400, margin:0 }}>{body}</p>
     </div>
   );
 }
