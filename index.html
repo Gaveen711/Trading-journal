@@ -18,6 +18,12 @@
     content="XAUUSD trading journal, gold trading journal, MT5 trading journal, forex trading analytics, gold trader tools, XAU USD journal" />
   <meta name="author" content="Gaveen Perera" />
   <link rel="canonical" href="https://xaujournal.com" />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://api.fontshare.com" />
+  <link rel="dns-prefetch" href="https://www.googleapis.com" />
+  <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
 
   <!-- ── Open Graph ─────────────────────────────────────────────── -->
   <meta property="og:type" content="website" />
@@ -50,7 +56,7 @@
       "operatingSystem": "Web",
       "offers": [
         { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" },
-        { "@type": "Offer", "price": "19", "priceCurrency": "USD", "name": "Pro" }
+        { "@type": "Offer", "price": "29.99", "priceCurrency": "USD", "name": "Pro" }
       ],
       "url": "https://xaujournal.com"
     }
@@ -63,6 +69,7 @@
 
   <!-- ── Fonts ─────────────────────────────────────────────────── -->
   <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="preload" as="style" href="https://api.fontshare.com/v2/css?f[]=satoshi@300,350,400,500,700,900&display=swap" />
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,350,400,500,700,900&display=swap" rel="stylesheet" />
 
   <!-- ── Favicon ───────────────────────────────────────────────── -->
@@ -98,11 +105,6 @@
         const clear = () => console.clear();
         setInterval(clear, 2000);
       }
-      
-      // 4. Debugger trap to stall inspection attempts
-      setInterval(function() {
-        (function() { return false; })["constructor"]("debugger")["call"]();
-      }, 1000);
     })();
   </script>
 </body>

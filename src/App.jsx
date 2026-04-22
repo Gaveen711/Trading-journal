@@ -6,6 +6,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useToast } from './components/ToastContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { useSubscription } from './hooks/useSubscription';
+import { useWallet } from './hooks/useWallet';
 import { useAppTheme } from './hooks/useAppTheme';
 
 import { PricingModal } from './components/PricingModal';
@@ -46,6 +47,7 @@ function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { plan, expiry, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms } = useSubscription(user);
+  const { updateBalance } = useWallet(user);
   const toast = useToast();
 
   useEffect(() => {
@@ -62,7 +64,7 @@ function AuthenticatedApp({ user }) {
   const completeOnboarding = async (val) => {
     if (!isNaN(val) && val > 0) {
       const newBalance = parseFloat(val.toFixed(2));
-      localStorage.setItem('xau-starting-balance', JSON.stringify(newBalance));
+      await updateBalance(newBalance);
     }
     localStorage.setItem('xau-onboarded', '1');
     setShowOnboarding(false);

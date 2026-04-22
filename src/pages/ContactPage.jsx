@@ -17,8 +17,18 @@ export function ContactPage() {
     useEffect(() => {
         const onScroll = () => setShowScroll(window.scrollY > 300);
         window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
+        
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            document.body.style.overflow = 'unset';
+        };
+    }, [mobileMenuOpen]);
 
     useEffect(() => {
         const lenis = new Lenis({
@@ -48,11 +58,11 @@ export function ContactPage() {
         const nav = navRef.current;
         if (!nav) return;
         const onScroll = () => {
-            if (window.scrollY > 20) {
-                nav.classList.add('bg-background/80', 'backdrop-blur-xl', 'border-b', 'border-border/50');
+            if (window.scrollY > 10) {
+                nav.classList.add('bg-background', 'border-b', 'border-border/50', 'shadow-xl');
                 nav.classList.remove('bg-transparent', 'border-transparent');
             } else {
-                nav.classList.remove('bg-background/80', 'backdrop-blur-xl', 'border-b', 'border-border/50');
+                nav.classList.remove('bg-background', 'border-b', 'border-border/50', 'shadow-xl');
                 nav.classList.add('bg-transparent', 'border-transparent');
             }
         };
@@ -90,13 +100,13 @@ export function ContactPage() {
 
             {/* ── Nav ───────────────────────────────────────────────── */}
             <header>
-                <nav ref={navRef} className="fixed top-0 left-0 right-0 z-[100] h-16 flex items-center justify-between px-6 transition-all duration-500 ease-out border-b border-transparent bg-transparent">
+                <nav ref={navRef} className="fixed top-0 left-0 right-0 z-[100] h-16 flex items-center justify-between px-12 transition-all duration-500 ease-out border-b border-transparent bg-transparent">
                     <button onClick={() => { navigate('/'); window.scrollTo(0,0); }} aria-label="Go home" className="flex items-center gap-2 hover:opacity-80 transition-opacity z-50">
                         <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-to flex items-center justify-center text-[0.65rem] font-black text-white shadow-lg shadow-primary/20">XAU</span>
                         <span className="text-lg font-bold tracking-tight">Journal</span>
                     </button>
 
-                    <ul className="hidden md:flex items-center gap-1">
+                    <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1">
                         {[{to:'/',l:'Home'},{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'}].map(({to,l})=>(
                             <li key={to}>
                                 <NavLink to={to} className="text-sm font-medium px-4 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
@@ -106,9 +116,9 @@ export function ContactPage() {
                         ))}
                     </ul>
 
-                    <div className="flex items-center gap-3 z-50">
-                        <button onClick={toggleTheme} className="hidden md:flex p-2.5 rounded-full border border-border/40 hover:bg-muted hover:scale-110 active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground items-center justify-center">
-                            {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
+                    <div className="flex items-center gap-2 z-50">
+                        <button onClick={toggleTheme} className="flex p-2.5 rounded-full border border-border/40 hover:bg-muted active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground items-center justify-center">
+                            {isLightMode ? <MoonStarsFill className="w-3.5 h-3.5" /> : <SunFill className="w-3.5 h-3.5" />}
                         </button>
                         <button onClick={()=>navigate('/login')} className="hidden md:block glass text-foreground text-sm font-bold tracking-wide px-5 py-2.5 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
                             Get started
@@ -121,21 +131,22 @@ export function ContactPage() {
                     </div>
 
                     {/* Mobile Menu */}
-                    <div className={`md:hidden fixed inset-0 bg-background/95 backdrop-blur-xl transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                        <div className="flex flex-col items-center justify-center h-full gap-8">
+                    <div className={`md:hidden fixed inset-0 bg-background z-[200] transition-all duration-500 ease-[var(--apple-ease)] ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
+                        <div className="flex flex-col items-center justify-center h-full gap-12 px-6">
+                            <button 
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="absolute top-6 right-6 p-2 text-foreground/40 hover:text-foreground transition-colors"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            </button>
                             {[{to:'/',l:'Home'},{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'}].map(({to,l})=>(
                                 <NavLink key={to} to={to} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-black tracking-tight text-foreground hover:text-primary transition-colors">
                                     {l}
                                 </NavLink>
                             ))}
-                            <div className="flex flex-col items-center gap-4 mt-8">
-                                <button onClick={() => { toggleTheme(); setMobileMenuOpen(false); }} className="flex items-center gap-3 text-xl font-black tracking-tight text-foreground/80 hover:text-foreground hover:scale-110 transition-all">
-                                    {isLightMode ? <><MoonStarsFill className="w-6 h-6" /> Dark Mode</> : <><SunFill className="w-6 h-6" /> Light Mode</>}
-                                </button>
-                                <button onClick={()=>navigate('/login')} className="glass text-foreground text-lg font-bold tracking-wide px-8 py-4 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
-                                    Get started
-                                </button>
-                            </div>
+                            <button onClick={()=>navigate('/login')} className="mt-4 glass text-foreground text-lg font-bold tracking-wide px-10 py-4 rounded-full shadow-lg hover:bg-foreground/10 active:scale-95 transition-all duration-300">
+                                Get started
+                            </button>
                         </div>
                     </div>
                 </nav>

@@ -62,7 +62,8 @@ export function useTrades(user) {
   };
 
   const editTrade = async (id, updatedData) => {
-    await updateDoc(doc(db, 'users', user.uid, 'trades', id), updatedData);
+    const { id: _, ...cleanData } = updatedData;
+    await updateDoc(doc(db, 'users', user.uid, 'trades', id), cleanData);
   };
 
   const resetTrades = async () => {

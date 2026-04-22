@@ -74,10 +74,10 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose }) {
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.15em] text-primary mb-1">Pro</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black text-primary">$19</span>
+                <span className="text-3xl font-black text-primary">$29.99</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">or $190/year — <span className="text-primary font-black">save 17%</span></p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">or $199/year — <span className="text-primary font-black">save over 40%</span></p>
             </div>
             <ul className="space-y-3 flex-1">
               {PRO_FEATS.map(f => (
