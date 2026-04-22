@@ -17,6 +17,8 @@ import { useAppTheme } from './hooks/useAppTheme';
 import { CheckoutSuccess } from './pages/CheckoutSuccess';
 import { CheckoutCancel } from './pages/CheckoutCancel';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { PricingPage } from './pages/PricingPage';
+import { ContactPage } from './pages/ContactPage';
 import { LandingPage } from './pages/LandingPage';
 
 import { PricingModal } from './components/PricingModal';
@@ -53,7 +55,7 @@ function AuthenticatedApp({ user }) {
   };
 
   const location = useLocation();
-  const isPrivacyPage = location.pathname === '/privacy';
+  const isPublicPage = ['/privacy', '/pricing', '/contact'].includes(location.pathname);
 
   return (
     <>
@@ -72,7 +74,7 @@ function AuthenticatedApp({ user }) {
 
       {showPricingModal && <PricingModal plan={plan} expiry={expiry} onSubscribe={startCheckout} onClose={() => setShowPricingModal(false)} />}
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onClose={dismissOnboarding} />}
-      {!agreedToTerms && !isSubLoading && !isPrivacyPage && <ConsentModal onAgree={agreeToTerms} />}
+      {!agreedToTerms && !isSubLoading && !isPublicPage && <ConsentModal onAgree={agreeToTerms} />}
     </>
   );
 }
@@ -89,7 +91,7 @@ function App() {
       if (loading) setAuthError(true);
     }, 15000);
 
-    const unsubscribe = onAuthStateChanged(auth, 
+    const unsubscribe = onAuthStateChanged(auth,
       (currentUser) => {
         clearTimeout(timeout);
         setUser(currentUser);
@@ -114,10 +116,10 @@ function App() {
       <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
         <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
           <div className="w-20 h-20 bg-primary/10 rounded-3xl mx-auto flex items-center justify-center border border-primary/20 relative">
-             <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full" />
-             <img src="/favicon.png" alt="Logo" className="w-10 h-10 object-contain grayscale opacity-50 relative z-10" />
+            <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full" />
+            <img src="/favicon.png" alt="Logo" className="w-10 h-10 object-contain grayscale opacity-50 relative z-10" />
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-2xl font-black text-gradient uppercase tracking-tight">Sync Failure</h1>
             <p className="text-xs text-muted-foreground font-medium leading-relaxed uppercase tracking-wider">
@@ -125,7 +127,7 @@ function App() {
             </p>
           </div>
 
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="w-full py-4 rounded-2xl bg-muted border border-border/50 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-muted/80 active:scale-95 transition-all text-foreground/70"
           >
@@ -146,10 +148,10 @@ function App() {
           </div>
         </div>
         <div className="flex flex-col items-center gap-2">
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary animate-pulse">Syncing Terminal</p>
-           <div className="w-32 h-[1px] bg-border/40 relative overflow-hidden">
-              <div className="absolute inset-0 bg-primary animate-[shimmer_2s_infinite]" style={{ width: '40%' }} />
-           </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary animate-pulse">Syncing Terminal</p>
+          <div className="w-32 h-[1px] bg-border/40 relative overflow-hidden">
+            <div className="absolute inset-0 bg-primary animate-[shimmer_2s_infinite]" style={{ width: '40%' }} />
+          </div>
         </div>
       </div>
     )
@@ -162,11 +164,13 @@ function App() {
           {/* Public Website Flow */}
           <Route path="/" element={user ? <Navigate to="/app" /> : <LandingPage />} />
           <Route path="/login" element={user ? <Navigate to="/app" /> : <Login />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
-          
+
           {/* Protected App Flow */}
           <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login" />} />
-          
+
           {/* Catch-all fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

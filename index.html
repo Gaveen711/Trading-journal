@@ -1,17 +1,74 @@
 <!doctype html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.google.com https://*.googleapis.com https://*.firebaseapp.com; script-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://*.firebaseapp.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com; font-src 'self' data: https://fonts.gstatic.com https://*.fontshare.com; img-src 'self' data: https://*.googleusercontent.com https://*.stripe.com https://*.google.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://*.google.com https://www.goldapi.io https://*.firebaseapp.com https://api.stripe.com https://q.stripe.com; frame-src 'self' https://*.firebaseapp.com https://*.google.com https://js.stripe.com https://hooks.stripe.com;">
-    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,350,400,500,700,900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <title>XAU Journal — Advanced Performance Insights</title>
-    <meta name="description" content="A premium trading journal for elite performance tracking, analytics, and psychology. Built exclusively for XAUUSD Gold trading.">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── Primary SEO ────────────────────────────────────────────── -->
+  <title>Gold Journal — XAUUSD Trading Journal & Analytics</title>
+  <meta name="description"
+    content="The trading journal built exclusively for gold traders. Automated MT5 sync, deep analytics, trade calendar, and session intelligence for XAUUSD." />
+  <meta name="keywords"
+    content="XAUUSD trading journal, gold trading journal, MT5 trading journal, forex trading analytics, gold trader tools, XAU USD journal" />
+  <meta name="author" content="Gaveen Perera" />
+  <link rel="canonical" href="https://xaujournal.com" />
+
+  <!-- ── Open Graph ─────────────────────────────────────────────── -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://xaujournal.com" />
+  <meta property="og:title" content="Gold Journal — XAUUSD Trading Journal & Analytics" />
+  <meta property="og:description"
+    content="Automated MT5 sync, deep analytics, and a beautiful calendar — everything a gold trader needs." />
+  <meta property="og:image" content="https://xaujournal.com/og-image.png" />
+  <meta property="og:site_name" content="Gold Journal" />
+
+  <!-- ── Twitter / X ───────────────────────────────────────────── -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Gold Journal — XAUUSD Trading Journal" />
+  <meta name="twitter:description"
+    content="The only trading journal built exclusively for gold traders. MT5 sync, analytics, calendar." />
+  <meta name="twitter:image" content="https://xaujournal.com/og-image.png" />
+
+  <!-- ── Robots ────────────────────────────────────────────────── -->
+  <meta name="robots" content="index, follow" />
+  <meta name="googlebot" content="index, follow" />
+
+  <!-- ── Structured data ───────────────────────────────────────── -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Gold Journal",
+      "description": "XAUUSD trading journal with automated MT5 sync and advanced analytics",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web",
+      "offers": [
+        { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" },
+        { "@type": "Offer", "price": "19", "priceCurrency": "USD", "name": "Pro" }
+      ],
+      "url": "https://xaujournal.com"
+    }
+    </script>
+
+  <!-- ── Security ──────────────────────────────────────────────── -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' https://*.google.com https://*.googleapis.com https://*.firebaseapp.com; script-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://*.firebaseapp.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com; font-src 'self' data: https://fonts.gstatic.com https://*.fontshare.com; img-src 'self' data: https://*.googleusercontent.com https://*.stripe.com https://*.google.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://*.google.com https://www.goldapi.io https://*.firebaseapp.com https://api.stripe.com https://q.stripe.com; frame-src 'self' https://*.firebaseapp.com https://*.google.com https://js.stripe.com https://hooks.stripe.com;" />
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
+
+  <!-- ── Fonts ─────────────────────────────────────────────────── -->
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,350,400,500,700,900&display=swap" rel="stylesheet" />
+
+  <!-- ── Favicon ───────────────────────────────────────────────── -->
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+  <meta name="theme-color" content="#060606" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
