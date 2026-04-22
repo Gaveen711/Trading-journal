@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 220 33% 98%;
-    --foreground: 222 47% 11%;
+    --background: 240 5% 96%;
+    --foreground: 240 10% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 240 10% 4%;
     --primary: 262.1 83.3% 57.8%;
     --primary-to: 270 95% 75%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 30%;
+    --secondary: 240 5% 90%;
+    --secondary-foreground: 240 10% 4%;
+    --muted: 240 5% 90%;
+    --muted-foreground: 240 4% 46%;
     --accent: 262.1 83.3% 57.8%;
-    --accent-foreground: 220.9 39.3% 11%;
+    --accent-foreground: 240 10% 4%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 20% 98%;
-    --border: 214.3 31.8% 85%;
-    --input: 214.3 31.8% 85%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
     --ring: 262.1 83.3% 57.8%;
     --radius: 1rem;
     
@@ -90,11 +90,11 @@
 
 @layer components {
   .glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/20;
+    @apply bg-white/70 backdrop-blur-xl border border-black/5 shadow-sm;
   }
   
   .dark .glass {
-    @apply bg-white/5 backdrop-blur-md border border-white/5;
+    @apply bg-white/5 backdrop-blur-md border border-white/5 shadow-none;
   }
 
   .card-premium {
@@ -159,7 +159,8 @@ h1, h2, h3, h4, h5, h6 {
   @apply bg-clip-text text-transparent bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary-to))];
 }
 
-/* Auth Transitions - Sleeker neutral deep dark */
+/* Auth Transitions - Sleeker neutral deep dark / light */
 .auth-container {
-  @apply min-h-screen flex items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-950 via-slate-900 to-black;
+  @apply min-h-screen flex items-center justify-center p-6 bg-background transition-colors duration-500 ease-[var(--apple-ease)];
+  background-image: radial-gradient(ellipse at top, hsl(var(--primary) / 0.1), transparent 50%);
 }

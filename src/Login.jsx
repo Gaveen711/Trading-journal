@@ -6,7 +6,7 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { auth, googleProvider } from './firebase.js';
+import { auth, googleProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 
 function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -15,6 +15,7 @@ function Login() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
@@ -22,11 +23,13 @@ function Login() {
     setMessage('');
     setLoading(true);
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
+      localStorage.setItem('xau-auth-hint', 'true');
     } catch (err) {
       setError(err.message.replace('Firebase: ', '').replace(/\(.*\)/, '').trim());
     } finally {
@@ -57,7 +60,9 @@ function Login() {
     setMessage('');
     setLoading(true);
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signInWithPopup(auth, googleProvider);
+      localStorage.setItem('xau-auth-hint', 'true');
     } catch (err) {
       setError(err.message.replace('Firebase: ', '').replace(/\(.*\)/, '').trim());
     } finally {
@@ -152,6 +157,19 @@ function Login() {
                   required={!loading}
                   className="input-premium h-12 text-sm font-bold"
                 />
+              </div>
+
+              {/* Stay Signed In Toggle */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-3">
+                  <div 
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className={`w-10 h-5 rounded-full transition-all duration-300 cursor-pointer relative ${rememberMe ? 'bg-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)]' : 'bg-muted'}`}
+                  >
+                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${rememberMe ? 'left-6' : 'left-1'}`} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Stay signed in</span>
+                </div>
               </div>
 
               {error && (

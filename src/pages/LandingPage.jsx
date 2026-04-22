@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Lenis from 'lenis';
+import { useAppTheme } from '../hooks/useAppTheme';
+import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
 /* ─── Data ───────────────────────────────────────────────────────── */
 const FEATURES = [
@@ -45,7 +47,7 @@ const STEPS = [
 
 const STATS = [
   { value: 'Precision', label: 'Built specifically for traders' },
-  { value: '< 1s',   label: 'MT5 sync latency' },
+  { value: '1s',   label: 'MT5 sync latency' },
   { value: '100%',   label: 'Your data, your control' },
 ];
 
@@ -54,6 +56,7 @@ export function LandingPage() {
   const navRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
+  const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
     const onScroll = () => setShowScroll(window.scrollY > 300);
@@ -149,6 +152,9 @@ export function LandingPage() {
           </ul>
 
           <div className="flex items-center gap-3 z-50">
+            <button onClick={toggleTheme} className="hidden md:flex p-2.5 rounded-full border border-border/40 hover:bg-muted hover:scale-110 active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground items-center justify-center">
+              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
+            </button>
             <button onClick={()=>navigate('/login')} className="hidden md:block glass text-foreground text-sm font-bold tracking-wide px-5 py-2.5 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
               Get started
             </button>
@@ -167,9 +173,14 @@ export function LandingPage() {
                   {l}
                 </NavLink>
               ))}
-              <button onClick={()=>navigate('/login')} className="mt-8 glass text-foreground text-lg font-bold tracking-wide px-8 py-4 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
-                Get started
-              </button>
+              <div className="flex flex-col items-center gap-4 mt-8">
+                <button onClick={() => { toggleTheme(); setMobileMenuOpen(false); }} className="flex items-center gap-3 text-xl font-black tracking-tight text-foreground/80 hover:text-foreground hover:scale-110 transition-all">
+                  {isLightMode ? <><MoonStarsFill className="w-6 h-6" /> Dark Mode</> : <><SunFill className="w-6 h-6" /> Light Mode</>}
+                </button>
+                <button onClick={()=>navigate('/login')} className="glass text-foreground text-lg font-bold tracking-wide px-8 py-4 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
+                  Get started
+                </button>
+              </div>
             </div>
           </div>
         </nav>
@@ -181,7 +192,7 @@ export function LandingPage() {
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto flex flex-col items-center">
             <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-xs font-bold tracking-[0.2em] uppercase mb-10 shadow-sm shadow-primary/5">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Built for precision
+                Excusively for Gold traders
             </motion.div>
 
             <motion.div variants={itemVariants}>

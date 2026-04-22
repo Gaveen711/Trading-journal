@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Lenis from 'lenis';
+import { useAppTheme } from '../hooks/useAppTheme';
+import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
 const SECTIONS = [
   {
@@ -90,6 +92,7 @@ export function PrivacyPolicyPage() {
   const navRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
+  const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
     const onScroll = () => setShowScroll(window.scrollY > 300);
@@ -174,6 +177,9 @@ export function PrivacyPolicyPage() {
           </ul>
 
           <div className="flex items-center gap-3 z-50">
+            <button onClick={toggleTheme} className="hidden md:flex p-2.5 rounded-full border border-border/40 hover:bg-muted hover:scale-110 active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground items-center justify-center">
+              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
+            </button>
             <button onClick={()=>navigate('/login')} className="hidden md:block glass text-foreground text-sm font-bold tracking-wide px-5 py-2.5 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
               Get started
             </button>
@@ -192,9 +198,14 @@ export function PrivacyPolicyPage() {
                   {l}
                 </NavLink>
               ))}
-              <button onClick={()=>navigate('/login')} className="mt-8 glass text-foreground text-lg font-bold tracking-wide px-8 py-4 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
-                Get started
-              </button>
+              <div className="flex flex-col items-center gap-4 mt-8">
+                <button onClick={() => { toggleTheme(); setMobileMenuOpen(false); }} className="flex items-center gap-3 text-xl font-black tracking-tight text-foreground/80 hover:text-foreground hover:scale-110 transition-all">
+                  {isLightMode ? <><MoonStarsFill className="w-6 h-6" /> Dark Mode</> : <><SunFill className="w-6 h-6" /> Light Mode</>}
+                </button>
+                <button onClick={()=>navigate('/login')} className="glass text-foreground text-lg font-bold tracking-wide px-8 py-4 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
+                  Get started
+                </button>
+              </div>
             </div>
           </div>
         </nav>

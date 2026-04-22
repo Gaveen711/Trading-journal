@@ -222,7 +222,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
 
 
 
-                  <button onClick={() => auth.signOut()} className="w-full flex items-center gap-3 px-3 py-2.5 text-destructive mt-1 hover:bg-destructive/10 rounded-lg transition-all duration-200 group">
+                  <button onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-destructive mt-1 hover:bg-destructive/10 rounded-lg transition-all duration-200 group">
                     <BoxArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     <span className="text-[11px] font-black uppercase">Logout</span>
                   </button>

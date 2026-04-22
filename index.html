@@ -4,6 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    if (localStorage.getItem('xau-theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
 
   <!-- ── Primary SEO ────────────────────────────────────────────── -->
   <title>Gold Journal — XAUUSD Trading Journal & Analytics</title>
@@ -69,6 +74,37 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+  <script>
+    // SECURITY SHIELD: Maximum protection against inspection
+    (function() {
+      // 1. Disable Right Click
+      document.addEventListener('contextmenu', e => e.preventDefault());
+
+      // 2. Disable Keyboard Shortcuts (F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S)
+      document.addEventListener('keydown', e => {
+        if (
+          e.keyCode === 123 || // F12
+          (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || // Ctrl+Shift+I/J/C
+          (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83)) // Ctrl+U or Ctrl+S
+        ) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // 3. Clear console on load and continuously
+      if (typeof console !== "undefined") {
+        console.clear();
+        const clear = () => console.clear();
+        setInterval(clear, 2000);
+      }
+      
+      // 4. Debugger trap to stall inspection attempts
+      setInterval(function() {
+        (function() { return false; })["constructor"]("debugger")["call"]();
+      }, 1000);
+    })();
+  </script>
 </body>
 
 </html>
