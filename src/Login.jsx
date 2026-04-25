@@ -70,7 +70,6 @@ function Login() {
     setMessage('');
     setLoading(true);
     try {
-      await getRecaptchaToken(isSignUp ? 'REGISTER' : 'LOGIN');
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       
       // Save email for next time if rememberMe is true
@@ -127,7 +126,6 @@ function Login() {
     setMessage('');
     setLoading(true);
     try {
-      await getRecaptchaToken('GOOGLE_LOGIN');
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signInWithPopup(auth, googleProvider);
       localStorage.setItem('xau-auth-hint', 'true');
