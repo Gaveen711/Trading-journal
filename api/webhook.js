@@ -9,6 +9,7 @@
 
 import Stripe from 'stripe';
 import { admin, db } from './_firebase.js';
+import resend from './_resend.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -100,6 +101,67 @@ export default async function handler(req, res) {
       }, { merge: true });
 
       console.log('💎 USER UPGRADED SUCCESSFULLY');
+
+      // ── Send Institutional Invoice Email ──────────────────────────
+      try {
+        const userEmail = session.customer_details?.email || session.metadata?.email;
+        if (userEmail) {
+          const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const amountStr = (session.amount_total / 100).toFixed(2);
+          const invoiceNum = session.invoice ? session.invoice.toString().slice(-4) : Math.floor(1000 + Math.random() * 9000);
+
+          await resend.emails.send({
+            from: 'xaujournal <billing@xaujournal.com>',
+            to: userEmail,
+            subject: `Institutional Receipt: XAU-${invoiceNum} | xaujournal`,
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 60px; background: #0d0d14; color: #ffffff; border-radius: 32px; border: 1px solid #ffffff10;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 60px;">
+                  <div>
+                    <h1 style="font-size: 28px; font-weight: 900; letter-spacing: -0.05em; margin: 0; color: #8b5cf6;">XAUJOURNAL</h1>
+                    <p style="text-transform: uppercase; font-size: 10px; font-weight: 900; letter-spacing: 0.3em; color: #64748b; margin-top: 8px;">Institutional Receipt</p>
+                  </div>
+                  <div style="text-align: right;">
+                    <p style="font-size: 12px; font-weight: 900; color: #ffffff; margin: 0;">INVOICE #XAU-${invoiceNum}</p>
+                    <p style="font-size: 10px; color: #64748b; margin: 4px 0 0 0;">DATE: ${dateStr.toUpperCase()}</p>
+                  </div>
+                </div>
+
+                <div style="border-top: 1px solid #ffffff10; border-bottom: 1px solid #ffffff10; padding: 40px 0; margin-bottom: 40px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; padding-bottom: 12px;">Description</td>
+                      <td style="font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: right; padding-bottom: 12px;">Amount</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size: 14px; font-weight: 700; color: #ffffff; padding: 20px 0;">PRO TERMINAL SUBSCRIPTION (MONTHLY)</td>
+                      <td style="font-size: 15px; font-weight: 900; color: #8b5cf6; text-align: right; padding: 20px 0;">$${amountStr}</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <div style="text-align: right; margin-bottom: 60px;">
+                  <p style="font-size: 11px; color: #64748b; margin: 0; font-weight: 900; text-transform: uppercase;">Total Amount Paid</p>
+                  <h2 style="font-size: 42px; font-weight: 900; margin: 8px 0; color: #ffffff;">$${amountStr} <span style="font-size: 14px; color: #64748b; font-weight: 500;">USD</span></h2>
+                </div>
+
+                <div style="background: #ffffff05; padding: 24px; border-radius: 20px; border: 1px solid #ffffff05;">
+                  <p style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Status</p>
+                  <p style="font-size: 13px; color: #ffffff; margin: 0; font-weight: 700;">PRO ACCESS GRANTED • SECURED STRIPE NODE</p>
+                </div>
+
+                <div style="margin-top: 60px; padding-top: 40px; border-top: 1px solid #ffffff10;">
+                  <p style="font-size: 11px; font-weight: 900; color: #22c55e; letter-spacing: 0.1em; margin: 0; text-transform: uppercase;">Curated by Gaveen.</p>
+                  <p style="font-size: 10px; color: #475569; margin: 8px 0 0 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Secured Cloud Infrastructure | Trading Analytics Unit</p>
+                </div>
+              </div>
+            `
+          });
+          console.log('📧 Institutional invoice dispatched to:', userEmail);
+        }
+      } catch (emailErr) {
+        console.error('❌ Failed to dispatch invoice email:', emailErr);
+      }
     }
 
     // ── invoice.paid → renewal ───────────────────────────────────────────────
