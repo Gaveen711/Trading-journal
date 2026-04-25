@@ -450,17 +450,25 @@ export function LandingPage() {
       {/* ── Footer ────────────────────────────────────────────────── */}
       <footer className="relative z-10 border-t border-border/50 py-12 px-6 bg-muted/10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tighter">xaujournal</span>
+          <div className="flex flex-col items-center md:items-start gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold tracking-tighter">xaujournal</span>
+            </div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/20">
+              © {new Date().getFullYear()} All Rights Reserved
+            </p>
           </div>
           
-          <div className="flex flex-col items-center md:items-end gap-2 text-xs font-medium text-muted-foreground/60">
-            <div className="flex items-center gap-3">
-              <span>© {new Date().getFullYear()} xaujournal</span>
-              <span className="w-1 h-1 rounded-full bg-border/40" />
+          <div className="flex flex-col items-center md:items-end gap-3 text-[9px] font-black uppercase tracking-[0.2em]">
+            <div className="flex items-center gap-3 text-muted-foreground/60">
               <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</NavLink>
             </div>
-            <span>Crafted with precision</span>
+            <p className="flex gap-2">
+              <span className="text-foreground/30">Curated by</span>
+              <span className="text-green-500 cursor-help hover:scale-105 transition-all duration-300">
+                Gaveen.
+              </span>
+            </p>
           </div>
         </div>
       </footer>

@@ -4,6 +4,10 @@ import { motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
+import { auth } from '../firebase';
+import { useSubscription } from '../hooks/useSubscription';
+import { ProTermsModal } from '../components/ProTermsModal';
+import { useToast } from '../components/ToastContext';
 
 const FREE_FEATURES = [
   '50 trades / month',
@@ -38,6 +42,26 @@ export function PricingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
+  const user = auth.currentUser;
+  const { startCheckout, recordProAcceptance } = useSubscription(user);
+  const [showTerms, setShowTerms] = useState(false);
+  const toast = useToast();
+
+  const handleUpgradeClick = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setShowTerms(true);
+  };
+
+  const handleAcceptTerms = async () => {
+    const success = await recordProAcceptance();
+    if (success) {
+      setShowTerms(false);
+      startCheckout();
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setShowScroll(window.scrollY > 300);
@@ -239,7 +263,7 @@ export function PricingPage() {
               ))}
             </ul>
             
-            <button onClick={()=>navigate('/login')} className="w-full py-4 rounded-xl border-none bg-primary text-primary-foreground text-sm font-bold tracking-wide hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 relative z-10">
+            <button onClick={handleUpgradeClick} className="w-full py-4 rounded-xl border-none bg-primary text-primary-foreground text-sm font-bold tracking-wide hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 relative z-10">
               Upgrade to Pro
             </button>
           </motion.div>
@@ -285,6 +309,13 @@ export function PricingPage() {
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
       </button>
+
+      {showTerms && (
+        <ProTermsModal 
+          onAccept={handleAcceptTerms} 
+          onClose={() => setShowTerms(false)} 
+        />
+      )}
     </div>
   );
 }

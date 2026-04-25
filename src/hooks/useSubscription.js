@@ -134,6 +134,22 @@ export function useSubscription(user) {
     }
   };
 
+  const recordProAcceptance = async () => {
+    try {
+      await updateDoc(doc(db, "users", user.uid), { 
+        proLegalAccepted: true,
+        proLegalAcceptedAt: new Date().toISOString(),
+        proLegalVersion: "1.0.4",
+        refundPolicyAcknowledged: true
+      });
+      return true;
+    } catch (error) {
+      console.error("Legal Acceptance Error:", error);
+      toast("Failed to record legal signature. Please try again.", "error");
+      return false;
+    }
+  };
+
   const agreeToTerms = async () => {
     try {
       await updateDoc(doc(db, "users", user.uid), { 
@@ -146,5 +162,5 @@ export function useSubscription(user) {
     }
   };
   
-  return { ...subscription, startCheckout, openPortal, agreeToTerms };
+  return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance };
 }

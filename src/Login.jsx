@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -17,6 +17,15 @@ function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Load saved email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('xau-remembered-email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+  }, []);
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
@@ -25,12 +34,31 @@ function Login() {
     setLoading(true);
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      
+      // Save email for next time if rememberMe is true
+      if (rememberMe) {
+        localStorage.setItem('xau-remembered-email', email);
+      } else {
+        localStorage.removeItem('xau-remembered-email');
+      }
+
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
       localStorage.setItem('xau-auth-hint', 'true');
+
+      // Trigger Login Alert Email
+      try {
+        const token = await auth.currentUser.getIdToken();
+        fetch('/api/login-alert', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (e) {
+        console.error("Failed to trigger login alert:", e);
+      }
     } catch (err) {
       setError(getFriendlyErrorMessage(err));
     } finally {
@@ -64,6 +92,17 @@ function Login() {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signInWithPopup(auth, googleProvider);
       localStorage.setItem('xau-auth-hint', 'true');
+
+      // Trigger Login Alert Email
+      try {
+        const token = await auth.currentUser.getIdToken();
+        fetch('/api/login-alert', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (e) {
+        console.error("Failed to trigger login alert:", e);
+      }
     } catch (err) {
       setError(getFriendlyErrorMessage(err));
     } finally {
@@ -137,28 +176,41 @@ function Login() {
                   className="input-premium h-12 text-sm font-bold"
                 />
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center px-1">
-                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60"> Password</label>
-                  {!isSignUp && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60"> Password</label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={handleResetPassword}
+                        className="text-[9px] font-black text-primary hover:text-primary/70 transition-colors uppercase tracking-widest"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative group">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder=""
+                      required={!loading}
+                      className="input-premium h-12 text-sm font-bold pr-12"
+                    />
                     <button
                       type="button"
-                      onClick={handleResetPassword}
-                      className="text-[9px] font-black text-primary hover:text-primary/70 transition-colors uppercase tracking-widest"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-muted-foreground/40 hover:text-primary transition-all duration-300"
                     >
-                      Forgot?
+                      {showPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      )}
                     </button>
-                  )}
+                  </div>
                 </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder=""
-                  required={!loading}
-                  className="input-premium h-12 text-sm font-bold"
-                />
-              </div>
 
               {/* Stay Signed In Toggle */}
               <div className="flex items-center justify-between px-1">

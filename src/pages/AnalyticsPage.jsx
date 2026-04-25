@@ -158,8 +158,8 @@ export function AnalyticsPage() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="space-y-1">
-        <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Intelligence Ledger</h1>
-        <p className="text-muted-foreground text-sm font-medium">Quantify your edge and identify weaknesses in the system.</p>
+        <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Performance Analytics</h1>
+        <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest">Deep insights into your edge, consistency, and risk management.</p>
       </header>
       
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
@@ -180,20 +180,22 @@ export function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2 text-foreground/80">
+          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
             <ClockFill className="w-4 h-4 text-primary" />
-            Session Performance Matrix
+            Session Efficiency
           </h3>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Performance distribution across London, NY, and Asian sessions.</p>
           <div className="h-64">
             <Bar data={sessionChartData} options={chartOptions} />
           </div>
         </div>
 
         <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-right-4 duration-700 delay-300">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2 text-foreground/80">
+          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
             <LightningFill className="w-4 h-4 text-primary" />
-            Setup Intelligence
+            Strategy Intelligence
           </h3>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Detailed P&L breakdown for each individual trading setup.</p>
           <div className="h-64">
             <Bar data={setupChartData} options={chartOptions} />
           </div>
@@ -201,10 +203,11 @@ export function AnalyticsPage() {
       </div>
 
       <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
-        <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2 text-foreground/80 text-red-500">
+        <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80 text-red-500">
           <ShieldExclamation className="w-4 h-4" />
-          Underwater Drawdown Curve
+          Peak-to-Valley Drawdown
         </h3>
+        <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Tracks losses relative to your previous peak balance (how far "underwater" you are).</p>
         <div className="h-64">
           <Line data={drawdownChartData} options={chartOptions} />
         </div>

@@ -292,23 +292,24 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
       <footer className="w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-border/10 bg-muted/5 relative overflow-hidden transition-all duration-700">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
 
-          <div className="flex flex-col items-center md:items-start gap-4">
+          <div className="flex flex-col items-center md:items-start gap-1">
             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <span className="text-lg font-bold tracking-tighter group-hover:text-primary transition-colors duration-300">xaujournal</span>
             </div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/20">
+              © {new Date().getFullYear()} All Rights Reserved
+            </p>
           </div>
 
           <div className="flex flex-col items-center md:items-end gap-3 uppercase font-black text-[10px] tracking-widest">
             <p className="text-foreground/30 flex items-center gap-3">
-              © {new Date().getFullYear()} xaujournal 
-              <span className="w-1 h-1 rounded-full bg-border/40" />
               <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</NavLink>
             </p>
 
-            <p className="flex gap-2">
-              <span className="text-foreground/50">Curated by</span>
-              <span className="cursor-help hover:scale-105 transition-transform duration-300" style={{ animation: "rgbCycle 3s linear infinite" }}>
-                Gaveen Perera.
+            <p className="flex gap-2 uppercase font-black text-[9px] tracking-[0.2em]">
+              <span className="text-foreground/30">Curated by</span>
+              <span className="text-green-500 cursor-help hover:scale-105 transition-all duration-300">
+                Gaveen.
               </span>
             </p>
           </div>

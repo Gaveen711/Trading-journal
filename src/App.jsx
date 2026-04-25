@@ -46,7 +46,7 @@ const PageLoader = () => (
 function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { plan, expiry, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms } = useSubscription(user);
+  const { plan, expiry, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
   const { updateBalance } = useWallet(user);
   const toast = useToast();
 
@@ -91,7 +91,7 @@ function AuthenticatedApp({ user }) {
       </Routes>
     </Suspense>
 
-      {showPricingModal && <PricingModal plan={plan} expiry={expiry} onSubscribe={startCheckout} onClose={() => setShowPricingModal(false)} />}
+      {showPricingModal && <PricingModal plan={plan} expiry={expiry} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onClose={dismissOnboarding} />}
       {!agreedToTerms && !isSubLoading && !isPublicPage && <ConsentModal onAgree={agreeToTerms} />}
     </>

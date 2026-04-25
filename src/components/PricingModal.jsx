@@ -1,7 +1,22 @@
+import { useState } from 'react';
 import { XLg, CheckCircleFill, CheckCircle } from 'react-bootstrap-icons';
+import { ProTermsModal } from './ProTermsModal';
 
-export function PricingModal({ plan, expiry, onSubscribe, onClose }) {
+export function PricingModal({ plan, expiry, onSubscribe, onClose, recordProAcceptance }) {
+  const [showTerms, setShowTerms] = useState(false);
   const SUB_LIMITS = { freeTrades: 50, freeJournals: 10 };
+
+  const handleProClick = () => {
+    setShowTerms(true);
+  };
+
+  const handleAcceptTerms = async () => {
+    const success = await recordProAcceptance();
+    if (success) {
+      setShowTerms(false);
+      onSubscribe();
+    }
+  };
 
   const FREE_FEATS = [
     `${SUB_LIMITS.freeTrades} trades / month`,
@@ -99,7 +114,7 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose }) {
               </div>
             ) : (
               <button
-                onClick={onSubscribe}
+                onClick={handleProClick}
                 className="btn-primary w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/10 active:scale-95 transition-all"
               >
                 Upgrade to Pro
@@ -112,6 +127,13 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose }) {
           Prices in USD · Cancel anytime · All data encrypted
         </p>
       </div>
+
+      {showTerms && (
+        <ProTermsModal 
+          onAccept={handleAcceptTerms} 
+          onClose={() => setShowTerms(false)} 
+        />
+      )}
     </div>
   );
 }

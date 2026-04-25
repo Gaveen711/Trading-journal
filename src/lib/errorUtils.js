@@ -8,7 +8,9 @@ export const getFriendlyErrorMessage = (error) => {
   
   // Authentication Errors
   if (msg.includes('auth/invalid-email')) return "Please enter a valid email address.";
-  if (msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password')) return "Invalid email or password.";
+  if (msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) {
+    return "The email or password you entered was not found. Please try again.";
+  }
   if (msg.includes('auth/email-already-in-use')) return "This email is already registered.";
   if (msg.includes('auth/weak-password')) return "Password must be at least 6 characters.";
   if (msg.includes('auth/popup-closed-by-user')) return "Authentication was cancelled.";

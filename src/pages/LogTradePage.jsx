@@ -7,7 +7,8 @@ import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icon
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { RiskCalculator } from '../components/RiskCalculator';
-import { Calculator } from 'react-bootstrap-icons';
+import { Calculator, CurrencyExchange } from 'react-bootstrap-icons';
+import { CurrencyConverter } from '../components/CurrencyConverter';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
@@ -205,7 +206,7 @@ export function LogTradePage() {
   const handleSaveGoal = async () => {
     await updateMonthlyGoal(parseFloat(tempGoal) || 0);
     setIsEditingGoal(false);
-    toast("Monthly objective synchronized.", "success");
+    toast("Monthly objective updated.", "success");
   };
 
   const handleWipeTerminal = async () => {
@@ -575,6 +576,8 @@ export function LogTradePage() {
               </div>
             </div>
           </div>
+
+          <CurrencyConverter />
         </div>
       </div>
 
