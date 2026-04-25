@@ -18,7 +18,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [recaptchaVerified, setRecaptchaVerified] = useState(false);
+  const [recaptchaVerified, setRecaptchaVerified] = useState(true); // Score-based key: auto-verified
   const recaptchaRef = useRef(null);
   const recaptchaWidgetId = useRef(null);
 
@@ -28,36 +28,6 @@ function Login() {
     if (savedEmail) {
       setEmail(savedEmail);
     }
-  }, []);
-
-  // Render visible reCAPTCHA checkbox widget
-  useEffect(() => {
-    const renderWidget = () => {
-      if (
-        typeof grecaptcha !== 'undefined' &&
-        grecaptcha.enterprise &&
-        recaptchaRef.current &&
-        recaptchaWidgetId.current === null
-      ) {
-        recaptchaWidgetId.current = grecaptcha.enterprise.render(recaptchaRef.current, {
-          sitekey: '6LfSRMosAAAAAJkpsSHRweUx48z1amorEE2Abqe7',
-          theme: 'dark',
-          callback: () => setRecaptchaVerified(true),
-          'expired-callback': () => setRecaptchaVerified(false),
-          'error-callback': () => setRecaptchaVerified(false),
-        });
-      }
-    };
-
-    // Poll until grecaptcha is available
-    const interval = setInterval(() => {
-      if (typeof grecaptcha !== 'undefined' && grecaptcha.enterprise) {
-        clearInterval(interval);
-        grecaptcha.enterprise.ready(renderWidget);
-      }
-    }, 200);
-
-    return () => clearInterval(interval);
   }, []);
 
   // Execute reCAPTCHA Enterprise token before auth actions
@@ -74,10 +44,10 @@ function Login() {
         );
 
         // Send token to backend for risk assessment
-        const res = await fetch('/api/recaptcha-assess', {
+        const res = await fetch('/api/auth-utils?action=recaptcha', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, action }),
+          body: JSON.stringify({ token, recaptchaAction: action }),
         });
         const assessment = await res.json();
 
