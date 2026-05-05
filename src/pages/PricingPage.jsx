@@ -331,11 +331,8 @@ export function PricingPage() {
                 <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
                 <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
               </div>
-              <p className="text-xs text-muted-foreground/60 font-medium">
-                © {new Date().getFullYear()} xaujournal. Professional trade journaling.
-              </p>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-rgb mt-2">
-                Crafted by GP WALKER
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 text-center md:text-right">
+                © {new Date().getFullYear()} <span className="animate-rgb">-xaujournal-</span>
               </p>
             </div>
           </div>
