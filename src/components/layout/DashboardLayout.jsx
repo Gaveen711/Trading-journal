@@ -310,9 +310,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <span className="text-lg font-bold tracking-tighter group-hover:text-primary transition-colors duration-300">xaujournal</span>
             </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/20">
-              © {new Date().getFullYear()} All Rights Reserved
-            </p>
+
           </div>
 
           <div className="flex flex-col items-center md:items-end gap-3 uppercase font-black text-[10px] tracking-widest">
@@ -321,9 +319,9 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             </p>
 
             <p className="flex gap-2 uppercase font-black text-[9px] tracking-[0.2em]">
-              <span className="text-foreground/30">Created by</span>
+              <span className="text-foreground/30">© {new Date().getFullYear()}</span>
               <span className="animate-rgb cursor-help hover:scale-105 transition-all duration-300">
-                GP WALKER
+                xaujournal
               </span>
             </p>
           </div>

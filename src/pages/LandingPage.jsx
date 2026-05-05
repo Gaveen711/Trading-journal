@@ -469,11 +469,8 @@ export function LandingPage() {
                  </motion.a>
               </div>
               <div className="mt-auto flex flex-col items-start lg:items-end gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-left lg:text-right">
-                  © {new Date().getFullYear()} xaujournal. Built with precision.
-                </p>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-rgb">
-                  Crafted by GP WALKER
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 text-left lg:text-right">
+                  © {new Date().getFullYear()} <span className="animate-rgb">-xaujournal-</span>
                 </p>
               </div>
             </div>
