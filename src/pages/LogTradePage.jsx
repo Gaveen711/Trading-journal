@@ -17,7 +17,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 export function LogTradePage() {
   const { 
-    trades, addTrade, setShowPricingModal, startingBalance, updateBalance, 
+    trades, addTrade, setShowPricingModal, walletBalance, updateBalance, 
     plan, totalTrades, resetTrades, resetWallet, monthlyGoal, updateMonthlyGoal 
   } = useOutletContext();
   const toast = useToast();
@@ -120,7 +120,7 @@ export function LogTradePage() {
   const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
   
   let chartVisibleTrades = sortedForChart;
-  let initialBalanceForChart = startingBalance || 0;
+  let initialBalanceForChart = walletBalance || 0;
 
   if (equityPeriod === '30') {
     const cutoffDate = new Date();
@@ -189,13 +189,13 @@ export function LogTradePage() {
 
   const [isEditingBalance, setIsEditingBalance] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [tempBalance, setTempBalance] = useState(startingBalance || 0);
+  const [tempBalance, setTempBalance] = useState(walletBalance || 0);
   const [tempGoal, setTempGoal] = useState(monthlyGoal || 1000);
   const [isWiping, setIsWiping] = useState(false);
 
   useEffect(() => {
-    setTempBalance(startingBalance || 0);
-  }, [startingBalance]);
+    setTempBalance(walletBalance || 0);
+  }, [walletBalance]);
 
   const handleSaveBalance = async () => {
     await updateBalance(parseFloat(tempBalance) || 0);
@@ -231,7 +231,7 @@ export function LogTradePage() {
   }, [isWiping]);
 
   const totalPnl = chartVisibleTrades.reduce((s,t)=> s + (t.pnl || 0), 0);
-  const currentWalletBalance = (startingBalance || 0) + trades.reduce((s,t)=> s + (t.pnl || 0), 0);
+  const currentWalletBalance = (walletBalance || 0) + trades.reduce((s,t)=> s + (t.pnl || 0), 0);
   const winRate = chartVisibleTrades.length ? (chartVisibleTrades.filter(t => t.outcome === 'WIN').length / chartVisibleTrades.length * 100).toFixed(0) : 0;
 
   const thisMonthTrades = trades.filter(t => t.date >= monthStart);

@@ -67,7 +67,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const thisMonthTradesCount = trades.filter(t => t.date >= monthStart).length;
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
-  const { startingBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
+  const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
 
   const [copied, setCopied] = useState(false);
   const copyUid = () => {
@@ -297,7 +297,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             user, plan, expiry, totalTrades, setShowPricingModal, openPortal,
             trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
             journals, isLoadingJournals, saveJournalEntry, deleteEntry,
-            startingBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
+            walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
           }} />
         )}
       </main>

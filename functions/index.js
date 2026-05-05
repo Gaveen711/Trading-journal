@@ -263,3 +263,15 @@ exports.revokeApiKey = functions.https.onCall(async (data, context) => {
   await db.collection("users").doc(uid).update({ mt5SyncEnabled: false });
   return { success: true };
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// onTradeDeleted — keep totalTradesLogged in sync
+// ─────────────────────────────────────────────────────────────────────────────
+exports.onTradeDeleted = functions.firestore
+  .document("users/{uid}/trades/{tradeId}")
+  .onDelete(async (snap, context) => {
+    const uid = context.params.uid;
+    await db.collection("users").doc(uid).update({
+      totalTradesLogged: admin.firestore.FieldValue.increment(-1)
+    });
+  });

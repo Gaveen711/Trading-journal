@@ -60,9 +60,6 @@ export function useTrades(user) {
 
   const removeTrade = async (id) => {
     await deleteDoc(doc(db, 'users', user.uid, 'trades', id));
-    await updateDoc(doc(db, 'users', user.uid), {
-      totalTradesLogged: increment(-1)
-    });
   };
 
   const editTrade = async (id, updatedData) => {
@@ -76,7 +73,6 @@ export function useTrades(user) {
     const snapshot = await getDocs(collection(db, 'users', user.uid, 'trades'));
     snapshot.docs.forEach((d) => batch.delete(d.ref));
     await batch.commit();
-    await updateDoc(doc(db, 'users', user.uid), { totalTradesLogged: 0 });
   };
 
   return { trades, isLoading, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync };
