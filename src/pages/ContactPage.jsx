@@ -274,7 +274,7 @@ export function ContactPage() {
                                 <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
                             </div>
                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 text-center md:text-right">
-                                © {new Date().getFullYear()} <span className="animate-rgb">-xaujournal-</span>
+                                © {new Date().getFullYear()} <span className="animate-rgb">xaujournal</span>
                             </p>
                         </div>
                     </div>
