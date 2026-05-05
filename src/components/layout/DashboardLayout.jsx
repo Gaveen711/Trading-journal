@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   House, HouseFill,
   ClockHistory, ClockFill,
@@ -105,17 +106,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
               </div>
               
               {/* DESKTOP NAV */}
-              <div className="hidden md:flex relative bg-muted/20 p-1.5 rounded-full border border-border/20 backdrop-blur-md">
-                <div 
-                  className="absolute top-1.5 bottom-1.5 left-1.5 bg-background shadow-lg border border-border/50 rounded-full transition-all duration-500 ease-[var(--spring-bounce)]"
-                  style={{ 
-                    width: '115px', 
-                    transform: `translateX(calc(${activeIndex === -1 ? 0 : activeIndex} * 115px))`,
-                    opacity: activeIndex === -1 ? 0 : 1,
-                    visibility: activeIndex === -1 ? 'hidden' : 'visible'
-                  }}
-                />
-                
+              <div className="hidden md:flex items-center gap-1.5 bg-muted/20 p-1.5 rounded-2xl border border-border/10 backdrop-blur-md">
                 {navigation.map((item) => {
                   const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
                   const Icon = isActive ? item.iconSolid : item.icon;
@@ -123,12 +114,35 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                     <NavLink
                       key={item.name}
                       to={`/app/${item.id}`}
-                      className={`relative z-10 w-[115px] py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${
-                        isActive ? 'text-primary' : 'text-foreground/50 hover:text-foreground hover:scale-105'
+                      className={`group relative flex items-center h-11 px-4 rounded-xl transition-all duration-500 ease-[var(--apple-ease)] ${
+                        isActive 
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' 
+                          : 'text-foreground/80 hover:bg-muted hover:text-foreground'
                       }`}
                     >
-                      <Icon className={`w-3.5 h-3.5 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                      {item.name}
+                      <Icon className={`w-[1.2rem] h-[1.2rem] shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
+                      
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {isActive && (
+                          <motion.span
+                            layout
+                            initial={{ width: 0, opacity: 0, marginLeft: 0 }}
+                            animate={{ width: 'auto', opacity: 1, marginLeft: 10 }}
+                            exit={{ width: 0, opacity: 0, marginLeft: 0 }}
+                            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                            className="text-[11px] font-black uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden"
+                          >
+                            {item.name}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+
+                      {/* HOVER LABEL (Only if not active) */}
+                      {!isActive && (
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-foreground text-background text-[8px] font-black uppercase tracking-widest rounded-md opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none whitespace-nowrap z-50">
+                          {item.name}
+                        </div>
+                      )}
                     </NavLink>
                   );
                 })}
@@ -307,9 +321,9 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             </p>
 
             <p className="flex gap-2 uppercase font-black text-[9px] tracking-[0.2em]">
-              <span className="text-foreground/30">Curated by</span>
-              <span className="text-green-500 cursor-help hover:scale-105 transition-all duration-300">
-                Gaveen.
+              <span className="text-foreground/30">Created by</span>
+              <span className="animate-rgb cursor-help hover:scale-105 transition-all duration-300">
+                GP WALKER
               </span>
             </p>
           </div>
@@ -330,25 +344,41 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
       </footer>
 
       {/* MOBILE NAV */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 transition-all duration-500 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
-        <div className="bg-background border border-border/40 rounded-[2rem] h-20 flex items-center justify-around shadow-2xl backdrop-blur-xl">
-
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe pt-2 transition-all duration-500 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
+        <div className="bg-background/90 backdrop-blur-xl border border-border/40 rounded-[2rem] h-16 flex items-center justify-between px-2 shadow-2xl safe-bottom mb-4">
           {navigation.map((item) => {
-            const isActive =
-              item.id === ''
-                ? (location.pathname === '/app' || location.pathname === '/app/')
-                : location.pathname.startsWith(`/app/${item.id}`);
-
+            const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
             const Icon = isActive ? item.iconSolid : item.icon;
 
             return (
-              <NavLink key={item.name} to={`/app/${item.id}`} className={`flex flex-col items-center gap-1.5 transition-all duration-300 active:scale-90 ${isActive ? 'text-primary scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
-                <Icon className={`w-5 h-5 transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                <span className="text-[9px] font-black uppercase tracking-widest">{item.name}</span>
+              <NavLink 
+                key={item.name} 
+                to={`/app/${item.id}`} 
+                className={`group relative flex items-center justify-center h-12 rounded-2xl transition-all duration-500 ease-[var(--apple-ease)] ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground px-4 flex-grow mx-1 shadow-lg shadow-primary/25' 
+                    : 'text-foreground/60 w-12 hover:bg-muted mx-0.5'
+                }`}
+              >
+                <Icon className={`w-5 h-5 shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
+                
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {isActive && (
+                    <motion.span
+                      layout
+                      initial={{ width: 0, opacity: 0, marginLeft: 0 }}
+                      animate={{ width: 'auto', opacity: 1, marginLeft: 8 }}
+                      exit={{ width: 0, opacity: 0, marginLeft: 0 }}
+                      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                      className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden"
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </NavLink>
             );
           })}
-
         </div>
       </nav>
 

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { 
@@ -15,7 +15,9 @@ import {
   Display,
   GearWideConnected,
   DatabaseFill,
-  WindowSidebar
+  WindowSidebar,
+  Twitter,
+  Discord
 } from 'react-bootstrap-icons';
 
 /* ─── Data ───────────────────────────────────────────────────────── */
@@ -81,216 +83,208 @@ const STATS = [
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const navRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showScroll, setShowScroll] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
-    const onScroll = () => setShowScroll(window.scrollY > 300);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      document.body.style.overflow = 'unset';
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
     };
-  }, [mobileMenuOpen]);
 
-  useEffect(() => {
-    // Disable Lenis on touch devices (Safari iOS) to prevent scrolling conflicts
-    const isTouch = !window.matchMedia('(hover: hover)').matches;
-    if (isTouch) return;
-
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      direction: 'vertical',
-      gestureDirection: 'vertical',
       smooth: true,
-      mouseMultiplier: 1,
-      smoothTouch: false,
-      touchMultiplier: 2,
-      infinite: false,
     });
 
     function raf(time) {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
-
     requestAnimationFrame(raf);
 
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
     return () => {
+      window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
+      document.body.style.overflow = '';
     };
-  }, []);
+  }, [mobileMenuOpen]);
 
-  useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    const onScroll = () => {
-      if (window.scrollY > 10) {
-        nav.classList.add('bg-background', 'border-b', 'border-border/50', 'shadow-xl');
-        nav.classList.remove('bg-transparent', 'border-transparent');
-      } else {
-        nav.classList.remove('bg-background', 'border-b', 'border-border/50', 'shadow-xl');
-        nav.classList.add('bg-transparent', 'border-transparent');
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Framer Motion Variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-    },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
+  const navLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/pricing', label: 'Pricing' },
+    { to: '/contact', label: 'Contact' }
+  ];
+
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans">
-      
-      {/* ── Ambient blobs ─────────────────────────────────────── */}
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute top-[-10%] left-[-5%] w-[60vw] h-[60vw] rounded-full bg-primary/5 blur-[80px] opacity-40 md:opacity-60 md:blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[80px] opacity-30 md:opacity-50 md:blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-5%] w-[60vw] h-[60vw] rounded-full bg-primary/5 blur-[120px] opacity-60 mix-blend-screen" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[100px] opacity-40 mix-blend-screen" />
       </div>
 
-      {/* ── Nav ───────────────────────────────────────────────── */}
       <header>
-        <nav ref={navRef} className="fixed top-0 left-0 right-0 z-[100] h-16 flex items-center justify-between px-12 transition-all duration-500 ease-out border-b border-transparent bg-transparent">
-          <button onClick={() => window.scrollTo({top:0,behavior:'smooth'})} aria-label="Go to top"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity z-50">
-            <span className="text-lg font-bold tracking-tighter">xaujournal</span>
+        <nav 
+          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
+            isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
+          }`}
+        >
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
+            <span className="text-xl font-bold tracking-tighter">xaujournal</span>
           </button>
 
-          <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1">
-            {[{to:'/',l:'Home'},{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'}].map(({to,l})=>(
+          <ul className="hidden md:flex items-center gap-2">
+            {navLinks.map(({ to, label }) => (
               <li key={to}>
-                <NavLink to={to} className="text-sm font-medium px-4 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
-                  {l}
+                <NavLink 
+                  to={to} 
+                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                >
+                  {label}
                 </NavLink>
               </li>
             ))}
           </ul>
 
-          <div className="flex items-center gap-2 z-50">
-            <button onClick={toggleTheme} className="flex p-2.5 rounded-full border border-border/40 hover:bg-muted active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground items-center justify-center">
-              {isLightMode ? <MoonStarsFill className="w-3.5 h-3.5" /> : <SunFill className="w-3.5 h-3.5" />}
+          <div className="flex items-center gap-3 z-[101]">
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
+              aria-label="Toggle theme"
+            >
+              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button onClick={()=>navigate('/login')} className="hidden md:block glass text-foreground text-sm font-bold tracking-wide px-5 py-2.5 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
+            <button 
+              onClick={() => navigate('/login')} 
+              className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
+            >
               Get started
             </button>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-foreground">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="md:hidden p-2 text-foreground"
+              aria-label="Toggle menu"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                  {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
               </svg>
             </button>
           </div>
 
-          {/* Mobile Menu */}
-          <div className={`md:hidden fixed inset-0 bg-background z-[200] transition-all duration-500 ease-[var(--apple-ease)] ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
-            <div className="flex flex-col items-center justify-center h-full gap-12 px-6">
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="absolute top-6 right-6 p-2 text-foreground/40 hover:text-foreground transition-colors"
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-              {[{to:'/',l:'Home'},{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'}].map(({to,l})=>(
-                <NavLink key={to} to={to} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-black tracking-tight text-foreground hover:text-primary transition-colors">
-                  {l}
-                </NavLink>
-              ))}
-              <button onClick={()=>navigate('/login')} className="mt-4 glass text-foreground text-lg font-bold tracking-wide px-10 py-4 rounded-full shadow-lg hover:bg-foreground/10 active:scale-95 transition-all duration-300">
-                Get started
-              </button>
-            </div>
-          </div>
+                {navLinks.map(({ to, label }) => (
+                  <NavLink 
+                    key={to} 
+                    to={to} 
+                    onClick={() => setMobileMenuOpen(false)} 
+                    className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+                <button 
+                  onClick={() => navigate('/login')} 
+                  className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                >
+                  Get started
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </nav>
       </header>
 
       <main>
-        {/* ── Hero ──────────────────────────────────────────────── */}
-        <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center">
-          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto flex flex-col items-center">
-            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-xs font-bold tracking-[0.2em] uppercase mb-10 shadow-sm shadow-primary/5">
+        <section className="relative z-10 min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center">
+          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-5xl mx-auto flex flex-col items-center">
+            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-[10px] font-bold tracking-[0.2em] uppercase mb-10 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                Excusively for Gold traders
+              Exclusively for Gold traders
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <h1 className="text-[clamp(3rem,8vw,7.5rem)] font-black leading-[0.95] tracking-tighter mb-8 text-foreground drop-shadow-sm">
+              <h1 className="text-[clamp(3rem,10vw,8rem)] font-black leading-[0.9] tracking-tighter mb-10 text-foreground">
                 Trade with <br />
                 <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400">absolute clarity.</span>
               </h1>
             </motion.div>
 
-            <motion.p variants={itemVariants} className="text-[clamp(1.1rem,2vw,1.25rem)] text-muted-foreground leading-relaxed max-w-2xl mb-12 font-medium">
-              Automated MT5 sync, deep session analytics, and a beautiful journal. Everything a professional trader needs to find their edge.
+            <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
+              Automated MT5 sync, deep session analytics, and a beautiful journal. Built for professionals who treat trading like a business.
             </motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-4">
-              <button onClick={()=>navigate('/login')} className="glass text-foreground text-sm font-bold tracking-wide px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:bg-foreground/10 transition-all duration-300 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
+              <button 
+                onClick={() => navigate('/login')} 
+                className="w-full sm:w-auto px-10 py-5 rounded-full bg-foreground text-background font-bold text-base shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
+              >
                 Start journaling free
               </button>
-              <Link to="/pricing" className="glass group inline-flex items-center gap-2 text-muted-foreground text-sm font-semibold px-8 py-4 rounded-full hover:bg-foreground/5 hover:text-foreground transition-all duration-300">
+              <Link 
+                to="/pricing" 
+                className="w-full sm:w-auto px-10 py-5 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-base transition-all duration-300 flex items-center justify-center gap-2"
+              >
                 See pricing 
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </Link>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-8 md:gap-16 mt-24 border-t border-border/40 pt-12 w-full max-w-3xl">
-              {STATS.map((s, i) => (
-                <div key={s.label} className="text-center flex-1">
-                  <div className="text-2xl md:text-3xl font-black tracking-tight text-foreground mb-1">{s.value}</div>
-                  <div className="text-[0.65rem] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">{s.label}</div>
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 border-t border-border/40 pt-16 w-full max-w-4xl px-4">
+              {STATS.map((s) => (
+                <div key={s.label} className="text-center group">
+                  <div className="text-3xl md:text-4xl font-black tracking-tight text-foreground mb-2 group-hover:text-primary transition-colors">{s.value}</div>
+                  <div className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</div>
                 </div>
               ))}
             </motion.div>
           </motion.div>
         </section>
 
-
-        {/* ── Features ──────────────────────────────────────────── */}
-        <section id="features" className="relative z-10 py-32 px-6">
-          <div className="max-w-6xl mx-auto">
+        <section id="features" className="relative z-10 py-32 md:py-48 px-6">
+          <div className="max-w-7xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="max-w-2xl mb-20"
+              className="max-w-3xl mb-24 md:mb-32"
             >
-              <p className="text-primary text-sm font-bold tracking-[0.2em] uppercase mb-4">The Platform</p>
-              <h2 className="text-[clamp(2rem,5vw,4rem)] font-black leading-[1.05] tracking-tight mb-6">
+              <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 inline-block px-3 py-1 rounded-full bg-primary/10">The Platform</span>
+              <h2 className="text-[clamp(2.5rem,6vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-8">
                 Every tool you need.<br/>Nothing you don't.
               </h2>
-              <p className="text-lg text-muted-foreground font-medium leading-relaxed">
-                Designed from the ground up for serious traders. Experience the perfect balance of simplicity and power.
+              <p className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
+                Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {FEATURES.map((f, i) => (
                 <FeatureCard key={f.title} {...f} index={i} />
               ))}
@@ -298,23 +292,22 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ── How it works ──────────────────────────────────────── */}
-        <section className="relative z-10 py-32 px-6 bg-muted/20 border-y border-border/50">
-          <div className="max-w-6xl mx-auto">
+        <section className="relative z-10 py-32 md:py-48 px-6 bg-muted/5 border-y border-border/40 overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
+          <div className="max-w-7xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="text-center mb-24"
+              className="text-center mb-24 md:mb-32"
             >
-              <p className="text-primary text-sm font-bold tracking-[0.2em] uppercase mb-4">Workflow</p>
-              <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black leading-tight tracking-tight">Three steps to mastery</h2>
+              <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 inline-block px-3 py-1 rounded-full bg-primary/10">Workflow</span>
+              <h2 className="text-[clamp(2rem,6vw,4rem)] font-black leading-tight tracking-tight">Three steps to mastery</h2>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-              {/* Connecting line for desktop */}
-              <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16 relative">
+              <div className="hidden md:block absolute top-20 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5" />
               
               {STEPS.map((step, i) => (
                 <motion.div 
@@ -323,59 +316,47 @@ export function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.7, delay: i * 0.2 }}
-                  whileHover={{ y: -12, scale: 1.02 }}
-                  className="relative p-8 rounded-[2.5rem] bg-card border border-border/50 shadow-xl hover:shadow-[0_30px_60px_-15px_rgba(139,92,246,0.15)] hover:border-primary/40 transition-all duration-500 group cursor-pointer"
+                  className="relative p-10 rounded-[3rem] bg-card border border-border/40 shadow-2xl group hover:border-primary/40 transition-all duration-500"
                 >
-                  {/* Icon Badge */}
-                  <div className="absolute -top-6 left-8 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-to text-white flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-primary/40 transition-all duration-500">
+                  <div className="absolute -top-10 left-10 w-20 h-20 rounded-3xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500">
                     {step.icon}
                   </div>
                   
-                  {/* Subtle Background Number */}
-                  <div className="absolute top-8 right-8 text-7xl font-black text-foreground/[0.03] select-none group-hover:text-primary/[0.05] transition-colors duration-700">
+                  <div className="absolute top-10 right-10 text-8xl font-black text-foreground/[0.03] select-none group-hover:text-primary/[0.05] transition-colors duration-700">
                     {step.id}
                   </div>
 
-                  <div className="mt-8">
-                    <h3 className="text-2xl font-bold mb-4 tracking-tight group-hover:text-primary transition-colors duration-300">
-                      {step.title}
-                    </h3>
+                  <div className="mt-12">
+                    <h3 className="text-2xl font-bold mb-5 tracking-tight group-hover:text-primary transition-colors">{step.title}</h3>
                     <p className="text-muted-foreground leading-relaxed font-medium text-base">
                       {step.body}
                     </p>
                   </div>
-
-                  {/* Hover Glow Effect */}
-                  <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── Architecture Flow ─────────────────────────────────── */}
-        <section className="relative z-10 py-32 px-6">
-          <div className="max-w-4xl mx-auto">
+        <section className="relative z-10 py-32 md:py-48 px-6">
+          <div className="max-w-5xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="text-center mb-20"
+              className="text-center mb-24 md:mb-32"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest mb-4">
-                <Stars className="w-3 h-3" /> Pro Only
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest mb-6">
+                <Stars className="w-3 h-3" /> Architecture
               </div>
-              <h2 className="text-[clamp(2rem,5vw,3rem)] font-black leading-tight tracking-tight mb-4">The Data Pipeline</h2>
-              <p className="text-muted-foreground font-medium max-w-xl mx-auto">
-                An institutional-grade architecture built for absolute precision. From your first execution to the final analytics, every data point is handled with zero-latency automation.
+              <h2 className="text-[clamp(2rem,6vw,4rem)] font-black leading-tight tracking-tight mb-8">Built for Scale</h2>
+              <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
+                An institutional-grade pipeline ensures your data is always synced, secured, and ready for analysis.
               </p>
             </motion.div>
 
-            <div className="relative flex flex-col items-center gap-4">
-              {/* Vertical Path */}
-              <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gradient-to-b from-primary/5 via-primary/40 to-primary/5 hidden md:block" />
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
               {[
                 { label: 'Mobile Access', sub: 'Universal MT5 connectivity for traders on the move.', icon: <Phone className="w-5 h-5" /> },
                 { label: 'Broker Agnostic', sub: 'Seamlessly connects with any MT5 broker worldwide.', icon: <HddNetwork className="w-5 h-5" /> },
@@ -386,26 +367,18 @@ export function LandingPage() {
               ].map((step, i) => (
                 <motion.div
                   key={step.label}
-                  initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.1 }}
-                  className="relative z-10 flex flex-col md:flex-row items-center gap-6 w-full max-w-2xl group"
+                  className="flex items-center gap-6 bg-card/30 backdrop-blur-sm border border-border/40 p-8 rounded-[2.5rem] hover:bg-card/50 hover:border-primary/20 transition-all duration-300"
                 >
-                  {/* Node */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-card border border-border/50 flex items-center justify-center text-primary shadow-lg group-hover:scale-110 group-hover:border-primary/50 group-hover:shadow-primary/10 transition-all duration-500">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                     {step.icon}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 text-center md:text-left bg-card/40 backdrop-blur-sm border border-border/40 p-5 rounded-2xl group-hover:border-primary/20 group-hover:bg-card/60 transition-all duration-500">
-                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{step.label}</h3>
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">{step.sub}</p>
-                  </div>
-
-                  {/* Desktop Step Number */}
-                  <div className="absolute -left-12 top-1/2 -translate-y-1/2 text-2xl font-black text-foreground/5 hidden lg:block select-none group-hover:text-primary/10 transition-colors">
-                    {String(i + 1).padStart(2, '0')}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-1">{step.label}</h3>
+                    <p className="text-sm text-muted-foreground font-medium leading-tight">{step.sub}</p>
                   </div>
                 </motion.div>
               ))}
@@ -413,8 +386,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ── CTA ───────────────────────────────────────────────── */}
-        <section className="relative z-10 py-40 px-6 text-center overflow-hidden">
+        <section className="relative z-10 py-40 md:py-64 px-6 text-center overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
           
           <motion.div 
@@ -422,24 +394,27 @@ export function LandingPage() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-3xl mx-auto relative z-10"
+            className="max-w-4xl mx-auto relative z-10"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-bold tracking-[0.2em] uppercase mb-8">
-              Start today — it's free
-            </div>
-            <h2 className="text-[clamp(2.5rem,6vw,5rem)] font-black leading-[1] tracking-tighter mb-8 text-foreground">
+            <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-10 inline-block px-4 py-2 rounded-full bg-primary/10">Start for free</span>
+            <h2 className="text-[clamp(3rem,8vw,6rem)] font-black leading-[1] tracking-tighter mb-10 text-foreground">
               Stop guessing.<br />
               <span className="text-gradient">Start knowing.</span>
             </h2>
-            <p className="text-xl text-muted-foreground mb-12 font-medium max-w-xl mx-auto">
-              Join the new standard of trading journals. Upgrade to Pro when you're ready for the full suite.
+            <p className="text-xl md:text-2xl text-muted-foreground mb-16 font-medium max-w-2xl mx-auto leading-relaxed">
+              Join thousands of traders who have standardized their journaling with xaujournal.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button onClick={()=>navigate('/login')} className="glass w-full sm:w-auto text-foreground text-base font-bold tracking-wide px-10 py-4 rounded-full shadow-xl hover:bg-foreground/10 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <button 
+                onClick={() => navigate('/login')} 
+                className="w-full sm:w-auto px-12 py-6 rounded-full bg-foreground text-background font-bold text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
+              >
                 Create free account
               </button>
-              <Link to="/pricing" className="glass w-full sm:w-auto text-muted-foreground text-base font-semibold px-10 py-4 rounded-full hover:bg-foreground/5 hover:text-foreground transition-all duration-300">
+              <Link 
+                to="/pricing" 
+                className="w-full sm:w-auto px-12 py-6 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-lg transition-all duration-300"
+              >
                 View pricing
               </Link>
             </div>
@@ -447,58 +422,98 @@ export function LandingPage() {
         </section>
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-border/50 py-12 px-6 bg-muted/10">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col items-center md:items-start gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tighter">xaujournal</span>
+      <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 md:gap-10">
+            <div className="lg:col-span-1">
+              <span className="text-2xl font-bold tracking-tighter mb-6 block">xaujournal</span>
+              <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs">
+                Empowering professional gold traders with institutional-grade data and beautiful analytics.
+              </p>
             </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/20">
-              © {new Date().getFullYear()} All Rights Reserved
-            </p>
-          </div>
-          
-          <div className="flex flex-col items-center md:items-end gap-3 text-[9px] font-black uppercase tracking-[0.2em]">
-            <div className="flex items-center gap-3 text-muted-foreground/60">
-              <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</NavLink>
+            
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Platform</h4>
+              <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
+                <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
+                <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+                <li><Link to="/login" className="hover:text-primary transition-colors">Login</Link></li>
+              </ul>
             </div>
-            <p className="flex gap-2">
-              <span className="text-foreground/30">Curated by</span>
-              <span className="text-green-500 cursor-help hover:scale-105 transition-all duration-300">
-                Gaveen.
-              </span>
-            </p>
+
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Legal</h4>
+              <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
+                <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li><Link to="/refund-policy" className="hover:text-primary transition-colors">Refund Policy</Link></li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col items-start lg:items-end">
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Social</h4>
+              <div className="flex gap-6 mb-8">
+                 <motion.a 
+                   href="#" 
+                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }} 
+                   className="text-muted-foreground transition-colors"
+                 >
+                   <Twitter size={22}/>
+                 </motion.a>
+                 <motion.a 
+                   href="#" 
+                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }} 
+                   className="text-muted-foreground transition-colors"
+                 >
+                   <Discord size={22}/>
+                 </motion.a>
+              </div>
+              <div className="mt-auto flex flex-col items-start lg:items-end gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-left lg:text-right">
+                  © {new Date().getFullYear()} xaujournal. Built with precision.
+                </p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-rgb">
+                  Crafted by GP WALKER
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
-      {/* Scroll to Top */}
+
       <button 
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-        className={`fixed bottom-8 right-8 z-[90] p-3 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary shadow-lg shadow-primary/10 transition-all duration-500 hover:-translate-y-1 hover:bg-primary/30 ${showScroll ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}
+        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-white/40 text-primary shadow-xl transition-all duration-300 hover:-translate-y-2 active:scale-90 ${
+          isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        }`}
+        aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
       </button>
     </div>
   );
 }
 
-/* ─── Feature card ───────────────────────────────────────────────── */
 function FeatureCard({ icon, title, body, index }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -10, scale: 1.02 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      whileHover={{ y: -5 }}
-      className="p-8 rounded-[2rem] bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:border-primary/30 transition-all duration-300 group shadow-sm hover:shadow-xl hover:shadow-primary/5"
+      transition={{ 
+        type: "spring",
+        stiffness: 400,
+        damping: 25,
+        delay: index * 0.05 
+      }}
+      className="p-10 rounded-[3rem] bg-card/60 backdrop-blur-md border border-white/20 hover:border-white/60 hover:bg-primary transition-all duration-300 ease-out group shadow-sm hover:shadow-[0_20px_50px_-15px_rgba(139,92,246,0.5)] h-full flex flex-col cursor-default"
     >
-      <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-inner">
+      <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 flex items-center justify-center text-primary mb-8 group-hover:scale-110 group-hover:bg-white group-hover:text-primary transition-all duration-300 shadow-inner">
         {icon}
       </div>
-      <h3 className="text-xl font-bold mb-3 tracking-tight group-hover:text-primary transition-colors">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed font-medium">{body}</p>
+      <h3 className="text-2xl font-bold mb-4 tracking-tight group-hover:text-white transition-colors duration-300">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed font-medium text-base group-hover:text-white/90 transition-colors duration-300">{body}</p>
     </motion.div>
   );
 }

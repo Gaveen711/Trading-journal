@@ -268,6 +268,7 @@ export function LogTradePage() {
               <div className="flex gap-2 items-center animate-in slide-in-from-right-2 duration-300">
                 <input 
                   type="number"
+                  inputMode="decimal"
                   value={tempBalance}
                   onChange={e => setTempBalance(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSaveBalance()}
@@ -304,6 +305,7 @@ export function LogTradePage() {
                 <div className="flex gap-2 items-center w-full animate-in slide-in-from-right-2">
                   <input 
                     type="number"
+                    inputMode="decimal"
                     value={tempGoal}
                     onChange={e => setTempGoal(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
@@ -456,30 +458,30 @@ export function LogTradePage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Entry Price</label>
-                  <input type="number" name="entry" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="entry" inputMode="decimal" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Exit Price</label>
-                  <input type="number" name="exit" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="exit" inputMode="decimal" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Lot Size</label>
-                  <input type="number" name="lots" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.10" />
+                  <input type="number" name="lots" inputMode="decimal" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.10" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Stop Loss</label>
-                  <input type="number" name="sl" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="sl" inputMode="decimal" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Take Profit</label>
-                  <input type="number" name="tp" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="tp" inputMode="decimal" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Swap / Fees ($)</label>
-                  <input type="number" name="swap" step="0.01" value={swap} onChange={e => setSwap(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <input type="number" name="swap" inputMode="decimal" step="0.01" value={swap} onChange={e => setSwap(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
                 </div>
 
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Lenis from 'lenis';
@@ -109,66 +109,46 @@ If you have a dispute or complaint, please contact us first at support@xaujourna
 
 export function TermsOfServicePage() {
   const navigate = useNavigate();
-  const navRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showScroll, setShowScroll] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
 
+  // Consolidated scroll and lifecycle logic
   useEffect(() => {
-    const onScroll = () => setShowScroll(window.scrollY > 300);
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      document.body.style.overflow = 'unset';
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
     };
-  }, [mobileMenuOpen]);
 
-  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Smooth scrolling initialization
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      direction: 'vertical',
-      gestureDirection: 'vertical',
       smooth: true,
-      mouseMultiplier: 1,
-      smoothTouch: false,
-      touchMultiplier: 2,
-      infinite: false,
     });
 
     function raf(time) {
       lenis.raf(time);
       requestAnimationFrame(raf);
     }
-
     requestAnimationFrame(raf);
+
+    // Lock body scroll when mobile menu is open
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
     window.scrollTo(0, 0);
 
-    return () => lenis.destroy();
-  }, []);
-
-  useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    const onScroll = () => {
-      if (window.scrollY > 10) {
-        nav.classList.add('bg-background', 'border-b', 'border-border/50', 'shadow-xl');
-        nav.classList.remove('bg-transparent', 'border-transparent');
-      } else {
-        nav.classList.remove('bg-background', 'border-b', 'border-border/50', 'shadow-xl');
-        nav.classList.add('bg-transparent', 'border-transparent');
-      }
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      lenis.destroy();
+      document.body.style.overflow = '';
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [mobileMenuOpen]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -176,122 +156,164 @@ export function TermsOfServicePage() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
-  return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans">
+  const navLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/pricing', label: 'Pricing' },
+    { to: '/contact', label: 'Contact' }
+  ];
 
-      {/* ── Ambient blobs ─────────────────────────────────────── */}
+  return (
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">
+      {/* Ambient backgrounds */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[100px] opacity-60 mix-blend-screen" />
+        <div className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[120px] opacity-60 mix-blend-screen" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary/3 blur-[100px] opacity-40 mix-blend-screen" />
       </div>
 
-      {/* ── Nav ───────────────────────────────────────────────── */}
+      {/* Navigation */}
       <header>
-        <nav ref={navRef} className="fixed top-0 left-0 right-0 z-[100] h-16 flex items-center justify-between px-6 transition-all duration-500 ease-out border-b border-transparent bg-transparent">
-          <button onClick={() => { navigate('/'); window.scrollTo(0,0); }} aria-label="Go home" className="flex items-center gap-2 hover:opacity-80 transition-opacity z-50">
-            <span className="text-lg font-bold tracking-tighter">xaujournal</span>
+        <nav 
+          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
+            isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
+          }`}
+        >
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
+            <span className="text-xl font-bold tracking-tighter">xaujournal</span>
           </button>
 
-          <ul className="hidden md:flex items-center gap-1">
-            {[{to:'/',l:'Home'},{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'}].map(({to,l})=>(
+          <ul className="hidden md:flex items-center gap-2">
+            {navLinks.map(({ to, label }) => (
               <li key={to}>
-                <NavLink to={to} className="text-sm font-medium px-4 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
-                  {l}
+                <NavLink 
+                  to={to} 
+                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                >
+                  {label}
                 </NavLink>
               </li>
             ))}
           </ul>
 
-          <div className="flex items-center gap-2 z-50">
-            <button onClick={toggleTheme} className="flex p-2.5 rounded-full border border-border/40 hover:bg-muted active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground items-center justify-center">
-              {isLightMode ? <MoonStarsFill className="w-3.5 h-3.5" /> : <SunFill className="w-3.5 h-3.5" />}
+          <div className="flex items-center gap-3 z-[101]">
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
+              aria-label="Toggle theme"
+            >
+              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button onClick={()=>navigate('/login')} className="hidden md:block glass text-foreground text-sm font-bold tracking-wide px-5 py-2.5 rounded-full shadow-lg hover:bg-foreground/10 hover:-translate-y-0.5 transition-all duration-300">
+            <button 
+              onClick={() => navigate('/login')} 
+              className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
+            >
               Get started
             </button>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-foreground">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="md:hidden p-2 text-foreground"
+              aria-label="Toggle menu"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                  {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
               </svg>
             </button>
           </div>
 
-          {/* Mobile Menu */}
-          <div className={`md:hidden fixed inset-0 bg-background z-[200] transition-all duration-500 ease-[var(--apple-ease)] ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
-            <div className="flex flex-col items-center justify-center h-full gap-12 px-6">
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="absolute top-6 right-6 p-2 text-foreground/40 hover:text-foreground transition-colors"
+          {/* Mobile Menu Overlay */}
+          <motion.div 
+            initial={false}
+            animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
+            className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+          >
+            {navLinks.map(({ to, label }) => (
+              <NavLink 
+                key={to} 
+                to={to} 
+                onClick={() => setMobileMenuOpen(false)} 
+                className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-              {[{to:'/',l:'Home'},{to:'/pricing',l:'Pricing'},{to:'/contact',l:'Contact'}].map(({to,l})=>(
-                <NavLink key={to} to={to} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-black tracking-tight text-foreground hover:text-primary transition-colors">
-                  {l}
-                </NavLink>
-              ))}
-              <button onClick={()=>navigate('/login')} className="mt-4 glass text-foreground text-lg font-bold tracking-wide px-10 py-4 rounded-full shadow-lg hover:bg-foreground/10 active:scale-95 transition-all duration-300">
-                Get started
-              </button>
-            </div>
-          </div>
+                {label}
+              </NavLink>
+            ))}
+            <button 
+              onClick={() => navigate('/login')} 
+              className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
+            >
+              Get started
+            </button>
+          </motion.div>
         </nav>
       </header>
 
-      <main className="relative z-10 px-6 pt-32 pb-32">
-        {/* Hero */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="text-center max-w-2xl mx-auto mb-20">
-          <motion.p variants={itemVariants} className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-4">Legal</motion.p>
-          <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,6vw,4rem)] font-black leading-[1.05] tracking-tight mb-6">
-            Terms of Service
+      <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
+        {/* Hero Section */}
+        <motion.div 
+          variants={containerVariants} 
+          initial="hidden" 
+          animate="visible" 
+          className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
+        >
+          <motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
+            Legal & Privacy
+          </motion.span>
+          <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
+            Terms of <span className="text-primary">Service</span>
           </motion.h1>
-          <motion.p variants={itemVariants} className="text-lg text-muted-foreground font-medium leading-relaxed mb-2">
-            Simple, honest terms for a simple, honest product.
-          </motion.p>
-          <motion.p variants={itemVariants} className="text-sm text-muted-foreground/70 font-medium">
-            Effective date: April 26, 2026 · Last updated: April 26, 2026
+          <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+            Our commitment to transparency and fairness in providing the best trading journal experience.
           </motion.p>
         </motion.div>
 
-        {/* Two-column layout: TOC + content */}
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-12 lg:gap-20 items-start">
-
-          {/* Table of contents — sticky sidebar */}
-          <nav aria-label="Table of contents" className="hidden lg:block sticky top-28">
-            <p className="text-primary text-xs font-bold tracking-[0.15em] uppercase mb-6">Contents</p>
-            <ul className="flex flex-col gap-3">
-              {SECTIONS.map((s, i) => (
-                <motion.li key={s.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + (i*0.05) }}>
-                  <a href={`#${s.id}`} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors block leading-snug">
-                    {s.title.replace(/^\d+\.\s/, '')}
-                  </a>
-                </motion.li>
+        {/* Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
+          
+          {/* Sticky Table of Contents */}
+          <aside className="hidden lg:block sticky top-32">
+            <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-8">Table of Contents</h3>
+            <nav className="flex flex-col gap-4">
+              {SECTIONS.map((s) => (
+                <a 
+                  key={s.id} 
+                  href={`#${s.id}`} 
+                  className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors hover:translate-x-1 duration-200"
+                >
+                  {s.title.split('. ')[1]}
+                </a>
               ))}
-            </ul>
-          </nav>
+            </nav>
+          </aside>
 
-          {/* Terms content */}
-          <motion.article initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }}>
-            <div className="p-6 rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur-sm mb-12 shadow-inner">
-              <p className="text-sm md:text-base leading-relaxed font-medium text-foreground">
-                <strong className="text-primary mr-2 font-bold">Summary:</strong>
+          {/* Main Content */}
+          <motion.article 
+            initial={{ opacity: 0, y: 40 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="prose prose-slate dark:prose-invert max-w-none"
+          >
+            <div className="p-8 rounded-3xl border border-primary/20 bg-primary/5 backdrop-blur-sm mb-20 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
+                <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">TL;DR:</strong>
                 Use xaujournal responsibly. Your data is yours. We don't give financial advice. Pro subscriptions auto-renew and can be cancelled anytime.
               </p>
             </div>
 
-            <div className="flex flex-col gap-16">
-              {SECTIONS.map(s => (
-                <section key={s.id} id={s.id} className="scroll-mt-28">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-1 h-8 bg-gradient-to-b from-primary to-primary-to rounded-full shrink-0 shadow-sm shadow-primary/30" />
-                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">{s.title}</h2>
+            <div className="space-y-24 md:space-y-32">
+              {SECTIONS.map((s) => (
+                <section key={s.id} id={s.id} className="scroll-mt-32 group">
+                  <div className="flex items-center gap-5 mb-8">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-2xl bg-primary/10 text-primary text-sm font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-500">
+                      {s.title.split('.')[0]}
+                    </span>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{s.title.split('. ')[1]}</h2>
                   </div>
-                  <div className="pl-5 md:pl-8">
+                  <div className="pl-2 md:pl-15 space-y-6">
                     {s.content.split('\n\n').map((block, i) => (
-                      <p key={i} className="text-base text-muted-foreground leading-relaxed font-medium mb-4 whitespace-pre-line">
+                      <p key={i} className="text-base md:text-lg text-muted-foreground/90 leading-relaxed whitespace-pre-line font-medium">
                         {block}
                       </p>
                     ))}
@@ -303,32 +325,43 @@ export function TermsOfServicePage() {
         </div>
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-border/50 py-12 px-6 bg-muted/10">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tighter">xaujournal</span>
-          </div>
-
-          <div className="flex flex-col items-center md:items-end gap-2 text-xs font-medium text-muted-foreground/60">
-            <div className="flex items-center gap-3">
-              <span>© {new Date().getFullYear()} xaujournal</span>
-              <span className="w-1 h-1 rounded-full bg-border/40" />
-              <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</NavLink>
-              <span className="w-1 h-1 rounded-full bg-border/40" />
-              <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms of Service</NavLink>
+      {/* Footer */}
+      <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-10">
+            <div className="flex flex-col items-center md:items-start gap-4">
+              <span className="text-2xl font-bold tracking-tighter">xaujournal</span>
+              <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left">
+                Empowering gold traders with institutional-grade analytics and journaling.
+              </p>
             </div>
-            <span>Crafted with precision</span>
+            
+            <div className="flex flex-col items-center md:items-end gap-6">
+              <div className="flex items-center gap-8 text-sm font-semibold">
+                <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
+                <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+                <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
+              </div>
+              <p className="text-xs text-muted-foreground/60 font-medium text-center md:text-right">
+                © {new Date().getFullYear()} xaujournal. Built for precision.
+              </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-rgb mt-2">
+                Crafted by GP WALKER
+              </p>
+            </div>
           </div>
         </div>
       </footer>
 
-      {/* Scroll to Top */}
+      {/* Scroll to Top Button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`fixed bottom-8 right-8 z-[90] p-3 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary shadow-lg shadow-primary/10 transition-all duration-500 hover:-translate-y-1 hover:bg-primary/30 ${showScroll ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}
+        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
+          isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        }`}
+        aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
       </button>
     </div>
   );
