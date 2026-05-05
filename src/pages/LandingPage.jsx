@@ -470,7 +470,7 @@ export function LandingPage() {
               </div>
               <div className="mt-auto flex flex-col items-start lg:items-end gap-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 text-left lg:text-right">
-                  © {new Date().getFullYear()} <span className="animate-rgb">-xaujournal-</span>
+                  © {new Date().getFullYear()} <span className="animate-rgb">xaujournal</span>
                 </p>
               </div>
             </div>
