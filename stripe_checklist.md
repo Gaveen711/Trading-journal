@@ -3,13 +3,13 @@
 Due to webhooks and asynchronous state changes, the Stripe checkout flow is vulnerable to silent failures. Run through this checklist before any major release or pricing change.
 
 ## 1. Pre-Checkout State
-- [ ] **UI Alignment:** Verify the Pricing Page shows $29.99/mo and $199/yr.
+- [ ] **UI Alignment:** Verify the Pricing Page shows $19.99/mo and $139/yr.
 - [ ] **Modal Trigger:** Click "Upgrade to Pro" from the dashboard. Ensure the `PricingModal` appears correctly.
 - [ ] **Plan Selection:** Click the upgrade button inside the modal and confirm it redirects to the Stripe Checkout page.
 
 ## 2. Stripe Checkout Page
 - [ ] **Product Matching:** Verify the product name shown on the Stripe checkout matches "Pro Subscription".
-- [ ] **Price Matching:** Verify the amount matches the selected plan ($29.99 or $199.00).
+- [ ] **Price Matching:** Verify the amount matches the selected plan ($19.99 or $139.00).
 - [ ] **Email Pre-fill:** Ensure the user's email address is automatically pre-filled in the checkout form (passed via `customer_email`).
 
 ## 3. Successful Payment & Redirect
