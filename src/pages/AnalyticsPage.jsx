@@ -24,7 +24,7 @@ const AnalyticsSkeleton = () => (
 );
 
 export function AnalyticsPage() {
-  const { trades, isLoadingTrades, startingBalance } = useOutletContext();
+  const { trades, isLoadingTrades, walletBalance } = useOutletContext();
   
   if (isLoadingTrades) return (
     <div className="space-y-8">
@@ -47,7 +47,7 @@ export function AnalyticsPage() {
   const rrTrades = trades.filter(t => t.rr);
   const avgRR = rrTrades.length ? rrTrades.reduce((s, t) => s + t.rr, 0) / rrTrades.length : null;
 
-  let peak = startingBalance || 0, maxDD = 0, running = startingBalance || 0;
+  let peak = walletBalance || 0, maxDD = 0, running = walletBalance || 0;
   const sortedTrades = [...trades].sort((a, b) => a.date.localeCompare(b.date));
   const drawdownCurve = [0];
   const drawdownLabels = ['Start'];
@@ -135,7 +135,7 @@ export function AnalyticsPage() {
   };
 
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
-  const currentWalletBalance = (startingBalance || 0) + totalPnl;
+  const currentWalletBalance = (walletBalance || 0) + totalPnl;
   const winRatePercent = trades.length ? (wins.length / trades.length * 100).toFixed(0) : 0;
 
   const monthMap = {};

@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { storage } from '../lib/tradeUtils';
 
 export function useWallet(user) {
-  const [startingBalance, setStartingBalance] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [monthlyGoal, setMonthlyGoal] = useState(1000); // Default $1000 goal
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,29 +20,20 @@ export function useWallet(user) {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         
-        let cloudStartingBalance = undefined;
+        let cloudWalletBalance = undefined;
         let cloudMonthlyGoal = undefined;
 
         if (userSnap.exists()) {
           const data = userSnap.data();
-          cloudStartingBalance = data.startingBalance;
+          cloudWalletBalance = data.walletBalance;
           cloudMonthlyGoal = data.monthlyGoal;
         }
 
-        // 2. Migration & Initialization Check
-        if (cloudStartingBalance === undefined) {
-          const localBal = await storage.get('xau-starting-balance');
-          const bal = localBal !== null ? (parseFloat(localBal) || 0) : 0;
-          
-          // Save to cloud immediately to fix the orphaned local state
-          await updateDoc(userRef, { startingBalance: bal }, { merge: true });
-          setStartingBalance(bal);
-          
-          if (localBal !== null) {
-            await storage.remove('xau-starting-balance');
-          }
+        if (cloudWalletBalance !== undefined) {
+          setWalletBalance(cloudWalletBalance);
         } else {
-          setStartingBalance(cloudStartingBalance);
+          await updateDoc(userRef, { walletBalance: 0 }, { merge: true });
+          setWalletBalance(0);
         }
 
         if (cloudMonthlyGoal !== undefined) {
@@ -63,19 +54,19 @@ export function useWallet(user) {
   }, [user]);
 
   const updateBalance = async (newBalance) => {
-    setStartingBalance(newBalance);
+    setWalletBalance(newBalance);
     if (user) {
       await updateDoc(doc(db, "users", user.uid), {
-        startingBalance: newBalance
+        walletBalance: newBalance
       });
     }
   };
 
   const resetWallet = async () => {
-    setStartingBalance(0);
+    setWalletBalance(0);
     if (user) {
       await updateDoc(doc(db, "users", user.uid), {
-        startingBalance: 0
+        walletBalance: 0
       });
     }
   };
@@ -89,5 +80,5 @@ export function useWallet(user) {
     }
   };
 
-  return { startingBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, isLoading };
+  return { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, isLoading };
 }
