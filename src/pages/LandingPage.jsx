@@ -3,11 +3,11 @@ import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { 
-  MoonStarsFill, 
-  SunFill, 
-  CloudArrowDownFill, 
-  LightningChargeFill, 
+import {
+  MoonStarsFill,
+  SunFill,
+  CloudArrowDownFill,
+  LightningChargeFill,
   BarChartLineFill,
   Stars,
   Phone,
@@ -23,62 +23,62 @@ import {
 /* ─── Data ───────────────────────────────────────────────────────── */
 const FEATURES = [
   {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>,
     title: 'Instant MT5 Sync',
     body: 'Our Expert Advisor watches your terminal and pushes every closed position to the cloud the moment it happens. Zero manual entry, absolute precision.',
   },
   {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>,
     title: 'Deep Analytics',
     body: 'Win-rate by session, drawdown clusters, streak analysis, and behavioural heatmaps, every metric purpose-built for clarity.',
   },
   {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
     title: 'Trade Calendar',
     body: 'A month-view calendar shows your P&L heat at a glance. Identify your best and worst days in a single look.',
   },
   {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>,
     title: 'Trade Journal',
     body: 'Attach thoughts, emotions, and notes to each trade. Build an annotated playbook straight from your own history.',
   },
   {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
     title: 'Bank-Grade Security',
     body: 'Strict isolated storage protocols mean your data is yours alone. Nobody including us can access your private trade history.',
   },
   {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
     title: 'Session Intelligence',
     body: 'London, New York, Tokyo — see exactly which session your edge lives in and schedule your trading around it.',
   },
 ];
 
 const STEPS = [
-  { 
+  {
     id: '01',
-    icon: <CloudArrowDownFill className="w-6 h-6" />, 
-    title: 'Install the EA', 
-    body: 'Drop our MQL5 Expert Advisor onto any chart in MT5. It runs silently and requires no manual action.' 
+    icon: <CloudArrowDownFill className="w-6 h-6" />,
+    title: 'Install the EA',
+    body: 'Drop our MQL5 Expert Advisor onto any chart in MT5. It runs silently and requires no manual action.'
   },
-  { 
+  {
     id: '02',
-    icon: <LightningChargeFill className="w-6 h-6" />, 
-    title: 'Trade normally', 
-    body: 'The moment you close a position, the EA captures price, lot, P&L, and duration — and syncs everything instantly.' 
+    icon: <LightningChargeFill className="w-6 h-6" />,
+    title: 'Trade normally',
+    body: 'The moment you close a position, the EA captures price, lot, P&L, and duration — and syncs everything instantly.'
   },
-  { 
+  {
     id: '03',
-    icon: <BarChartLineFill className="w-6 h-6" />, 
-    title: 'Find your edge', 
-    body: 'Review analytics, annotate trades, and study your calendar. Turn raw executions into actionable intelligence.' 
+    icon: <BarChartLineFill className="w-6 h-6" />,
+    title: 'Find your edge',
+    body: 'Review analytics, annotate trades, and study your calendar. Turn raw executions into actionable intelligence.'
   },
 ];
 
 const STATS = [
   { value: 'Precision', label: 'Built specifically for traders' },
-  { value: '1s',   label: 'MT5 sync latency' },
-  { value: '100%',   label: 'Your data, your control' },
+  { value: '1s', label: 'MT5 sync latency' },
+  { value: '100%', label: 'Your data, your control' },
 ];
 
 export function LandingPage() {
@@ -93,7 +93,7 @@ export function LandingPage() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -143,73 +143,76 @@ export function LandingPage() {
       </div>
 
       <header>
-        <nav 
-          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
-            isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
-          }`}
+        <nav
+          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
+            }`}
         >
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
             <span className="text-xl font-bold tracking-tighter">xaujournal</span>
           </button>
 
-          <ul className="hidden md:flex items-center gap-2">
+          <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
             {navLinks.map(({ to, label }) => (
-              <li key={to}>
-                <NavLink 
-                  to={to} 
-                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+              <motion.li 
+                key={to}
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <NavLink
+                  to={to}
+                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
                 >
                   {label}
                 </NavLink>
-              </li>
+              </motion.li>
             ))}
           </ul>
 
           <div className="flex items-center gap-3 z-[101]">
-            <button 
-              onClick={toggleTheme} 
+            <button
+              onClick={toggleTheme}
               className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
               aria-label="Toggle theme"
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
             >
               Get started
             </button>
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
+                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
             </button>
           </div>
 
           <AnimatePresence>
             {mobileMenuOpen && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
               >
                 {navLinks.map(({ to, label }) => (
-                  <NavLink 
-                    key={to} 
-                    to={to} 
-                    onClick={() => setMobileMenuOpen(false)} 
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={() => setMobileMenuOpen(false)}
                     className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
                   >
                     {label}
                   </NavLink>
                 ))}
-                <button 
-                  onClick={() => navigate('/login')} 
+                <button
+                  onClick={() => navigate('/login')}
                   className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
                 >
                   Get started
@@ -223,8 +226,12 @@ export function LandingPage() {
       <main>
         <section className="relative z-10 min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center">
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-5xl mx-auto flex flex-col items-center">
-            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-[10px] font-bold tracking-[0.2em] uppercase mb-10 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <motion.div
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-black uppercase mb-10 shadow-[0_0_25px_rgba(139,92,246,0.4)] backdrop-blur-md relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
               Exclusively for Gold traders
             </motion.div>
 
@@ -240,18 +247,18 @@ export function LandingPage() {
             </motion.p>
 
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
-              <button 
-                onClick={() => navigate('/login')} 
+              <button
+                onClick={() => navigate('/login')}
                 className="w-full sm:w-auto px-10 py-5 rounded-full bg-foreground text-background font-bold text-base shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
               >
                 Start journaling free
               </button>
-              <Link 
-                to="/pricing" 
+              <Link
+                to="/pricing"
                 className="w-full sm:w-auto px-10 py-5 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-base transition-all duration-300 flex items-center justify-center gap-2"
               >
-                See pricing 
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                See pricing
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </Link>
             </motion.div>
 
@@ -268,7 +275,7 @@ export function LandingPage() {
 
         <section id="features" className="relative z-10 py-32 md:py-48 px-6">
           <div className="max-w-7xl mx-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -277,7 +284,7 @@ export function LandingPage() {
             >
               <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 inline-block px-3 py-1 rounded-full bg-primary/10">The Platform</span>
               <h2 className="text-[clamp(2.5rem,6vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-8">
-                Every tool you need.<br/>Nothing you don't.
+                Every tool you need.<br />Nothing you don't.
               </h2>
               <p className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
                 Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
@@ -295,7 +302,7 @@ export function LandingPage() {
         <section className="relative z-10 py-32 md:py-48 px-6 bg-muted/5 border-y border-border/40 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
           <div className="max-w-7xl mx-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -308,9 +315,9 @@ export function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16 relative">
               <div className="hidden md:block absolute top-20 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5" />
-              
+
               {STEPS.map((step, i) => (
-                <motion.div 
+                <motion.div
                   key={step.id}
                   initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -321,7 +328,7 @@ export function LandingPage() {
                   <div className="absolute -top-10 left-10 w-20 h-20 rounded-3xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500">
                     {step.icon}
                   </div>
-                  
+
                   <div className="absolute top-10 right-10 text-8xl font-black text-foreground/[0.03] select-none group-hover:text-primary/[0.05] transition-colors duration-700">
                     {step.id}
                   </div>
@@ -340,7 +347,7 @@ export function LandingPage() {
 
         <section className="relative z-10 py-32 md:py-48 px-6">
           <div className="max-w-5xl mx-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -371,13 +378,13 @@ export function LandingPage() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.1 }}
-                  className="flex items-center gap-6 bg-card/30 backdrop-blur-sm border border-border/40 p-8 rounded-[2.5rem] hover:bg-card/50 hover:border-primary/20 transition-all duration-300"
+                  className="flex items-center gap-6 bg-card/30 backdrop-blur-md border border-border/40 p-8 rounded-[2.5rem] hover:bg-card/60 hover:border-primary/60 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500 group cursor-default"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                     {step.icon}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-foreground mb-1">{step.label}</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{step.label}</h3>
                     <p className="text-sm text-muted-foreground font-medium leading-tight">{step.sub}</p>
                   </div>
                 </motion.div>
@@ -388,8 +395,8 @@ export function LandingPage() {
 
         <section className="relative z-10 py-40 md:py-64 px-6 text-center overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -405,14 +412,14 @@ export function LandingPage() {
               Join thousands of traders who have standardized their journaling with xaujournal.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <button 
-                onClick={() => navigate('/login')} 
+              <button
+                onClick={() => navigate('/login')}
                 className="w-full sm:w-auto px-12 py-6 rounded-full bg-foreground text-background font-bold text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
               >
                 Create free account
               </button>
-              <Link 
-                to="/pricing" 
+              <Link
+                to="/pricing"
                 className="w-full sm:w-auto px-12 py-6 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-lg transition-all duration-300"
               >
                 View pricing
@@ -425,14 +432,14 @@ export function LandingPage() {
       <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 md:gap-10">
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
               <span className="text-2xl font-bold tracking-tighter mb-6 block">xaujournal</span>
               <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs">
                 Empowering professional gold traders with institutional-grade data and beautiful analytics.
               </p>
             </div>
-            
-            <div>
+
+            <div className="text-center md:text-left">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Platform</h4>
               <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
                 <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
@@ -441,7 +448,7 @@ export function LandingPage() {
               </ul>
             </div>
 
-            <div>
+            <div className="text-center md:text-left">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Legal</h4>
               <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
                 <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
@@ -450,26 +457,26 @@ export function LandingPage() {
               </ul>
             </div>
 
-            <div className="flex flex-col items-start lg:items-end">
+            <div className="flex flex-col items-center md:items-end text-center md:text-right">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Social</h4>
               <div className="flex gap-6 mb-8">
-                 <motion.a 
-                   href="#" 
-                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }} 
-                   className="text-muted-foreground transition-colors"
-                 >
-                   <Twitter size={22}/>
-                 </motion.a>
-                 <motion.a 
-                   href="#" 
-                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }} 
-                   className="text-muted-foreground transition-colors"
-                 >
-                   <Discord size={22}/>
-                 </motion.a>
+                <motion.a
+                  href="#"
+                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                  className="text-muted-foreground transition-colors"
+                >
+                  <Twitter size={22} />
+                </motion.a>
+                <motion.a
+                  href="#"
+                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                  className="text-muted-foreground transition-colors"
+                >
+                  <Discord size={22} />
+                </motion.a>
               </div>
-              <div className="mt-auto flex flex-col items-start lg:items-end gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 text-left lg:text-right">
+              <div className="mt-auto flex flex-col items-center md:items-end gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60">
                   © {new Date().getFullYear()} <span className="animate-rgb">xaujournal</span>
                 </p>
               </div>
@@ -478,14 +485,13 @@ export function LandingPage() {
         </div>
       </footer>
 
-      <button 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-white/40 text-primary shadow-xl transition-all duration-300 hover:-translate-y-2 active:scale-90 ${
-          isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-white/40 text-primary shadow-xl transition-all duration-300 hover:-translate-y-2 active:scale-90 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+          }`}
         aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
       </button>
     </div>
   );
@@ -493,16 +499,16 @@ export function LandingPage() {
 
 function FeatureCard({ icon, title, body, index }) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       whileHover={{ y: -10, scale: 1.02 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ 
+      transition={{
         type: "spring",
         stiffness: 400,
         damping: 25,
-        delay: index * 0.05 
+        delay: index * 0.05
       }}
       className="p-10 rounded-[3rem] bg-card/60 backdrop-blur-md border border-white/20 hover:border-white/60 hover:bg-primary transition-all duration-300 ease-out group shadow-sm hover:shadow-[0_20px_50px_-15px_rgba(139,92,246,0.5)] h-full flex flex-col cursor-default"
     >

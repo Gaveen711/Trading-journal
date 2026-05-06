@@ -82,8 +82,8 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
     { id: 'calendar', name: 'Calendar', icon: Calendar3, iconSolid: Calendar3Fill },
     { id: 'analytics', name: 'Analytics', icon: BarChartLine, iconSolid: BarChartLineFill },
     { id: 'journal', name: 'Journal', icon: Book, iconSolid: BookFill },
-    { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill }
-  ];
+    (plan === 'pro' || plan === 'grace') && { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill }
+  ].filter(Boolean);
 
   const activeIndex = navigation.findIndex(item => 
     item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`)

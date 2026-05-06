@@ -129,16 +129,20 @@ export function PricingPage() {
             <span className="text-xl font-bold tracking-tighter">xaujournal</span>
           </button>
 
-          <ul className="hidden md:flex items-center gap-2">
+          <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
             {navLinks.map(({ to, label }) => (
-              <li key={to}>
+              <motion.li 
+                key={to}
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
                 <NavLink 
                   to={to} 
-                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
                 >
                   {label}
                 </NavLink>
-              </li>
+              </motion.li>
             ))}
           </ul>
 
@@ -204,9 +208,7 @@ export function PricingPage() {
           animate="visible" 
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
-          <motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
-            Simple Pricing
-          </motion.span>
+
           <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
             Trade better. <span className="text-primary">Stress less.</span>
           </motion.h1>
@@ -256,7 +258,7 @@ export function PricingPage() {
             whileInView={{ opacity: 1, y: 0 }} 
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="relative p-10 md:p-12 rounded-[3rem] border-2 border-white/30 bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-primary/20 transition-all duration-300 overflow-hidden"
+            className="relative p-10 md:p-12 rounded-[3rem] border-2 border-white/30 bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             
