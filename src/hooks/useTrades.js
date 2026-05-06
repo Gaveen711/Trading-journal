@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, increment, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, updateDoc, doc, query, orderBy } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '../firebase';
 
 export function useTrades(user) {
@@ -47,15 +48,10 @@ export function useTrades(user) {
   }, [user]);
 
   const addTrade = async (tradeData) => {
-    const collRef = collection(db, 'users', user.uid, 'trades');
-    const docRef  = await addDoc(collRef, tradeData);
-    // Persist the ID inside the document to prevent orphaned record risk
-    await updateDoc(docRef, { id: docRef.id });
-    
-    await updateDoc(doc(db, 'users', user.uid), {
-      totalTradesLogged: increment(1)
-    });
-    return docRef;
+    const functions = getFunctions();
+    const logTradeCallable = httpsCallable(functions, 'logTrade');
+    const result = await logTradeCallable(tradeData);
+    return { id: result.data.id };
   };
 
   const removeTrade = async (id) => {
