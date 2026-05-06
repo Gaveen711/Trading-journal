@@ -122,15 +122,23 @@
   }
 
   .btn-premium {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-primary {
-    @apply btn-premium bg-primary text-primary-foreground shadow shadow-primary/20 hover:bg-primary/90;
+    @apply btn-premium bg-primary text-primary-foreground shadow shadow-primary/20 hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply btn-premium bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    @apply btn-premium bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-[0_0_15px_rgba(139,92,246,0.15)] hover:-translate-y-0.5;
+  }
+
+  /* Global Button Hover Glow */
+  button:not(.btn-premium) {
+    @apply transition-all duration-300;
+  }
+  button:not(.btn-premium):hover {
+    @apply shadow-[0_0_15px_rgba(139,92,246,0.25)] -translate-y-0.5;
   }
 
   .input-premium {
@@ -195,6 +203,12 @@ h1, h2, h3, h4, h5, h6 {
   66%  { color: #0080ff; }
   83%  { color: #8000ff; }
   100% { color: #ff0000; }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .animate-rgb {

@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   const STRIPE_SECRET = process.env.STRIPE_SECRET;
-  if (!STRIPE_SECRET || STRIPE_SECRET.startsWith('sk_test_...')) {
+  if (!STRIPE_SECRET) {
     return res.status(500).json({ error: 'Configuration Error: STRIPE_SECRET is missing.' });
   }
 

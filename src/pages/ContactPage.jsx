@@ -19,7 +19,7 @@ export function ContactPage() {
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
-        
+
         const lenis = new Lenis({
             duration: 1.2,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -82,70 +82,73 @@ export function ContactPage() {
             </div>
 
             <header>
-                <nav 
-                    className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
-                        isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
-                    }`}
+                <nav
+                    className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
+                        }`}
                 >
                     <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
                         <span className="text-xl font-bold tracking-tighter">xaujournal</span>
                     </button>
 
-                    <ul className="hidden md:flex items-center gap-2">
+                    <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
                         {navLinks.map(({ to, label }) => (
-                            <li key={to}>
-                                <NavLink 
-                                    to={to} 
-                                    className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                            <motion.li 
+                                key={to}
+                                whileHover={{ scale: 1.05, y: -2 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                                <NavLink
+                                    to={to}
+                                    className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
                                 >
                                     {label}
                                 </NavLink>
-                            </li>
+                            </motion.li>
                         ))}
                     </ul>
 
                     <div className="flex items-center gap-3 z-[101]">
-                        <button 
-                            onClick={toggleTheme} 
+                        <button
+                            onClick={toggleTheme}
                             className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
                             aria-label="Toggle theme"
                         >
                             {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
                         </button>
-                        <button 
-                            onClick={() => navigate('/login')} 
+                        <button
+                            onClick={() => navigate('/login')}
                             className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
                         >
                             Get started
                         </button>
-                        <button 
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="md:hidden p-2 text-foreground"
                             aria-label="Toggle menu"
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
+                                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
                             </svg>
                         </button>
                     </div>
 
-                    <motion.div 
+                    <motion.div
                         initial={false}
                         animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
                         className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
                     >
                         {navLinks.map(({ to, label }) => (
-                            <NavLink 
-                                key={to} 
-                                to={to} 
-                                onClick={() => setMobileMenuOpen(false)} 
+                            <NavLink
+                                key={to}
+                                to={to}
+                                onClick={() => setMobileMenuOpen(false)}
                                 className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
                             >
                                 {label}
                             </NavLink>
                         ))}
-                        <button 
-                            onClick={() => navigate('/login')} 
+                        <button
+                            onClick={() => navigate('/login')}
                             className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
                         >
                             Get started
@@ -155,15 +158,13 @@ export function ContactPage() {
             </header>
 
             <main className="relative z-10 px-6 pt-32 pb-24 md:pt-40 md:pb-40 max-w-7xl mx-auto min-h-screen">
-                <motion.div 
-                    variants={containerVariants} 
-                    initial="hidden" 
-                    animate="visible" 
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
                     className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
                 >
-                    <motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
-                        Support & Feedback
-                    </motion.span>
+
                     <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
                         Get in <span className="text-primary">touch</span>
                     </motion.h1>
@@ -188,10 +189,10 @@ export function ContactPage() {
                                 { label: 'Feature requests', desc: 'We actively shape our roadmap based on real trader feedback.' },
                                 { label: 'Billing & account', desc: 'Need help with subscriptions, invoices, or account management?' },
                             ].map((item, i) => (
-                                <motion.div 
-                                    key={item.label} 
-                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 + (i*0.1) }}
-                                    className="p-8 rounded-3xl border border-border/40 bg-muted/5 backdrop-blur-sm group hover:bg-muted/10 transition-colors"
+                                <motion.div
+                                    key={item.label}
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 + (i * 0.1) }}
+                                    className="p-8 rounded-3xl border border-border/40 bg-muted/5 backdrop-blur-md group hover:bg-muted/10 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500"
                                 >
                                     <p className="text-base font-bold mb-2 group-hover:text-primary transition-colors">{item.label}</p>
                                     <p className="text-sm text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
@@ -202,7 +203,7 @@ export function ContactPage() {
 
                     <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }}>
                         {status === 'sent' ? (
-                            <motion.div 
+                            <motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 className="p-12 rounded-[2.5rem] border border-primary/20 bg-primary/5 backdrop-blur-md text-center shadow-2xl shadow-primary/5 h-full flex flex-col items-center justify-center"
@@ -214,7 +215,7 @@ export function ContactPage() {
                                 <p className="text-lg text-muted-foreground font-medium leading-relaxed max-w-sm">
                                     Thanks for reaching out. We'll get back to you at <span className="text-foreground font-bold">{form.email}</span> soon.
                                 </p>
-                                <button 
+                                <button
                                     onClick={() => setStatus('idle')}
                                     className="mt-10 text-sm font-bold text-primary hover:underline"
                                 >
@@ -247,7 +248,7 @@ export function ContactPage() {
                                     ) : (
                                         <>
                                             Send message
-                                            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                         </>
                                     )}
                                 </button>
@@ -266,7 +267,7 @@ export function ContactPage() {
                                 Here to support your trading journey every step of the way.
                             </p>
                         </div>
-                        
+
                         <div className="flex flex-col items-center md:items-end gap-6">
                             <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end">
                                 <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
@@ -281,14 +282,13 @@ export function ContactPage() {
                 </div>
             </footer>
 
-            <button 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-                className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
-                    isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-                }`}
+            <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+                    }`}
                 aria-label="Scroll to top"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
             </button>
         </div>
     );
