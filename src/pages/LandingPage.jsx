@@ -153,7 +153,7 @@ export function LandingPage() {
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
             {navLinks.map(({ to, label }) => (
-              <motion.li 
+              <motion.li
                 key={to}
                 whileHover={{ scale: 1.05, y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
