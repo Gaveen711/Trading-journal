@@ -8,6 +8,7 @@
 //   customer.subscription.deleted  → start 1.5-week grace period
 
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { admin, db, isDbReady } from './_firebase.js';
 import resend from './_resend.js';
 
@@ -90,6 +91,9 @@ export default async function handler(req, res) {
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 30);
 
+      const userDoc = await db.collection('users').doc(userId).get();
+      const apiKey = userDoc.data()?.apiKey || ('xau_live_' + crypto.randomBytes(24).toString('hex'));
+
       await db.collection('users').doc(userId).set({
         plan:             'pro',
         planExpiry:       expiryDate.toISOString(),
@@ -97,6 +101,7 @@ export default async function handler(req, res) {
         graceReason:      null,
         mt5SyncEnabled:   true,
         stripeCustomerId: session.customer,
+        apiKey:           apiKey,
         updatedAt:        admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
 
@@ -172,12 +177,17 @@ export default async function handler(req, res) {
       if (uid) {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 30);
+
+        const userDoc = await db.collection('users').doc(uid).get();
+        const apiKey = userDoc.data()?.apiKey || ('xau_live_' + crypto.randomBytes(24).toString('hex'));
+
         await db.collection('users').doc(uid).set({
           plan:           'pro',
           planExpiry:     expiryDate.toISOString(),
           graceUntil:     null,
           graceReason:    null,
           mt5SyncEnabled: true,
+          apiKey:         apiKey,
           updatedAt:      admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
         console.log(`✅ Renewal processed for uid=${uid} (${event.type})`);
@@ -190,7 +200,7 @@ export default async function handler(req, res) {
       if (uid) await startGracePeriod(uid, 'payment_failed');
     }
 
-    // ── subscription.deleted / updated (cancellation) ────────────────────────
+    // ── customer.subscription.deleted ────────────────────────────────────────
     else if (event.type === 'customer.subscription.deleted') {
       const uid = await findUserByCustomer(event.data.object.customer);
       console.log(`🔍 Deletion: customer=${event.data.object.customer} -> uid=${uid}`);
@@ -203,9 +213,6 @@ export default async function handler(req, res) {
         const uid = await findUserByCustomer(sub.customer);
         console.log(`🔍 Scheduled Cancel: customer=${sub.customer} -> uid=${uid}`);
         if (uid) {
-          // We don't enter grace yet because they still have access until period end,
-          // but we could mark it as "Cancelled (ending soon)" if we had a field for it.
-          // For now, let's just log it.
           console.log(`⏳ Subscription for ${uid} scheduled to end at ${new Date(sub.current_period_end * 1000).toISOString()}`);
         }
       }

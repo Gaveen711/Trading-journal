@@ -38,9 +38,19 @@ async function resolveKey(apiKey) {
 /**
  * Upsert an open trade record. Creates if not exists, skips if already open.
  */
-async function handleOpen(tradeRef, payload) {
+async function handleOpen(tradeRef, payload, uid) {
   const snap = await tradeRef.get();
   if (snap.exists) return { status: "duplicate" };
+
+  const userDoc = await db.collection("users").doc(uid).get();
+  const plan = userDoc.exists ? (userDoc.data().plan || "free") : "free";
+
+  if (plan !== "pro") {
+    const tradesSnap = await db.collection("users").doc(uid).collection("trades").count().get();
+    if (tradesSnap.data().count >= 25) {
+      return { status: "rejected", error: "Free tier limit reached (25 trades). Upgrade to Pro." };
+    }
+  }
 
   await tradeRef.set({
     positionId:      payload.positionId,
@@ -148,7 +158,7 @@ exports.syncTrade = functions
       .collection("trades").doc(`pos_${positionId}`);
 
     let result;
-    if (event === "open")       result = await handleOpen(tradeRef, req.body);
+    if (event === "open")       result = await handleOpen(tradeRef, req.body, uid);
     else if (event === "close") result = await handleClose(tradeRef, req.body);
     else return res.status(400).json({ error: `Unknown event: ${event}` });
 
@@ -159,24 +169,6 @@ exports.syncTrade = functions
 
 // ─────────────────────────────────────────────────────────────────────────────
 // tvWebhook — receives TradingView alert webhooks
-//
-// TradingView Alert Message template (paste into TradingView alert):
-// {
-//   "apiKey": "YOUR_API_KEY",
-//   "event": "{{strategy.order.action == 'buy' ? 'open' : 'close'}}",
-//   "source": "tradingview",
-//   "positionId": "{{ticker}}-{{timenow}}",
-//   "symbol": "{{ticker}}",
-//   "direction": "{{strategy.order.action}}",
-//   "lots": 0.10,
-//   "price": {{close}},
-//   "profit": 0,
-//   "time": "{{timenow}}"
-// }
-//
-// NOTE: TradingView can't report broker P&L — profit will be 0 on the webhook.
-// The trade will show in the journal as "TV alert" and P&L can be edited manually,
-// OR you can pair this with the MT5 EA (MT5 EA fills P&L when it closes the trade).
 // ─────────────────────────────────────────────────────────────────────────────
 exports.tvWebhook = functions
   .runWith({ timeoutSeconds: 30, memory: "256MB" })
@@ -203,7 +195,7 @@ exports.tvWebhook = functions
       .collection("trades").doc(`pos_${positionId}`);
 
     let result;
-    if (event === "open")       result = await handleOpen(tradeRef, body);
+    if (event === "open")       result = await handleOpen(tradeRef, body, uid);
     else if (event === "close") result = await handleClose(tradeRef, body);
     else return res.status(400).json({ error: `Unknown event: ${event}` });
 
@@ -272,6 +264,69 @@ exports.onTradeDeleted = functions.firestore
   .onDelete(async (snap, context) => {
     const uid = context.params.uid;
     await db.collection("users").doc(uid).update({
-      totalTradesLogged: admin.firestore.FieldValue.increment(-1)
+      totalTradesLogged: admin.FieldValue.increment(-1)
     });
   });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// logTrade — callable from React app
+// ─────────────────────────────────────────────────────────────────────────────
+exports.logTrade = functions.https.onCall(async (data, context) => {
+  if (!context.auth)
+    throw new functions.https.HttpsError("unauthenticated", "Login required");
+
+  const uid = context.auth.uid;
+  const userDoc = await db.collection("users").doc(uid).get();
+  const plan = userDoc.exists ? (userDoc.data().plan || "free") : "free";
+
+  if (plan !== "pro") {
+    const tradesSnap = await db.collection("users").doc(uid).collection("trades").count().get();
+    if (tradesSnap.data().count >= 25) {
+      throw new functions.https.HttpsError("resource-exhausted", "Free tier limit reached (25 trades). Upgrade to Pro.");
+    }
+  }
+
+  const tradeRef = await db.collection("users").doc(uid).collection("trades").add({
+    ...data,
+    createdAt: now(),
+    updatedAt: now()
+  });
+
+  await db.collection("users").doc(uid).set({
+    totalTradesLogged: admin.firestore.FieldValue.increment(1)
+  }, { merge: true });
+
+  return { id: tradeRef.id };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// stripeWebhook — handles Stripe events to upgrade users and generate keys
+// ─────────────────────────────────────────────────────────────────────────────
+exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+  const event = req.body;
+
+  if (event.type === 'customer.subscription.updated' ||
+      event.type === 'customer.subscription.created') {
+
+    const subscription = event.data.object;
+    if (subscription.status !== 'active') return res.sendStatus(200);
+
+    const uid = subscription.metadata.uid;
+    if (!uid) return res.sendStatus(200);
+
+    const userDoc = await db.doc(`users/${uid}`).get();
+
+    // Only generate once — don't overwrite existing key
+    if (!userDoc.data()?.apiKey) {
+      const apiKey = 'xau_live_' + crypto.randomBytes(24).toString('hex');
+      await db.doc(`users/${uid}`).update({
+        plan:   'pro',
+        apiKey: apiKey,
+      });
+    } else {
+      await db.doc(`users/${uid}`).update({ plan: 'pro' });
+    }
+  }
+
+  return res.sendStatus(200);
+});

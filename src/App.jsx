@@ -13,13 +13,13 @@ import { PricingModal } from './components/PricingModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 
-// Lazy load pages for performance (Handling named exports)
+// Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
 const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx').then(m => ({ default: m.HistoryPage })));
 const CalendarPage = lazy(() => import('./pages/CalendarPage.jsx').then(m => ({ default: m.CalendarPage })));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx').then(m => ({ default: m.AnalyticsPage })));
 const JournalPage = lazy(() => import('./pages/JournalPage.jsx').then(m => ({ default: m.JournalPage })));
-const MT5SyncSetup = lazy(() => import('./components/MT5SyncSetup').then(m => ({ default: m.default })));
+const EASetup = lazy(() => import('./components/EASetup').then(m => ({ default: m.default })));
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess.jsx').then(m => ({ default: m.CheckoutSuccess })));
 const CheckoutCancel = lazy(() => import('./pages/CheckoutCancel.jsx').then(m => ({ default: m.CheckoutCancel })));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage.jsx').then(m => ({ default: m.PrivacyPolicyPage })));
@@ -28,7 +28,7 @@ const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage.jsx').then(
 const PricingPage = lazy(() => import('./pages/PricingPage.jsx').then(m => ({ default: m.PricingPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage.jsx').then(m => ({ default: m.ContactPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
-const Login = lazy(() => import('./Login.jsx')); // Already a default export
+const Login = lazy(() => import('./Login.jsx'));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6">
@@ -44,7 +44,6 @@ const PageLoader = () => (
   </div>
 );
 
-// Inner wrapper that requires toast
 function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -86,7 +85,7 @@ function AuthenticatedApp({ user }) {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="journal" element={<JournalPage />} />
-          <Route path="sync" element={<MT5SyncSetup />} />
+          <Route path="sync" element={<EASetup />} />
           <Route path="checkout-success" element={<CheckoutSuccess />} />
           <Route path="checkout-cancel" element={<CheckoutCancel />} />
         </Route>
@@ -136,7 +135,6 @@ function App() {
     };
   }, []);
 
-  // Main UI render - Providers are now in main.jsx for stability
   return (
     <Suspense fallback={<PageLoader />}>
       {authError ? (
