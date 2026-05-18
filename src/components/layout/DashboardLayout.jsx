@@ -90,10 +90,10 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background transition-colors duration-500 selection:bg-primary/20">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
       
       {/* TOP NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 glass border-b border-border/40 safe-top transition-all duration-500 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'max-md:-translate-y-full max-md:opacity-0'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 glass border-b border-border/40 safe-top transition-[transform,opacity] duration-300 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'max-md:-translate-y-full max-md:opacity-0'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
 
@@ -303,7 +303,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
       </main>
 
       {/* FOOTER */}
-      <footer className="w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-border/10 bg-muted/5 relative overflow-hidden transition-all duration-700">
+      <footer className="w-full py-12 px-4 sm:px-6 lg:px-8 border-t border-border/10 bg-muted/5 relative overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
 
           <div className="flex flex-col items-center md:items-start gap-1">
@@ -342,7 +342,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
       </footer>
 
       {/* MOBILE NAV */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe pt-2 transition-all duration-500 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe pt-2 transition-[transform,opacity] duration-300 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
         <div className="bg-background/90 backdrop-blur-xl border border-border/40 rounded-[2rem] h-16 flex items-center justify-between px-2 shadow-2xl safe-bottom mb-4">
           {navigation.map((item) => {
             const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
