@@ -59,11 +59,11 @@ export default async function handler(req, res) {
     openTime: trade.openTime,
     closeTime: trade.closeTime,
     source: 'mt5_ea',
-    syncedAt: FieldValue.serverTimestamp(),
+    syncedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
   await db.doc(`users/${uid}`).update({
-    totalTradesLogged: FieldValue.increment(1),
+    totalTradesLogged: admin.firestore.FieldValue.increment(1),
   });
 
   return res.status(200).json({ ok: true, ticket: trade.ticket });

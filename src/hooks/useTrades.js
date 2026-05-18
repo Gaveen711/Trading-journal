@@ -52,7 +52,7 @@ export function useTrades(user) {
     const token = await currentUser.getIdToken();
 
     const BASE_URL = window.location.origin;
-    const res = await fetch(`${BASE_URL}/api/log-trade`, {
+    const res = await fetch(`${BASE_URL}/api/save-trade`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
