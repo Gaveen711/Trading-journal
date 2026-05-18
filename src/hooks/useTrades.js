@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, deleteDoc, updateDoc, doc, query, orderBy } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 
 export function useTrades(user) {
   const [trades, setTrades]           = useState([]);
@@ -48,10 +47,25 @@ export function useTrades(user) {
   }, [user]);
 
   const addTrade = async (tradeData) => {
-    const functions = getFunctions();
-    const logTradeCallable = httpsCallable(functions, 'logTrade');
-    const result = await logTradeCallable(tradeData);
-    return { id: result.data.id };
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Not authenticated');
+    const token = await currentUser.getIdToken();
+
+    const BASE_URL = window.location.origin;
+    const res = await fetch(`${BASE_URL}/api/log-trade`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tradeData),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to log trade');
+    }
+    return { id: data.id };
   };
 
   const removeTrade = async (id) => {
