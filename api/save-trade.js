@@ -22,7 +22,8 @@ export default async function handler(req, res) {
     const decoded = await admin.auth().verifyIdToken(idToken);
     uid = decoded.uid;
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    console.error('[save-trade] verifyIdToken failed:', err.message);
+    return res.status(401).json({ error: 'Invalid or expired token', details: err.message });
   }
 
   try {
