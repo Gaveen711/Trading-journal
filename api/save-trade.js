@@ -1,5 +1,5 @@
-// api/log-trade.js
-// xaujournal — Log trade endpoint
+// api/save-trade.js
+// xaujournal — Save trade endpoint
 // Handles local trade uploads by users.
 // Ensures Spark/Free plan users do not exceed the 25-trade limit.
 
@@ -54,10 +54,10 @@ export default async function handler(req, res) {
       totalTradesLogged: admin.firestore.FieldValue.increment(1)
     }, { merge: true });
 
-    console.log(`[log-trade] New trade logged for uid=${uid}, tradeId=${tradeRef.id}`);
+    console.log(`[save-trade] New trade logged for uid=${uid}, tradeId=${tradeRef.id}`);
     return res.status(200).json({ id: tradeRef.id });
   } catch (err) {
-    console.error('[log-trade] Error logging trade:', err.message);
+    console.error('[save-trade] Error logging trade:', err.message);
     return res.status(500).json({ error: 'Internal Server Error', message: err.message });
   }
 }
