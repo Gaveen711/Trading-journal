@@ -7,6 +7,14 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 export default defineConfig({
   base: '/',
   plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://xaujournal.vercel.app',
+        changeOrigin: true,
+      }
+    }
+  },
   css: {
     postcss: './postcss.config.js',
   },

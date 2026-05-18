@@ -48,7 +48,7 @@ export default async function handler(req, res) {
   const ALLOWED_ORIGINS = [
     'https://xaujournal.vercel.app',
     'https://xaujournal-cfnqvtqlm-walker-4a977fbd.vercel.app',
-    'https://myjournal-bfeca.web.app',
+    `https://${process.env.VITE_FIREBASE_PROJECT_ID || 'myjournal-bfeca'}.web.app`,
     process.env.ALLOWED_ORIGIN
   ].filter(Boolean);
 

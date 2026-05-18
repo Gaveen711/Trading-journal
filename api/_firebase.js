@@ -41,9 +41,10 @@ function initAdmin() {
       if (serviceAccount.privateKey) serviceAccount.privateKey = serviceAccount.privateKey.replace(/\\n/g, '\n');
       if (serviceAccount.private_key) serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 
+      const projectId = serviceAccount.projectId || process.env.VITE_FIREBASE_PROJECT_ID || 'myjournal-bfeca';
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: 'https://myjournal-bfeca-default-rtdb.asia-southeast1.firebasedatabase.app',
+        databaseURL: `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`,
       });
       console.log('✅ Firebase Admin initialised (Lazy)');
     } else {

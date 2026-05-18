@@ -60,8 +60,9 @@ export default async function handler(req, res) {
     if (!token) return res.status(400).json({ valid: true, score: null }); // Fail open if no token
 
     try {
+      const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'myjournal-bfeca';
       const response = await fetch(
-        `https://recaptchaenterprise.googleapis.com/v1/projects/myjournal-bfeca/assessments?key=${process.env.RECAPTCHA_API_KEY}`,
+        `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${process.env.RECAPTCHA_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
