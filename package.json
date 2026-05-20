@@ -19,7 +19,7 @@
     "@google-cloud/recaptcha-enterprise": "^6.4.0",
     "@heroicons/react": "^2.2.0",
     "@paypal/react-paypal-js": "^9.2.0",
-    "@paypal/checkout-server-sdk": "^1.0.5",
+    "@paypal/checkout-server-sdk": "^1.0.3",
     "@radix-ui/react-slot": "^1.2.4",
     "axios": "^1.15.0",
     "bootstrap-icons": "^1.13.1",
