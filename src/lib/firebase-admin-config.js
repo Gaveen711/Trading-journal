@@ -1,3 +1,4 @@
+/* global process */
 import admin from 'firebase-admin';
 
 // Unified Firebase Admin Initialization

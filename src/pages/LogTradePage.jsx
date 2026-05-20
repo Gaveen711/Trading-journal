@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { calcPnl, todayStr, formatCompact, formatCurrencyCompact } from '../lib/tradeUtils';
+import { calcPnl, todayStr, formatCurrencyCompact } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icons';
 import { DatePicker } from '../components/ui/DatePicker';
@@ -17,7 +17,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 export function LogTradePage() {
   const {
     trades, addTrade, setShowPricingModal, walletBalance, updateBalance,
-    plan, totalTrades, resetTrades, resetWallet, monthlyGoal, updateMonthlyGoal
+    plan, resetTrades, monthlyGoal, updateMonthlyGoal
   } = useOutletContext();
   const toast = useToast();
 
@@ -94,7 +94,7 @@ export function LogTradePage() {
       setDate(todayStr());
       setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup('');
       toast(`Trade recorded: ${outcome} ${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
-    } catch (error) {
+    } catch {
       toast('Failed to record trade. Please try again.', 'error');
     } finally {
       setSaving(false);
@@ -214,7 +214,6 @@ export function LogTradePage() {
     return () => clearTimeout(timer);
   }, [isWiping]);
 
-  const totalPnl = chartVisibleTrades.reduce((s, t) => s + (t.pnl || 0), 0);
   const currentWalletBalance = (walletBalance || 0) + trades.reduce((s, t) => s + (t.pnl || 0), 0);
   const winRate = chartVisibleTrades.length ? (chartVisibleTrades.filter(t => t.outcome === 'WIN').length / chartVisibleTrades.length * 100).toFixed(0) : 0;
 
@@ -588,6 +587,7 @@ export function LogTradePage() {
     </div>
   );
 }
+
 
 
 

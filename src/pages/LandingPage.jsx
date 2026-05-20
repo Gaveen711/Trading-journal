@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -212,7 +212,7 @@ export function LandingPage() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' }
+    { to: '/contact', label: 'Contact' },
   ];
 
   return (
@@ -235,7 +235,7 @@ export function LandingPage() {
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
             {navLinks.map(({ to, label }) => (
-              <motion.li
+              <Motion.li
                 key={to}
                 whileHover={{ scale: 1.05, y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -246,7 +246,7 @@ export function LandingPage() {
                 >
                   {label}
                 </NavLink>
-              </motion.li>
+              </Motion.li>
             ))}
           </ul>
 
@@ -277,7 +277,7 @@ export function LandingPage() {
 
           <AnimatePresence>
             {mobileMenuOpen && (
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -299,7 +299,7 @@ export function LandingPage() {
                 >
                   Get started
                 </button>
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
         </nav>
@@ -307,28 +307,28 @@ export function LandingPage() {
 
       <main>
         <section className="relative z-10 min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center">
-          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-5xl mx-auto flex flex-col items-center">
-            <motion.div
+          <Motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-5xl mx-auto flex flex-col items-center">
+            <Motion.div
               variants={itemVariants}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-black uppercase mb-10 shadow-[0_0_25px_rgba(139,92,246,0.4)] backdrop-blur-md relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
               Exclusively for Gold traders
-            </motion.div>
+            </Motion.div>
 
-            <motion.div variants={itemVariants}>
+            <Motion.div variants={itemVariants}>
               <h1 className="text-[clamp(3rem,10vw,8rem)] font-black leading-[0.9] tracking-tighter mb-10 text-foreground">
                 Trade with <br />
                 <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400">absolute clarity.</span>
               </h1>
-            </motion.div>
+            </Motion.div>
 
-            <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
+            <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
               Automated MT5 sync, deep session analytics, and a beautiful journal. Built for professionals who treat trading like a business.
-            </motion.p>
+            </Motion.p>
 
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
+            <Motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
               <button
                 onClick={() => navigate('/login')}
                 className="w-full sm:w-auto px-8 py-3.5 sm:py-5 sm:px-10 rounded-full bg-foreground text-background font-bold text-sm sm:text-base shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
@@ -342,22 +342,22 @@ export function LandingPage() {
                 See pricing
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </Link>
-            </motion.div>
+            </Motion.div>
 
-            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 border-t border-border/40 pt-16 w-full max-w-4xl px-4">
+            <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 border-t border-border/40 pt-16 w-full max-w-4xl px-4">
               {STATS.map((s) => (
                 <div key={s.label} className="text-center group">
                   <div className="text-3xl md:text-4xl font-black tracking-tight text-foreground mb-2 group-hover:text-primary transition-colors">{s.value}</div>
                   <div className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</div>
                 </div>
               ))}
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         </section>
 
         <section id="features" className="relative z-10 py-32 md:py-48 px-6">
           <div className="max-w-7xl mx-auto">
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -371,7 +371,7 @@ export function LandingPage() {
               <p className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
                 Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
               </p>
-            </motion.div>
+            </Motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {FEATURES.map((f, i) => (
@@ -384,7 +384,7 @@ export function LandingPage() {
         <section className="relative z-10 py-32 md:py-48 px-6 bg-muted/5 border-y border-border/40 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
           <div className="max-w-7xl mx-auto">
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -393,13 +393,13 @@ export function LandingPage() {
             >
               <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 inline-block px-3 py-1 rounded-full bg-primary/10">Workflow</span>
               <h2 className="text-[clamp(2rem,6vw,4rem)] font-black leading-tight tracking-tight">Three steps to mastery</h2>
-            </motion.div>
+            </Motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-16 relative">
               <div className="hidden md:block absolute top-20 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5" />
 
               {STEPS.map((step, i) => (
-                <motion.div
+                <Motion.div
                   key={step.id}
                   initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -421,7 +421,7 @@ export function LandingPage() {
                       {step.body}
                     </p>
                   </div>
-                </motion.div>
+                </Motion.div>
               ))}
             </div>
           </div>
@@ -429,7 +429,7 @@ export function LandingPage() {
 
         <section className="relative z-10 py-32 md:py-48 px-6">
           <div className="max-w-5xl mx-auto">
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -443,7 +443,7 @@ export function LandingPage() {
               <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
                 An institutional-grade pipeline ensures your data is always synced, secured, and ready for analysis.
               </p>
-            </motion.div>
+            </Motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
               {[
@@ -454,7 +454,7 @@ export function LandingPage() {
                 { label: 'Encrypted Vault', sub: 'Military-grade protection for your private trade data.', icon: <DatabaseFill className="w-5 h-5" /> },
                 { label: 'Intelligence Suite', sub: 'Professional dashboard for deep performance insights.', icon: <WindowSidebar className="w-5 h-5" /> },
               ].map((step, i) => (
-                <motion.div
+                <Motion.div
                   key={step.label}
                   initial={{ opacity: 0, scale: 0.95 }}
                   whileInView={{ opacity: 1, scale: 1 }}
@@ -469,7 +469,7 @@ export function LandingPage() {
                     <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{step.label}</h3>
                     <p className="text-sm text-muted-foreground font-medium leading-tight">{step.sub}</p>
                   </div>
-                </motion.div>
+                </Motion.div>
               ))}
             </div>
           </div>
@@ -478,7 +478,7 @@ export function LandingPage() {
         <section className="relative z-10 py-40 md:py-64 px-6 text-center overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
 
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -507,7 +507,7 @@ export function LandingPage() {
                 View pricing
               </Link>
             </div>
-          </motion.div>
+          </Motion.div>
         </section>
       </main>
 
@@ -542,20 +542,20 @@ export function LandingPage() {
             <div className="flex flex-col items-center md:items-end text-center md:text-right">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Social</h4>
               <div className="flex gap-6 mb-8">
-                <motion.a
+                <Motion.a
                   href="#"
                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
                   className="text-muted-foreground transition-colors"
                 >
                   <Twitter size={22} />
-                </motion.a>
-                <motion.a
+                </Motion.a>
+                <Motion.a
                   href="#"
                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
                   className="text-muted-foreground transition-colors"
                 >
                   <Discord size={22} />
-                </motion.a>
+                </Motion.a>
               </div>
               <div className="mt-auto flex flex-col items-center md:items-end gap-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60">
@@ -581,7 +581,7 @@ export function LandingPage() {
 
 function FeatureCard({ icon, title, body, index }) {
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       whileHover={{ y: -10, scale: 1.02 }}
@@ -599,6 +599,8 @@ function FeatureCard({ icon, title, body, index }) {
       </div>
       <h3 className="text-2xl font-bold mb-4 tracking-tight group-hover:text-white transition-colors duration-300">{title}</h3>
       <p className="text-muted-foreground leading-relaxed font-medium text-base group-hover:text-white/90 transition-colors duration-300">{body}</p>
-    </motion.div>
+    </Motion.div>
   );
 }
+
+

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
@@ -61,7 +61,7 @@ Each of these services maintains its own privacy and security certifications (SO
 • Export — download a CSV of all trade records from the History page at any time.
 • Delete entries — permanently remove individual trades from the History page.
 • Reset account — use the "Reset Terminal" function in account settings to wipe all trade and journal data.
-• Delete account — contact us at support@xaujournal.com to permanently delete your account. All associated data will be purged from our records within 30 days.
+• Delete account — contact us at info@xaujournal.com to permanently delete your account. All associated data will be purged from our records within 30 days.
 
 If you are located in the European Economic Area (EEA), you have additional rights under the GDPR including the right to access, rectify, port, and erase your data. Contact us to exercise any of these rights.`,
   },
@@ -83,7 +83,7 @@ We do not use advertising cookies, tracking pixels, or third-party analytics scr
   {
     id: 'contact',
     title: '9. Contact',
-    content: `For any privacy-related questions or requests:\n\nEmail: support@xaujournal.com\n\nWe aim to respond within two business days.`,
+    content: `For any privacy-related questions or requests:\n\nEmail: info@xaujournal.com\n\nWe aim to respond within two business days.`,
   },
 ];
 
@@ -198,7 +198,7 @@ export function PrivacyPolicyPage() {
             </button>
           </div>
 
-          <motion.div 
+          <Motion.div 
             initial={false}
             animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
             className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
@@ -219,27 +219,27 @@ export function PrivacyPolicyPage() {
             >
               Get started
             </button>
-          </motion.div>
+          </Motion.div>
         </nav>
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
-        <motion.div 
+        <Motion.div 
           variants={containerVariants} 
           initial="hidden" 
           animate="visible" 
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
-          <motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
+          <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
             Privacy Matters
-          </motion.span>
-          <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
+          </Motion.span>
+          <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
             Privacy <span className="text-primary">Policy</span>
-          </motion.h1>
-          <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+          </Motion.h1>
+          <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
             We believe privacy policies should be readable. This one is. Your trust is our most valuable asset.
-          </motion.p>
-        </motion.div>
+          </Motion.p>
+        </Motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
           <aside className="hidden lg:block sticky top-32">
@@ -257,7 +257,7 @@ export function PrivacyPolicyPage() {
             </nav>
           </aside>
 
-          <motion.article 
+          <Motion.article 
             initial={{ opacity: 0, y: 40 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -290,7 +290,7 @@ export function PrivacyPolicyPage() {
                 </section>
               ))}
             </div>
-          </motion.article>
+          </Motion.article>
         </div>
       </main>
 
@@ -330,3 +330,5 @@ export function PrivacyPolicyPage() {
     </div>
   );
 }
+
+

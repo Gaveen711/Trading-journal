@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
@@ -25,7 +25,7 @@ The Service is provided on a subscription basis. A free tier with limited featur
     title: '3. Accounts & eligibility',
     content: `You must be at least 18 years old to create an account. By registering, you confirm you meet this requirement.
 
-You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. Notify us immediately at support@xaujournal.com if you suspect unauthorized access.
+You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. Notify us immediately at info@xaujournal.com if you suspect unauthorized access.
 
 We reserve the right to suspend or terminate accounts that violate these Terms, engage in fraudulent activity, or abuse the platform in any way.`,
   },
@@ -36,7 +36,7 @@ We reserve the right to suspend or terminate accounts that violate these Terms, 
 
 Subscriptions auto-renew each billing cycle unless cancelled before the renewal date. You may cancel at any time via the billing portal in your account settings. Cancellation takes effect at the end of the current billing period — you retain Pro access until then.
 
-We do not offer refunds for partial months or unused features. If you believe a charge is in error, contact us within 14 days at support@xaujournal.com.`,
+We do not offer refunds for partial months or unused features. If you believe a charge is in error, contact us within 14 days at info@xaujournal.com.`,
   },
   {
     id: 'acceptable-use',
@@ -89,7 +89,7 @@ Our total liability to you for any claim arising from these Terms or your use of
   {
     id: 'termination',
     title: '10. Termination',
-    content: `You may stop using the Service and delete your account at any time by contacting support@xaujournal.com. We will process account deletion requests within 30 days.
+    content: `You may stop using the Service and delete your account at any time by contacting info@xaujournal.com. We will process account deletion requests within 30 days.
 
 We may terminate or suspend your account at any time, with or without notice, for violation of these Terms or any other reason we deem necessary to protect the integrity of the platform. Upon termination, your right to use the Service ceases immediately.`,
   },
@@ -98,12 +98,12 @@ We may terminate or suspend your account at any time, with or without notice, fo
     title: '11. Governing law',
     content: `These Terms are governed by and construed in accordance with applicable laws. Any disputes arising from these Terms or your use of the Service shall first be attempted to be resolved through good-faith negotiation.
 
-If you have a dispute or complaint, please contact us first at support@xaujournal.com. We aim to resolve all issues within 5 business days.`,
+If you have a dispute or complaint, please contact us first at info@xaujournal.com. We aim to resolve all issues within 5 business days.`,
   },
   {
     id: 'contact',
     title: '12. Contact',
-    content: `For any questions regarding these Terms:\n\nEmail: support@xaujournal.com\n\nWe aim to respond within two business days.`,
+    content: `For any questions regarding these Terms:\n\nEmail: info@xaujournal.com\n\nWe aim to respond within two business days.`,
   },
 ];
 
@@ -224,7 +224,7 @@ export function TermsOfServicePage() {
           </div>
 
           {/* Mobile Menu Overlay */}
-          <motion.div 
+          <Motion.div 
             initial={false}
             animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
             className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
@@ -245,28 +245,28 @@ export function TermsOfServicePage() {
             >
               Get started
             </button>
-          </motion.div>
+          </Motion.div>
         </nav>
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
         {/* Hero Section */}
-        <motion.div 
+        <Motion.div 
           variants={containerVariants} 
           initial="hidden" 
           animate="visible" 
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
-          <motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
+          <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
             Legal & Privacy
-          </motion.span>
-          <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
+          </Motion.span>
+          <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
             Terms of <span className="text-primary">Service</span>
-          </motion.h1>
-          <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+          </Motion.h1>
+          <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
             Our commitment to transparency and fairness in providing the best trading journal experience.
-          </motion.p>
-        </motion.div>
+          </Motion.p>
+        </Motion.div>
 
         {/* Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
@@ -288,7 +288,7 @@ export function TermsOfServicePage() {
           </aside>
 
           {/* Main Content */}
-          <motion.article 
+          <Motion.article 
             initial={{ opacity: 0, y: 40 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -321,7 +321,7 @@ export function TermsOfServicePage() {
                 </section>
               ))}
             </div>
-          </motion.article>
+          </Motion.article>
         </div>
       </main>
 
@@ -363,3 +363,6 @@ export function TermsOfServicePage() {
     </div>
   );
 }
+
+
+

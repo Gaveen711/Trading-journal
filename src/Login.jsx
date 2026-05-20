@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -18,10 +18,6 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [recaptchaVerified, setRecaptchaVerified] = useState(true); // Score-based key: auto-verified
-  const recaptchaRef = useRef(null);
-  const recaptchaWidgetId = useRef(null);
-
   // Load saved email on mount
   useEffect(() => {
     const savedEmail = localStorage.getItem('xau-remembered-email');
@@ -31,39 +27,6 @@ function Login() {
   }, []);
 
   // Execute reCAPTCHA Enterprise token before auth actions
-  const getRecaptchaToken = (action) => new Promise((resolve) => {
-    if (typeof grecaptcha === 'undefined' || !grecaptcha.enterprise) {
-      resolve(null); // Fallback gracefully in dev
-      return;
-    }
-    grecaptcha.enterprise.ready(async () => {
-      try {
-        const token = await grecaptcha.enterprise.execute(
-          '6LfSRMosAAAAAJkpsSHRweUx48z1amorEE2Abqe7',
-          { action }
-        );
-
-        // Send token to backend for risk assessment
-        const res = await fetch('/api/auth-utils?action=recaptcha', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, recaptchaAction: action }),
-        });
-        const assessment = await res.json();
-
-        if (assessment.blocked) {
-          throw new Error('High-risk request detected. Please try again.');
-        }
-
-        resolve(token);
-      } catch (err) {
-        // Re-throw if it's our block error, otherwise fail open
-        if (err.message.includes('High-risk')) throw err;
-        resolve(null);
-      }
-    });
-  });
-
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     setError('');
@@ -262,14 +225,6 @@ function Login() {
                 </div>
               </div>
 
-              {/* reCAPTCHA Checkbox */}
-              <div className="flex justify-center">
-                <div
-                  ref={recaptchaRef}
-                  className="rounded-xl overflow-hidden"
-                />
-              </div>
-
               {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[11px] font-bold uppercase tracking-tight animate-in shake-1">
                   {error}
@@ -284,7 +239,7 @@ function Login() {
 
               <button
                 type="submit"
-                disabled={loading || !recaptchaVerified}
+                disabled={loading}
                 className="btn-primary w-full h-12 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Authorizing...' : isSignUp ? 'Create New Account' : 'Sign in to Terminal'}

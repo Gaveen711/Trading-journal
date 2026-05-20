@@ -47,3 +47,4 @@ describe('Trade Logic (calcPnl)', () => {
     expect(result.rr).toBe(2);
   });
 });
+

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { storage } from '../lib/tradeUtils';
 
 export function useWallet(user) {
   const [walletBalance, setWalletBalance] = useState(0);
@@ -82,3 +81,4 @@ export function useWallet(user) {
 
   return { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, isLoading };
 }
+

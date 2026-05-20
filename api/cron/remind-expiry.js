@@ -2,7 +2,7 @@
 /* global process */
 import { Resend } from 'resend';
 import { timingSafeEqual, createHash } from 'crypto';
-import { admin, db } from '../_firebase.js';
+import { db } from '../_firebase.js';
 
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -24,8 +24,6 @@ export default async function handler(req, res) {
     // Logic: 3 days before expiry
     const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
     // Logic: 1 day before expiry (Final warning)
-    const oneDayFromNow = new Date(now.getTime() + (1 * 24 * 60 * 60 * 1000));
-
     const usersRef = db.collection('users');
     const snapshot = await usersRef.where('plan', '==', 'pro').get();
 

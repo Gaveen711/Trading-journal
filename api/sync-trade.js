@@ -3,7 +3,7 @@
 // PRO ONLY: rejects API keys belonging to users whose subscription
 // has expired beyond the 1.5-week grace period.
 
-import { admin, db, now } from './_firebase.js';
+import { db, now } from './_firebase.js';
 
 // ── Shared plan guard (same logic as generate-api-key) ───────────────────────
 function isSyncAllowed(userData) {

@@ -7,7 +7,6 @@ import { useToast } from './components/ToastContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { useSubscription } from './hooks/useSubscription';
 import { useWallet } from './hooks/useWallet';
-import { useAppTheme } from './hooks/useAppTheme';
 
 import { PricingModal } from './components/PricingModal';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -100,7 +99,6 @@ function AuthenticatedApp({ user }) {
 }
 
 function App() {
-  const { isLightMode } = useAppTheme();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
@@ -133,7 +131,7 @@ function App() {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, []);
+  }, [loading]);
 
   return (
     <Suspense fallback={<PageLoader />}>

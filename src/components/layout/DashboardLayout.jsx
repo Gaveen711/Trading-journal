@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import { AnimatePresence, motion as Motion } from 'framer-motion';
+import {
   House, HouseFill,
   ClockHistory, ClockFill,
   Calendar3, Calendar3Fill,
@@ -26,8 +26,6 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
   const { isLightMode, toggleTheme } = useAppTheme();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  
-  const isGracePeriod = plan === 'grace';
 
   const profileMenuRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -62,7 +60,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
   }, []);
 
   const { trades, isLoading: isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
-  
+
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const thisMonthTradesCount = trades.filter(t => t.date >= monthStart).length;
@@ -85,13 +83,9 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
     (plan === 'pro' || plan === 'grace') && { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill }
   ].filter(Boolean);
 
-  const activeIndex = navigation.findIndex(item => 
-    item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`)
-  );
-
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
-      
+
       {/* TOP NAVBAR */}
       <nav className={`fixed top-0 left-0 right-0 z-50 glass border-b border-border/40 safe-top transition-[transform,opacity] duration-300 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'max-md:-translate-y-full max-md:opacity-0'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -104,7 +98,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                   {plan}
                 </div>
               </div>
-              
+
               {/* DESKTOP NAV */}
               <div className="hidden md:flex items-center gap-1.5 bg-muted/20 p-1.5 rounded-2xl border border-border/10 backdrop-blur-md">
                 {navigation.map((item) => {
@@ -114,17 +108,16 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                     <NavLink
                       key={item.name}
                       to={`/app/${item.id}`}
-                      className={`group relative flex items-center h-11 px-4 rounded-xl transition-all duration-500 ease-[var(--apple-ease)] ${
-                        isActive 
-                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' 
+                      className={`group relative flex items-center h-11 px-4 rounded-xl transition-all duration-500 ease-[var(--apple-ease)] ${isActive
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                           : 'text-foreground/80 hover:bg-muted hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       <Icon className={`w-[1.2rem] h-[1.2rem] shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
-                      
+
                       <AnimatePresence mode="popLayout" initial={false}>
                         {isActive && (
-                          <motion.span
+                          <Motion.span
                             layout
                             initial={{ width: 0, opacity: 0, marginLeft: 0 }}
                             animate={{ width: 'auto', opacity: 1, marginLeft: 10 }}
@@ -133,7 +126,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                             className="text-[11px] font-black uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden"
                           >
                             {item.name}
-                          </motion.span>
+                          </Motion.span>
                         )}
                       </AnimatePresence>
 
@@ -153,7 +146,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             <div className="flex items-center gap-3 sm:gap-4 ml-2 pl-4 border-l border-border/20 relative" ref={profileMenuRef}>
 
               {plan === 'free' && (
-                <button 
+                <button
                   onClick={() => setShowPricingModal(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all duration-300 group"
                 >
@@ -174,7 +167,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                 {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
               </button>
 
-              <button 
+              <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className={`w-10 h-10 rounded-xl bg-muted border flex items-center justify-center hover:scale-110 active:scale-90 transition-all duration-300 ${showProfileMenu ? 'border-primary ring-2 ring-primary/20' : 'border-border/40'}`}
               >
@@ -206,33 +199,33 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
 
                   {/* MT5 SYNC CREDENTIALS — Pro & grace only */}
                   {(plan === 'pro' || plan === 'grace') && (
-                  <div className="px-3 py-3 border-t border-border/20 mt-1 space-y-2">
-                    <p className="text-[10px] font-black uppercase text-foreground/80 mb-2">MT5 Auto-Sync</p>
-                    {plan === 'grace' && (
-                      <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                        ⚠ Grace period active
-                      </p>
-                    )}
-                    <div className="space-y-1.5">
-                      <p className="text-[9px] uppercase tracking-widest text-foreground/60">Your User ID</p>
-                      <button
-                        onClick={copyUid}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-muted/50 border border-border/40 hover:border-primary/40 hover:bg-primary/5 transition-all group"
-                      >
-                        <span className="text-[10px] font-mono text-foreground truncate max-w-[140px]">{user?.uid}</span>
-                        <span className={`text-[9px] font-black uppercase shrink-0 ml-2 transition-colors ${copied ? 'text-green-500' : 'text-primary group-hover:text-primary/80'}`}>
-                          {copied ? '✓ Copied' : 'Copy'}
-                        </span>
-                      </button>
-                      <p className="text-[9px] text-foreground/60 leading-relaxed">Paste into MT5 EA inputs to enable live sync.</p>
+                    <div className="px-3 py-3 border-t border-border/20 mt-1 space-y-2">
+                      <p className="text-[10px] font-black uppercase text-foreground/80 mb-2">MT5 Auto-Sync</p>
+                      {plan === 'grace' && (
+                        <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                          ⚠ Grace period active
+                        </p>
+                      )}
+                      <div className="space-y-1.5">
+                        <p className="text-[9px] uppercase tracking-widest text-foreground/60">Your User ID</p>
+                        <button
+                          onClick={copyUid}
+                          className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-muted/50 border border-border/40 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                        >
+                          <span className="text-[10px] font-mono text-foreground truncate max-w-[140px]">{user?.uid}</span>
+                          <span className={`text-[9px] font-black uppercase shrink-0 ml-2 transition-colors ${copied ? 'text-green-500' : 'text-primary group-hover:text-primary/80'}`}>
+                            {copied ? '✓ Copied' : 'Copy'}
+                          </span>
+                        </button>
+                        <p className="text-[9px] text-foreground/60 leading-relaxed">Paste into MT5 EA inputs to enable live sync.</p>
+                      </div>
+                      {lastMT5Sync && (
+                        <p className="text-[9px] text-green-500 font-black uppercase tracking-widest flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                          Last sync: {lastMT5Sync.toLocaleTimeString()}
+                        </p>
+                      )}
                     </div>
-                    {lastMT5Sync && (
-                      <p className="text-[9px] text-green-500 font-black uppercase tracking-widest flex items-center gap-1">
-                        <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                        Last sync: {lastMT5Sync.toLocaleTimeString()}
-                      </p>
-                    )}
-                  </div>
                   )}
 
 
@@ -264,19 +257,19 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             <div className="max-w-md space-y-3">
               <h2 className="text-3xl font-black text-gradient-red uppercase tracking-tighter">Terminal Locked</h2>
               <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest leading-relaxed">
-                {thisMonthTradesCount >= 50 ? "Free monthly limit reached (50/50)." : "Free journal limit reached (10/10)."} <br/>
+                {thisMonthTradesCount >= 50 ? "Free monthly limit reached (50/50)." : "Free journal limit reached (10/10)."} <br />
                 <span className="text-destructive font-black">Upgrade to Pro</span> to unlock unlimited operations and cognitive brief logs.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-              <button 
+              <button
                 onClick={() => setShowPricingModal(true)}
                 className="flex-1 h-14 bg-primary text-primary-foreground font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
               >
                 Go Pro Now
               </button>
-              <button 
+              <button
                 onClick={() => auth.signOut()}
                 className="flex-1 h-14 bg-muted border border-border/40 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-muted/80 transition-all text-foreground/50"
               >
@@ -293,7 +286,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             `}</style>
           </div>
         ) : (
-          <Outlet context={{ 
+          <Outlet context={{
             user, plan, expiry, totalTrades, setShowPricingModal, openPortal,
             trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
             journals, isLoadingJournals, saveJournalEntry, deleteEntry,
@@ -349,20 +342,19 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             const Icon = isActive ? item.iconSolid : item.icon;
 
             return (
-              <NavLink 
-                key={item.name} 
-                to={`/app/${item.id}`} 
-                className={`group relative flex items-center justify-center h-12 rounded-2xl transition-all duration-500 ease-[var(--apple-ease)] ${
-                  isActive 
-                    ? 'bg-primary text-primary-foreground px-4 flex-grow mx-1 shadow-lg shadow-primary/25' 
+              <NavLink
+                key={item.name}
+                to={`/app/${item.id}`}
+                className={`group relative flex items-center justify-center h-12 rounded-2xl transition-all duration-500 ease-[var(--apple-ease)] ${isActive
+                    ? 'bg-primary text-primary-foreground px-4 flex-grow mx-1 shadow-lg shadow-primary/25'
                     : 'text-foreground/60 w-12 hover:bg-muted mx-0.5'
-                }`}
+                  }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
-                
+
                 <AnimatePresence mode="popLayout" initial={false}>
                   {isActive && (
-                    <motion.span
+                    <Motion.span
                       layout
                       initial={{ width: 0, opacity: 0, marginLeft: 0 }}
                       animate={{ width: 'auto', opacity: 1, marginLeft: 8 }}
@@ -371,7 +363,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                       className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden"
                     >
                       {item.name}
-                    </motion.span>
+                    </Motion.span>
                   )}
                 </AnimatePresence>
               </NavLink>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useToast } from '../components/ToastContext';
 
@@ -129,11 +129,10 @@ export function CurrencyConverter() {
   const [amount, setAmount] = useState('100');
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('EUR');
-  const [rate, setRate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const fetchRate = async () => {
+  const fetchRate = useCallback(async () => {
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) {
       toast("Please enter a valid amount.", "error");
@@ -141,7 +140,6 @@ export function CurrencyConverter() {
     }
 
     if (from === to) {
-      setRate(1);
       setResult(val);
       return;
     }
@@ -175,7 +173,6 @@ export function CurrencyConverter() {
       if (!currentRate) throw new Error("Target currency not found in rates");
 
       setResult(val * currentRate);
-      setRate(currentRate);
     } catch (error) {
       console.error('Currency Conversion Error:', error);
       toast("Connection error. Using estimated rates.", "error");
@@ -184,11 +181,11 @@ export function CurrencyConverter() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [amount, from, to, toast]);
 
   useEffect(() => {
     fetchRate();
-  }, [from, to]);
+  }, [fetchRate]);
 
   const handleConvert = (e) => {
     e.preventDefault();
@@ -242,3 +239,4 @@ export function CurrencyConverter() {
     </div>
   );
 }
+

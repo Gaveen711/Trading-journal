@@ -137,3 +137,4 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose, recordProAcce
     </div>
   );
 }
+

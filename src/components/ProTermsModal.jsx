@@ -77,3 +77,4 @@ export function ProTermsModal({ onAccept, onClose }) {
     </div>
   );
 }
+

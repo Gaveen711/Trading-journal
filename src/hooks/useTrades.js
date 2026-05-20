@@ -87,3 +87,4 @@ export function useTrades(user) {
 
   return { trades, isLoading, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync };
 }
+

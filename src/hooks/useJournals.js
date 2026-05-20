@@ -64,3 +64,4 @@ export function useJournals(user) {
 
   return { journals, isLoading, saveJournalEntry, deleteEntry, refreshJournals: loadJournals };
 }
+
