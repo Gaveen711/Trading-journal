@@ -9,6 +9,8 @@ export default async function handler(req, res) {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://xaujournal.vercel.app',
+    'https://www.xaujournal.com',
+    'https://xaujournal.com',
     'http://localhost:5173',
   ];
   if (process.env.ALLOWED_ORIGIN) allowedOrigins.push(process.env.ALLOWED_ORIGIN);

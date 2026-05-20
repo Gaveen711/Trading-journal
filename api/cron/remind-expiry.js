@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       if (expiryDate <= threeDaysFromNow && expiryDate > new Date(threeDaysFromNow.getTime() - 86400000)) {
         emailPromises.push(
           resend.emails.send({
-            from: 'xaujournal <alerts@xaujournal.vercel.app/>', // Ensure goldjournal.app is verified in Resend dashboard
+            from: 'xaujournal <alerts@xaujournal.com>',
             to: data.email,
             subject: 'xaujournal: 3 Days Left of Pro',
             html: `<p>Hi ${data.name || 'Trader'}, your Pro access expires in 3 days. Renew now to avoid losing your advanced analytics.</p>`

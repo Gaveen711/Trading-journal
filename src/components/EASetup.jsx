@@ -78,7 +78,7 @@ export default function EASetup() {
         <p className="text-sm text-amber-400 font-medium">⚠️ Required MT5 Setting</p>
         <p className="text-xs text-zinc-400 mt-1">
           Go to <strong className="text-zinc-300">Tools → Options → Expert Advisors</strong> and add{' '}
-          <code className="text-zinc-300">xaujournal.vercel.app</code> to the allowed WebRequest URLs.
+          <code className="text-zinc-300">https://www.xaujournal.com</code> to the allowed WebRequest URLs.
         </p>
       </div>
     </div>
