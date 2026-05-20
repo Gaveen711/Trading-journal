@@ -102,36 +102,12 @@ export function useSubscription(user) {
     }
   };
 
-  const openPortal = async () => {
-    try {
-      const token = await user.getIdToken();
-      const resp = await fetch('/api/portal', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          userId: user.uid,
-          origin: window.location.origin
-        })
-      });
-      
-      const contentType = resp.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server communication failure.");
-      }
-
-      const data = await resp.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Failed to access management portal.');
-      }
-    } catch (error) {
-      console.error("Portal Error:", error);
-      toast("Could not access the billing portal at this time.", "error");
-    }
+  const openPortal = () => {
+    const portalUrl = import.meta.env.MODE === 'production'
+      ? 'https://www.paypal.com/myaccount/autopay/'
+      : 'https://www.sandbox.paypal.com/myaccount/autopay/';
+    window.open(portalUrl, '_blank');
+    toast("Open PayPal autopay settings to manage billing.", "info");
   };
 
   const recordProAcceptance = async () => {
