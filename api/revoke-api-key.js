@@ -1,5 +1,7 @@
 // api/revoke-api-key.js
 // xaujournal — Revoke a user's MT5/TradingView sync API key
+/* eslint-env node */
+/* global process */
 // Called from the React Settings page with a valid Firebase ID token.
 //
 // Request:

@@ -6,6 +6,8 @@
 // deletes their apiKeys, sets plan='free', and clears mt5SyncEnabled.
 
 import { timingSafeEqual, createHash } from 'crypto';
+/* eslint-env node */
+/* global process */
 import { admin, db } from '../_firebase.js';
 
 

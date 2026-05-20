@@ -1,4 +1,6 @@
 // api/auth-utils.js
+/* eslint-env node */
+/* global process */
 // Consolidated: Login Alert emails + reCAPTCHA Enterprise assessment
 // POST /api/auth-utils?action=login-alert   → send security email
 // POST /api/auth-utils?action=recaptcha     → assess reCAPTCHA token

@@ -1,14 +1,14 @@
 // api/save-trade.js
 // xaujournal — Save trade endpoint
+/* eslint-env node */
+/* global process */
 // Handles local trade uploads by users.
 // Ensures Spark/Free plan users do not exceed the 25-trade limit.
-
 import { admin, db, now } from './_firebase.js';
 
 export default async function handler(req, res) {
   const origin = req.headers.origin;
   const allowedOrigins = [
-    'https://xaujournal.vercel.app',
     'https://www.xaujournal.com',
     'https://xaujournal.com',
     'http://localhost:5173',

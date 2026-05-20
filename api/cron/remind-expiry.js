@@ -1,3 +1,5 @@
+/* eslint-env node */
+/* global process */
 import { Resend } from 'resend';
 import { timingSafeEqual, createHash } from 'crypto';
 import { admin, db } from '../_firebase.js';
