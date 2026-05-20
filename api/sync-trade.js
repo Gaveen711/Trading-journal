@@ -106,8 +106,6 @@ async function handleClose(tradeRef, payload) {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'POST only' });
 
   const apiKey = req.headers['x-api-key'] || req.body?.apiKey;

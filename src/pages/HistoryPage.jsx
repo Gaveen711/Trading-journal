@@ -52,7 +52,7 @@ export function HistoryPage() {
   const onExportCSV = () => {
     if (plan !== 'pro') {
       setShowPricingModal(true);
-      return toast('Upgrade to Pro to export your terminal data.', 'warn');
+      return toast('Upgrade to Pro to export your trade data.', 'warn');
     }
     if (!trades.length) return toast('No trades to export.', 'warn');
     const headers = ['Date', 'Direction', 'Entry', 'Exit', 'P&L', 'Swap', 'Pips', 'Session', 'Setup', 'Outcome', 'Note'];
@@ -184,7 +184,7 @@ export function HistoryPage() {
             <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-2 shadow-inner">
               <Search className="w-6 h-6 text-muted-foreground/40" />
             </div>
-            <span className="text-xs font-black uppercase tracking-widest opacity-40">No operations match the current filter</span>
+            <span className="text-xs font-black uppercase tracking-widest opacity-40">No trades match the current filter</span>
           </div>
         ) : (
           <div className="space-y-4">
@@ -265,7 +265,7 @@ export function HistoryPage() {
                 {expandedNotes[t.id] && (
                   <div className="mt-4 pt-4 border-t border-border/40 animate-in slide-in-from-top-2 duration-500 ease-[var(--apple-ease)]">
                     <div className="text-sm font-medium text-foreground/90 leading-relaxed whitespace-pre-wrap px-1">
-                      {t.note || <span className="text-muted-foreground italic font-normal">No intelligence brief provided for this operation.</span>}
+                      {t.note || <span className="text-muted-foreground italic font-normal">No notes provided for this trade.</span>}
                     </div>
                     {t.screenshots && t.screenshots.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-3">

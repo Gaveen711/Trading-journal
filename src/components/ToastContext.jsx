@@ -12,6 +12,10 @@ export const ToastProvider = ({ children }) => {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
   }, []);
 
+  const dismiss = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
   return (
     <ToastContext.Provider value={toast}>
       {children}
@@ -20,13 +24,13 @@ export const ToastProvider = ({ children }) => {
           <div 
             key={t.id} 
             className={`
-              pointer-events-auto px-6 py-4 rounded-2xl glass border shadow-2xl min-w-[300px]
-              animate-in slide-in-from-right-full duration-500 flex items-center gap-4
+              pointer-events-auto px-6 py-4 rounded-2xl glass border shadow-2xl min-w-[300px] relative
+              animate-in slide-in-from-right-full duration-500 flex items-center gap-4 pr-12
               ${t.type === 'success' ? 'border-green-500/20' : t.type === 'error' ? 'border-red-500/20' : 'border-primary/20'}
             `}
           >
             <div className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-sm
+              w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0
               ${t.type === 'success' ? 'bg-green-500/10 text-green-500' : t.type === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'}
             `}>
               {t.type === 'success' ? '✓' : t.type === 'error' ? '!' : 'i'}
@@ -37,6 +41,13 @@ export const ToastProvider = ({ children }) => {
               </span>
               <span className="text-sm font-semibold text-foreground/90 leading-tight">{t.msg}</span>
             </div>
+            <button 
+              onClick={() => dismiss(t.id)} 
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors p-1"
+              aria-label="Close notification"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
           </div>
         ))}
       </div>

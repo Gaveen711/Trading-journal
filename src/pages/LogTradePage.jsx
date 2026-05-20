@@ -6,8 +6,7 @@ import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icons';
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
-import { RiskCalculator } from '../components/RiskCalculator';
-import { Calculator, CurrencyExchange } from 'react-bootstrap-icons';
+import { CurrencyExchange } from 'react-bootstrap-icons';
 import { CurrencyConverter } from '../components/CurrencyConverter';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
@@ -32,7 +31,6 @@ export function LogTradePage() {
 
   const [direction, setDirection] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [showRiskCalc, setShowRiskCalc] = useState(false);
   const [equityPeriod, setEquityPeriod] = useState('all');
 
   const [date, setDate] = useState(todayStr());
@@ -101,20 +99,6 @@ export function LogTradePage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const onApplyRisk = (calcLots, calcSlPips) => {
-    setLots(calcLots.toString());
-    // Calculate SL Price based on entry if available
-    if (entry && direction) {
-      const entryPrice = parseFloat(entry);
-      // Gold: 1 pip = 0.10. 
-      const slDist = calcSlPips * 0.1;
-      const calculatedSl = direction === 'BUY' ? entryPrice - slDist : entryPrice + slDist;
-      setSl(calculatedSl.toFixed(2));
-    }
-    setShowRiskCalc(false);
-    toast('Risk intelligence applied.', 'success');
   };
 
   const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
@@ -247,8 +231,8 @@ export function LogTradePage() {
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Performance Terminal</h1>
-          <p className="text-muted-foreground text-sm font-medium">Welcome back, Agent. Analyze your market impact.</p>
+          <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Log Trade</h1>
+          <p className="text-muted-foreground text-sm font-medium">Welcome back. Enter your trade details below.</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
           <div className="card-premium p-4 flex flex-col gap-1 min-w-[150px] bg-muted/30 relative group overflow-hidden">
@@ -340,7 +324,7 @@ export function LogTradePage() {
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 flex justify-between items-center group animate-in zoom-in-95 duration-500 delay-150">
               <div className="space-y-1">
                 <h3 className="font-bold text-primary">Unlock Pro Access</h3>
-                <p className="text-xs text-primary/90">Advanced intelligence & unlimited logs.</p>
+                <p className="text-xs text-primary/90">Advanced analytics & unlimited trades.</p>
               </div>
               <button 
                 onClick={() => setShowPricingModal(true)}
@@ -355,22 +339,9 @@ export function LogTradePage() {
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                New Operation
+                New Trade
               </h3>
-              <button 
-                type="button"
-                onClick={() => setShowRiskCalc(!showRiskCalc)}
-                className={`p-2 rounded-xl border transition-all active:scale-95 ${showRiskCalc ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-muted/30 border-border/40 text-foreground/40 hover:text-primary hover:border-primary/40'}`}
-              >
-                <Calculator className="w-4 h-4" />
-              </button>
             </div>
-
-            {showRiskCalc && (
-              <div className="animate-in slide-in-from-top-4 duration-500">
-                <RiskCalculator balance={currentWalletBalance} onApply={onApplyRisk} onClose={() => setShowRiskCalc(false)} />
-              </div>
-            )}
 
             <form onSubmit={saveTradeForm} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -505,14 +476,14 @@ export function LogTradePage() {
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Intelligence Brief</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Trade Notes</label>
                 <textarea name="note" value={note} onChange={e => setNote(e.target.value)} className="input-premium h-24 resize-none text-xs leading-relaxed p-4" placeholder="Market conditions, emotional state, pattern recognized..."></textarea>
               </div>
 
               {plan === 'free' && (
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    <span>Operation Limit</span>
+                    <span>Trade Limit</span>
                     <span>{thisMonthTradesCount} / {TRADE_LIMIT} Logs</span>
                   </div>
                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/30 shadow-inner">
@@ -529,7 +500,7 @@ export function LogTradePage() {
                 disabled={saving} 
                 className={`btn-primary w-full h-12 text-sm font-black tracking-widest uppercase shadow-xl active:scale-95 transition-all ${isLimitReached ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
               >
-                {saving ? 'Processing Signal...' : isLimitReached ? 'Limit Exceeded' : 'Authorize Log'}
+                {saving ? 'Saving Trade...' : isLimitReached ? 'Limit Exceeded' : 'Save Trade'}
               </button>
             </form>
           </div>
@@ -540,7 +511,7 @@ export function LogTradePage() {
             <div className="flex justify-between items-center mb-6 relative z-10">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                Equity Intelligence
+                Equity Curve
               </h3>
               <CustomSelect 
                 className="min-w-[140px] h-9"
@@ -561,8 +532,8 @@ export function LogTradePage() {
                       <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
                     </div>
                     <div className="text-center space-y-1">
-                      <span className="text-sm font-bold text-foreground opacity-80">No Intel Data Available</span>
-                      <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log operations to begin analyzing your performance curve.</p>
+                      <span className="text-sm font-bold text-foreground opacity-80">No Data Available</span>
+                      <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log trades to see your performance curve.</p>
                     </div>
                   </div>
                 )}
@@ -611,7 +582,7 @@ export function LogTradePage() {
                 : 'bg-muted/30 border-border/40 text-foreground/30 hover:text-foreground/50 hover:bg-muted/50'
             }`}
           >
-            {isWiping ? 'Confirm Wipe?' : 'Reset Terminal'}
+            {isWiping ? 'Confirm Reset?' : 'Reset Account'}
           </button>
         </div>
       )}

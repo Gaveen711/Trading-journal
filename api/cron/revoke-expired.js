@@ -5,17 +5,19 @@
 // Finds all users with plan='grace' and graceUntil < now,
 // deletes their apiKeys, sets plan='free', and clears mt5SyncEnabled.
 
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual, createHash } from 'crypto';
 import { admin, db } from '../_firebase.js';
 
 
 export default async function handler(req, res) {
-  // ── Auth guard (timing-safe) ───────────────────────────────────────────────
+  // ── Auth guard (timing-safe with SHA-256 hashes) ───────────────────────────
   const providedAuth = req.headers.authorization || '';
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
-  const pBuf = Buffer.from(providedAuth.padEnd(expectedAuth.length));
-  const eBuf = Buffer.from(expectedAuth.padEnd(providedAuth.length));
-  if (pBuf.length !== eBuf.length || !timingSafeEqual(pBuf, eBuf)) {
+
+  const providedHash = createHash('sha256').update(providedAuth).digest();
+  const expectedHash = createHash('sha256').update(expectedAuth).digest();
+
+  if (!timingSafeEqual(providedHash, expectedHash)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

@@ -1,4 +1,4 @@
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line } from 'react-chartjs-2';
 import { formatCurrencyCompact } from '../lib/tradeUtils';
 import { BarChartLine, ClockFill, LightningFill, ShieldExclamation } from 'react-bootstrap-icons';
@@ -25,6 +25,7 @@ const AnalyticsSkeleton = () => (
 
 export function AnalyticsPage() {
   const { trades, isLoadingTrades, walletBalance } = useOutletContext();
+  const navigate = useNavigate();
   
   if (isLoadingTrades) return (
     <div className="space-y-8">
@@ -214,40 +215,38 @@ export function AnalyticsPage() {
       </div>
 
       <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-500">
-        <h3 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2 text-foreground/80">
-          <BarChartLine className="w-4 h-4 text-primary" />
-          Monthly Performance Signals
-        </h3>
-        <div className="space-y-5">
-          {months.length ? months.map((month, idx) => {
-            const value = monthMap[month];
-            const percent = Math.abs(value) / maxAbs * 100;
-            const label = new Date(`${month}-01`).toLocaleString('default', { month: 'short', year: '2-digit' });
-            return (
-              <div key={month} className="group animate-in slide-in-from-right-4 duration-700" style={{ animationDelay: `${700 + (idx * 100)}ms` }}>
-                <div className="flex justify-between items-center mb-2 px-1">
-                  <span className="text-xs font-black uppercase tracking-[0.15em] text-foreground">{label}</span>
-                  <span className={`text-sm font-black tracking-tight ${value >= 0 ? 'text-green-500 shadow-green-500/20' : 'text-red-500 shadow-red-500/20'}`}>
-                    {formatCurrencyCompact(value)}
-                  </span>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/80">
+            <BarChartLine className="w-4 h-4 text-primary" />
+            Recent Signals
+          </h3>
+          <button 
+            onClick={() => navigate('/history')} 
+            className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+          >
+            View All History →
+          </button>
+        </div>
+        <div className="space-y-3">
+          {sortedTrades.slice(-5).reverse().map((t) => (
+            <div key={t.id} className="flex justify-between items-center p-4 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-7 rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-widest ${t.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+                  {t.direction}
                 </div>
-                <div className="h-4 w-full bg-muted/30 rounded-full overflow-hidden border border-border/40 shadow-inner p-[2px]">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-1500 ease-[var(--apple-ease)] ${value >= 0 ? 'bg-gradient-to-r from-green-500/80 to-green-400 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-gradient-to-r from-red-500/80 to-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]'}`} 
-                    style={{ width: `${Math.max(4, percent)}%` }}
-                  ></div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-black tracking-tight">{t.date}</span>
+                  <span className="text-[9px] text-foreground/70 font-bold uppercase tracking-widest">{t.session} · {t.setup}</span>
                 </div>
               </div>
-            );
-          }) : (
-            <div className="py-20 flex flex-col items-center justify-center text-muted-foreground gap-6">
-              <div className="w-20 h-20 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-6">
-                <BarChartLine className="w-8 h-8 text-muted-foreground/40" />
+              <div className={`text-sm font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toFixed(2)}
               </div>
-              <div className="text-center space-y-1">
-                <span className="text-sm font-bold text-foreground uppercase tracking-tight">No Monthly Logs Identified</span>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground/75 leading-relaxed px-8">Initialize operations to begin synthesizing monthly performance curves.</p>
-              </div>
+            </div>
+          ))}
+          {sortedTrades.length === 0 && (
+            <div className="text-center py-8 text-[10px] uppercase tracking-widest text-muted-foreground/60">
+              No recent signals found.
             </div>
           )}
         </div>
