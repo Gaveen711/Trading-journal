@@ -61,11 +61,11 @@ Fraudulent chargebacks may result in permanent account termination.`,
 If you are on the free tier and wish to upgrade, review the features available on our Pricing page before subscribing.`,
   },
   {
-    id: 'stripe',
+    id: 'payment_processor',
     title: '7. Payment processor',
-    content: `All payments are processed by Stripe, a PCI-DSS compliant payment processor. xaujournal does not store your card details.
+    content: `All payments are processed by our payment provider, which is responsible for PCI compliance. xaujournal does not store your card details.
 
-Refunds approved by xaujournal are processed via Stripe and typically appear on your statement within 5–10 business days, depending on your bank. We have no control over how quickly your bank processes the credit.`,
+Refunds approved by xaujournal are processed via the payment provider and typically appear on your statement within 5–10 business days, depending on your bank. We have no control over how quickly your bank processes the credit.`,
   },
   {
     id: 'changes',

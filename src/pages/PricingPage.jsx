@@ -32,7 +32,7 @@ const FAQ = [
   { q: 'Can I cancel anytime?', a: 'Yes. Cancel from the billing portal at any time. You keep Pro access until the end of your billing period — no partial-month charges.' },
   { q: 'Is my trading data secure?', a: 'Your data is secured using industry-standard encryption and isolated cloud storage. Only you have access to your trade history; we cannot read your private logs.' },
   { q: 'Does the EA work on mobile MT5?', a: 'Expert Advisors require the MT5 desktop terminal on Windows. The recommended workflow is to run the EA on your desktop while executing trades from mobile — data syncs in real time.' },
-  { q: 'What payment methods do you accept?', a: 'All major credit and debit cards via Stripe. No PayPal at this time.' },
+  { q: 'What payment methods do you accept?', a: 'All major credit and debit cards and PayPal.' },
   { q: 'Is there a free trial for Pro?', a: 'The free plan provides full access to the core journaling experience. We are currently developing a Pro trial experience—sign up to be notified when it launches.' },
 ];
 

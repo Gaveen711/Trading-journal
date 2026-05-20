@@ -25,10 +25,11 @@ Before scaling to real users, you MUST set up budget alerts to prevent unexpecte
 If you ever committed secrets (like Stripe Private Keys or Firebase Service Accounts) to Git history, they are considered compromised.
 
 ### Steps to Rotate:
-1. **Stripe**:
-   - Go to Stripe Dashboard → **Developers** → **API Keys**.
-   - Click **Roll Key** for your Secret Key (`sk_live_...`).
-   - Immediately update the `STRIPE_SECRET` environment variable in Vercel.
+1. **Payments (PayPal / provider keys)**:
+   - Go to your payment provider's developer dashboard (e.g., PayPal Developer Dashboard) and locate your client ID and secret.
+   - Create new credentials if you suspect compromise.
+   - Update the corresponding environment variables in Vercel (e.g., `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`).
+   - Remove any old `STRIPE_*` environment variables from your deployment configuration if you are migrating off Stripe.
 2. **Firebase Service Account**:
    - Go to Google Cloud Console → **IAM & Admin** → **Service Accounts**.
    - Select the Firebase Admin SDK account.
