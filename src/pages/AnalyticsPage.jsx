@@ -45,8 +45,6 @@ export function AnalyticsPage() {
   const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
   const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
   const pf = grossLoss > 0 ? grossWin / grossLoss : null;
-  const rrTrades = trades.filter(t => t.rr);
-  const avgRR = rrTrades.length ? rrTrades.reduce((s, t) => s + t.rr, 0) / rrTrades.length : null;
 
   let peak = walletBalance || 0, maxDD = 0, running = walletBalance || 0;
   const sortedTrades = [...trades].sort((a, b) => a.date.localeCompare(b.date));
@@ -144,8 +142,6 @@ export function AnalyticsPage() {
     const key = t.date.substring(0, 7);
     monthMap[key] = (monthMap[key] || 0) + t.pnl;
   });
-  const months = Object.keys(monthMap).sort().reverse();
-  const maxAbs = months.length ? Math.max(...months.map(m => Math.abs(monthMap[m]))) : 1;
 
   const statCards = [
     { label: 'Wallet Balance', value: formatCurrencyCompact(currentWalletBalance), sub: 'Current Liquidity', color: 'text-primary' },
@@ -254,5 +250,6 @@ export function AnalyticsPage() {
     </div>
   );
 }
+
 
 

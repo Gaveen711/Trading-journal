@@ -4,3 +4,4 @@ declare module './firebase.js' {
   export const db: import('firebase/firestore').Firestore;
 
 }
+

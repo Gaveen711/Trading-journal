@@ -36,7 +36,7 @@ export function CalendarPage() {
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const monthlyTrades = trades.filter(t => {
     if (!t.date) return false;
-    const [y, m, d] = t.date.split('-').map(Number);
+    const [y, m] = t.date.split('-').map(Number);
     return y === calYear && (m - 1) === calMonth;
   });
 
@@ -44,7 +44,6 @@ export function CalendarPage() {
   const totalMonthlyTrades = monthlyTrades.length;
 
   let winDays = 0;
-  let lossDays = 0;
   let activeDays = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const dayTrs = dayTrades(calYear, calMonth, d);
@@ -497,7 +496,7 @@ export function CalendarPage() {
               <div className="space-y-3">
                 <p className="text-xs font-black text-muted-foreground/80 uppercase tracking-widest">Best Execution Setups</p>
                 {sortedSetups.length > 0 ? (
-                  sortedSetups.map((setup, idx) => (
+                  sortedSetups.map((setup) => (
                     <div key={setup.name} className="p-3 rounded-2xl bg-muted/10 border border-border/10 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-black text-foreground truncate max-w-[140px]">{setup.name}</span>
@@ -556,6 +555,7 @@ export function CalendarPage() {
     </div>
   );
 }
+
 
 
 

@@ -53,7 +53,7 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
     
     // Bind context to identify collection in mock (simple hack for test)
     db.__mocks.mockCollection.mockImplementation((name) => {
-      const docMock = (id) => {
+      const docMock = () => {
         const obj = {
           get: db.__mocks.mockDocGet.bind({ collectionName: name }),
           set: db.__mocks.mockDocSet,

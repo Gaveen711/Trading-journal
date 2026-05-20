@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { XLg, Check2Circle } from 'react-bootstrap-icons';
 import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
@@ -11,8 +11,7 @@ export function EditTradeModal({ trade, onSave, onClose }) {
   const [setup, setSetup] = useState(trade.setup || '');
   const [date, setDate] = useState(trade.date);
 
-  useEffect(() => {
-    // Re-calculate P&L and Pips dynamically
+  const derivedMetrics = useMemo(() => {
     const res = calcPnl(
       parseFloat(formData.entry) || 0,
       parseFloat(formData.exit) || 0,
@@ -21,17 +20,15 @@ export function EditTradeModal({ trade, onSave, onClose }) {
       parseFloat(formData.sl) || null,
       parseFloat(formData.tp) || null,
       direction,
-      'GOLD',
       parseFloat(formData.swap) || 0
     );
-    
-    setFormData(prev => ({
-      ...prev,
-      pnl: parseFloat(res.pnl.toFixed(2)),
-      pips: res.pips,
+
+    return {
+      pnl: res.pnl ?? 0,
+      pips: res.pips ?? 0,
       rr: res.rr,
       outcome: res.pnl > 0.01 ? 'WIN' : res.pnl < -0.01 ? 'LOSS' : 'BE'
-    }));
+    };
   }, [formData.entry, formData.exit, formData.lots, formData.swap, formData.sl, formData.tp, direction]);
 
   const handleSubmit = (e) => {
@@ -41,7 +38,11 @@ export function EditTradeModal({ trade, onSave, onClose }) {
       direction,
       session,
       setup,
-      date
+      date,
+      pnl: derivedMetrics.pnl,
+      pips: derivedMetrics.pips,
+      rr: derivedMetrics.rr,
+      outcome: derivedMetrics.outcome
     });
   };
 
@@ -149,13 +150,13 @@ export function EditTradeModal({ trade, onSave, onClose }) {
           <div className="p-5 rounded-2xl bg-muted/40 border border-border/50 flex justify-between items-center animate-in slide-in-from-top-2">
             <div className="flex flex-col">
               <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Recalculated Impact</span>
-              <span className={`text-xl font-black ${formData.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {formData.pnl >= 0 ? '+' : ''}${Math.abs(formData.pnl).toFixed(2)}
+              <span className={`text-xl font-black ${derivedMetrics.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {derivedMetrics.pnl >= 0 ? '+' : ''}${Math.abs(derivedMetrics.pnl).toFixed(2)}
               </span>
             </div>
             <div className="text-right">
               <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest block">Efficiency</span>
-              <span className="text-sm font-black text-foreground">{formData.pips} Pips {formData.rr ? `· R:R ${formData.rr}` : ''}</span>
+              <span className="text-sm font-black text-foreground">{derivedMetrics.pips} Pips {derivedMetrics.rr ? `· R:R ${derivedMetrics.rr}` : ''}</span>
             </div>
           </div>
 
@@ -177,3 +178,4 @@ export function EditTradeModal({ trade, onSave, onClose }) {
     </div>
   );
 }
+

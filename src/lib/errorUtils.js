@@ -34,3 +34,4 @@ export const getFriendlyErrorMessage = (error) => {
 
   return cleanMsg || "Something went wrong.";
 };
+

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
@@ -44,7 +44,7 @@ To cancel: go to Account Settings → Manage Subscription → Cancel Plan.`,
 
 • Accidental purchase — if you contact us within 48 hours of your first-ever subscription charge and have not used any Pro features, we will consider a one-time refund.
 
-To request a goodwill refund, email support@xaujournal.com with your account email, the charge date, and a brief description of the issue. We aim to respond within 2 business days.`,
+To request a goodwill refund, email info@xaujournal.com with your account email, the charge date, and a brief description of the issue. We aim to respond within 2 business days.`,
   },
   {
     id: 'chargebacks',
@@ -77,7 +77,7 @@ Continued use of xaujournal after the effective date of any changes constitutes 
   {
     id: 'contact',
     title: '9. Contact us',
-    content: `For any billing or refund enquiries:\n\nEmail: support@xaujournal.com\n\nPlease include your account email and the transaction date in your message. We aim to respond within two business days.`,
+    content: `For any billing or refund enquiries:\n\nEmail: info@xaujournal.com\n\nPlease include your account email and the transaction date in your message. We aim to respond within two business days.`,
   },
 ];
 
@@ -192,7 +192,7 @@ export function RefundPolicyPage() {
             </button>
           </div>
 
-          <motion.div 
+          <Motion.div 
             initial={false}
             animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
             className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
@@ -213,27 +213,27 @@ export function RefundPolicyPage() {
             >
               Get started
             </button>
-          </motion.div>
+          </Motion.div>
         </nav>
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
-        <motion.div 
+        <Motion.div 
           variants={containerVariants} 
           initial="hidden" 
           animate="visible" 
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
-          <motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
+          <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
             Transparency
-          </motion.span>
-          <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
+          </Motion.span>
+          <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
             Refund <span className="text-primary">Policy</span>
-          </motion.h1>
-          <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+          </Motion.h1>
+          <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
             Clear and simple rules about subscriptions and refunds. We believe in being fair to our users.
-          </motion.p>
-        </motion.div>
+          </Motion.p>
+        </Motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
           <aside className="hidden lg:block sticky top-32">
@@ -251,7 +251,7 @@ export function RefundPolicyPage() {
             </nav>
           </aside>
 
-          <motion.article 
+          <Motion.article 
             initial={{ opacity: 0, y: 40 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -284,7 +284,7 @@ export function RefundPolicyPage() {
                 </section>
               ))}
             </div>
-          </motion.article>
+          </Motion.article>
         </div>
       </main>
 
@@ -325,3 +325,6 @@ export function RefundPolicyPage() {
     </div>
   );
 }
+
+
+

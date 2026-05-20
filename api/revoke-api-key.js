@@ -44,6 +44,7 @@ export default async function handler(req, res) {
     const decoded = await admin.auth().verifyIdToken(idToken);
     uid = decoded.uid;
   } catch (err) {
+    console.error('[revoke-api-key] verifyIdToken failed:', err && err.message ? err.message : err);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 

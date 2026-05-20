@@ -1,23 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { CalculatorFill, LightningFill, XLg } from 'react-bootstrap-icons';
 
 export function RiskCalculator({ balance, onApply, onClose }) {
   const [riskPercent, setRiskPercent] = useState(1);
   const [slPips, setSlPips] = useState(20); // standard 20 pip sl for gold scalp
-  const [contractSize, setContractSize] = useState(100); // Standard Gold contract
-  const [calculatedLots, setCalculatedLots] = useState(0);
-  const [riskAmount, setRiskAmount] = useState(0);
 
-  useEffect(() => {
-    const amount = (balance * (riskPercent / 100));
-    setRiskAmount(amount);
-    
-    // Position Size = (Amount at Risk) / (SL Pips * Pip Value)
-    // For Gold: 1 Lot = 100oz. 1 pip (0.10) for 1 lot = $10.
-    // Lot Size = Risk Amount / (Sl Pips * 10)
-    const lots = amount / (slPips * 10);
-    setCalculatedLots(parseFloat(lots.toFixed(2)));
-  }, [balance, riskPercent, slPips, contractSize]);
+  const riskAmount = useMemo(() => {
+    return balance ? balance * (riskPercent / 100) : 0;
+  }, [balance, riskPercent]);
+
+  const calculatedLots = useMemo(() => {
+    if (!slPips || slPips <= 0) return 0;
+    const lots = riskAmount / (slPips * 10);
+    return parseFloat(lots.toFixed(2));
+  }, [riskAmount, slPips]);
 
   return (
     <div className="card-premium p-6 sm:p-8 space-y-6 animate-in slide-in-from-right-4 duration-500 relative group overflow-hidden border-primary/20 bg-primary/5">
@@ -98,3 +94,4 @@ export function RiskCalculator({ balance, onApply, onClose }) {
     </div>
   );
 }
+

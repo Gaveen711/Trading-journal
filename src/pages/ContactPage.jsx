@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
@@ -58,6 +58,17 @@ export function ContactPage() {
         setStatus('sent');
     };
 
+    const handleEmailClick = (event) => {
+        event.preventDefault();
+        const email = 'info@xaujournal.com';
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}`;
+        const newWindow = window.open(gmailUrl, '_blank');
+
+        if (!newWindow) {
+            window.location.href = `mailto:${email}`;
+        }
+    };
+
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
@@ -92,7 +103,7 @@ export function ContactPage() {
 
                     <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
                         {navLinks.map(({ to, label }) => (
-                            <motion.li 
+                            <Motion.li 
                                 key={to}
                                 whileHover={{ scale: 1.05, y: -2 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -103,7 +114,7 @@ export function ContactPage() {
                                 >
                                     {label}
                                 </NavLink>
-                            </motion.li>
+                            </Motion.li>
                         ))}
                     </ul>
 
@@ -132,7 +143,7 @@ export function ContactPage() {
                         </button>
                     </div>
 
-                    <motion.div
+                    <Motion.div
                         initial={false}
                         animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
                         className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
@@ -153,32 +164,36 @@ export function ContactPage() {
                         >
                             Get started
                         </button>
-                    </motion.div>
+                    </Motion.div>
                 </nav>
             </header>
 
             <main className="relative z-10 px-6 pt-32 pb-24 md:pt-40 md:pb-40 max-w-7xl mx-auto min-h-screen">
-                <motion.div
+                <Motion.div
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
                     className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
                 >
 
-                    <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
+                    <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
                         Get in <span className="text-primary">touch</span>
-                    </motion.h1>
-                    <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+                    </Motion.h1>
+                    <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
                         Questions, feedback, or a bug to report? We read every message and reply within one business day.
-                    </motion.p>
-                </motion.div>
+                    </Motion.p>
+                </Motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-16 lg:gap-24">
-                    <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.3 }}>
+                    <Motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.3 }}>
                         <div className="mb-16">
                             <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-4">Direct contact</p>
-                            <a href="mailto:support@xaujournal.com" className="text-2xl md:text-3xl font-bold hover:text-primary transition-colors duration-300">
-                                support@xaujournal.com
+                            <a
+                                href="mailto:info@xaujournal.com"
+                                onClick={handleEmailClick}
+                                className="text-2xl md:text-3xl font-bold hover:text-primary transition-colors duration-300"
+                            >
+                                info@xaujournal.com
                             </a>
                             <p className="text-sm text-muted-foreground mt-3 font-medium">Global support available Mon-Fri.</p>
                         </div>
@@ -189,21 +204,21 @@ export function ContactPage() {
                                 { label: 'Feature requests', desc: 'We actively shape our roadmap based on real trader feedback.' },
                                 { label: 'Billing & account', desc: 'Need help with subscriptions, invoices, or account management?' },
                             ].map((item, i) => (
-                                <motion.div
+                                <Motion.div
                                     key={item.label}
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 + (i * 0.1) }}
                                     className="p-8 rounded-3xl border border-border/40 bg-muted/5 backdrop-blur-md group hover:bg-muted/10 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500"
                                 >
                                     <p className="text-base font-bold mb-2 group-hover:text-primary transition-colors">{item.label}</p>
                                     <p className="text-sm text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
-                                </motion.div>
+                                </Motion.div>
                             ))}
                         </div>
-                    </motion.div>
+                    </Motion.div>
 
-                    <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }}>
+                    <Motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }}>
                         {status === 'sent' ? (
-                            <motion.div
+                            <Motion.div
                                 initial={{ scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 className="p-12 rounded-[2.5rem] border border-primary/20 bg-primary/5 backdrop-blur-md text-center shadow-2xl shadow-primary/5 h-full flex flex-col items-center justify-center"
@@ -221,9 +236,9 @@ export function ContactPage() {
                                 >
                                     Send another message
                                 </button>
-                            </motion.div>
+                            </Motion.div>
                         ) : (
-                            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8 p-8 md:p-12 rounded-[2.5rem] border border-border/40 bg-card/50 backdrop-blur-xl shadow-2xl shadow-foreground/5 relative overflow-hidden">
+                            <form onSubmit={handleSubmit} className="flex flex-col gap-8 p-8 md:p-12 rounded-[2.5rem] border border-border/40 bg-card/50 backdrop-blur-xl shadow-2xl shadow-foreground/5 relative overflow-hidden">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                     <div className="space-y-3">
                                         <label className="block text-[0.7rem] font-black tracking-[0.2em] uppercase text-muted-foreground/80 ml-1">Name</label>
@@ -254,7 +269,7 @@ export function ContactPage() {
                                 </button>
                             </form>
                         )}
-                    </motion.div>
+                    </Motion.div>
                 </div>
             </main>
 
@@ -293,3 +308,5 @@ export function ContactPage() {
         </div>
     );
 }
+
+

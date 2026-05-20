@@ -47,3 +47,4 @@ export function useAppTheme() {
 
   return { isLightMode, toggleTheme };
 }
+

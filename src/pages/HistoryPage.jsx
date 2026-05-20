@@ -83,7 +83,7 @@ export function HistoryPage() {
       await editTrade(id, data);
       setEditingTrade(null);
       toast('Trade log updated.', 'success');
-    } catch (e) {
+    } catch {
       toast('Failed to update log.', 'error');
     }
   };
@@ -294,4 +294,5 @@ export function HistoryPage() {
     </div>
   );
 }
+
 

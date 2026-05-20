@@ -32,7 +32,7 @@ export const formatCurrencyCompact = (val) => {
 const XAUUSD_CONTRACT_SIZE = 100;
 const XAUUSD_PIP_SIZE      = 0.1;
 
-export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, _market = 'GOLD', swap = 0) => {
+export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
 
   const diff    = dir === 'BUY' ? exit - entry : entry - exit;
@@ -80,3 +80,4 @@ export const storage = {
     return true;
   }
 };
+

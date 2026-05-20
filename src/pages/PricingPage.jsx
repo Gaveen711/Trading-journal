@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 import { auth } from '../firebase';
 import { useSubscription } from '../hooks/useSubscription';
 import { ProTermsModal } from '../components/ProTermsModal';
-import { useToast } from '../components/ToastContext';
 
 const FREE_FEATURES = [
   '50 trades / month',
@@ -44,7 +43,6 @@ export function PricingPage() {
   const user = auth.currentUser;
   const { startCheckout, recordProAcceptance } = useSubscription(user);
   const [showTerms, setShowTerms] = useState(false);
-  const toast = useToast();
 
   const handleUpgradeClick = () => {
     if (!user) {
@@ -131,7 +129,7 @@ export function PricingPage() {
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
             {navLinks.map(({ to, label }) => (
-              <motion.li 
+              <Motion.li 
                 key={to}
                 whileHover={{ scale: 1.05, y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -142,7 +140,7 @@ export function PricingPage() {
                 >
                   {label}
                 </NavLink>
-              </motion.li>
+              </Motion.li>
             ))}
           </ul>
 
@@ -173,7 +171,7 @@ export function PricingPage() {
 
           <AnimatePresence>
             {mobileMenuOpen && (
-              <motion.div 
+              <Motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -195,30 +193,30 @@ export function PricingPage() {
                 >
                   Get started
                 </button>
-              </motion.div>
+              </Motion.div>
             )}
           </AnimatePresence>
         </nav>
       </header>
 
       <main className="relative z-10 px-6 pt-32 pb-24 md:pt-40 md:pb-40 max-w-7xl mx-auto">
-        <motion.div 
+        <Motion.div 
           variants={containerVariants} 
           initial="hidden" 
           animate="visible" 
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
 
-          <motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
+          <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
             Trade better. <span className="text-primary">Stress less.</span>
-          </motion.h1>
-          <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+          </Motion.h1>
+          <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
             Start with our generous free tier. Upgrade to Pro when you're ready to unlock the full institutional-grade analytics suite.
-          </motion.p>
-        </motion.div>
+          </Motion.p>
+        </Motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto mb-32 md:mb-48">
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, y: 40 }} 
             whileInView={{ opacity: 1, y: 0 }} 
             viewport={{ once: true }}
@@ -251,9 +249,9 @@ export function PricingPage() {
             >
               Get started free
             </button>
-          </motion.div>
+          </Motion.div>
 
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, y: 40 }} 
             whileInView={{ opacity: 1, y: 0 }} 
             viewport={{ once: true }}
@@ -294,11 +292,11 @@ export function PricingPage() {
             >
               Upgrade to Pro
             </button>
-          </motion.div>
+          </Motion.div>
         </div>
 
         <div className="max-w-3xl mx-auto">
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, y: 30 }} 
             whileInView={{ opacity: 1, y: 0 }} 
             viewport={{ once: true }} 
@@ -307,7 +305,7 @@ export function PricingPage() {
           >
             <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Common questions</h2>
             <p className="text-muted-foreground font-medium">Everything you need to know about xaujournal Pro.</p>
-          </motion.div>
+          </Motion.div>
           
           <div className="space-y-4">
             {FAQ.map((item, i) => (
@@ -364,7 +362,7 @@ export function PricingPage() {
 function FAQItem({ q, a, index }) {
   const [open, setOpen] = useState(false);
   return (
-    <motion.div 
+    <Motion.div 
       initial={{ opacity: 0, y: 20 }} 
       whileInView={{ opacity: 1, y: 0 }} 
       viewport={{ once: true }} 
@@ -380,6 +378,8 @@ function FAQItem({ q, a, index }) {
       <div className={`overflow-hidden transition-all duration-500 ease-in-out ${open ? 'max-h-[500px] mt-6 opacity-100' : 'max-h-0 opacity-0'}`}>
         <p className="text-muted-foreground leading-relaxed font-medium text-sm md:text-base">{a}</p>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }
+
+
