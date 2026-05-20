@@ -226,3 +226,11 @@ h1, h2, h3, h4, h5, h6 {
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
+
+/* Hide NeatGradients library watermark */
+a[data-n="1"], a[href*="neat.firecms.co"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

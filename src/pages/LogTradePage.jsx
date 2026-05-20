@@ -15,12 +15,12 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 export function LogTradePage() {
-  const { 
-    trades, addTrade, setShowPricingModal, walletBalance, updateBalance, 
-    plan, totalTrades, resetTrades, resetWallet, monthlyGoal, updateMonthlyGoal 
+  const {
+    trades, addTrade, setShowPricingModal, walletBalance, updateBalance,
+    plan, totalTrades, resetTrades, resetWallet, monthlyGoal, updateMonthlyGoal
   } = useOutletContext();
   const toast = useToast();
-  
+
 
 
   const TRADE_LIMIT = 50;
@@ -53,7 +53,7 @@ export function LogTradePage() {
 
   const saveTradeForm = async (e) => {
     e.preventDefault();
-    
+
     if (isLimitReached) {
       setShowPricingModal(true);
       toast(`Monthly limit reached (${TRADE_LIMIT} trades). Access will reset next month, or upgrade now for unlimited logs.`, 'warn');
@@ -102,7 +102,7 @@ export function LogTradePage() {
   };
 
   const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
-  
+
   let chartVisibleTrades = sortedForChart;
   let initialBalanceForChart = walletBalance || 0;
 
@@ -110,9 +110,9 @@ export function LogTradePage() {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 30);
     const cutoffStr = cutoffDate.toISOString().split('T')[0];
-    
+
     chartVisibleTrades = sortedForChart.filter(t => t.date >= cutoffStr);
-    
+
     // Calculate the cumulative pnl of all trades BEFORE the 30-day window
     const olderTrades = sortedForChart.filter(t => t.date < cutoffStr);
     initialBalanceForChart += olderTrades.reduce((s, t) => s + (t.pnl || 0), 0);
@@ -149,24 +149,24 @@ export function LogTradePage() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { 
-      legend: { display: false }, 
-      tooltip: { 
+    plugins: {
+      legend: { display: false },
+      tooltip: {
         backgroundColor: 'rgba(13, 13, 20, 0.9)',
         titleColor: '#94a3b8',
         bodyColor: '#f1f5f9',
         padding: 12,
         borderRadius: 8,
         displayColors: false,
-        mode: 'index', 
-        intersect: false 
-      } 
+        mode: 'index',
+        intersect: false
+      }
     },
-    scales: { 
+    scales: {
       x: { display: false },
-      y: { 
-        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
-        ticks: { color: '#64748b', font: { size: 10 } } 
+      y: {
+        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+        ticks: { color: '#64748b', font: { size: 10 } }
       }
     }
   };
@@ -209,17 +209,17 @@ export function LogTradePage() {
   useEffect(() => {
     let timer;
     if (isWiping) {
-        timer = setTimeout(() => setIsWiping(false), 5000);
+      timer = setTimeout(() => setIsWiping(false), 5000);
     }
     return () => clearTimeout(timer);
   }, [isWiping]);
 
-  const totalPnl = chartVisibleTrades.reduce((s,t)=> s + (t.pnl || 0), 0);
-  const currentWalletBalance = (walletBalance || 0) + trades.reduce((s,t)=> s + (t.pnl || 0), 0);
+  const totalPnl = chartVisibleTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+  const currentWalletBalance = (walletBalance || 0) + trades.reduce((s, t) => s + (t.pnl || 0), 0);
   const winRate = chartVisibleTrades.length ? (chartVisibleTrades.filter(t => t.outcome === 'WIN').length / chartVisibleTrades.length * 100).toFixed(0) : 0;
 
   const thisMonthTrades = trades.filter(t => t.date >= monthStart);
-  const thisMonthPnl = thisMonthTrades.reduce((s,t) => s + (t.pnl || 0), 0);
+  const thisMonthPnl = thisMonthTrades.reduce((s, t) => s + (t.pnl || 0), 0);
   const goalProgress = Math.min(100, Math.max(0, (thisMonthPnl / (monthlyGoal || 1)) * 100));
 
   const wins = chartVisibleTrades.filter(t => (t.pnl || 0) > 0);
@@ -239,7 +239,7 @@ export function LogTradePage() {
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Wallet Balance</span>
               {plan === 'pro' && !isEditingBalance && (
-                <button 
+                <button
                   onClick={() => setIsEditingBalance(true)}
                   className="text-[9px] font-black uppercase text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 hover:underline"
                 >
@@ -247,10 +247,10 @@ export function LogTradePage() {
                 </button>
               )}
             </div>
-            
+
             {isEditingBalance ? (
               <div className="flex gap-2 items-center animate-in slide-in-from-right-2 duration-300">
-                <input 
+                <input
                   type="number"
                   inputMode="decimal"
                   value={tempBalance}
@@ -264,7 +264,7 @@ export function LogTradePage() {
             ) : (
               <span className="text-xl font-black">{formatCurrencyCompact(currentWalletBalance)}</span>
             )}
-            
+
             {/* Pulsing light for pro users when balance is active */}
             {plan === 'pro' && <div className="absolute top-0 right-0 w-1 h-full bg-primary/20 animate-pulse" />}
           </div>
@@ -276,18 +276,18 @@ export function LogTradePage() {
           <div className="card-premium p-4 flex flex-col gap-2 min-w-[200px] bg-muted/30 relative overflow-hidden group">
             <div className="flex justify-between items-center">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Objective Progress</span>
-              <button 
+              <button
                 onClick={() => setIsEditingGoal(true)}
                 className="text-[9px] font-black uppercase text-primary opacity-0 group-hover:opacity-100 transition-all hover:underline"
               >
                 Target
               </button>
             </div>
-            
+
             <div className="flex justify-between items-center">
               {isEditingGoal ? (
                 <div className="flex gap-2 items-center w-full animate-in slide-in-from-right-2">
-                  <input 
+                  <input
                     type="number"
                     inputMode="decimal"
                     value={tempGoal}
@@ -309,15 +309,15 @@ export function LogTradePage() {
             </div>
 
             <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20 shadow-inner">
-              <div 
-                className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${thisMonthPnl >= monthlyGoal ? 'bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-primary'}`} 
+              <div
+                className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${thisMonthPnl >= monthlyGoal ? 'bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-primary'}`}
                 style={{ width: `${goalProgress}%` }}
               />
             </div>
           </div>
         </div>
       </header>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-12 xl:col-span-5 space-y-6">
           {plan === 'free' && (
@@ -326,7 +326,7 @@ export function LogTradePage() {
                 <h3 className="font-bold text-primary">Unlock Pro Access</h3>
                 <p className="text-xs text-primary/90">Advanced analytics & unlimited trades.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowPricingModal(true)}
                 className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
               >
@@ -334,7 +334,7 @@ export function LogTradePage() {
               </button>
             </div>
           )}
-          
+
           <div className="card-premium p-8 sm:p-10 space-y-8 animate-in slide-in-from-left-4 duration-700 delay-100">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-bold flex items-center gap-2">
@@ -358,9 +358,9 @@ export function LogTradePage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Session</label>
-                  <CustomSelect 
-                    name="session" 
-                    value={session} 
+                  <CustomSelect
+                    name="session"
+                    value={session}
                     onChange={setSession}
                     options={[
                       { value: 'Sydney', label: 'Sydney' },
@@ -376,12 +376,12 @@ export function LogTradePage() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Direction</label>
                   <div className="flex bg-muted rounded-xl p-1 gap-1 border border-border/50 h-11">
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setDirection('BUY')}
                       className={`flex-1 rounded-lg text-xs font-black transition-all ${direction === 'BUY' ? 'bg-green-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
                     >BUY</button>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setDirection('SELL')}
                       className={`flex-1 rounded-lg text-xs font-black transition-all ${direction === 'SELL' ? 'bg-red-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
@@ -390,9 +390,9 @@ export function LogTradePage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Setup</label>
-                  <CustomSelect 
-                    name="setup" 
-                    value={setup} 
+                  <CustomSelect
+                    name="setup"
+                    value={setup}
                     onChange={setSetup}
                     options={[
                       { value: 'A+ Setup', label: 'A+ Setup' },
@@ -405,9 +405,9 @@ export function LogTradePage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Leverage</label>
-                  <CustomSelect 
-                    name="leverage" 
-                    value={leverage} 
+                  <CustomSelect
+                    name="leverage"
+                    value={leverage}
                     onChange={setLeverage}
                     options={[
                       { value: '1:1', label: '1:1' },
@@ -487,17 +487,17 @@ export function LogTradePage() {
                     <span>{thisMonthTradesCount} / {TRADE_LIMIT} Logs</span>
                   </div>
                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/30 shadow-inner">
-                    <div 
-                      className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${isLimitReached ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-primary'}`} 
+                    <div
+                      className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${isLimitReached ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-primary'}`}
                       style={{ width: `${(thisMonthTradesCount / TRADE_LIMIT) * 100}%` }}
                     />
                   </div>
                 </div>
               )}
 
-              <button 
-                type="submit" 
-                disabled={saving} 
+              <button
+                type="submit"
+                disabled={saving}
                 className={`btn-primary w-full h-12 text-sm font-black tracking-widest uppercase shadow-xl active:scale-95 transition-all ${isLimitReached ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
               >
                 {saving ? 'Saving Trade...' : isLimitReached ? 'Limit Exceeded' : 'Save Trade'}
@@ -505,7 +505,7 @@ export function LogTradePage() {
             </form>
           </div>
         </div>
-        
+
         <div className="lg:col-span-12 xl:col-span-7 space-y-8 animate-in slide-in-from-right-4 duration-700 delay-200">
           <div className="card-premium p-6 sm:p-8 h-[400px] sm:h-[550px] flex flex-col relative overflow-hidden">
             <div className="flex justify-between items-center mb-6 relative z-10">
@@ -513,9 +513,9 @@ export function LogTradePage() {
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 Equity Curve
               </h3>
-              <CustomSelect 
+              <CustomSelect
                 className="min-w-[140px] h-9"
-                value={equityPeriod} 
+                value={equityPeriod}
                 onChange={setEquityPeriod}
                 options={[
                   { value: 'all', label: 'Full Profile' },
@@ -524,19 +524,19 @@ export function LogTradePage() {
               />
             </div>
             <div className="flex-1 w-full min-h-0 relative z-10">
-                {trades.length > 0 ? (
-                  <Line data={chartData} options={chartOptions} />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-6">
-                    <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
-                      <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
-                    </div>
-                    <div className="text-center space-y-1">
-                      <span className="text-sm font-bold text-foreground opacity-80">No Data Available</span>
-                      <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log trades to see your performance curve.</p>
-                    </div>
+              {trades.length > 0 ? (
+                <Line data={chartData} options={chartOptions} />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-6">
+                  <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
                   </div>
-                )}
+                  <div className="text-center space-y-1">
+                    <span className="text-sm font-bold text-foreground opacity-80">No Data Available</span>
+                    <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log trades to see your performance curve.</p>
+                  </div>
+                </div>
+              )}
             </div>
             {/* Background Glow */}
             <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -574,13 +574,12 @@ export function LogTradePage() {
       {/* PRO RESET OPTION */}
       {plan === 'pro' && (
         <div className="pt-12 pb-8 flex justify-center animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
-          <button 
+          <button
             onClick={() => isWiping ? handleWipeTerminal() : setIsWiping(true)}
-            className={`px-8 h-10 border text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500 active:scale-95 ${
-              isWiping 
-                ? 'bg-destructive/10 text-destructive border-destructive/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' 
+            className={`px-8 h-10 border text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500 active:scale-95 ${isWiping
+                ? 'bg-destructive/10 text-destructive border-destructive/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
                 : 'bg-muted/30 border-border/40 text-foreground/30 hover:text-foreground/50 hover:bg-muted/50'
-            }`}
+              }`}
           >
             {isWiping ? 'Confirm Reset?' : 'Reset Account'}
           </button>
