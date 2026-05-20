@@ -17,7 +17,7 @@ const SECTIONS = [
 
 • Usage telemetry — basic interaction signals (feature usage frequency, session counts) used solely to enforce plan limits and improve the product. We never track keystrokes or screen content.
 
-• Billing data — your subscription status and Stripe customer ID. We do not store or process card numbers; all payment data is handled by Stripe.`,
+• Billing data — your subscription status and payment customer ID. We do not store or process card numbers; payment data is handled by our payment provider.`,
   },
   {
     id: 'data-security',
@@ -38,7 +38,7 @@ You can revoke sync access at any time by rotating your API key or removing the 
   {
     id: 'payments',
     title: '4. Payments & subscriptions',
-    content: `All financial transactions are processed by Stripe. xaujournal does not store credit card numbers, CVVs, or bank details on our servers. When you upgrade to Pro, we create a Stripe Customer and Subscription linked to your unique account identifier.
+    content: `All financial transactions are processed by our payment provider. xaujournal does not store credit card numbers, CVVs, or bank details on our servers. When you upgrade to Pro, we create a customer record with the payment provider linked to your unique account identifier.
 
 Subscription status (active, cancelled, past due) is synced securely to our database and used to gate Pro features. You can manage or cancel your subscription at any time via the billing portal accessible from your account settings.`,
   },
@@ -48,7 +48,7 @@ Subscription status (active, cancelled, past due) is synced securely to our data
     content: `We do not sell, rent, or share your personal or trading data with any third party for advertising or commercial purposes. The only third-party services that process your data are:
 
 • Infrastructure partners — secure authentication and cloud storage.
-• Stripe — payment processing and subscription management.
+• Payment provider — payment processing and subscription management.
 • Vercel — serverless function hosting for the sync API.
 
 Each of these services maintains its own privacy and security certifications (SOC 2, ISO 27001). Links to their privacy policies are available on their respective websites.`,

@@ -17,8 +17,8 @@ The xaujournal project aims to provide traders with a frictionless, insight-driv
 
 ### 3. Tiered Ecosystem (Subscription Logic)
 *   **Free Tier**: Limited to 25 lifetime trades and 10 intelligence briefs. Features a hard lockout screen upon reaching operational limits.
-*   **Pro Tier**: Unlimited operations, full data export/import capabilities, and professional customer portal via Stripe.
-*   **Secure Billing**: Fully integrated Stripe Checkout and billing management with automated expiry reminders.
+*   **Pro Tier**: Unlimited operations, full data export/import capabilities, and a professional customer portal.
+*   **Secure Billing**: Integrated payment processing with automated expiry reminders.
 
 ### 4. Hardened Security Infrastructure
 *   **Identity Shield**: Firebase Authentication with mandatory ID Token verification across all backend endpoints.
@@ -29,11 +29,11 @@ The xaujournal project aims to provide traders with a frictionless, insight-driv
 *   **Frontend**: React (Vite), TailwindCSS-inspired Premium CSS, Chart.js.
 *   **Backend**: Node.js ESM Serverless Functions (Vercel).
 *   **Database & Auth**: Firebase Firestore & Auth.
-*   **Payments**: Stripe API.
+*   **Payments**: PayPal (migration in progress) / payment provider.
 *   **Emails**: Resend.
 
 ## ⚖️ Compliance
-Includes a fully integrated **Privacy Protocol** documenting AES-256 encryption standards and Stripe PCI-compliant processing.
+Includes a fully integrated **Privacy Protocol** documenting AES-256 encryption standards and PCI-compliant processing as provided by the payment partner.
 
 ---
 © 2026 xaujournal. Curated By Gaveen Perera

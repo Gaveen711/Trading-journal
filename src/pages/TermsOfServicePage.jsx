@@ -32,7 +32,7 @@ We reserve the right to suspend or terminate accounts that violate these Terms, 
   {
     id: 'subscriptions',
     title: '4. Subscriptions & billing',
-    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely by Stripe.
+    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely via our payment provider.
 
 Subscriptions auto-renew each billing cycle unless cancelled before the renewal date. You may cancel at any time via the billing portal in your account settings. Cancellation takes effect at the end of the current billing period — you retain Pro access until then.
 
