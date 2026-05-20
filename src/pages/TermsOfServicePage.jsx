@@ -57,7 +57,7 @@ Violation of this section may result in immediate account termination without re
     title: '6. Your data & content',
     content: `All trade data, journal entries, and notes you enter into xaujournal remain your property. You grant us a limited, non-exclusive license to store and process this data solely to provide the Service to you.
 
-We will never sell your data to third parties. We do not use your trading data for advertising purposes. See our Privacy Policy at xaujournal.vercel.app/privacy for full details on how we handle your information.
+We will never sell your data to third parties. We do not use your trading data for advertising purposes. See our Privacy Policy at www.xaujournal.com/privacy for full details on how we handle your information.
 
 You may export or delete your data at any time from within the platform.`,
   },
