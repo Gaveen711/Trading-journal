@@ -66,7 +66,7 @@ const STEPS = [
     id: '02',
     icon: <LightningChargeFill className="w-6 h-6" />,
     title: 'Trade normally',
-    body: 'The moment you close a position, the EA captures price, lot, P&L, and duration — and syncs everything instantly.'
+    body: 'The moment you close a position, the EA captures price, lot, P&L, and duration and syncs everything instantly.'
   },
   {
     id: '03',
