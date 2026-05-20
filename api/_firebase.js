@@ -1,4 +1,6 @@
 // api/_firebase.js
+/* eslint-env node */
+/* global process */
 // Shared Firebase Admin initializer for all Vercel API routes.
 //
 // WHY THIS EXISTS:
@@ -25,7 +27,7 @@ function initAdmin() {
       try {
         serviceAccount = JSON.parse(sanitized);
       } catch (parseErr) {
-        console.error('❌ JSON Parse Failed on sanitised string. Trying raw...');
+        console.error('❌ JSON Parse Failed on sanitised string. Trying raw...', parseErr && parseErr.message ? parseErr.message : parseErr);
         serviceAccount = JSON.parse(raw);
       }
     } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {

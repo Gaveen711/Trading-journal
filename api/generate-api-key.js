@@ -1,5 +1,7 @@
 // api/generate-api-key.js
 // xaujournal — Generate a per-user MT5/TradingView sync API key
+/* eslint-env node */
+/* global process */
 // PRO ONLY — returns 403 if user is on free plan or grace period has lapsed.
 
 import crypto from 'crypto';
@@ -48,6 +50,7 @@ export default async function handler(req, res) {
     const decoded = await admin.auth().verifyIdToken(idToken);
     uid = decoded.uid;
   } catch (err) {
+    console.error('[generate-api-key] verifyIdToken failed:', err && err.message ? err.message : err);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 

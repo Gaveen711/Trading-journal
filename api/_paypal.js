@@ -1,5 +1,7 @@
 import checkoutNodeJssdk from '@paypal/checkout-server-sdk';
 
+/* eslint-env node */
+/* global process */
 const clientId = process.env.PAYPAL_CLIENT_ID;
 const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 const mode = process.env.PAYPAL_MODE?.toLowerCase() === 'live' ? 'live' : 'sandbox';

@@ -20,6 +20,8 @@
 // P&L can be edited manually in the journal, or auto-filled when the
 // MT5 EA closes the matching trade.
 
+/* eslint-env node */
+/* global process */
 import admin from 'firebase-admin';
 
 // ── Firebase Admin init ───────────────────────────────────────────────────────
