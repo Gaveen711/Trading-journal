@@ -247,7 +247,7 @@ export function PricingPage() {
             
             <button 
               onClick={() => navigate('/login')} 
-              className="w-full py-5 rounded-2xl border-2 border-border/60 bg-transparent text-foreground font-bold tracking-wide hover:bg-foreground hover:text-background transition-all duration-300"
+              className="w-full py-3.5 sm:py-5 rounded-2xl border-2 border-border/60 bg-transparent text-foreground font-bold tracking-wide hover:bg-foreground hover:text-background transition-all duration-300"
             >
               Get started free
             </button>
@@ -290,7 +290,7 @@ export function PricingPage() {
             
             <button 
               onClick={handleUpgradeClick} 
-              className="w-full py-5 rounded-2xl bg-primary text-primary-foreground font-black tracking-wide shadow-xl shadow-primary/20 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative z-10"
+              className="w-full py-3.5 sm:py-5 rounded-2xl bg-primary text-primary-foreground font-black tracking-wide shadow-xl shadow-primary/20 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative z-10"
             >
               Upgrade to Pro
             </button>

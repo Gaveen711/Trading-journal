@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { todayStr } from '../lib/tradeUtils';
-import { PencilSquare, XLg } from 'react-bootstrap-icons';
+import { PencilSquare, XLg, EmojiAngryFill, EmojiFrownFill, EmojiNeutralFill, EmojiSmileFill, EmojiSunglassesFill } from 'react-bootstrap-icons';
 import { DatePicker } from '../components/ui/DatePicker';
 
 export function JournalPage() {
@@ -14,7 +14,14 @@ export function JournalPage() {
   const [selectedMood, setSelectedMood] = useState(null);
   const [journalSaved, setJournalSaved] = useState(false);
 
-  const moods = ['', '😤', '😕', '😐', '🙂', '😎'];
+  const moods = [
+    null, 
+    <EmojiAngryFill key="1" className="text-red-500/80" />, 
+    <EmojiFrownFill key="2" className="text-orange-500/80" />, 
+    <EmojiNeutralFill key="3" className="text-yellow-500/80" />, 
+    <EmojiSmileFill key="4" className="text-green-500/80" />, 
+    <EmojiSunglassesFill key="5" className="text-emerald-500/80" />
+  ];
   const moodLabels = ['Terrible', 'Bad', 'Neutral', 'Good', 'Excellent'];
   const entries = Object.entries(journals).sort((a, b) => b[0].localeCompare(a[0]));
   const SUB_LIMITS = { freeJournals: 10 };
@@ -65,7 +72,7 @@ export function JournalPage() {
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="space-y-1">
         <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Psychology Log</h1>
-        <p className="text-muted-foreground text-sm font-medium">Document your intelligence and master the emotional market curve.</p>
+        <p className="text-muted-foreground text-sm font-medium">Reflect on your trades and improve your psychology.</p>
       </header>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -98,12 +105,12 @@ export function JournalPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Cognitive Brief</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Journal Notes</label>
                 <textarea 
                   className="input-premium h-48 resize-none text-sm leading-relaxed p-4" 
                   value={journalText} 
                   onChange={e => setJournalText(e.target.value)}
-                  placeholder="Intercept your emotional signals. Identify FOMO, revenge trading, or discipline..." 
+                  placeholder="Write down your thoughts, emotions, and lessons learned..." 
                 />
               </div>
 
@@ -114,9 +121,9 @@ export function JournalPage() {
                 {journalSaved ? (
                   <>
                     <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin hidden" />
-                    ✓ Intelligence Saved
+                    ✓ Journal Saved
                   </>
-                ) : 'Authorize Log'}
+                ) : 'Save Journal'}
               </button>
 
               {plan === 'free' && (
@@ -139,7 +146,7 @@ export function JournalPage() {
 
         <div className="lg:col-span-2 space-y-6 animate-in slide-in-from-right-4 duration-700 delay-200">
           <h3 className="text-lg font-bold flex items-center gap-3">
-            Stored Intelligence 
+            Saved Journals 
             <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-black text-primary tracking-tight">{entries.length} Entries</span>
           </h3>
           
@@ -150,8 +157,8 @@ export function JournalPage() {
                   <PencilSquare className="w-8 h-8 text-muted-foreground/40" />
                 </div>
                 <div className="text-center space-y-1">
-                  <span className="text-sm font-bold text-foreground uppercase tracking-tight">Encryption Empty</span>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground/75 leading-relaxed px-8">Initialize cognitive reflections to begin documentation.</p>
+                  <span className="text-sm font-bold text-foreground uppercase tracking-tight">No Journals Found</span>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground/75 leading-relaxed px-8">Write your first journal entry to get started.</p>
                 </div>
               </div>
             ) : (

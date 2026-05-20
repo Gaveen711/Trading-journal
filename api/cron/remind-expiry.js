@@ -1,19 +1,19 @@
 import { Resend } from 'resend';
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual, createHash } from 'crypto';
 import { admin, db } from '../_firebase.js';
 
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
-  // 1. Verify the Secret (Hardened against Timing Attacks)
+  // 1. Verify the Secret (Hardened against Timing Attacks with SHA-256 Hashes)
   const providedAuth = req.headers.authorization || '';
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
 
-  const providedBuffer = Buffer.from(providedAuth);
-  const expectedBuffer = Buffer.from(expectedAuth);
+  const providedHash = createHash('sha256').update(providedAuth).digest();
+  const expectedHash = createHash('sha256').update(expectedAuth).digest();
 
-  if (providedBuffer.length !== expectedBuffer.length || !timingSafeEqual(providedBuffer, expectedBuffer)) {
+  if (!timingSafeEqual(providedHash, expectedHash)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

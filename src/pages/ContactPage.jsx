@@ -242,7 +242,7 @@ export function ContactPage() {
                                     <label className="block text-[0.7rem] font-black tracking-[0.2em] uppercase text-muted-foreground/80 ml-1">Message</label>
                                     <textarea value={form.message} onChange={set('message')} required rows={5} placeholder="Your message here..." className="w-full bg-background/50 border border-border/40 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none" />
                                 </div>
-                                <button type="submit" disabled={status === 'sending'} className={`w-full py-5 rounded-2xl bg-foreground text-background font-bold tracking-wide transition-all shadow-xl shadow-foreground/10 active:scale-95 flex items-center justify-center gap-3 group ${status === 'sending' ? 'opacity-70 cursor-wait' : 'hover:bg-foreground/90 hover:-translate-y-1'}`}>
+                                <button type="submit" disabled={status === 'sending'} className={`w-full py-3.5 sm:py-5 rounded-2xl bg-foreground text-background font-bold tracking-wide transition-all shadow-xl shadow-foreground/10 active:scale-95 flex items-center justify-center gap-3 group ${status === 'sending' ? 'opacity-70 cursor-wait' : 'hover:bg-foreground/90 hover:-translate-y-1'}`}>
                                     {status === 'sending' ? (
                                         <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
                                     ) : (

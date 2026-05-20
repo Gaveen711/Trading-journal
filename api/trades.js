@@ -43,28 +43,29 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, skipped: 'duplicate' });
   }
 
-  // Write trade
-  await tradeRef.set({
-    ticket: String(trade.ticket),
-    symbol: trade.symbol,
-    type: trade.type,
-    lots: Number(trade.lots),
-    openPrice: Number(trade.openPrice),
-    closePrice: Number(trade.closePrice),
-    stopLoss: Number(trade.stopLoss || 0),
-    takeProfit: Number(trade.takeProfit || 0),
-    pnl: Number(trade.pnl),
-    commission: Number(trade.commission || 0),
-    swap: Number(trade.swap || 0),
-    openTime: trade.openTime,
-    closeTime: trade.closeTime,
-    source: 'mt5_ea',
-    syncedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
-
-  await db.doc(`users/${uid}`).update({
-    totalTradesLogged: admin.firestore.FieldValue.increment(1),
-  });
+  // Write trade and update user trade counter in parallel
+  await Promise.all([
+    tradeRef.set({
+      ticket: String(trade.ticket),
+      symbol: trade.symbol,
+      type: trade.type,
+      lots: Number(trade.lots),
+      openPrice: Number(trade.openPrice),
+      closePrice: Number(trade.closePrice),
+      stopLoss: Number(trade.stopLoss || 0),
+      takeProfit: Number(trade.takeProfit || 0),
+      pnl: Number(trade.pnl),
+      commission: Number(trade.commission || 0),
+      swap: Number(trade.swap || 0),
+      openTime: trade.openTime,
+      closeTime: trade.closeTime,
+      source: 'mt5_ea',
+      syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }),
+    db.doc(`users/${uid}`).update({
+      totalTradesLogged: admin.firestore.FieldValue.increment(1),
+    })
+  ]);
 
   return res.status(200).json({ ok: true, ticket: trade.ticket });
 }

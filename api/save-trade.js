@@ -6,7 +6,16 @@
 import { admin, db, now } from './_firebase.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://xaujournal.vercel.app',
+    'http://localhost:5173',
+  ];
+  if (process.env.ALLOWED_ORIGIN) allowedOrigins.push(process.env.ALLOWED_ORIGIN);
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
@@ -45,18 +54,23 @@ export default async function handler(req, res) {
       }
     }
 
-    const tradeRef = await db.collection('users').doc(uid).collection('trades').add({
-      ...tradeData,
-      createdAt: now(),
-      updatedAt: now()
-    });
+    // Execute the trade creation and the trade counter increment in parallel to eliminate a sequential database round-trip.
+    const tradeColRef = db.collection('users').doc(uid).collection('trades');
+    const newTradeDoc = tradeColRef.doc(); // Pre-generate document reference locally (zero network cost)
 
-    await db.collection('users').doc(uid).set({
-      totalTradesLogged: admin.firestore.FieldValue.increment(1)
-    }, { merge: true });
+    await Promise.all([
+      newTradeDoc.set({
+        ...tradeData,
+        createdAt: now(),
+        updatedAt: now()
+      }),
+      db.collection('users').doc(uid).set({
+        totalTradesLogged: admin.firestore.FieldValue.increment(1)
+      }, { merge: true })
+    ]);
 
-    console.log(`[save-trade] New trade logged for uid=${uid}, tradeId=${tradeRef.id}`);
-    return res.status(200).json({ id: tradeRef.id });
+    console.log(`[save-trade] New trade logged for uid=${uid}, tradeId=${newTradeDoc.id}`);
+    return res.status(200).json({ id: newTradeDoc.id });
   } catch (err) {
     console.error('[save-trade] Error logging trade:', err.message);
     return res.status(500).json({ error: 'Internal Server Error', message: err.message });
