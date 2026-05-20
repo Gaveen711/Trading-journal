@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lenis from 'lenis';
+import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
   MoonStarsFill,
@@ -86,6 +87,85 @@ export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
+  const canvasRef = useRef(null);
+  const gradientRef = useRef(null);
+
+  function createGradient(lightMode) {
+    const lightColors = [
+      { color: '#ffffff', enabled: true },
+      { color: '#f6f7fb', enabled: true },
+      { color: '#A623F3', enabled: true },
+      { color: '#f6f7fb', enabled: true },
+      { color: '#ffffff', enabled: true },
+    ];
+
+    const darkColors = [
+      { color: '#000000', enabled: true },
+      { color: '#000000', enabled: true },
+      { color: '#A623F3', enabled: true },
+      { color: '#000000', enabled: true },
+      { color: '#000000', enabled: true },
+    ];
+
+    return new NeatGradient({
+      ref: canvasRef.current,
+      colors: lightMode ? lightColors : darkColors,
+      speed: 10,
+      horizontalPressure: 6,
+      verticalPressure: 5,
+      waveFrequencyX: 4,
+      waveFrequencyY: 10,
+      waveAmplitude: 1,
+      shadows: 2,
+      highlights: 2,
+      colorBrightness: lightMode ? 1.2 : 1,
+      colorSaturation: lightMode ? 0.2 : -1,
+      wireframe: false,
+      colorBlending: 8,
+      backgroundColor: lightMode ? '#f8fafc' : '#010101',
+      backgroundAlpha: 1,
+      grainScale: 2,
+      grainSparsity: 0,
+      grainIntensity: 0,
+      grainSpeed: 1,
+      resolution: 0.75,
+      flowEnabled: false,
+      enableProceduralTexture: false,
+      domainWarpEnabled: false,
+      vignetteIntensity: 0,
+      vignetteRadius: 0.8,
+      fresnelEnabled: false,
+      iridescenceEnabled: false,
+      bloomIntensity: 0,
+      chromaticAberration: 0,
+    });
+  }
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    if (gradientRef.current) {
+      gradientRef.current.destroy();
+      gradientRef.current = null;
+    }
+    gradientRef.current = createGradient(isLightMode);
+
+    const handleScroll = () => {
+      if (gradientRef.current) {
+        gradientRef.current.yOffset = window.scrollY * 0.3;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (gradientRef.current) {
+        gradientRef.current.destroy();
+        gradientRef.current = null;
+      }
+    };
+  }, [isLightMode]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -137,18 +217,20 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">
+      {/* NeatGradient animated hero background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute top-[-10%] left-[-5%] w-[60vw] h-[60vw] rounded-full bg-primary/5 blur-[120px] opacity-60 mix-blend-screen" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[100px] opacity-40 mix-blend-screen" />
+        <canvas
+          ref={canvasRef}
+          style={{ width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
+        />
       </div>
 
       <header>
         <nav
-          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
-            }`}
+          className="fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 bg-background/30 backdrop-blur-md border-b border-border/10 transition-all duration-300"
         >
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
-            <span className="text-xl font-bold tracking-tighter">xaujournal</span>
+            <span className="text-xl font-bold tracking-tighter text-foreground">xaujournal</span>
           </button>
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
@@ -160,7 +242,7 @@ export function LandingPage() {
               >
                 <NavLink
                   to={to}
-                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
+                  className="text-sm font-semibold px-4 py-2 rounded-full text-foreground/80 hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
                 >
                   {label}
                 </NavLink>
@@ -394,7 +476,7 @@ export function LandingPage() {
         </section>
 
         <section className="relative z-10 py-40 md:py-64 px-6 text-center overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
 
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
