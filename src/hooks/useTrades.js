@@ -49,25 +49,31 @@ export function useTrades(user) {
   const addTrade = async (tradeData) => {
     if (!user?.uid) throw new Error('Not authenticated');
 
-    const { timestamp, ...rest } = tradeData;
-    const payload = {
-      ...rest,
-      ...(timestamp != null && {
-        timestamp: timestamp instanceof Date ? timestamp.toISOString() : timestamp,
-      }),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+    const BASE_URL = window.location.origin;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${BASE_URL}/api/save-trade`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tradeData),
+      });
 
-    const docRef = await addDoc(collection(db, 'users', user.uid, 'trades'), payload);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || 'Failed to log trade');
+      }
 
-    await setDoc(
-      doc(db, 'users', user.uid),
-      { totalTradesLogged: increment(1) },
-      { merge: true }
-    );
-
-    return { id: docRef.id };
+      const data = await res.json().catch(() => ({ id: null }));
+      return { id: data.id };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request was cancelled');
+      }
+      throw error;
+    }
   };
 
   const removeTrade = async (id) => {
