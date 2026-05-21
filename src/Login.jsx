@@ -55,6 +55,10 @@ function Login() {
         fetch('/api/auth-utils?action=login-alert', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(e => {
+          if (e.name !== 'AbortError') {
+            console.error("Failed to trigger login alert:", e);
+          }
         });
       } catch (e) {
         console.error("Failed to trigger login alert:", e);
@@ -99,6 +103,10 @@ function Login() {
         fetch('/api/auth-utils?action=login-alert', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(e => {
+          if (e.name !== 'AbortError') {
+            console.error("Failed to trigger login alert:", e);
+          }
         });
       } catch (e) {
         console.error("Failed to trigger login alert:", e);
