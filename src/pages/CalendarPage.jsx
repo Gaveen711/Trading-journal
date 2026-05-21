@@ -46,6 +46,7 @@ export function CalendarPage() {
   let winDays = 0;
   let lossDays = 0;
   let activeDays = 0;
+  
   for (let d = 1; d <= daysInMonth; d++) {
     const dayTrs = dayTrades(calYear, calMonth, d);
     if (dayTrs.length > 0) {
