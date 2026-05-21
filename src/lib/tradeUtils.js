@@ -35,6 +35,7 @@ const XAUUSD_PIP_SIZE      = 0.1;
 export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
 
+  const swapNum = Number(swap) || 0;
   const diff    = dir === 'BUY' ? exit - entry : entry - exit;
   const absDiff = Math.abs(exit - entry);
   const pips    = parseFloat((absDiff / XAUUSD_PIP_SIZE).toFixed(1));
@@ -42,9 +43,9 @@ export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap =
   // If actual broker P&L is provided, trust it directly
   let pnl;
   if (actualPnl !== null && actualPnl !== undefined && !isNaN(actualPnl) && actualPnl !== 0) {
-    pnl = parseFloat(actualPnl) + parseFloat(swap || 0);
+    pnl = parseFloat(actualPnl) + swapNum;
   } else if (lots && !isNaN(lots) && lots > 0) {
-    pnl = (diff * lots * XAUUSD_CONTRACT_SIZE) + parseFloat(swap || 0);
+    pnl = (diff * lots * XAUUSD_CONTRACT_SIZE) + swapNum;
   } else {
     return { pnl: null, rr: null, pips };
   }
@@ -60,7 +61,7 @@ export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap =
     pnl:  parseFloat(pnl.toFixed(2)),
     rr,
     pips,
-    swap: parseFloat((swap || 0).toFixed(2))
+    swap: parseFloat(swapNum.toFixed(2))
   };
 };
 

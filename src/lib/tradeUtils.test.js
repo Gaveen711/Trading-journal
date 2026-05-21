@@ -29,14 +29,14 @@ describe('Trade Logic (calcPnl)', () => {
   it('calculates correct P&L with swap applied', () => {
     // BUY 1 lot at 2000, exit at 2010. Diff = 10. Swap = -5
     // PNL = (10 * 1 * 100) + (-5) = 995
-    const result = calcPnl(2000, 2010, 1, null, null, null, 'BUY', 'GOLD', -5);
+    const result = calcPnl(2000, 2010, 1, null, null, null, 'BUY', -5);
     expect(result.pnl).toBe(995);
     expect(result.swap).toBe(-5);
   });
 
   it('trusts actual broker PNL if provided over calculation', () => {
     // Even if diff is large, if actual broker PNL is given, use it + swap
-    const result = calcPnl(2000, 2010, 1, 950, null, null, 'BUY', 'GOLD', -10);
+    const result = calcPnl(2000, 2010, 1, 950, null, null, 'BUY', -10);
     expect(result.pnl).toBe(940); // 950 + -10
   });
 

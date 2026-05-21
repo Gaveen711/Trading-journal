@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, deleteDoc, updateDoc, doc, query, orderBy } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { collection, onSnapshot, deleteDoc, updateDoc, addDoc, doc, query, orderBy, serverTimestamp, increment, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export function useTrades(user) {
   const [trades, setTrades]           = useState([]);
@@ -47,25 +47,27 @@ export function useTrades(user) {
   }, [user]);
 
   const addTrade = async (tradeData) => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('Not authenticated');
-    const token = await currentUser.getIdToken();
+    if (!user?.uid) throw new Error('Not authenticated');
 
-    const BASE_URL = window.location.origin;
-    const res = await fetch(`${BASE_URL}/api/save-trade`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(tradeData),
-    });
+    const { timestamp, ...rest } = tradeData;
+    const payload = {
+      ...rest,
+      ...(timestamp != null && {
+        timestamp: timestamp instanceof Date ? timestamp.toISOString() : timestamp,
+      }),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to log trade');
-    }
-    return { id: data.id };
+    const docRef = await addDoc(collection(db, 'users', user.uid, 'trades'), payload);
+
+    await setDoc(
+      doc(db, 'users', user.uid),
+      { totalTradesLogged: increment(1) },
+      { merge: true }
+    );
+
+    return { id: docRef.id };
   };
 
   const removeTrade = async (id) => {

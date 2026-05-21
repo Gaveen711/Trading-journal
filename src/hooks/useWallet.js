@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useWallet(user) {
@@ -31,15 +31,14 @@ export function useWallet(user) {
         if (cloudWalletBalance !== undefined) {
           setWalletBalance(cloudWalletBalance);
         } else {
-          await updateDoc(userRef, { walletBalance: 0 }, { merge: true });
+          await setDoc(userRef, { walletBalance: 0 }, { merge: true });
           setWalletBalance(0);
         }
 
         if (cloudMonthlyGoal !== undefined) {
           setMonthlyGoal(cloudMonthlyGoal);
         } else {
-          // Initialize goal if missing
-          await updateDoc(userRef, { monthlyGoal: 1000 }, { merge: true });
+          await setDoc(userRef, { monthlyGoal: 1000 }, { merge: true });
           setMonthlyGoal(1000);
         }
       } catch (error) {
@@ -55,27 +54,21 @@ export function useWallet(user) {
   const updateBalance = async (newBalance) => {
     setWalletBalance(newBalance);
     if (user) {
-      await updateDoc(doc(db, "users", user.uid), {
-        walletBalance: newBalance
-      });
+      await setDoc(doc(db, "users", user.uid), { walletBalance: newBalance }, { merge: true });
     }
   };
 
   const resetWallet = async () => {
     setWalletBalance(0);
     if (user) {
-      await updateDoc(doc(db, "users", user.uid), {
-        walletBalance: 0
-      });
+      await setDoc(doc(db, "users", user.uid), { walletBalance: 0 }, { merge: true });
     }
   };
 
   const updateMonthlyGoal = async (newGoal) => {
     setMonthlyGoal(newGoal);
     if (user) {
-      await updateDoc(doc(db, "users", user.uid), {
-        monthlyGoal: newGoal
-      });
+      await setDoc(doc(db, "users", user.uid), { monthlyGoal: newGoal }, { merge: true });
     }
   };
 
