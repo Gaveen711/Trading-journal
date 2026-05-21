@@ -62,8 +62,9 @@ function AuthenticatedApp({ user }) {
   };
 
   const completeOnboarding = async (val) => {
-    if (!isNaN(val) && val > 0) {
-      const newBalance = parseFloat(val.toFixed(2));
+    const startingBalance = Number(val);
+    if (!Number.isNaN(startingBalance) && startingBalance > 0) {
+      const newBalance = Number(startingBalance.toFixed(2));
       await updateBalance(newBalance);
     }
     localStorage.setItem('xau-onboarded', '1');
