@@ -20,11 +20,8 @@ import {
 } from 'react-bootstrap-icons';
 
 const BROKER_PRESETS = [
-  { label: 'ICMarkets', server: 'ICMarkets-Live01', type: 'mt5' },
-  { label: 'Roboforex', server: 'Roboforex-Live', type: 'mt4' },
-  { label: 'FXCM', server: 'FXCM-Live', type: 'mt5' },
-  { label: 'MetaTrader4', server: 'Custom MT4', type: 'mt4' },
-  { label: 'MetaTrader5', server: 'Custom MT5', type: 'mt5' },
+  { label: 'Just Markets - Demo', server: 'JustMarkets-Demo', type: 'mt5' },
+  { label: 'Just Markets - Live', server: 'JustMarkets-Live', type: 'mt5' },
 ];
 
 async function getIdToken() {
@@ -64,8 +61,7 @@ export default function BrokerLoginSync() {
   // Form state
   const [formData, setFormData] = useState({
     accountName: '',
-    brokerType: 'mt5',
-    server: '',
+    server: 'JustMarkets-Demo', // Default to demo
     login: '',
     password: '',
     passwordVisible: false,
@@ -116,8 +112,8 @@ export default function BrokerLoginSync() {
         login: formData.login,
         password: formData.password,
         server: formData.server,
-        brokerType: formData.brokerType,
-        accountName: formData.accountName || `${formData.brokerType.toUpperCase()}-${formData.server}`,
+        brokerType: 'mt5',
+        accountName: formData.accountName || `Just Markets - ${formData.server}`,
       });
 
       // Reload accounts
@@ -126,8 +122,7 @@ export default function BrokerLoginSync() {
       // Reset form
       setFormData({
         accountName: '',
-        brokerType: 'mt5',
-        server: '',
+        server: 'JustMarkets-Demo',
         login: '',
         password: '',
         passwordVisible: false,

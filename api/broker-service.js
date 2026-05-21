@@ -18,18 +18,17 @@ class MT4MT5BrokerAdapter {
 
   /**
    * Resolve broker server to API endpoint
-   * Example: ICMarkets-Live01 → https://api.icmarkets.com
+   * Supports Just Markets demo and live servers
    */
   resolveServerUrl(server) {
-    // Map common broker server names to their API endpoints
+    // Map broker server names to their API endpoints
     const brokerMap = {
-      'ICMarkets-Live01': 'https://mt5-api.icmarkets.com', // Example - adjust per broker
-      'Roboforex-Live': 'https://www.roboforex.com',
-      'FXCM-Demo': 'https://api-demo.fxcm.com',
+      'JustMarkets-Demo': 'https://mt5-demo.justmarkets.com',
+      'JustMarkets-Live': 'https://mt5-live.justmarkets.com',
       // Add more brokers as needed
     };
     
-    return brokerMap[server] || `https://${server}`;
+    return brokerMap[server] || server;
   }
 
   /**
