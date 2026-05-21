@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Forbidden: User ID mismatch.' });
     }
 
-    const amount = planType === 'pro_yearly' ? '139.00' : '19.99';
+    const amount = planType === 'pro_yearly' ? '104.00' : '14.99';
     const orderRequest = new checkoutNodeJssdk.orders.OrdersCreateRequest();
     orderRequest.prefer('return=representation');
     orderRequest.requestBody({

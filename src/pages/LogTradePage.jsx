@@ -231,7 +231,7 @@ export function LogTradePage() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Log Trade</h1>
-          <p className="text-muted-foreground text-sm font-medium">Welcome back. Enter your trade details below.</p>
+          <p className="text-muted-foreground text-sm font-medium">Welcome back. Enter your trade Logs below.</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
           <div className="card-premium p-4 flex flex-col gap-1 min-w-[150px] bg-muted/30 relative group overflow-hidden">

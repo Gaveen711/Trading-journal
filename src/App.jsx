@@ -12,6 +12,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { PricingModal } from './components/PricingModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
+import { PageSEO } from './components/PageSEO';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -139,6 +140,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <PageSEO />
       <Suspense fallback={<PageLoader />}>
         {authError ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">

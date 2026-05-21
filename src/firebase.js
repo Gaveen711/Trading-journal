@@ -2,12 +2,16 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 
-const firebase= {
+/** Production project — override via VITE_* in .env (see .env.example) */
+const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429';
+
+const firebase = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASEURL_ID,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  // Custom domain (Firebase Console → Auth → Settings → Authorized domains)
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'auth.xaujournal.com',
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || import.meta.env.VITE_FIREBASE_DATABASEURL_ID,
+  projectId: PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${PROJECT_ID}.firebasestorage.app`,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
