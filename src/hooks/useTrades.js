@@ -52,20 +52,29 @@ export function useTrades(user) {
     const token = await currentUser.getIdToken();
 
     const BASE_URL = window.location.origin;
-    const res = await fetch(`${BASE_URL}/api/save-trade`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(tradeData),
-    });
+    try {
+      const res = await fetch(`${BASE_URL}/api/save-trade`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tradeData),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to log trade');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || 'Failed to log trade');
+      }
+
+      const data = await res.json().catch(() => ({ id: null }));
+      return { id: data.id };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request was cancelled');
+      }
+      throw error;
     }
-    return { id: data.id };
   };
 
   const removeTrade = async (id) => {

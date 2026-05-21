@@ -31,7 +31,7 @@ export function useWallet(user) {
         if (cloudWalletBalance !== undefined) {
           setWalletBalance(cloudWalletBalance);
         } else {
-          await updateDoc(userRef, { walletBalance: 0 }, { merge: true });
+          await updateDoc(userRef, { walletBalance: 0 });
           setWalletBalance(0);
         }
 
@@ -39,7 +39,7 @@ export function useWallet(user) {
           setMonthlyGoal(cloudMonthlyGoal);
         } else {
           // Initialize goal if missing
-          await updateDoc(userRef, { monthlyGoal: 1000 }, { merge: true });
+          await updateDoc(userRef, { monthlyGoal: 1000 });
           setMonthlyGoal(1000);
         }
       } catch (error) {
