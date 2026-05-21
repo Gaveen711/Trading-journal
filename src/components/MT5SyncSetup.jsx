@@ -266,7 +266,7 @@ export default function MT5SyncSetup() {
         <>
           {/* Tab switcher */}
           <div className="flex gap-1 p-1 rounded-xl bg-muted/30 border border-border/30">
-            {["mt5", "tv"].map((t) => (
+            {["mt5", "broker", "tv"].map((t) => (
               <button
                 key={t}
                 id={`sync-tab-${t}`}
@@ -277,7 +277,7 @@ export default function MT5SyncSetup() {
                     : "text-foreground/40 hover:text-foreground/70"
                 }`}
               >
-                {t === "mt5" ? "MT5 Expert Advisor" : "TradingView Alerts"}
+                {t === "mt5" ? "MT5 EA" : t === "broker" ? "Broker Login" : "TradingView"}
               </button>
             ))}
           </div>
@@ -392,6 +392,112 @@ export default function MT5SyncSetup() {
                   </li>
                 ))}
               </ol>
+            </div>
+          )}
+
+          {/* ── Broker Login Sync Instructions ───────────────────────── */}
+          {tab === "broker" && (
+            <div className="rounded-2xl border border-border/40 bg-card p-5 space-y-5">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-black flex items-center justify-center shrink-0">2</span>
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-foreground/80">
+                  Connect Broker Account
+                </h3>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Enter your MT4/MT5 broker credentials directly. We'll automatically pull your closed trades every 30-60 seconds without requiring an Expert Advisor.
+              </p>
+
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-green-500/5 border border-green-500/20 text-[10px] text-green-500/80 leading-relaxed">
+                <InfoCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-green-500">No EA required:</strong> This method connects directly to your broker's servers using your login credentials.
+                  Works with all MT4/MT5 brokers.
+                </span>
+              </div>
+
+              <ol className="space-y-4">
+                {[
+                  {
+                    n: 1,
+                    content: (
+                      <>
+                        Go to the <strong className="text-foreground">Broker Login</strong> section below (scroll down after you set your API key)
+                      </>
+                    ),
+                  },
+                  {
+                    n: 2,
+                    content: (
+                      <>
+                        Click <strong className="text-green-400">Add Broker Account</strong>
+                      </>
+                    ),
+                  },
+                  {
+                    n: 3,
+                    content: (
+                      <>
+                        <strong className="text-foreground">Enter your broker details:</strong>
+                        <div className="mt-3 space-y-2 text-[10px]">
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground/50">Account Name:</span>
+                            <code className="text-primary">e.g., Main Live Account</code>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground/50">Broker Type:</span>
+                            <code className="text-primary">MT5 or MT4</code>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground/50">Server:</span>
+                            <code className="text-primary">e.g., ICMarkets-Live01</code>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground/50">Login:</span>
+                            <code className="text-primary">Your broker login number</code>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground/50">Password:</span>
+                            <code className="text-primary">Your broker password</code>
+                          </div>
+                        </div>
+                      </>
+                    ),
+                  },
+                  {
+                    n: 4,
+                    content: (
+                      <>
+                        Click <strong className="text-green-400">Connect Account</strong>. We'll test the connection and start syncing trades.
+                      </>
+                    ),
+                  },
+                  {
+                    n: 5,
+                    content: (
+                      <>
+                        <strong className="text-green-400">Automatic sync:</strong> Closed trades appear in your journal automatically every 30-60 seconds. Click <strong className="text-foreground">Manual Sync Now</strong> to sync immediately.
+                      </>
+                    ),
+                  },
+                ].map(({ n, content }) => (
+                  <li key={n} className="flex gap-3">
+                    <span className="w-5 h-5 rounded-full bg-muted border border-border/40 text-[9px] font-black text-foreground/50 flex items-center justify-center shrink-0 mt-0.5">
+                      {n}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground leading-relaxed">{content}</span>
+                  </li>
+                ))}
+              </ol>
+
+              {/* Security info */}
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20 text-[10px] text-primary/80 leading-relaxed">
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Security:</strong> Your credentials are encrypted and never exposed. We only pull closed trade history from your broker.
+                </span>
+              </div>
             </div>
           )}
 
