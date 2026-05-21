@@ -45,6 +45,7 @@ export function CalendarPage() {
 
   let winDays = 0;
   let activeDays = 0;
+  let lossDays = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const dayTrs = dayTrades(calYear, calMonth, d);
     if (dayTrs.length > 0) {
@@ -317,6 +318,7 @@ export function CalendarPage() {
             {consistencyRate.toFixed(1)}%
           </h4>
           <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{winDays} Green / {activeDays} Traded Days</span>
+          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{winDays} Green / {lossDays} Red / {activeDays} Traded Days</span>
         </div>
 
         <div className="card-premium p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
