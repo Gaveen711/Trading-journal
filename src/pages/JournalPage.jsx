@@ -71,8 +71,8 @@ export function JournalPage() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="space-y-1">
-        <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Psychology Log</h1>
-        <p className="text-muted-foreground text-sm font-medium">Reflect on your trades and improve your psychology.</p>
+        <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Journaling</h1>
+        <p className="text-muted-foreground text-sm font-medium">Reflect on your Journals and improve your trading strategies.</p>
       </header>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

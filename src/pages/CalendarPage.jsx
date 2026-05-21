@@ -46,7 +46,6 @@ export function CalendarPage() {
   let winDays = 0;
   let lossDays = 0;
   let activeDays = 0;
-  let lossDays = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const dayTrs = dayTrades(calYear, calMonth, d);
     if (dayTrs.length > 0) {
@@ -75,7 +74,7 @@ export function CalendarPage() {
     winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
   })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
 
-  const sessionStats = { 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 }, 'Asian': { pnl: 0, count: 0 } };
+  const sessionStats = { 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 }, 'Asian': { pnl: 0, count: 0 },'Tokoyo': { pnl: 0, count: 0 } };
   monthlyTrades.forEach(t => {
     let s = t.session || '';
     if (s.toLowerCase().includes('london')) s = 'London';
