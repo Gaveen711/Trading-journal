@@ -48,7 +48,7 @@ export function LogTradePage() {
     parseFloat(entry) || 0, parseFloat(exit) || 0,
     parseFloat(lots) || 0, 0,
     parseFloat(sl) || 0, parseFloat(tp) || 0,
-    direction, 'GOLD', parseFloat(swap) || 0
+    direction, parseFloat(swap) || 0
   );
 
   const saveTradeForm = async (e) => {
@@ -78,7 +78,7 @@ export function LogTradePage() {
       return;
     }
 
-    const tradeRes = calcPnl(entryVal, exitVal, lotsVal, 0, slVal, tpVal, direction, 'GOLD', swapVal);
+    const tradeRes = calcPnl(entryVal, exitVal, lotsVal, 0, slVal, tpVal, direction, swapVal);
     const { pnl, pips, rr } = tradeRes;
     const outcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
 
@@ -94,8 +94,8 @@ export function LogTradePage() {
       setDate(todayStr());
       setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup('');
       toast(`Trade recorded: ${outcome} ${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
-    } catch {
-      toast('Failed to record trade. Please try again.', 'error');
+    } catch (err) {
+      toast(err?.message || 'Failed to record trade. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
