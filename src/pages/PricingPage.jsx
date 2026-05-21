@@ -7,6 +7,7 @@ import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 import { auth } from '../firebase';
 import { useSubscription } from '../hooks/useSubscription';
 import { ProTermsModal } from '../components/ProTermsModal';
+import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
 
 const FREE_FEATURES = [
   '50 trades / month',
@@ -208,10 +209,10 @@ export function PricingPage() {
         >
 
           <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
-            Trade better. <span className="text-primary">Stress less.</span>
+            XAU journal <span className="text-primary">pricing</span>
           </Motion.h1>
           <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
-            Start with our generous free tier. Upgrade to Pro when you're ready to unlock the full institutional-grade analytics suite.
+            Plans for the best gold (XAUUSD) trading journal — free manual logging or Pro with MT5 auto-sync and full analytics.
           </Motion.p>
         </Motion.div>
 
@@ -268,7 +269,7 @@ export function PricingPage() {
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black tracking-tighter leading-none text-primary">$19.99</span>
+                <span className="text-6xl font-black tracking-tighter leading-none text-primary">{PRO_MONTHLY_DISPLAY}</span>
                 <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">/mo</span>
               </div>
               <p className="text-sm text-primary font-bold mt-3">Monthly subscription · Cancel anytime</p>
@@ -307,11 +308,7 @@ export function PricingPage() {
             <p className="text-muted-foreground font-medium">Everything you need to know about xaujournal Pro.</p>
           </Motion.div>
           
-          <div className="space-y-4">
-            {FAQ.map((item, i) => (
-              <FAQItem key={item.q} {...item} index={i} />
-            ))}
-          </div>
+          <FAQAccordion />
         </div>
       </main>
 
@@ -359,26 +356,60 @@ export function PricingPage() {
   );
 }
 
-function FAQItem({ q, a, index }) {
-  const [open, setOpen] = useState(false);
+function FAQAccordion() {
+  const [openIndex, setOpenIndex] = useState(null);
+
   return (
-    <Motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      whileInView={{ opacity: 1, y: 0 }} 
-      viewport={{ once: true }} 
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="p-6 md:p-8 rounded-[2rem] border border-border/40 bg-card/20 hover:bg-card/40 transition-colors"
-    >
-      <button onClick={()=>setOpen(o=>!o)} className="w-full bg-transparent border-none text-left cursor-pointer flex items-center justify-between gap-6 group">
-        <span className="text-base md:text-lg font-bold tracking-tight group-hover:text-primary transition-colors">{q}</span>
-        <div className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center transition-transform duration-500 ${open ? 'rotate-180 bg-primary/10 text-primary' : 'rotate-0'}`}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </div>
-      </button>
-      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${open ? 'max-h-[500px] mt-6 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <p className="text-muted-foreground leading-relaxed font-medium text-sm md:text-base">{a}</p>
-      </div>
-    </Motion.div>
+    <div className="space-y-1">
+      {FAQ.map((item, i) => {
+        const isOpen = openIndex === i;
+        return (
+          <Motion.div
+            key={item.q}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45, delay: i * 0.06 }}
+            layout
+            className="overflow-hidden rounded-2xl border-0 bg-transparent"
+          >
+            <button
+              type="button"
+              onClick={() => setOpenIndex(isOpen ? null : i)}
+              className="w-full py-5 md:py-6 px-1 bg-transparent border-0 outline-none text-left cursor-pointer flex items-center justify-between gap-6 group focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl"
+              aria-expanded={isOpen}
+            >
+              <span className="text-base md:text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+                {item.q}
+              </span>
+              <Motion.div
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${isOpen ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+              </Motion.div>
+            </button>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <Motion.div
+                  key="content"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                >
+                  <p className="pb-5 md:pb-6 px-1 text-muted-foreground leading-relaxed font-medium text-sm md:text-base">
+                    {item.a}
+                  </p>
+                </Motion.div>
+              )}
+            </AnimatePresence>
+          </Motion.div>
+        );
+      })}
+    </div>
   );
 }
 

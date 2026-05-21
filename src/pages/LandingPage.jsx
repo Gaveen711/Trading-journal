@@ -5,6 +5,15 @@ import Lenis from 'lenis';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
+  LANDING_FAQ,
+  buildFAQSchema,
+  buildOrganizationSchema,
+  buildSoftwareSchema,
+  buildWebSiteSchema,
+  injectJsonLd,
+  removeJsonLd,
+} from '../lib/seo';
+import {
   MoonStarsFill,
   SunFill,
   CloudArrowDownFill,
@@ -89,6 +98,17 @@ export function LandingPage() {
   const { isLightMode, toggleTheme } = useAppTheme();
   const canvasRef = useRef(null);
   const gradientRef = useRef(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+
+  useEffect(() => {
+    injectJsonLd('ld-org', buildOrganizationSchema());
+    injectJsonLd('ld-website', buildWebSiteSchema());
+    injectJsonLd('ld-software', buildSoftwareSchema());
+    injectJsonLd('ld-faq', buildFAQSchema(LANDING_FAQ));
+    return () => {
+      ['ld-org', 'ld-website', 'ld-software', 'ld-faq'].forEach(removeJsonLd);
+    };
+  }, []);
 
   function createGradient(lightMode) {
     const lightColors = [
@@ -314,18 +334,18 @@ export function LandingPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-              Exclusively for Gold traders
+              Exclusively for gold traders · XAUUSD
             </Motion.div>
 
             <Motion.div variants={itemVariants}>
-              <h1 className="text-[clamp(3rem,10vw,8rem)] font-black leading-[0.9] tracking-tighter mb-10 text-foreground">
-                Trade with <br />
-                <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400">absolute clarity.</span>
+              <h1 className="text-[clamp(2.5rem,8vw,6.5rem)] font-black leading-[0.95] tracking-tighter mb-6 text-foreground">
+                The <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400">XAU journal</span>
+                <span className="block mt-3 text-[clamp(1.5rem,5vw,3.5rem)]">built for gold traders.</span>
               </h1>
             </Motion.div>
 
             <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
-              Automated MT5 sync, deep session analytics, and a beautiful journal. Built for professionals who treat trading like a business.
+              The dedicated XAUUSD trading journal with automated MT5 sync, session analytics, and a P&amp;L calendar — built only for XAU/USD, not generic forex pairs.
             </Motion.p>
 
             <Motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
@@ -344,7 +364,7 @@ export function LandingPage() {
               </Link>
             </Motion.div>
 
-            <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 border-t border-border/40 pt-16 w-full max-w-4xl px-4">
+            <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 w-full max-w-4xl px-4">
               {STATS.map((s) => (
                 <div key={s.label} className="text-center group">
                   <div className="text-3xl md:text-4xl font-black tracking-tight text-foreground mb-2 group-hover:text-primary transition-colors">{s.value}</div>
@@ -475,6 +495,67 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section id="faq" className="relative z-10 py-32 md:py-40 px-6">
+          <div className="max-w-3xl mx-auto">
+            <Motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-14"
+            >
+              <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-4 inline-block">XAU journal FAQ</span>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Gold trading journal questions</h2>
+              <p className="text-muted-foreground font-medium">Answers for traders searching for an XAUUSD journal, MT5 sync, and XAU journal templates.</p>
+            </Motion.div>
+            <div className="space-y-1">
+              {LANDING_FAQ.map((item, i) => {
+                const isOpen = openFaqIndex === i;
+                return (
+                  <Motion.div
+                    key={item.q}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                    layout
+                    className="overflow-hidden rounded-2xl border-0 bg-transparent"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqIndex(isOpen ? null : i)}
+                      className="w-full flex justify-between items-center gap-4 py-5 px-1 text-left font-bold text-sm md:text-base border-0 bg-transparent outline-none group focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl"
+                      aria-expanded={isOpen}
+                    >
+                      <span className="group-hover:text-primary transition-colors">{item.q}</span>
+                      <Motion.span
+                        animate={{ rotate: isOpen ? 45 : 0 }}
+                        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        className="text-primary text-xl flex-shrink-0"
+                      >
+                        +
+                      </Motion.span>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <Motion.div
+                          key="content"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                          className="overflow-hidden"
+                        >
+                          <p className="pb-5 px-1 text-sm text-muted-foreground leading-relaxed font-medium">{item.a}</p>
+                        </Motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         <section className="relative z-10 py-40 md:py-64 px-6 text-center overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
 
@@ -517,7 +598,7 @@ export function LandingPage() {
             <div className="lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
               <span className="text-2xl font-bold tracking-tighter mb-6 block">xaujournal</span>
               <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs">
-                Empowering professional gold traders with institutional-grade data and beautiful analytics.
+                The XAU journal for professional gold (XAUUSD) traders — MT5 sync, analytics, and secure trade history.
               </p>
             </div>
 
