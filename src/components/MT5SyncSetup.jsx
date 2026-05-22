@@ -190,8 +190,7 @@ export default function MT5SyncSetup() {
         </div>
       )}
 
-      {/* ── Rest of UI only shown when sync is allowed ──────────────────── */}
-      {isSyncAllowed && (<>
+      {/* ── Rest of UI (visible for Free + Pro) ───────────────────────── */}
       <div className="flex items-start gap-4 p-5 rounded-2xl border border-primary/20 bg-primary/5">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
           <Lightning className="w-5 h-5 text-white" />
@@ -270,7 +269,14 @@ export default function MT5SyncSetup() {
               <button
                 key={t}
                 id={`sync-tab-${t}`}
-                onClick={() => setTab(t)}
+                onClick={() => {
+                  if (t === "broker" && !isSyncAllowed) {
+                    window.alert("Broker Sync is available on Pro. Upgrade to unlock the Broker Login sync tab.");
+                    onUpgrade?.();
+                    return;
+                  }
+                  setTab(t);
+                }}
                 className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                   tab === t
                     ? "bg-background shadow border border-border/40 text-primary"
