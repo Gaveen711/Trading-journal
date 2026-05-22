@@ -11,7 +11,7 @@ import {
   CloudDownload,
   Trash2,
   CheckCircle,
-  AlertCircle,
+  ExclamationCircle,
   Clock,
   Plus,
   ChevronRight,
@@ -228,7 +228,7 @@ export default function BrokerLoginSync() {
       {/* Error alert */}
       {error && (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/10 border border-destructive/30">
-          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <ExclamationCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-[11px] font-black uppercase tracking-wide text-destructive">{error}</p>
           </div>
@@ -266,7 +266,7 @@ export default function BrokerLoginSync() {
                   </>
                 ) : account.lastSyncStatus === 'failed' ? (
                   <>
-                    <AlertCircle className="w-3 h-3 text-destructive" />
+                    <ExclamationCircle className="w-3 h-3 text-destructive" />
                     <span className="text-destructive">Sync failed</span>
                   </>
                 ) : (
