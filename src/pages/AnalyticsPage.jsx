@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line } from 'react-chartjs-2';
-import { formatCurrencyCompact } from '../lib/tradeUtils';
+import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
 import { BarChartLine, ClockFill, LightningFill, ShieldExclamation } from 'react-bootstrap-icons';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler
@@ -26,6 +27,12 @@ const AnalyticsSkeleton = () => (
 export function AnalyticsPage() {
   const { trades, isLoadingTrades, walletBalance } = useOutletContext();
   const navigate = useNavigate();
+  
+  const [showExact, setShowExact] = useState({});
+
+  const setExact = (index, val) => {
+    setShowExact(prev => ({ ...prev, [index]: val }));
+  };
   
   if (isLoadingTrades) return (
     <div className="space-y-8">
@@ -144,12 +151,54 @@ export function AnalyticsPage() {
   });
 
   const statCards = [
-    { label: 'Wallet Balance', value: formatCurrencyCompact(currentWalletBalance), sub: 'Current Liquidity', color: 'text-primary' },
-    { label: 'Win Rate', value: `${winRatePercent}%`, sub: `${wins.length} successful`, color: 'text-green-500' },
-    { label: 'Expectancy', value: trades.length ? formatCurrencyCompact(expectancy) : '—', sub: 'Average per trade', color: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : '' },
-    { label: 'Avg Win', value: wins.length ? formatCurrencyCompact(avgWin) : '—', sub: `${wins.length} winners`, color: 'text-green-500' },
-    { label: 'Avg Loss', value: losses.length ? formatCurrencyCompact(avgLoss) : '—', sub: `${losses.length} losers`, color: 'text-red-500' },
-    { label: 'Profit Factor', value: pf !== null ? pf.toFixed(2) : '—', sub: 'Gross Profit / Loss', color: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : '' },
+    { 
+      label: 'Wallet Balance', 
+      value: showExact[0] ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance), 
+      sub: 'Current Liquidity', 
+      color: 'text-primary',
+      isInteractive: true,
+      index: 0
+    },
+    { 
+      label: 'Win Rate', 
+      value: `${winRatePercent}%`, 
+      sub: `${wins.length} successful`, 
+      color: 'text-green-500',
+      isInteractive: false,
+      index: 1
+    },
+    { 
+      label: 'Expectancy', 
+      value: trades.length ? (showExact[2] ? formatCurrency(expectancy) : formatCurrencyCompact(expectancy)) : '—', 
+      sub: trades.length ? 'Average per trade' : 'Average per trade', 
+      color: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : '',
+      isInteractive: trades.length > 0,
+      index: 2
+    },
+    { 
+      label: 'Avg Win', 
+      value: wins.length ? (showExact[3] ? formatCurrency(avgWin) : formatCurrencyCompact(avgWin)) : '—', 
+      sub: `${wins.length} winners`, 
+      color: 'text-green-500',
+      isInteractive: wins.length > 0,
+      index: 3
+    },
+    { 
+      label: 'Avg Loss', 
+      value: losses.length ? (showExact[4] ? formatCurrency(avgLoss) : formatCurrencyCompact(avgLoss)) : '—', 
+      sub: `${losses.length} losers`, 
+      color: 'text-red-500',
+      isInteractive: losses.length > 0,
+      index: 4
+    },
+    { 
+      label: 'Profit Factor', 
+      value: pf !== null ? pf.toFixed(2) : '—', 
+      sub: 'Gross Profit / Loss', 
+      color: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : '',
+      isInteractive: false,
+      index: 5
+    },
   ];
 
   return (
@@ -163,7 +212,11 @@ export function AnalyticsPage() {
         {statCards.map((stat, i) => (
           <div 
             key={i} 
-            className="card-premium p-3 sm:p-5 flex flex-col justify-between h-28 sm:h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both"
+            onMouseEnter={() => stat.isInteractive && setExact(stat.index, true)}
+            onMouseLeave={() => stat.isInteractive && setExact(stat.index, false)}
+            className={`card-premium p-3 sm:p-5 flex flex-col justify-between h-28 sm:h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both ${
+              stat.isInteractive ? 'cursor-default select-none hover:border-primary/30' : ''
+            }`}
             style={{ animationDelay: `${i * 75}ms` }}
           >
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/85 group-hover:text-primary transition-colors">{stat.label}</span>
@@ -236,7 +289,7 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <div className={`text-sm font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toFixed(2)}
+                {formatCurrency(t.pnl, true)}
               </div>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useToast } from '../components/ToastContext';
+import { formatNumber } from '../lib/tradeUtils';
 
 const CURRENCIES = [
   { code: 'USD', name: 'US Dollar', country: 'US' },
@@ -222,7 +223,7 @@ export function CurrencyConverter() {
               {loading ? (
                 <span>Calculating...</span>
               ) : (
-                <span>{amount} {from} = {result.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})} {to}</span>
+                <span>{formatNumber(parseFloat(amount) || 0, 0)} {from} = {result.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})} {to}</span>
               )}
             </div>
           </div>

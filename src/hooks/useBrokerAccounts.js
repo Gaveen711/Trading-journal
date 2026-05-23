@@ -69,6 +69,11 @@ export function useBrokerAccounts() {
         accountName,
       });
 
+      if (result.ok && result.accountId) {
+        const creds = { login, password, server, brokerType };
+        localStorage.setItem(`xau_broker_creds_${result.accountId}`, btoa(JSON.stringify(creds)));
+      }
+
       // Reload accounts after adding
       await loadAccounts();
       return result;
@@ -118,6 +123,8 @@ export function useBrokerAccounts() {
     try {
       setError(null);
       const result = await callBrokerAPI('remove', { accountId });
+
+      localStorage.removeItem(`xau_broker_creds_${accountId}`);
 
       // Remove from state
       setAccounts(prev => prev.filter(acc => acc.id !== accountId));

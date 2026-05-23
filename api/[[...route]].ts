@@ -51,14 +51,6 @@ function isSyncAllowed(userData: any) {
   return false
 }
 
-function encryptCredential(text: string) {
-  return Buffer.from(text).toString('base64')
-}
-
-function decryptCredential(encoded: string) {
-  return Buffer.from(encoded, 'base64').toString('utf-8')
-}
-
 // ── 1. Auth Utils Route ──────────────────────────────────────────────────────
 app.post('/auth-utils', async (c) => {
   const action = c.req.query('action')
@@ -197,7 +189,6 @@ app.post('/broker-login-sync', async (c) => {
         brokerType,
         server,
         login,
-        encryptedPassword: encryptCredential(password),
         metaApiAccountId,
         isActive: true,
         lastSyncTime: null,
@@ -232,14 +223,12 @@ app.post('/broker-login-sync', async (c) => {
       if (!accountSnap.exists) return c.json({ error: 'Broker account not found' }, 404)
 
       const account = accountSnap.data()
-      const decryptedPassword = decryptCredential(account.encryptedPassword)
 
       const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
       const brokerTrades = await fetchBrokerTrades(
         {
           metaApiAccountId: account.metaApiAccountId,
           login: account.login,
-          password: decryptedPassword,
           server: account.server,
           brokerType: account.brokerType,
         },
@@ -330,7 +319,21 @@ app.post('/broker-login-sync', async (c) => {
     const { accountId } = body
     if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
     try {
-      await db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId).update({
+      const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
+      const accountSnap = await accountRef.get()
+      if (accountSnap.exists) {
+        const accountData = accountSnap.data()
+        if (accountData.metaApiAccountId) {
+          try {
+            const { deleteMetaApiAccount } = await import('./_metaapi-broker.js')
+            await deleteMetaApiAccount(accountData.metaApiAccountId)
+          } catch (metaApiErr: any) {
+            console.error('[broker-login-sync] Failed to delete MetaApi account:', metaApiErr.message || metaApiErr)
+          }
+        }
+      }
+
+      await accountRef.update({
         isActive: false,
         updatedAt: now(),
       })
@@ -392,7 +395,6 @@ app.post('/connect-broker', async (c) => {
       brokerType,
       server,
       login: String(accountId),
-      encryptedPassword: encryptCredential(password),
       metaApiAccountId,
       isActive: true,
       lastSyncTime: now(),
@@ -1204,13 +1206,11 @@ const handleBrokerSyncPoller = async (c: any) => {
             }
           }
 
-          const password = decryptCredential(account.encryptedPassword)
-
           const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
           const brokerTrades = await fetchBrokerTrades(
             {
+              metaApiAccountId: account.metaApiAccountId,
               login: account.login,
-              password,
               server: account.server,
               brokerType: account.brokerType,
             },

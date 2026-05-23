@@ -4,6 +4,7 @@ import { useToast } from '../components/ToastContext';
 import { Download, Search, XLg, PencilSquare } from 'react-bootstrap-icons';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { EditTradeModal } from '../components/EditTradeModal';
+import { formatCurrency, formatPrice, formatNumber } from '../lib/tradeUtils';
 
 const HistorySkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -229,17 +230,17 @@ export function HistoryPage() {
 
                   <div className="flex items-center justify-between sm:justify-start gap-8 flex-1">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold font-mono text-foreground/95">{t.entry} → {t.exit}</span>
-                      <span className="text-[10px] text-foreground/85 font-black uppercase tracking-widest">{t.lots} Lots · {t.pips || 0} Pips</span>
+                      <span className="text-xs font-bold font-mono text-foreground/95">{formatPrice(t.entry)} → {formatPrice(t.exit)}</span>
+                      <span className="text-[10px] text-foreground/85 font-black uppercase tracking-widest">{formatNumber(t.lots, 2)} Lots · {formatNumber(t.pips || 0, 0)} Pips</span>
                     </div>
 
                     <div className="sm:ml-auto flex items-center gap-6">
                       <div className="flex flex-col items-end">
                         <span className={`text-lg sm:text-base font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {t.pnl >= 0 ? '+' : '-'}${Math.abs(t.pnl).toFixed(2)}
+                          {formatCurrency(t.pnl, true)}
                         </span>
                         <span className="text-[10px] font-black text-foreground/75 tracking-widest uppercase">
-                          Swap: ${t.swap || 0} {t.rr ? `· R:R ${t.rr}` : ''}
+                          Swap: {formatCurrency(t.swap || 0)} {t.rr ? `· R:R ${t.rr}` : ''}
                         </span>
                       </div>
                       

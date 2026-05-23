@@ -5,6 +5,46 @@ export const todayStr = () => {
   return `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
 };
 
+export const formatNumber = (val, decimals = 2) => {
+  if (val === null || val === undefined || isNaN(val) || val === '') return '—';
+  const num = Number(val);
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+};
+
+export const formatCurrency = (val, showPlusSign = false, decimals = 2) => {
+  if (val === null || val === undefined || isNaN(val) || val === '') return '—';
+  const num = Number(val);
+  const absNum = Math.abs(num);
+  const formatted = absNum.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+  
+  if (num < 0) {
+    return `-$${formatted}`;
+  }
+  if (num > 0 && showPlusSign) {
+    return `+$${formatted}`;
+  }
+  return `$${formatted}`;
+};
+
+export const formatPrice = (val) => {
+  if (val === null || val === undefined || isNaN(val) || val === '') return '—';
+  const num = Number(val);
+  const parts = String(val).split('.');
+  const decimals = parts.length > 1 ? parts[1].length : 2;
+  const finalDecimals = Math.min(Math.max(decimals, 2), 5);
+  
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: finalDecimals,
+    maximumFractionDigits: finalDecimals
+  });
+};
+
 export const formatCompact = (val) => {
   if (val === null || val === undefined || isNaN(val)) return '—';
   const absVal = Math.abs(val);
@@ -16,7 +56,11 @@ export const formatCompact = (val) => {
   if (absVal >= 10000) {
     return sign + (absVal / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   }
-  return sign + absVal.toFixed(2).replace(/\.00$/, '');
+  const formattedAbs = absVal.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).replace(/\.00$/, '');
+  return sign + formattedAbs;
 };
 
 export const formatCurrencyCompact = (val) => {

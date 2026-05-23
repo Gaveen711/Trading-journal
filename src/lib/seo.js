@@ -5,13 +5,13 @@ export const SITE_NAME = 'xaujournal';
 export const SITE_TAGLINE = 'XAU Journal — Gold (XAUUSD) Trading Journal';
 
 export const DEFAULT_TITLE =
-  'XAU Journal | Best Gold Trading Journal for XAUUSD — MT5 Auto Sync';
+  'XAU Journal | Best Gold Trading Journal for XAUUSD — MT4/MT5 Broker Sync';
 
 export const DEFAULT_DESCRIPTION =
-  'xaujournal is the XAU journal built for gold traders. Auto-sync MT5 trades, track XAUUSD P&L, session analytics, trade calendar, and journaling — free to start.';
+  'xaujournal is the XAU journal built for gold traders. Auto-sync MT4/MT5 trades, track XAUUSD P&L, session analytics, trade calendar, and journaling — free to start.';
 
 export const DEFAULT_KEYWORDS =
-  'xau journal, XAU journal, gold trading journal, XAUUSD trading journal, XAU USD journal, MT5 trading journal, gold trader journal, XAUUSD analytics, MT5 EA sync, forex gold journal';
+  'xau journal, XAU journal, gold trading journal, XAUUSD trading journal, XAU USD journal, MT5 trading journal, MT4 trading journal, gold trader journal, XAUUSD analytics, MT4/MT5 broker sync, forex gold journal';
 
 /** Per-route titles & descriptions (public marketing pages) */
 export const ROUTE_SEO = {
@@ -22,17 +22,17 @@ export const ROUTE_SEO = {
   '/pricing': {
     title: `Pricing — ${SITE_NAME} XAU Gold Trading Journal`,
     description:
-      `Compare Free and Pro plans for the best XAUUSD trading journal. MT5 sync, analytics, and session intelligence from ${PRO_MONTHLY_PRICE}/month.`,
+      `Compare Free and Pro plans for the best XAUUSD trading journal. MT4/MT5 sync, analytics, and session intelligence from ${PRO_MONTHLY_PRICE}/month.`,
   },
   '/login': {
     title: `Sign In — ${SITE_NAME} XAU Trading Journal`,
     description:
-      'Log in to your xaujournal account. Access your gold (XAUUSD) trade history, analytics, and MT5-synced journal.',
+      'Log in to your xaujournal account. Access your gold (XAUUSD) trade history, analytics, and MT4/MT5-synced journal.',
   },
   '/contact': {
     title: `Contact — ${SITE_NAME} Support`,
     description:
-      'Contact the xaujournal team for help with your XAU gold trading journal, MT5 EA setup, or billing.',
+      'Contact the xaujournal team for help with your XAU gold trading journal, MT4/MT5 broker sync, or billing.',
   },
   '/privacy': {
     title: `Privacy Policy — ${SITE_NAME}`,
@@ -94,16 +94,16 @@ export const LANDING_FAQ = [
     a: 'An XAU trading journal records every gold (XAUUSD) trade — entry, exit, lot size, P&L, session, and notes — so you can review performance and improve discipline. xaujournal is built only for gold traders, not generic forex pairs.',
   },
   {
-    q: 'Is xaujournal the best gold trading journal for MT5?',
-    a: 'xaujournal auto-syncs closed trades from MetaTrader 5 via our Expert Advisor, so you never re-type executions. You get XAUUSD-specific analytics, a P&L calendar, session breakdowns, and manual logging on the free plan.',
+    q: 'Is xaujournal the best gold trading journal for MT4/MT5?',
+    a: 'xaujournal auto-syncs closed trades from MetaTrader 4 and MetaTrader 5 via our secure broker connection, so you never re-type executions. You get XAUUSD-specific analytics, a P&L calendar, session breakdowns, and manual logging on the free plan.',
   },
   {
     q: 'How is xaujournal different from a Notion XAU journal template?',
-    a: 'Notion templates are static. xaujournal is a live app with real-time MT5 sync, structured analytics, and secure cloud storage designed for active XAUUSD traders.',
+    a: 'Notion templates are static. xaujournal is a live app with real-time MT4/MT5 sync, structured analytics, and secure cloud storage designed for active XAUUSD traders.',
   },
   {
     q: 'Do I need Pro to start journaling gold trades?',
-    a: 'No. The free plan includes manual trade logging, calendar, and core P&L tracking. Pro adds unlimited trades, full analytics, MT5 EA sync, TradingView webhooks, and API access.',
+    a: 'No. The free plan includes manual trade logging, calendar, and core P&L tracking. Pro adds unlimited trades, full analytics, MT4/MT5 broker sync, TradingView webhooks, and API access.',
   },
   {
     q: 'Does the journal work only for XAUUSD (gold)?',
@@ -148,7 +148,7 @@ export function buildSoftwareSchema() {
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'Web',
     description:
-      'Gold (XAUUSD) trading journal with automated MT5 sync, trade calendar, session analytics, and trade notes.',
+      'Gold (XAUUSD) trading journal with automated MT4/MT5 broker sync, trade calendar, session analytics, and trade notes.',
     url: SITE_URL,
     offers: [
       { '@type': 'Offer', price: '0', priceCurrency: 'USD', name: 'Free' },
@@ -166,7 +166,7 @@ export function buildSoftwareSchema() {
       },
     ],
     featureList: [
-      'MT5 Expert Advisor auto-sync',
+      'MT4/MT5 broker auto-sync',
       'XAUUSD P&L and pip tracking',
       'Trade calendar heatmap',
       'Session analytics (London, New York, Tokyo)',
