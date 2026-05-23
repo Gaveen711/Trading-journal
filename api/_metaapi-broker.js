@@ -2,7 +2,7 @@
 /* global process */
 // MetaApi.cloud — MT4/MT5 broker login & deal history (server-side only)
 
-import MetaApi from 'metaapi.cloud-sdk';
+const MetaApi = require('metaapi.cloud-sdk');
 
 let apiClient = null;
 
@@ -56,7 +56,7 @@ function normalizeDeal(deal, ctx) {
 /**
  * Create/deploy MetaApi cloud account and return MetaApi account id.
  */
-export async function provisionMetaApiAccount({ login, password, server, brokerType }) {
+async function provisionMetaApiAccount({ login, password, server, brokerType }) {
   const api = getApi();
   const platform = brokerType === 'mt4' ? 'mt4' : 'mt5';
   const loginStr = String(login);
@@ -91,7 +91,7 @@ export async function provisionMetaApiAccount({ login, password, server, brokerT
 /**
  * Fetch closed deals since optional fromDate.
  */
-export async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
+async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
   const api = getApi();
   const account = await api.metatraderAccountApi.getAccount(metaApiAccountId);
   await account.waitConnected(300);
@@ -112,7 +112,7 @@ export async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
   return (Array.isArray(deals) ? deals : []).map((d) => normalizeDeal(d, ctx));
 }
 
-export async function fetchBrokerTrades(credentials, fromDate = null) {
+async function fetchBrokerTrades(credentials, fromDate = null) {
   if (credentials.metaApiAccountId) {
     return fetchMetaApiDeals(credentials.metaApiAccountId, fromDate);
   }
@@ -121,7 +121,7 @@ export async function fetchBrokerTrades(credentials, fromDate = null) {
   return fetchMetaApiDeals(metaApiAccountId, fromDate);
 }
 
-export async function deleteMetaApiAccount(metaApiAccountId) {
+async function deleteMetaApiAccount(metaApiAccountId) {
   const api = getApi();
   try {
     await api.metatraderAccountApi.removeAccount(metaApiAccountId);
@@ -129,4 +129,11 @@ export async function deleteMetaApiAccount(metaApiAccountId) {
     console.error(`Failed to delete MetaApi account ${metaApiAccountId}:`, err.message || err);
   }
 }
+
+module.exports = {
+  provisionMetaApiAccount,
+  fetchMetaApiDeals,
+  fetchBrokerTrades,
+  deleteMetaApiAccount
+};
 
