@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://www.xaujournal.com',
+        target: 'https://xaujournal.vercel.app',
         changeOrigin: true,
       }
     }

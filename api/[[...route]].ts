@@ -4,7 +4,8 @@ import crypto from 'crypto'
 
 // Import shared helpers (using JS files under /api)
 // @ts-ignore
-import { admin, db, initAdmin, now } from './_firebase.js'
+import { admin, db as _db, initAdmin, now } from './_firebase.js'
+const db: any = _db
 // @ts-ignore
 import resend from './_resend.js'
 // @ts-ignore
@@ -13,9 +14,9 @@ import client, { checkoutNodeJssdk } from './_paypal.js'
 import { fetchBrokerTrades, provisionMetaApiAccount, fetchMetaApiDeals } from './_metaapi-broker.js'
 
 type Env = {}
-type Variables = {}
+type Variables = Record<string, unknown>
 
-export const app = new Hono<{ Bindings: Env; Variables }>().basePath('/api')
+export const app = new Hono<{ Bindings: Env; Variables: Variables }>().basePath('/api')
 
 // ── CORS Middleware ─────────────────────────────────────────────────────────
 const allowedOrigins = [
@@ -36,7 +37,7 @@ app.use('*', async (c, next) => {
   c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Api-Key, x-api-key')
   c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
   if (c.req.method === 'OPTIONS') {
-    return c.text('', 204)
+    return c.body(null, 204 as any)
   }
   await next()
 })
@@ -260,7 +261,7 @@ app.post('/broker-login-sync', async (c) => {
         }
 
         if (!existing.exists) {
-          tradeData.createdAt = now()
+          (tradeData as any).createdAt = now()
           newTradesCount++
         } else {
           updatedTradesCount++
@@ -1209,7 +1210,7 @@ const handleBrokerSyncPoller = async (c: any) => {
               server: account.server,
               brokerType: account.brokerType,
             },
-            account.lastSyncTime ? new Date(account.lastSyncTime) : null
+            (account.lastSyncTime ? new Date(account.lastSyncTime) : null) as any
           )
 
           const tradesRef = db.collection('users').doc(uid).collection('trades')
