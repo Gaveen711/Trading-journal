@@ -163,7 +163,7 @@ export function AnalyticsPage() {
         {statCards.map((stat, i) => (
           <div 
             key={i} 
-            className="card-premium p-4 sm:p-5 flex flex-col justify-between h-28 sm:h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both"
+            className="card-premium p-3 sm:p-5 flex flex-col justify-between h-28 sm:h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both"
             style={{ animationDelay: `${i * 75}ms` }}
           >
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/85 group-hover:text-primary transition-colors">{stat.label}</span>
@@ -176,7 +176,7 @@ export function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300">
+        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300">
           <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
             <ClockFill className="w-4 h-4 text-primary" />
             Session Efficiency
@@ -187,7 +187,7 @@ export function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-right-4 duration-700 delay-300">
+        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-right-4 duration-700 delay-300">
           <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
             <LightningFill className="w-4 h-4 text-primary" />
             Strategy Intelligence
@@ -199,7 +199,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
+      <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
         <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80 text-red-500">
           <ShieldExclamation className="w-4 h-4" />
           Peak-to-Valley Drawdown
@@ -210,7 +210,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="card-premium p-6 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+      <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-500">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/80">
             <BarChartLine className="w-4 h-4 text-primary" />
@@ -225,8 +225,8 @@ export function AnalyticsPage() {
         </div>
         <div className="space-y-3">
           {sortedTrades.slice(-5).reverse().map((t) => (
-            <div key={t.id} className="flex justify-between items-center p-4 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-4">
+            <div key={t.id} className="flex justify-between items-center p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-2.5 sm:gap-4">
                 <div className={`w-12 h-7 rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-widest ${t.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
                   {t.direction}
                 </div>

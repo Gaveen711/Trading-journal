@@ -77,7 +77,7 @@ export function JournalPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-6 animate-in slide-in-from-left-4 duration-700">
-          <div className="card-premium p-6 sm:p-8 space-y-6">
+          <div className="card-premium p-4 sm:p-8 space-y-6">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               Daily Reflection
@@ -165,23 +165,23 @@ export function JournalPage() {
               entries.map(([date, entry], idx) => (
                 <div 
                   key={date} 
-                  className="card-premium p-6 group hover:bg-muted/30 transition-all duration-500 ease-[var(--spring-bounce)] animate-in slide-in-from-bottom-2 fill-both"
+                  className="card-premium p-4 sm:p-6 group hover:bg-muted/30 transition-all duration-500 ease-[var(--spring-bounce)] animate-in slide-in-from-bottom-2 fill-both"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       {entry.mood ? (
-                        <div className="w-12 h-12 rounded-2xl bg-muted/50 border border-border/50 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-muted/50 border border-border/50 flex items-center justify-center text-xl sm:text-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
                           {moods[entry.mood]}
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-center text-lg text-muted-foreground">?</div>
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-center text-sm sm:text-lg text-muted-foreground">?</div>
                       )}
                       <div className="flex flex-col">
-                        <span className="text-sm font-black tracking-tight text-foreground/95">
+                        <span className="text-xs sm:text-sm font-black tracking-tight text-foreground/95">
                           {new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(date + 'T00:00:00'))}
                         </span>
-                        <span className="text-[10px] font-black text-foreground/75 uppercase tracking-[0.1em]">{new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' })}</span>
+                        <span className="text-[9px] sm:text-[10px] font-black text-foreground/75 uppercase tracking-[0.1em]">{new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' })}</span>
                       </div>
                     </div>
                     <button 
@@ -191,7 +191,7 @@ export function JournalPage() {
                       <XLg className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="text-sm font-medium text-foreground/95 leading-relaxed line-clamp-4 whitespace-pre-wrap italic border-l-2 border-primary/20 pl-5 py-1 group-hover:border-primary transition-colors">
+                  <div className="text-sm font-medium text-foreground/95 leading-relaxed line-clamp-4 whitespace-pre-wrap italic border-l-2 border-primary/20 pl-4 sm:pl-5 py-1 group-hover:border-primary transition-colors">
                     "{entry.text}"
                   </div>
                 </div>

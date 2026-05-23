@@ -2,8 +2,8 @@
 // MT4/MT5 Broker Login Sync Endpoint
 // Manages broker credential storage and trade synchronization
 
-import { db, now } from './_firebase.js';
-import { fetchBrokerTrades } from './broker-service.js';
+import { admin, db, now } from './_firebase.js';
+import { fetchBrokerTrades, provisionMetaApiAccount } from './metaapi-broker.js';
 
 // ── Shared plan guard ────────────────────────────────────────────────────────
 function isSyncAllowed(userData) {
@@ -28,9 +28,33 @@ function decryptCredential(encoded, key) {
 // ── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  const { uid } = req.body;
-  
-  // Verify user is authenticated
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://www.xaujournal.com',
+    'https://xaujournal.com',
+    'http://localhost:5173',
+  ];
+  if (process.env.ALLOWED_ORIGIN) allowedOrigins.push(process.env.ALLOWED_ORIGIN);
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+
+  const authHeader = req.headers.authorization || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!idToken) return res.status(401).json({ error: 'Missing Authorization header' });
+
+  let uid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    uid = decoded.uid;
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
   const user = await db.collection('users').doc(uid).get();
   if (!user.exists) {
     return res.status(404).json({ error: 'User not found' });
@@ -75,15 +99,15 @@ async function handleAddBrokerAccount(uid, req, res) {
   }
 
   try {
-    // Test connection before storing
-    const testResult = await fetchBrokerTrades({
+    const metaApiAccountId = await provisionMetaApiAccount({
       login,
       password,
       server,
       brokerType,
     });
 
-    // Store encrypted credentials
+    const testResult = await fetchBrokerTrades({ metaApiAccountId }, null);
+
     const brokerRef = db
       .collection('users').doc(uid)
       .collection('brokerAccounts')
@@ -95,8 +119,8 @@ async function handleAddBrokerAccount(uid, req, res) {
       brokerType,
       server,
       login,
-      // Store encrypted password
       encryptedPassword: encryptCredential(password, process.env.ENCRYPTION_KEY || ''),
+      metaApiAccountId,
       isActive: true,
       lastSyncTime: null,
       lastSyncStatus: 'pending',
@@ -157,12 +181,13 @@ async function handleSyncBrokerTrades(uid, req, res) {
     // Fetch trades from broker
     const brokerTrades = await fetchBrokerTrades(
       {
+        metaApiAccountId: account.metaApiAccountId,
         login: account.login,
         password: decryptedPassword,
         server: account.server,
         brokerType: account.brokerType,
       },
-      account.lastSyncTime ? new Date(account.lastSyncTime) : null
+      account.lastSyncTime?.toDate ? account.lastSyncTime.toDate() : account.lastSyncTime ? new Date(account.lastSyncTime) : null
     );
 
     // Store trades to user's trades collection

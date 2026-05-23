@@ -234,7 +234,7 @@ export function LogTradePage() {
           <p className="text-muted-foreground text-sm font-medium">Welcome back. Enter your trade Logs below.</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
-          <div className="card-premium p-4 flex flex-col gap-1 min-w-[150px] bg-muted/30 relative group overflow-hidden">
+          <div className="card-premium p-4 flex flex-col gap-1 min-w-0 sm:min-w-[150px] bg-muted/30 relative group overflow-hidden">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Wallet Balance</span>
               {plan === 'pro' && !isEditingBalance && (
@@ -267,12 +267,12 @@ export function LogTradePage() {
             {/* Pulsing light for pro users when balance is active */}
             {plan === 'pro' && <div className="absolute top-0 right-0 w-1 h-full bg-primary/20 animate-pulse" />}
           </div>
-          <div className="card-premium p-4 flex flex-col gap-1 min-w-[120px] bg-muted/30">
+          <div className="card-premium p-4 flex flex-col gap-1 min-w-0 sm:min-w-[120px] bg-muted/30">
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Win Rate</span>
             <span className="text-xl font-black">{winRate}%</span>
           </div>
 
-          <div className="card-premium p-4 flex flex-col gap-2 min-w-[200px] bg-muted/30 relative overflow-hidden group">
+          <div className="card-premium p-4 flex flex-col gap-2 col-span-2 sm:col-span-1 min-w-0 sm:min-w-[200px] bg-muted/30 relative overflow-hidden group">
             <div className="flex justify-between items-center">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Objective Progress</span>
               <button
@@ -318,7 +318,7 @@ export function LogTradePage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-12 xl:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-6">
           {plan === 'free' && (
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 flex justify-between items-center group animate-in zoom-in-95 duration-500 delay-150">
               <div className="space-y-1">
@@ -334,7 +334,7 @@ export function LogTradePage() {
             </div>
           )}
 
-          <div className="card-premium p-8 sm:p-10 space-y-8 animate-in slide-in-from-left-4 duration-700 delay-100">
+          <div className="card-premium p-5 sm:p-10 space-y-8 animate-in slide-in-from-left-4 duration-700 delay-100">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -505,8 +505,8 @@ export function LogTradePage() {
           </div>
         </div>
 
-        <div className="lg:col-span-12 xl:col-span-7 space-y-8 animate-in slide-in-from-right-4 duration-700 delay-200">
-          <div className="card-premium p-6 sm:p-8 h-[400px] sm:h-[550px] flex flex-col relative overflow-hidden">
+        <div className="lg:col-span-7 space-y-8 animate-in slide-in-from-right-4 duration-700 delay-200">
+          <div className="card-premium p-4 sm:p-8 h-[320px] sm:h-[500px] flex flex-col relative overflow-hidden">
             <div className="flex justify-between items-center mb-6 relative z-10">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />

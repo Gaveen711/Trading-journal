@@ -29,7 +29,10 @@ If you ever committed secrets (like Stripe Private Keys or Firebase Service Acco
    - Go to your payment provider's developer dashboard (e.g., PayPal Developer Dashboard) and locate your client ID and secret.
    - Create new credentials if you suspect compromise.
    - Update the corresponding environment variables in Vercel (e.g., `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`).
-   - Remove any old `STRIPE_*` environment variables from your deployment configuration if you are migrating off Stripe.
+   - Ensure no legacy payment-provider secrets (e.g., `STRIPE_*`) remain configured in Vercel if they are not used.
+
+
+
 2. **Firebase Service Account**:
    - Go to Google Cloud Console → **IAM & Admin** → **Service Accounts**.
    - Select the Firebase Admin SDK account.

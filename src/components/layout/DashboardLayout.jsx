@@ -14,18 +14,27 @@ import {
   CreditCard,
   PersonCircle,
   Lightning,
-  LightningFill
+  LightningFill,
+  ArrowClockwise,
+  LockFill
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import { useToast } from '../ToastContext';
+import { syncBrokerTradesCallable } from '../../lib/brokerSync';
+import { getFriendlyErrorMessage } from '../../lib/errorUtils';
 import { useTrades } from '../../hooks/useTrades';
 import { useJournals } from '../../hooks/useJournals';
 import { useWallet } from '../../hooks/useWallet';
 
-export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals, setShowPricingModal, openPortal }) {
+export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
+  const toast = useToast();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [brokerSyncing, setBrokerSyncing] = useState(false);
+
+  const canBrokerSync = plan === 'pro' || plan === 'grace';
 
   const profileMenuRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -73,6 +82,22 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  async function handleManualSync() {
+    if (!canBrokerSync) {
+      openBrokerSyncUpsell?.();
+      return;
+    }
+    setBrokerSyncing(true);
+    try {
+      const result = await syncBrokerTradesCallable();
+      toast(result.message || 'Trades synced.', 'success');
+    } catch (err) {
+      toast(getFriendlyErrorMessage(err), 'error');
+    } finally {
+      setBrokerSyncing(false);
+    }
+  }
 
   const navigation = [
     { id: '', name: 'Log', icon: House, iconSolid: HouseFill },
@@ -143,17 +168,36 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
             </div>
 
             {/* RIGHT SIDE */}
-            <div className="flex items-center gap-3 sm:gap-4 ml-2 pl-4 border-l border-border/20 relative" ref={profileMenuRef}>
+            <div className="flex items-center gap-1.5 sm:gap-4 ml-1.5 pl-2 sm:ml-2 sm:pl-4 border-l border-border/20 relative" ref={profileMenuRef}>
 
               {plan === 'free' && (
                 <button
                   onClick={() => setShowPricingModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all duration-300 group"
+                  className="flex items-center gap-1 px-2 py-1.5 sm:gap-1.5 sm:px-3 rounded-full bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all duration-300 group"
                 >
                   <Stars className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform duration-500" />
-                  <span className="text-[10px] font-black uppercase text-primary">Upgrade</span>
+                  <span className="text-[10px] font-black uppercase text-primary hidden sm:inline">Upgrade</span>
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={brokerSyncing}
+                title={canBrokerSync ? 'Pull latest broker trades' : 'Pro feature — upgrade to sync'}
+                className={`flex items-center gap-1 px-2 py-1.5 sm:gap-1.5 sm:px-3 rounded-full border text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 disabled:opacity-60 ${
+                  canBrokerSync
+                    ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:scale-105'
+                    : 'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 cursor-pointer'
+                }`}
+              >
+                {canBrokerSync ? (
+                  <ArrowClockwise className={`w-3.5 h-3.5 ${brokerSyncing ? 'animate-spin' : ''}`} />
+                ) : (
+                  <LockFill className="w-3 h-3 opacity-60" />
+                )}
+                <span className="hidden sm:inline">{brokerSyncing ? 'Syncing…' : 'Sync now'}</span>
+              </button>
 
               {/* MT5 LIVE SYNC INDICATOR */}
               {lastMT5Sync && (
@@ -163,13 +207,13 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                 </div>
               )}
 
-              <button onClick={toggleTheme} className="p-2.5 rounded-xl border border-border/40 hover:bg-muted hover:scale-110 active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground">
+              <button onClick={toggleTheme} className="p-2 sm:p-2.5 rounded-xl border border-border/40 hover:bg-muted hover:scale-110 active:scale-90 transition-all duration-300 text-foreground/70 hover:text-foreground">
                 {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
               </button>
 
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`w-10 h-10 rounded-xl bg-muted border flex items-center justify-center hover:scale-110 active:scale-90 transition-all duration-300 ${showProfileMenu ? 'border-primary ring-2 ring-primary/20' : 'border-border/40'}`}
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-muted border flex items-center justify-center hover:scale-110 active:scale-90 transition-all duration-300 ${showProfileMenu ? 'border-primary ring-2 ring-primary/20' : 'border-border/40'}`}
               >
                 <PersonCircle className={`w-5 h-5 transition-colors duration-300 ${showProfileMenu ? 'text-primary' : 'text-foreground/70'}`} />
               </button>
@@ -346,8 +390,8 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                 key={item.name}
                 to={`/app/${item.id}`}
                 className={`group relative flex items-center justify-center h-12 rounded-2xl transition-all duration-500 ease-[var(--apple-ease)] ${isActive
-                    ? 'bg-primary text-primary-foreground px-4 flex-grow mx-1 shadow-lg shadow-primary/25'
-                    : 'text-foreground/60 w-12 hover:bg-muted mx-0.5'
+                    ? 'bg-primary text-primary-foreground px-3 sm:px-4 flex-grow mx-0.5 sm:mx-1 shadow-lg shadow-primary/25'
+                    : 'text-foreground/60 w-10 sm:w-12 hover:bg-muted mx-0.5'
                   }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
@@ -360,7 +404,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                       animate={{ width: 'auto', opacity: 1, marginLeft: 8 }}
                       exit={{ width: 0, opacity: 0, marginLeft: 0 }}
                       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                      className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden"
+                      className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden mobile-nav-label"
                     >
                       {item.name}
                     </Motion.span>

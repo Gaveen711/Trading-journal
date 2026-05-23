@@ -146,7 +146,7 @@ export function CalendarPage() {
       cells.push(
         <button 
           key={`day-${d}`} 
-          className={`relative aspect-square rounded-2xl transition-all duration-300 flex flex-col justify-between p-2 sm:p-3 group ${
+          className={`relative aspect-square rounded-xl sm:rounded-2xl transition-all duration-300 flex flex-col justify-between p-1 sm:p-3 group ${
             isSelected 
               ? 'border-2 border-primary ring-2 ring-primary/20 shadow-[0_0_25px_rgba(139,92,246,0.25)] bg-primary/5 scale-105 z-10' 
               : hasTrades 
@@ -163,7 +163,7 @@ export function CalendarPage() {
           <div className="w-full flex justify-between items-center">
             <span className={`text-[10px] sm:text-xs font-black transition-colors ${
               isToday 
-                ? 'bg-primary text-primary-foreground px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] shadow-sm' 
+                ? 'bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] shadow-sm' 
                 : isSelected 
                   ? 'text-primary' 
                   : 'text-foreground/60 group-hover:text-foreground'
@@ -178,7 +178,7 @@ export function CalendarPage() {
           {/* PNL Badge (Center) */}
           <div className="w-full flex items-center justify-center py-1">
             {hasTrades ? (
-              <div className={`px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-black tracking-tight border shadow-[0_2px_10px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-105 ${
+              <div className={`hidden sm:block px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-black tracking-tight border shadow-[0_2px_10px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-105 ${
                 isWin 
                   ? 'bg-green-500/10 text-green-500 border-green-500/20' 
                   : isLoss 
@@ -287,7 +287,7 @@ export function CalendarPage() {
             <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="px-4 py-2 text-[10px] font-black min-w-[130px] text-center uppercase tracking-[0.2em] self-center text-foreground/90 select-none">
+            <span className="px-4 py-2 text-[10px] font-black min-w-[100px] sm:min-w-[130px] text-center uppercase tracking-[0.2em] self-center text-foreground/90 select-none">
               {new Date(calYear, calMonth, 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
             </span>
             <button onClick={() => changeMonth(1)} className="p-2 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">
@@ -299,7 +299,7 @@ export function CalendarPage() {
 
       {/* MONTH STATISTICS SUMMARY ROW */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="card-premium p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
           <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
             {monthlyPnl >= 0 ? <GraphUp size={36} className="text-green-500" /> : <GraphDown size={36} className="text-red-500" />}
           </div>
@@ -310,7 +310,7 @@ export function CalendarPage() {
           <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">Realized in closed trades</span>
         </div>
 
-        <div className="card-premium p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
           <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
             <ShieldCheck size={36} className="text-primary" />
           </div>
@@ -319,10 +319,9 @@ export function CalendarPage() {
             {consistencyRate.toFixed(1)}%
           </h4>
           <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{winDays} Green / {activeDays} Traded Days</span>
-          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{winDays} Green / {lossDays} Red / {activeDays} Traded Days</span>
         </div>
 
-        <div className="card-premium p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
           <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
             <LightningChargeFill size={36} className="text-yellow-500" />
           </div>
@@ -333,7 +332,7 @@ export function CalendarPage() {
           <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">Executions logged this month</span>
         </div>
 
-        <div className="card-premium p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
           <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
             <Activity size={36} className="text-sky-500" />
           </div>
@@ -349,12 +348,18 @@ export function CalendarPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Calendar Grid Card */}
-        <div className="lg:col-span-2 card-premium p-5 sm:p-8 animate-in slide-in-from-left-4 duration-700">
+        <div className="lg:col-span-2 card-premium p-3 sm:p-8 animate-in slide-in-from-left-4 duration-700">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 gap-2 mb-4 border-b border-border/10 pb-3">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-foreground/50">{d}</div>
-            ))}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => {
+              const mobileLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+              return (
+                <div key={d} className="text-center text-[10px] font-black uppercase tracking-[0.15em] text-foreground/50">
+                  <span className="hidden sm:inline">{d}</span>
+                  <span className="sm:hidden">{mobileLabels[i]}</span>
+                </div>
+              );
+            })}
           </div>
           
           {/* Days Grid */}

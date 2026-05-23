@@ -103,11 +103,11 @@ export function HistoryPage() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-gradient">TRADE HISTORY</h1>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Trade History</h1>
           <p className="text-muted-foreground text-sm font-medium">A comprehensive log of your past performance.</p>
         </div>
-        <button onClick={onExportCSV} className="btn-secondary gap-2 text-[11px] font-black uppercase tracking-widest px-5 h-10">
+        <button onClick={onExportCSV} className="btn-secondary gap-2 text-[11px] font-black uppercase tracking-widest px-5 h-10 w-full sm:w-auto justify-center">
           <Download className="w-3.5 h-3.5" /> Export Data
         </button>
       </header>
@@ -119,7 +119,7 @@ export function HistoryPage() {
             placeholder="Search notes..." 
             value={filterSearch} 
             onChange={e => setFilterSearch(e.target.value)} 
-            className="input-premium lg:col-span-1"
+            className="input-premium col-span-2 md:col-span-1"
           />
           <CustomSelect 
             value={filterDir} 
