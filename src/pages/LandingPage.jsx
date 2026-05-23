@@ -35,7 +35,7 @@ const FEATURES = [
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>,
     title: 'Instant MT5 Sync',
-    body: 'Our Expert Advisor watches your terminal and pushes every closed position to the cloud the moment it happens. Zero manual entry, absolute precision.',
+    body: 'Effortlessly capture your trade history and sync your performance data to the cloud. Eliminate manual logging and ensure 100% accuracy for every position closed.',
   },
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>,
@@ -68,20 +68,20 @@ const STEPS = [
   {
     id: '01',
     icon: <CloudArrowDownFill className="w-6 h-6" />,
-    title: 'Install the EA',
-    body: 'Drop our MQL5 Expert Advisor onto any chart in MT5. It runs silently and requires no manual action.'
+    title: 'Connect Your Broker',
+    body: 'Authorize your account via our secure portal. No plugins or Expert Advisors required just a direct, encrypted connection to your MT4 or MT5 platform.'
   },
   {
     id: '02',
     icon: <LightningChargeFill className="w-6 h-6" />,
-    title: 'Trade normally',
-    body: 'The moment you close a position, the EA captures price, lot, P&L, and duration and syncs everything instantly.'
+    title: 'Real-time Trade Sync',
+    body: 'Stop logging trades manually. Our automated system syncs every closed position from your broker to your trading journal the moment it happens.'
   },
   {
     id: '03',
     icon: <BarChartLineFill className="w-6 h-6" />,
-    title: 'Find your edge',
-    body: 'Review analytics, annotate trades, and study your calendar. Turn raw executions into actionable intelligence.'
+    title: 'Optimize Your Strategy',
+    body: 'Transform trade data into profit. Use our advanced performance analytics, behavioral heatmaps, and session tracking to identify your edge and master your trading psychology.'
   },
 ];
 
@@ -345,7 +345,7 @@ export function LandingPage() {
             </Motion.div>
 
             <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
-              The dedicated XAUUSD trading journal with automated MT5 sync, session analytics, and a P&amp;L calendar — built only for XAU/USD, not generic forex pairs.
+              The dedicated XAUUSD trading journal with automated MT5 sync, session analytics, and a P&amp;L calendar built only for XAU/USD, not generic forex pairs.
             </Motion.p>
 
             <Motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
