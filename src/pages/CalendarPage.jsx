@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { pad2 } from '../lib/tradeUtils';
+import { pad2, formatCurrency, formatNumber } from '../lib/tradeUtils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -75,7 +75,7 @@ export function CalendarPage() {
     winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
   })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
 
-  const sessionStats = { 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 }, 'Asian': { pnl: 0, count: 0 },'Tokoyo': { pnl: 0, count: 0 } };
+  const sessionStats = { 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 }, 'Asian': { pnl: 0, count: 0 }, };
   monthlyTrades.forEach(t => {
     let s = t.session || '';
     if (s.toLowerCase().includes('london')) s = 'London';
@@ -86,7 +86,7 @@ export function CalendarPage() {
     sessionStats[s].pnl += (t.pnl || 0);
     sessionStats[s].count++;
   });
-
+  
   let bestSession = '';
   let bestSessionPnl = -Infinity;
   Object.entries(sessionStats).forEach(([name, data]) => {
@@ -185,7 +185,7 @@ export function CalendarPage() {
                     ? 'bg-red-500/10 text-red-500 border-red-500/20' 
                     : 'bg-muted text-muted-foreground border-border'
               }`}>
-                {pnl >= 0 ? '+' : '-'}${Math.abs(pnl).toFixed(0)}
+                {formatCurrency(pnl, true, 0)}
               </div>
             ) : (
               <div className="h-5 sm:h-6" />
@@ -305,7 +305,7 @@ export function CalendarPage() {
           </div>
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Monthly Net P&L</span>
           <h4 className={`text-2xl font-black tracking-tighter ${monthlyPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {monthlyPnl >= 0 ? '+' : '-'}${Math.abs(monthlyPnl).toFixed(2)}
+            {formatCurrency(monthlyPnl, true)}
           </h4>
           <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">Realized in closed trades</span>
         </div>
@@ -338,9 +338,9 @@ export function CalendarPage() {
           </div>
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Volume & Pips</span>
           <h4 className="text-2xl font-black tracking-tighter text-foreground">
-            {totalPips >= 0 ? '+' : ''}{totalPips.toFixed(0)} <span className="text-xs text-muted-foreground">Pips</span>
+            {totalPips >= 0 ? '+' : ''}{formatNumber(totalPips, 0)} <span className="text-xs text-muted-foreground">Pips</span>
           </h4>
-          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{totalLots.toFixed(2)} Total Lots Traded</span>
+          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{formatNumber(totalLots, 2)} Total Lots Traded</span>
         </div>
       </section>
 
@@ -404,7 +404,7 @@ export function CalendarPage() {
                 <div className="flex justify-between items-end text-foreground/90">
                   <div className="flex flex-col">
                     <span className={`text-3xl font-black tracking-tighter ${selectedTotal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {selectedTotal >= 0 ? '+' : '-'}${Math.abs(selectedTotal).toFixed(2)}
+                      {formatCurrency(selectedTotal, true)}
                     </span>
                     <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{selectedTotal >= 0 ? 'Net Profit' : 'Net Loss'}</span>
                   </div>
@@ -418,7 +418,7 @@ export function CalendarPage() {
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
                   <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Lots</div>
-                  <div className="text-xs font-bold text-foreground mt-0.5">{selectedLots.toFixed(2)}</div>
+                  <div className="text-xs font-bold text-foreground mt-0.5">{formatNumber(selectedLots, 2)}</div>
                 </div>
                 <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
                   <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Win Rate</div>
@@ -426,7 +426,7 @@ export function CalendarPage() {
                 </div>
                 <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
                   <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Pips</div>
-                  <div className="text-xs font-bold text-foreground mt-0.5">{selectedPips >= 0 ? '+' : ''}{selectedPips.toFixed(0)}</div>
+                  <div className="text-xs font-bold text-foreground mt-0.5">{selectedPips >= 0 ? '+' : ''}{formatNumber(selectedPips, 0)}</div>
                 </div>
               </div>
 
@@ -454,7 +454,7 @@ export function CalendarPage() {
                     </div>
                     <div className="flex flex-col items-end">
                       <span className={`text-xs font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {trade.pnl >= 0 ? '+' : '-'}${Math.abs(trade.pnl).toFixed(2)}
+                        {formatCurrency(trade.pnl, true)}
                       </span>
                       <span className="text-[8px] font-bold text-muted-foreground/50 uppercase flex items-center gap-1">
                         <Clock size={8} /> {trade.session || 'N/A'}
@@ -509,7 +509,7 @@ export function CalendarPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-black text-foreground truncate max-w-[140px]">{setup.name}</span>
                         <span className={`text-xs font-black ${setup.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {setup.pnl >= 0 ? '+' : '-'}${Math.abs(setup.pnl).toFixed(2)}
+                          {formatCurrency(setup.pnl, true)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -539,7 +539,7 @@ export function CalendarPage() {
                       <div key={name} className="p-2.5 rounded-xl bg-muted/15 border border-border/10 flex flex-col justify-between items-center text-center gap-1">
                         <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">{name}</span>
                         <span className={`text-xs font-black ${isSessionWin ? 'text-green-500' : isSessionLoss ? 'text-red-500' : 'text-muted-foreground'}`}>
-                          {data.count > 0 ? `${data.pnl >= 0 ? '+' : '-'}$${Math.abs(data.pnl).toFixed(0)}` : '—'}
+                          {data.count > 0 ? formatCurrency(data.pnl, true, 0) : '—'}
                         </span>
                         <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase">{data.count} Trades</span>
                       </div>

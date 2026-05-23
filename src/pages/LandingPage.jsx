@@ -54,8 +54,8 @@ const FEATURES = [
   },
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
-    title: 'Bank-Grade Security',
-    body: 'Strict isolated storage protocols mean your data is yours alone. Nobody including us can access your private trade history.',
+    title: 'Private & Secure Data',
+    body: 'Your trading data is yours alone. We use industry-standard encryption and isolated storage protocols to ensure your sensitive performance data remains 100% private. We never track or share your trade details.',
   },
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
@@ -598,7 +598,7 @@ export function LandingPage() {
             <div className="lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
               <span className="text-2xl font-bold tracking-tighter mb-6 block">xaujournal</span>
               <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs">
-                The XAU journal for professional gold (XAUUSD) traders — MT5 sync, analytics, and secure trade history.
+                The XAU journal for professional gold (XAUUSD) traders MT5 sync, analytics, and secure trade history.
               </p>
             </div>
 

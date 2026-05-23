@@ -5,78 +5,98 @@ import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
+const SEO = {
+  title: 'Refund Policy | XAU Journal — 7-Day Money-Back Guarantee',
+  description:
+    'XAU Journal offers a 7-day money-back guarantee. If you are not satisfied with your Pro subscription within 7 days of purchase, contact us for a full refund — no questions asked.',
+  keywords:
+    'xaujournal refund policy, gold trading journal refund, 7 day money back guarantee trading app, xau journal subscription refund, forex journal refund, cancel xaujournal subscription, PayPal subscription refund',
+  canonical: 'https://www.xaujournal.com/refund-policy',
+};
+
 const SECTIONS = [
   {
     id: 'overview',
     title: '1. Overview',
-    content: `xaujournal operates on a subscription basis. We want you to have a great experience with the platform, and we aim to be fair and transparent about our refund approach.
+    content: `xaujournal operates on a subscription basis and is committed to your satisfaction. We want you to feel confident when subscribing to xaujournal Pro, which is why we offer a 7-day money-back guarantee.
 
 Please read this policy carefully before subscribing. By completing a purchase, you confirm that you have read and agree to this Refund Policy.`,
   },
   {
-    id: 'no-refunds',
-    title: '2. General no-refund policy',
-    content: `All subscription payments to xaujournal are non-refundable by default. This applies to:
+    id: 'seven-day-guarantee',
+    title: '2. 7-Day money-back guarantee',
+    content: `If you are not satisfied with your xaujournal Pro subscription for any reason, you may request a full refund within 7 days of your initial purchase date.
 
-• Monthly Pro subscription charges
-• Any partial months remaining after cancellation
-• Unused features or periods during an active billing cycle
+To request a refund under this guarantee:
 
-When you subscribe to xaujournal Pro, you gain immediate access to all Pro features. Because digital access is delivered instantly and cannot be "returned," we do not offer refunds for subscription fees already charged.`,
+• Email us at info@xaujournal.com with the subject line "Refund Request."
+• Include your registered account email and the date of your purchase.
+• We will process your refund within 2 business days of receiving your request.
+
+This guarantee applies to your first-ever Pro subscription payment only. It does not apply to subsequent renewal charges, additional purchases, or accounts that have previously received a goodwill refund.
+
+Once a refund is processed, your account will be downgraded to the free tier immediately.`,
   },
   {
     id: 'cancellation',
     title: '3. Cancellation',
-    content: `You may cancel your Pro subscription at any time through the billing portal in your account settings. Cancellation stops future charges but does not trigger a refund for the current billing period.
+    content: `You may cancel your Pro subscription at any time through the billing portal in your account settings. Cancellation stops future charges but does not automatically trigger a refund for the current billing period (unless you are within your 7-day guarantee window).
 
 Upon cancellation, you will retain full Pro access until the end of your current paid billing cycle. After that date, your account will revert to the free tier automatically.
 
 To cancel: go to Account Settings → Manage Subscription → Cancel Plan.`,
   },
   {
+    id: 'renewals',
+    title: '4. Renewal charges',
+    content: `Subscriptions auto-renew each billing cycle on the same date as your original purchase. Renewal charges are non-refundable except in the circumstances listed in Section 5 below.
+
+We will always notify you by email at least 7 days before your renewal date. You may cancel at any time before the renewal date to avoid the next charge.`,
+  },
+  {
     id: 'exceptions',
-    title: '4. Exceptions & goodwill refunds',
-    content: `We may issue a full or partial refund at our sole discretion in the following situations:
+    title: '5. Additional refund exceptions',
+    content: `Outside of the 7-day guarantee, we may issue a full or partial refund at our sole discretion in the following situations:
 
 • Duplicate charges — if you were charged more than once for the same billing period due to a technical error, we will refund the duplicate charge in full.
 
 • Service unavailability — if xaujournal experiences a verified outage lasting more than 72 consecutive hours in a single billing month, you may request a pro-rated credit for the affected period.
 
-• Accidental purchase — if you contact us within 48 hours of your first-ever subscription charge and have not used any Pro features, we will consider a one-time refund.
-
-To request a goodwill refund, email info@xaujournal.com with your account email, the charge date, and a brief description of the issue. We aim to respond within 2 business days.`,
+To request a refund under these exceptions, email info@xaujournal.com with your account email, the charge date, and a brief description of the issue. We aim to respond within 2 business days.`,
   },
   {
     id: 'chargebacks',
-    title: '5. Chargebacks',
-    content: `If you initiate a chargeback with your bank or card provider without first contacting us, your account will be suspended immediately pending resolution. We strongly encourage you to contact us first — we are committed to resolving any billing issues fairly and quickly.
+    title: '6. Chargebacks & disputes',
+    content: `If you initiate a chargeback or PayPal dispute without first contacting us, your account will be suspended immediately pending resolution. We strongly encourage you to reach out to us first — we are committed to resolving any billing issues fairly and quickly.
 
-Fraudulent chargebacks may result in permanent account termination.`,
+Filing a fraudulent chargeback or dispute may result in permanent account termination and recovery of any refunded amounts through applicable legal channels.`,
   },
   {
     id: 'free-tier',
-    title: '6. Free tier',
+    title: '7. Free tier',
     content: `xaujournal offers a free tier with limited features at no cost. There are no charges associated with the free tier, and therefore no refunds are applicable.
 
-If you are on the free tier and wish to upgrade, review the features available on our Pricing page before subscribing.`,
+If you are on the free tier and wish to upgrade, we recommend reviewing the features available on our Pricing page before subscribing so you can make an informed decision.`,
   },
   {
-    id: 'payment_processor',
-    title: '7. Payment processor',
-    content: `All payments are processed by our payment provider, which is responsible for PCI compliance. xaujournal does not store your card details.
+    id: 'paypal-payments',
+    title: '8. PayPal payments',
+    content: `All subscription payments are processed securely by PayPal. xaujournal does not store your card details, bank information, or PayPal credentials on our servers.
 
-Refunds approved by xaujournal are processed via the payment provider and typically appear on your statement within 5–10 business days, depending on your bank. We have no control over how quickly your bank processes the credit.`,
+Refunds approved by xaujournal are processed through PayPal and typically appear in your PayPal account or on your original payment method within 3–5 business days, depending on your bank or card issuer. We have no control over how quickly your bank or PayPal processes the credit to your account.
+
+For questions about a specific PayPal transaction, you may also contact PayPal support directly at www.paypal.com/help.`,
   },
   {
     id: 'changes',
-    title: '8. Changes to this policy',
+    title: '9. Changes to this policy',
     content: `We may update this Refund Policy from time to time. Material changes will be communicated via email to your registered address and via in-app notification at least 14 days before taking effect.
 
 Continued use of xaujournal after the effective date of any changes constitutes your acceptance of the updated policy.`,
   },
   {
     id: 'contact',
-    title: '9. Contact us',
+    title: '10. Contact us',
     content: `For any billing or refund enquiries:\n\nEmail: info@xaujournal.com\n\nPlease include your account email and the transaction date in your message. We aim to respond within two business days.`,
   },
 ];
@@ -88,30 +108,40 @@ export function RefundPolicyPage() {
   const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    // SEO meta tags
+    document.title = SEO.title;
+    const setMeta = (name, content, isProperty = false) => {
+      const attr = isProperty ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
     };
+    setMeta('description', SEO.description);
+    setMeta('keywords', SEO.keywords);
+    setMeta('robots', 'index, follow');
+    setMeta('og:title', SEO.title, true);
+    setMeta('og:description', SEO.description, true);
+    setMeta('og:type', 'website', true);
+    setMeta('og:url', SEO.canonical, true);
+    setMeta('twitter:card', 'summary');
+    setMeta('twitter:title', SEO.title);
+    setMeta('twitter:description', SEO.description);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
+    canonical.setAttribute('href', SEO.canonical);
 
+    const handleScroll = () => { setIsScrolled(window.scrollY > 20); };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
 
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     window.scrollTo(0, 0);
 
     return () => {
@@ -134,7 +164,7 @@ export function RefundPolicyPage() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' }
+    { to: '/contact', label: 'Contact' },
   ];
 
   return (
@@ -145,7 +175,7 @@ export function RefundPolicyPage() {
       </div>
 
       <header>
-        <nav 
+        <nav
           className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
             isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
           }`}
@@ -157,9 +187,13 @@ export function RefundPolicyPage() {
           <ul className="hidden md:flex items-center gap-2">
             {navLinks.map(({ to, label }) => (
               <li key={to}>
-                <NavLink 
-                  to={to} 
-                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                      isActive ? 'text-primary bg-primary/10' : 'text-foreground/70 hover:text-foreground hover:bg-muted'
+                    }`
+                  }
                 >
                   {label}
                 </NavLink>
@@ -167,48 +201,48 @@ export function RefundPolicyPage() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3 z-[101]">
-            <button 
-              onClick={toggleTheme} 
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
               className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
               aria-label="Toggle theme"
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
             >
               Get started
             </button>
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
+                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
             </button>
           </div>
 
-          <Motion.div 
+          <Motion.div
             initial={false}
             animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
             className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
           >
             {navLinks.map(({ to, label }) => (
-              <NavLink 
-                key={to} 
-                to={to} 
-                onClick={() => setMobileMenuOpen(false)} 
+              <NavLink
+                key={to}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
                 className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
               >
                 {label}
               </NavLink>
             ))}
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
             >
               Get started
@@ -218,10 +252,10 @@ export function RefundPolicyPage() {
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
-        <Motion.div 
-          variants={containerVariants} 
-          initial="hidden" 
-          animate="visible" 
+        <Motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
           <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
@@ -231,18 +265,40 @@ export function RefundPolicyPage() {
             Refund <span className="text-primary">Policy</span>
           </Motion.h1>
           <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
-            Clear and simple rules about subscriptions and refunds. We believe in being fair to our users.
+            We stand behind xaujournal with a 7-day money-back guarantee. If you're not satisfied, we'll make it right.
           </Motion.p>
+          <Motion.p variants={itemVariants} className="text-sm text-muted-foreground/60 mt-4">
+            Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} · Effective immediately
+          </Motion.p>
+        </Motion.div>
+
+        {/* 7-day badge highlight */}
+        <Motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="max-w-2xl mx-auto mb-16 md:mb-24 flex items-center gap-6 p-6 rounded-3xl border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-sm"
+        >
+          <div className="flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <polyline points="9 12 11 14 15 10" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-bold text-lg tracking-tight">7-Day Money-Back Guarantee</p>
+            <p className="text-sm text-muted-foreground font-medium mt-1">Not happy within 7 days? Email us for a full refund — no questions asked.</p>
+          </div>
         </Motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
           <aside className="hidden lg:block sticky top-32">
             <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-8">Table of Contents</h3>
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-4" aria-label="Refund policy sections">
               {SECTIONS.map((s) => (
-                <a 
-                  key={s.id} 
-                  href={`#${s.id}`} 
+                <a
+                  key={s.id}
+                  href={`#${s.id}`}
                   className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors hover:translate-x-1 duration-200"
                 >
                   {s.title.split('. ')[1]}
@@ -251,17 +307,17 @@ export function RefundPolicyPage() {
             </nav>
           </aside>
 
-          <Motion.article 
-            initial={{ opacity: 0, y: 40 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <Motion.article
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="prose prose-slate dark:prose-invert max-w-none"
           >
             <div className="p-8 rounded-3xl border border-primary/20 bg-primary/5 backdrop-blur-sm mb-20 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
-                <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong> 
-                Subscriptions are non-refundable. You can cancel anytime and keep access until your billing period ends. If something went wrong on our end, contact us.
+                <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong>
+                You get a full 7-day money-back guarantee on your first Pro subscription. After 7 days, renewals are non-refundable. Cancel anytime and keep access until your billing period ends. Payments and refunds are handled through PayPal.
               </p>
             </div>
 
@@ -297,7 +353,6 @@ export function RefundPolicyPage() {
                 Empowering traders with clarity and institutional-grade analytics.
               </p>
             </div>
-            
             <div className="flex flex-col items-center md:items-end gap-6">
               <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end">
                 <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
@@ -313,18 +368,17 @@ export function RefundPolicyPage() {
         </div>
       </footer>
 
-      <button 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
           isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
         }`}
         aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
       </button>
     </div>
   );
 }
-
-
-

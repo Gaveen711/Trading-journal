@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { XLg, Check2Circle } from 'react-bootstrap-icons';
 import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
-import { calcPnl } from '../lib/tradeUtils';
+import { calcPnl, formatCurrency } from '../lib/tradeUtils';
 
 export function EditTradeModal({ trade, onSave, onClose }) {
   const [formData, setFormData] = useState({ ...trade });
@@ -151,7 +151,7 @@ export function EditTradeModal({ trade, onSave, onClose }) {
             <div className="flex flex-col">
               <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Recalculated Impact</span>
               <span className={`text-xl font-black ${derivedMetrics.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {derivedMetrics.pnl >= 0 ? '+' : ''}${Math.abs(derivedMetrics.pnl).toFixed(2)}
+                {formatCurrency(derivedMetrics.pnl, true)}
               </span>
             </div>
             <div className="text-right">

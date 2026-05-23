@@ -5,6 +5,15 @@ import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
+const SEO = {
+  title: 'Privacy Policy | XAU Journal — XAUUSD Gold Trading Journal',
+  description:
+    'Read the XAU Journal privacy policy. We only collect what is needed to run your XAUUSD trading journal. Your trade data belongs to you — we never sell it.',
+  keywords:
+    'xaujournal privacy policy, gold trading journal privacy, XAUUSD trade data security, forex journal app privacy, trading journal data protection, MetaTrader journal privacy, xau journal terms',
+  canonical: 'https://www.xaujournal.com/privacy',
+};
+
 const SECTIONS = [
   {
     id: 'data-collection',
@@ -13,45 +22,49 @@ const SECTIONS = [
 
 • Account data — your email address, display name, and authentication provider (email/password or Google OAuth) via secure industry-standard authentication.
 
-• Trade data — entry/exit prices, lot size, direction, duration, P&L, and any notes you attach. This is sent by you manually or by the MT5 Expert Advisor under your explicit control.
+• Trade data — entry/exit prices, lot size, direction, duration, P&L, and any notes you attach. This data is submitted manually by you or automatically via the Meta API broker connection under your explicit control.
 
 • Usage telemetry — basic interaction signals (feature usage frequency, session counts) used solely to enforce plan limits and improve the product. We never track keystrokes or screen content.
 
-• Billing data — your subscription status and payment customer ID. We do not store or process card numbers; payment data is handled by our payment provider.`,
+• Billing data — your subscription status and PayPal payment customer ID. We do not store or process card numbers or bank details; all payment data is handled securely by PayPal.`,
   },
   {
     id: 'data-security',
     title: '2. How we protect your data',
     content: `All data in transit is encrypted via TLS 1.3. Data at rest is stored in encrypted, isolated cloud databases protected by strict security protocols that enforce user-level isolation — no user can access another user's data, and neither can we in normal operation.
 
-Your trade data is strictly scoped, meaning only a valid authentication token for your account grants read/write access. API keys for MT5 sync are stored in a separate secure collection, hashed, and can be rotated or revoked at any time from your account settings.`,
+Your trade data is strictly scoped, meaning only a valid authentication token for your account grants read/write access. API keys for Meta API broker sync are stored in a separate secure collection, hashed, and can be rotated or revoked at any time from your account settings.`,
   },
   {
-    id: 'mt5-sync',
-    title: '3. MT5 Expert Advisor & API sync',
-    content: `Our MQL5 Expert Advisor (EA) transmits trade data from your MetaTrader 5 terminal to our Vercel serverless API endpoint using your unique API key. The EA sends: position ID, symbol, direction, lot size, open/close prices, open/close times, and broker-reported P&L.
+    id: 'meta-api-sync',
+    title: '3. Meta API & broker connection',
+    content: `xaujournal supports automatic trade synchronisation via the Meta API — the industry-standard protocol used by MetaTrader 4 and MetaTrader 5 brokers. When you connect your broker account, you authorise xaujournal to read your trade history using a secure read-only API connection.
 
-We do not receive your MT5 account credentials, account balance beyond individual trade P&L, open positions, or any other account metadata. The EA only runs when the MT5 terminal is active on your Windows desktop — it has no persistent access to your broker account.
+We receive only: position ID, symbol, direction, lot size, open/close prices, open/close times, and broker-reported P&L. We do not receive your broker account password, full account balance, open positions beyond individual trade data, or any other sensitive account metadata.
 
-You can revoke sync access at any time by rotating your API key or removing the EA from your chart.`,
+Your broker credentials are never stored on our servers. The connection is established via a secure OAuth-style token issued by your broker through the Meta API protocol. You can revoke this connection at any time from your account settings, which immediately terminates our access to your broker account.
+
+xaujournal is not affiliated with, endorsed by, or responsible for any broker you choose to connect. Use of the Meta API connection is at your own discretion.`,
   },
   {
     id: 'payments',
     title: '4. Payments & subscriptions',
-    content: `All financial transactions are processed by our payment provider. xaujournal does not store credit card numbers, CVVs, or bank details on our servers. When you upgrade to Pro, we create a customer record with the payment provider linked to your unique account identifier.
+    content: `All financial transactions are processed securely by PayPal. xaujournal does not store credit card numbers, CVVs, PayPal credentials, or bank details on our servers.
 
-Subscription status (active, cancelled, past due) is synced securely to our database and used to gate Pro features. You can manage or cancel your subscription at any time via the billing portal accessible from your account settings.`,
+When you upgrade to Pro, we create a subscription record linked to your PayPal account and your unique xaujournal identifier. Subscription status (active, cancelled, past due) is synced to our database and used to gate Pro features. You can manage or cancel your subscription at any time via the billing portal in your account settings.
+
+PayPal maintains its own privacy and security standards including PCI DSS compliance. For information on how PayPal handles your payment data, please refer to PayPal's Privacy Policy at www.paypal.com/privacy.`,
   },
   {
     id: 'data-sharing',
     title: '5. Data sharing & third parties',
     content: `We do not sell, rent, or share your personal or trading data with any third party for advertising or commercial purposes. The only third-party services that process your data are:
 
-• Infrastructure partners — secure authentication and cloud storage.
-• Payment provider — payment processing and subscription management.
-• Vercel — serverless function hosting for the sync API.
+• Infrastructure partners — secure authentication (Firebase) and cloud storage (Firestore), which provide user-level data isolation.
+• PayPal — payment processing and subscription management for xaujournal Pro.
+• Vercel — serverless function hosting for the Meta API sync and backend services.
 
-Each of these services maintains its own privacy and security certifications (SOC 2, ISO 27001). Links to their privacy policies are available on their respective websites.`,
+Each of these services maintains its own privacy and security certifications (SOC 2, ISO 27001, PCI DSS). Links to their privacy policies are available on their respective websites.`,
   },
   {
     id: 'user-rights',
@@ -61,6 +74,7 @@ Each of these services maintains its own privacy and security certifications (SO
 • Export — download a CSV of all trade records from the History page at any time.
 • Delete entries — permanently remove individual trades from the History page.
 • Reset account — use the "Reset Terminal" function in account settings to wipe all trade and journal data.
+• Disconnect broker — revoke the Meta API broker connection at any time from account settings.
 • Delete account — contact us at info@xaujournal.com to permanently delete your account. All associated data will be purged from our records within 30 days.
 
 If you are located in the European Economic Area (EEA), you have additional rights under the GDPR including the right to access, rectify, port, and erase your data. Contact us to exercise any of these rights.`,
@@ -94,30 +108,40 @@ export function PrivacyPolicyPage() {
   const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    // SEO meta tags
+    document.title = SEO.title;
+    const setMeta = (name, content, isProperty = false) => {
+      const attr = isProperty ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
     };
+    setMeta('description', SEO.description);
+    setMeta('keywords', SEO.keywords);
+    setMeta('robots', 'index, follow');
+    setMeta('og:title', SEO.title, true);
+    setMeta('og:description', SEO.description, true);
+    setMeta('og:type', 'website', true);
+    setMeta('og:url', SEO.canonical, true);
+    setMeta('twitter:card', 'summary');
+    setMeta('twitter:title', SEO.title);
+    setMeta('twitter:description', SEO.description);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
+    canonical.setAttribute('href', SEO.canonical);
 
+    const handleScroll = () => { setIsScrolled(window.scrollY > 20); };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
 
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     window.scrollTo(0, 0);
 
     return () => {
@@ -140,7 +164,7 @@ export function PrivacyPolicyPage() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' }
+    { to: '/contact', label: 'Contact' },
   ];
 
   return (
@@ -151,7 +175,7 @@ export function PrivacyPolicyPage() {
       </div>
 
       <header>
-        <nav 
+        <nav
           className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
             isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
           }`}
@@ -163,9 +187,13 @@ export function PrivacyPolicyPage() {
           <ul className="hidden md:flex items-center gap-2">
             {navLinks.map(({ to, label }) => (
               <li key={to}>
-                <NavLink 
-                  to={to} 
-                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                      isActive ? 'text-primary bg-primary/10' : 'text-foreground/70 hover:text-foreground hover:bg-muted'
+                    }`
+                  }
                 >
                   {label}
                 </NavLink>
@@ -173,48 +201,48 @@ export function PrivacyPolicyPage() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3 z-[101]">
-            <button 
-              onClick={toggleTheme} 
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
               className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
               aria-label="Toggle theme"
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
             >
               Get started
             </button>
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
+                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
             </button>
           </div>
 
-          <Motion.div 
+          <Motion.div
             initial={false}
             animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
             className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
           >
             {navLinks.map(({ to, label }) => (
-              <NavLink 
-                key={to} 
-                to={to} 
-                onClick={() => setMobileMenuOpen(false)} 
+              <NavLink
+                key={to}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
                 className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
               >
                 {label}
               </NavLink>
             ))}
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
             >
               Get started
@@ -224,10 +252,10 @@ export function PrivacyPolicyPage() {
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
-        <Motion.div 
-          variants={containerVariants} 
-          initial="hidden" 
-          animate="visible" 
+        <Motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
           <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
@@ -239,16 +267,19 @@ export function PrivacyPolicyPage() {
           <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
             We believe privacy policies should be readable. This one is. Your trust is our most valuable asset.
           </Motion.p>
+          <Motion.p variants={itemVariants} className="text-sm text-muted-foreground/60 mt-4">
+            Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} · Effective immediately
+          </Motion.p>
         </Motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
           <aside className="hidden lg:block sticky top-32">
             <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-8">Table of Contents</h3>
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-4" aria-label="Privacy policy sections">
               {SECTIONS.map((s) => (
-                <a 
-                  key={s.id} 
-                  href={`#${s.id}`} 
+                <a
+                  key={s.id}
+                  href={`#${s.id}`}
                   className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors hover:translate-x-1 duration-200"
                 >
                   {s.title.split('. ')[1]}
@@ -257,17 +288,17 @@ export function PrivacyPolicyPage() {
             </nav>
           </aside>
 
-          <Motion.article 
-            initial={{ opacity: 0, y: 40 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <Motion.article
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="prose prose-slate dark:prose-invert max-w-none"
           >
             <div className="p-8 rounded-3xl border border-primary/20 bg-primary/5 backdrop-blur-sm mb-20 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
-                <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong> 
-                We only collect what's needed to run the app. Your trading data belongs to you. We don't sell it. You can delete everything at any time.
+                <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong>
+                We only collect what's needed to run the app. Your trading data belongs to you. We don't sell it. Payments are handled by PayPal. You can delete everything at any time.
               </p>
             </div>
 
@@ -303,11 +334,11 @@ export function PrivacyPolicyPage() {
                 Built with a focus on security, performance, and user privacy.
               </p>
             </div>
-            
             <div className="flex flex-col items-center md:items-end gap-6">
-              <div className="flex items-center gap-8 text-sm font-semibold">
+              <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end">
                 <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
                 <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+                <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
                 <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
               </div>
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 text-center md:text-right">
@@ -318,17 +349,17 @@ export function PrivacyPolicyPage() {
         </div>
       </footer>
 
-      <button 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
           isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
         }`}
         aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
       </button>
     </div>
   );
 }
-
-

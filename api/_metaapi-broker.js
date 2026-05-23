@@ -120,3 +120,13 @@ export async function fetchBrokerTrades(credentials, fromDate = null) {
   const metaApiAccountId = await provisionMetaApiAccount(credentials);
   return fetchMetaApiDeals(metaApiAccountId, fromDate);
 }
+
+export async function deleteMetaApiAccount(metaApiAccountId) {
+  const api = getApi();
+  try {
+    await api.metatraderAccountApi.removeAccount(metaApiAccountId);
+  } catch (err) {
+    console.error(`Failed to delete MetaApi account ${metaApiAccountId}:`, err.message || err);
+  }
+}
+

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { calcPnl, todayStr, formatCurrencyCompact } from '../lib/tradeUtils';
+import { calcPnl, todayStr, formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icons';
 import { DatePicker } from '../components/ui/DatePicker';
@@ -32,6 +32,7 @@ export function LogTradePage() {
   const [direction, setDirection] = useState(null);
   const [saving, setSaving] = useState(false);
   const [equityPeriod, setEquityPeriod] = useState('all');
+  const [showExact, setShowExact] = useState({});
 
   const [date, setDate] = useState(todayStr());
   const [entry, setEntry] = useState('');
@@ -93,7 +94,7 @@ export function LogTradePage() {
       setDirection(null);
       setDate(todayStr());
       setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup('');
-      toast(`Trade recorded: ${outcome} ${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
+      toast(`Trade recorded: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
     } catch (err) {
       toast(err?.message || 'Failed to record trade. Please try again.', 'error');
     } finally {
@@ -261,7 +262,13 @@ export function LogTradePage() {
                 <button onClick={handleSaveBalance} className="text-[10px] font-black text-primary uppercase hover:scale-110 active:scale-95 transition-all">Save</button>
               </div>
             ) : (
-              <span className="text-xl font-black">{formatCurrencyCompact(currentWalletBalance)}</span>
+              <span 
+                onClick={() => setShowExact(prev => ({ ...prev, balance: !prev.balance }))}
+                className="text-xl font-black cursor-pointer select-none"
+                title={showExact.balance ? "Click to compact" : "Click to see exact amount"}
+              >
+                {showExact.balance ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance)}
+              </span>
             )}
 
             {/* Pulsing light for pro users when balance is active */}
@@ -299,8 +306,15 @@ export function LogTradePage() {
                 </div>
               ) : (
                 <>
-                  <span className={`text-xl font-black ${thisMonthPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {formatCurrencyCompact(thisMonthPnl)} <span className="text-[10px] text-muted-foreground">/ {formatCurrencyCompact(monthlyGoal)}</span>
+                  <span 
+                    onClick={() => setShowExact(prev => ({ ...prev, goal: !prev.goal }))}
+                    className={`text-xl font-black cursor-pointer select-none ${thisMonthPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                    title={showExact.goal ? "Click to compact" : "Click to see exact amount"}
+                  >
+                    {showExact.goal ? formatCurrency(thisMonthPnl) : formatCurrencyCompact(thisMonthPnl)}{' '}
+                    <span className="text-[10px] text-muted-foreground">
+                      / {showExact.goal ? formatCurrency(monthlyGoal) : formatCurrencyCompact(monthlyGoal)}
+                    </span>
                   </span>
                   <span className="text-[10px] font-black text-primary">{goalProgress.toFixed(0)}%</span>
                 </>
@@ -463,7 +477,7 @@ export function LogTradePage() {
                       Forecasted Impact ({pnlData.pips} Pips)
                     </span>
                     <span className={`text-xl font-black ${pnlData.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {pnlData.pnl >= 0 ? '+' : ''}${Math.abs(pnlData.pnl).toFixed(2)}
+                      {formatCurrency(pnlData.pnl, true)}
                     </span>
                   </div>
                   {pnlData.rr && (
@@ -546,7 +560,7 @@ export function LogTradePage() {
               <div className="space-y-1.5">
                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Growth</span>
                 <p className="text-2xl font-black text-green-500 tracking-tighter">
-                  +{avgProfit === 0 ? '$0.00' : `$${avgProfit.toFixed(2)}`}
+                  {formatCurrency(avgProfit, true)}
                 </p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-green-500/5 flex items-center justify-center text-green-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-green-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">
@@ -557,7 +571,7 @@ export function LogTradePage() {
               <div className="space-y-1.5">
                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Drawdown</span>
                 <p className="text-2xl font-black text-red-500 tracking-tighter">
-                  {avgLoss === 0 ? '$0.00' : `-$${Math.abs(avgLoss).toFixed(2)}`}
+                  {formatCurrency(avgLoss, false)}
                 </p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-red-500/5 flex items-center justify-center text-red-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">

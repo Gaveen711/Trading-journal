@@ -5,6 +5,15 @@ import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
+const SEO = {
+  title: 'Terms of Service | XAU Journal — XAUUSD Gold Trading Journal',
+  description:
+    'Read the XAU Journal terms of service. Understand your rights and responsibilities when using our XAUUSD gold trading journal platform, broker connection via Meta API, and PayPal subscription.',
+  keywords:
+    'xaujournal terms of service, gold trading journal terms, XAUUSD journal user agreement, xau journal legal, forex trading app terms, Meta API broker connection terms, xaujournal subscription terms, gold trader app terms and conditions',
+  canonical: 'https://www.xaujournal.com/terms-and-conditions',
+};
+
 const SECTIONS = [
   {
     id: 'acceptance',
@@ -16,7 +25,7 @@ These Terms apply to all users, including visitors, free-tier members, and Pro s
   {
     id: 'description',
     title: '2. Description of service',
-    content: `xaujournal is a cloud-based trading journal platform designed for XAUUSD (Gold) traders. It allows users to log trades, track performance analytics, write journal entries, and optionally synchronize trade data from MetaTrader 5 via a dedicated Expert Advisor (EA).
+    content: `xaujournal is a cloud-based trading journal platform designed for XAUUSD (Gold) traders. It allows users to log trades, track performance analytics, write journal entries, and optionally synchronise trade data from their broker account via the Meta API broker connection.
 
 The Service is provided on a subscription basis. A free tier with limited features is available. Advanced features are gated behind the Pro subscription plan.`,
   },
@@ -32,11 +41,11 @@ We reserve the right to suspend or terminate accounts that violate these Terms, 
   {
     id: 'subscriptions',
     title: '4. Subscriptions & billing',
-    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely via our payment provider.
+    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely via PayPal.
 
 Subscriptions auto-renew each billing cycle unless cancelled before the renewal date. You may cancel at any time via the billing portal in your account settings. Cancellation takes effect at the end of the current billing period — you retain Pro access until then.
 
-We do not offer refunds for partial months or unused features. If you believe a charge is in error, contact us within 14 days at info@xaujournal.com.`,
+xaujournal offers a 7-day money-back guarantee on your first Pro subscription payment. If you are not satisfied within 7 days of your initial purchase, contact us at info@xaujournal.com for a full refund. Renewal charges are non-refundable. Please refer to our full Refund Policy at www.xaujournal.com/refund-policy for complete details.`,
   },
   {
     id: 'acceptable-use',
@@ -62,13 +71,17 @@ We will never sell your data to third parties. We do not use your trading data f
 You may export or delete your data at any time from within the platform.`,
   },
   {
-    id: 'mt5-ea',
-    title: '7. MT5 Expert Advisor',
-    content: `The MT5 Expert Advisor (EA) provided as part of xaujournal is for personal use only. You may not distribute, sell, or share the EA file or its source code with others.
+    id: 'meta-api',
+    title: '7. Meta API & broker connection',
+    content: `xaujournal supports optional trade synchronisation via the Meta API — the industry-standard protocol used by MetaTrader 4 (MT4) and MetaTrader 5 (MT5) compatible brokers. By connecting your broker account through this feature, you authorise xaujournal to establish a read-only connection to your broker's trade history using a secure token issued through the Meta API protocol.
 
-The EA connects to our API using a unique key tied to your account. You are responsible for keeping this key secure. We are not liable for any trading losses, broker actions, or data exposure resulting from misuse of the EA or your API key.
+The Meta API connection is provided for personal use only. You may not share, transfer, or use another person's broker credentials to connect to xaujournal.
 
-The EA is provided as-is. We make no warranty that it will be free from errors or compatible with all MT5 builds or broker configurations.`,
+You are responsible for keeping your xaujournal account secure and for any activity resulting from your broker connection. We are not liable for any trading losses, broker actions, account restrictions, or data exposure resulting from your use of the Meta API connection or the misuse of your account credentials.
+
+The Meta API connection feature is provided as-is. We make no warranty that it will be compatible with all brokers, MT4/MT5 server versions, or broker configurations. You may revoke the broker connection at any time from your account settings, which will immediately terminate our access to your broker data.
+
+xaujournal is not affiliated with, endorsed by, or responsible for MetaQuotes Software Corp., any MetaTrader platform, or any broker you choose to connect.`,
   },
   {
     id: 'disclaimers',
@@ -113,34 +126,41 @@ export function TermsOfServicePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
 
-  // Consolidated scroll and lifecycle logic
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    // SEO meta tags
+    document.title = SEO.title;
+    const setMeta = (name, content, isProperty = false) => {
+      const attr = isProperty ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
     };
+    setMeta('description', SEO.description);
+    setMeta('keywords', SEO.keywords);
+    setMeta('robots', 'index, follow');
+    setMeta('og:title', SEO.title, true);
+    setMeta('og:description', SEO.description, true);
+    setMeta('og:type', 'website', true);
+    setMeta('og:url', SEO.canonical, true);
+    setMeta('twitter:card', 'summary');
+    setMeta('twitter:title', SEO.title);
+    setMeta('twitter:description', SEO.description);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
+    canonical.setAttribute('href', SEO.canonical);
 
+    const handleScroll = () => { setIsScrolled(window.scrollY > 20); };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    // Smooth scrolling initialization
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
 
-    // Lock body scroll when mobile menu is open
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     window.scrollTo(0, 0);
 
     return () => {
@@ -163,20 +183,18 @@ export function TermsOfServicePage() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' }
+    { to: '/contact', label: 'Contact' },
   ];
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">
-      {/* Ambient backgrounds */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[120px] opacity-60 mix-blend-screen" />
-        <div className="absolute bottom-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary/3 blur-[100px] opacity-40 mix-blend-screen" />
+        <div className="absolute top-[-10%] left-[-5%] w-[50vw] h-[50vw] rounded-full bg-primary/5 blur-[120px] opacity-60 mix-blend-screen" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary/3 blur-[100px] opacity-40 mix-blend-screen" />
       </div>
 
-      {/* Navigation */}
       <header>
-        <nav 
+        <nav
           className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
             isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
           }`}
@@ -188,9 +206,13 @@ export function TermsOfServicePage() {
           <ul className="hidden md:flex items-center gap-2">
             {navLinks.map(({ to, label }) => (
               <li key={to}>
-                <NavLink 
-                  to={to} 
-                  className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    `px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                      isActive ? 'text-primary bg-primary/10' : 'text-foreground/70 hover:text-foreground hover:bg-muted'
+                    }`
+                  }
                 >
                   {label}
                 </NavLink>
@@ -198,49 +220,48 @@ export function TermsOfServicePage() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3 z-[101]">
-            <button 
-              onClick={toggleTheme} 
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
               className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
               aria-label="Toggle theme"
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
             >
               Get started
             </button>
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
+                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
             </button>
           </div>
 
-          {/* Mobile Menu Overlay */}
-          <Motion.div 
+          <Motion.div
             initial={false}
             animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
             className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
           >
             {navLinks.map(({ to, label }) => (
-              <NavLink 
-                key={to} 
-                to={to} 
-                onClick={() => setMobileMenuOpen(false)} 
+              <NavLink
+                key={to}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
                 className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
               >
                 {label}
               </NavLink>
             ))}
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
             >
               Get started
@@ -250,11 +271,10 @@ export function TermsOfServicePage() {
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
-        {/* Hero Section */}
-        <Motion.div 
-          variants={containerVariants} 
-          initial="hidden" 
-          animate="visible" 
+        <Motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
           <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
@@ -266,19 +286,19 @@ export function TermsOfServicePage() {
           <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
             Our commitment to transparency and fairness in providing the best trading journal experience.
           </Motion.p>
+          <Motion.p variants={itemVariants} className="text-sm text-muted-foreground/60 mt-4">
+            Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} · Effective immediately
+          </Motion.p>
         </Motion.div>
 
-        {/* Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-16 lg:gap-24 items-start">
-          
-          {/* Sticky Table of Contents */}
           <aside className="hidden lg:block sticky top-32">
             <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-8">Table of Contents</h3>
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-4" aria-label="Terms of service sections">
               {SECTIONS.map((s) => (
-                <a 
-                  key={s.id} 
-                  href={`#${s.id}`} 
+                <a
+                  key={s.id}
+                  href={`#${s.id}`}
                   className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors hover:translate-x-1 duration-200"
                 >
                   {s.title.split('. ')[1]}
@@ -287,10 +307,9 @@ export function TermsOfServicePage() {
             </nav>
           </aside>
 
-          {/* Main Content */}
-          <Motion.article 
-            initial={{ opacity: 0, y: 40 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <Motion.article
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="prose prose-slate dark:prose-invert max-w-none"
           >
@@ -298,7 +317,7 @@ export function TermsOfServicePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
                 <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">TL;DR:</strong>
-                Use xaujournal responsibly. Your data is yours. We don't give financial advice. Pro subscriptions auto-renew and can be cancelled anytime.
+                Use xaujournal responsibly. Your data is yours. We don't give financial advice. Connect your broker securely via Meta API. Pro subscriptions are billed via PayPal, auto-renew monthly, and come with a 7-day money-back guarantee.
               </p>
             </div>
 
@@ -325,7 +344,6 @@ export function TermsOfServicePage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
@@ -335,11 +353,11 @@ export function TermsOfServicePage() {
                 Empowering gold traders with institutional-grade analytics and journaling.
               </p>
             </div>
-            
             <div className="flex flex-col items-center md:items-end gap-6">
-              <div className="flex items-center gap-8 text-sm font-semibold">
+              <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end">
                 <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
                 <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+                <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
                 <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
               </div>
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 text-center md:text-right">
@@ -350,7 +368,6 @@ export function TermsOfServicePage() {
         </div>
       </footer>
 
-      {/* Scroll to Top Button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
@@ -358,11 +375,10 @@ export function TermsOfServicePage() {
         }`}
         aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
       </button>
     </div>
   );
 }
-
-
-
