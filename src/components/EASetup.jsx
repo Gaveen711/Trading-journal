@@ -1,12 +1,13 @@
 // src/components/EASetup.jsx
 // Broker Sync Terminal — MT4/MT5 platform selection + broker login
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useBrokerAccounts } from '../hooks/useBrokerAccounts';
 // connectBrokerCallable and syncBrokerTradesCallable removed in favor of Hono useBrokerAccounts hook
 import { getFriendlyErrorMessage } from '../lib/errorUtils';
 import { useToast } from './ToastContext';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import {
   Lightning,
   LightningFill,
@@ -22,23 +23,136 @@ import {
   EyeSlashFill,
   PlusCircleFill,
   ExclamationTriangleFill,
+  ChevronDown,
+  Search,
 } from 'react-bootstrap-icons';
 
 const BROKERS = {
   mt5: [
-    { label: 'IC Markets', server: 'ICMarketsSC-Demo' },
-    { label: 'Exness', server: 'Exness-Trial' },
-    { label: 'FTMO', server: 'FTMO-Server' },
-    { label: 'The Funded Trader', server: 'TheFundedTrader-Live' },
-    { label: 'Just Markets — Demo', server: 'JustMarkets-Demo' },
-    { label: 'Just Markets — Live', server: 'JustMarkets-Live' },
+    { label: 'Admirals — Demo', server: 'AdmiralMarkets-Demo' },
+    { label: 'Admirals — Live', server: 'AdmiralMarkets-Live' },
+    { label: 'Alpha Capital Group — Demo', server: 'AlphaCapital-Demo' },
+    { label: 'Alpha Capital Group — Live', server: 'AlphaCapital-Live' },
+    { label: 'AvaTrade — Demo', server: 'Ava-Demo' },
+    { label: 'AvaTrade — Live', server: 'Ava-Real' },
+    { label: 'Axi — Demo', server: 'Axi-Demo' },
+    { label: 'Axi — Live', server: 'Axi-Live' },
+    { label: 'BlackBull Markets — Demo', server: 'BlackBull-Demo' },
+    { label: 'BlackBull Markets — Live', server: 'BlackBull-Live' },
+    { label: 'Blueberry Markets — Demo', server: 'BlueberryMarkets-Demo' },
+    { label: 'Blueberry Markets — Live', server: 'BlueberryMarkets-Live' },
+    { label: 'Darwinex — Demo', server: 'Darwinex-Demo' },
+    { label: 'Darwinex — Live', server: 'Darwinex-Live' },
+    { label: 'Eightcap — Demo', server: 'Eightcap-Demo' },
+    { label: 'Eightcap — Live', server: 'Eightcap-Live' },
+    { label: 'Exness — Demo', server: 'Exness-MT5Trial' },
+    { label: 'Exness — Live', server: 'Exness-MT5Real' },
+    { label: 'FBS — Demo', server: 'FBS-Demo' },
+    { label: 'FBS — Live', server: 'FBS-Real' },
+    { label: 'FP Markets — Demo', server: 'FPMarkets-Demo' },
+    { label: 'FP Markets — Live', server: 'FPMarkets-Live' },
+    { label: 'FTMO — Demo', server: 'FTMO-Demo' },
+    { label: 'FTMO — Live', server: 'FTMO-Server' },
+    { label: 'Funding Pips — Demo', server: 'FundingPips-Demo' },
+    { label: 'Funding Pips — Live', server: 'FundingPips-Live' },
+    { label: 'Fusion Markets — Demo', server: 'FusionMarkets-Demo' },
+    { label: 'Fusion Markets — Live', server: 'FusionMarkets-Live' },
+    { label: 'FxPro — Demo', server: 'FxPro-MT5Demo' },
+    { label: 'FxPro — Live', server: 'FxPro-MT5Real' },
+    { label: 'HFM (HotForex) — Demo', server: 'HFMarkets-Demo' },
+    { label: 'HFM (HotForex) — Live', server: 'HFMarkets-Live' },
+    { label: 'IC Markets — Demo', server: 'ICMarketsSC-Demo' },
+    { label: 'IC Markets — Live', server: 'ICMarketsSC-Live' },
+    { label: 'IG — Demo', server: 'IG-Demo' },
+    { label: 'IG — Live', server: 'IG-Live' },
+    { label: 'IronFX — Demo', server: 'IronFX-Demo' },
+    { label: 'IronFX — Live', server: 'IronFX-Live' },
+    { label: 'JustMarkets — Demo', server: 'JustMarkets-Demo' },
+    { label: 'JustMarkets — Live', server: 'JustMarkets-Live' },
+    { label: 'MultiBank — Demo', server: 'MultiBank-Demo' },
+    { label: 'MultiBank — Live', server: 'MultiBank-Live' },
+    { label: 'MyFundedFX — Demo', server: 'MyFundedFX-Demo' },
+    { label: 'MyFundedFX — Live', server: 'MyFundedFX-Live' },
+    { label: 'OANDA — Demo', server: 'OANDA-Demo' },
+    { label: 'OANDA — Live', server: 'OANDA-Live' },
+    { label: 'OctaFX — Demo', server: 'OctaFX-Demo' },
+    { label: 'OctaFX — Live', server: 'OctaFX-Live' },
+    { label: 'Pepperstone — Demo', server: 'Pepperstone-Demo' },
+    { label: 'Pepperstone — Live', server: 'Pepperstone-Live' },
+    { label: 'RoboForex — Demo', server: 'RoboForex-Demo' },
+    { label: 'RoboForex — Live', server: 'RoboForex-Live' },
+    { label: 'The Funded Trader — Demo', server: 'TheFundedTrader-Demo' },
+    { label: 'The Funded Trader — Live', server: 'TheFundedTrader-Live' },
+    { label: 'ThinkMarkets — Demo', server: 'ThinkMarkets-Demo' },
+    { label: 'ThinkMarkets — Live', server: 'ThinkMarkets-Live' },
+    { label: 'Tickmill — Demo', server: 'Tickmill-Demo' },
+    { label: 'Tickmill — Live', server: 'Tickmill-Live' },
+    { label: 'TMGM — Demo', server: 'TMGM-Demo' },
+    { label: 'TMGM — Live', server: 'TMGM-Live' },
+    { label: 'True Forex Funds — Demo', server: 'TrueForexFunds-Demo' },
+    { label: 'True Forex Funds — Live', server: 'TrueForexFunds-Live' },
+    { label: 'Vantage — Demo', server: 'Vantage-Demo' },
+    { label: 'Vantage — Live', server: 'Vantage-Live' },
+    { label: 'XM — Demo', server: 'XM-Demo' },
+    { label: 'XM — Live', server: 'XM-Live' }
   ],
   mt4: [
-    { label: 'IC Markets', server: 'ICMarkets-Demo02' },
-    { label: 'Exness', server: 'Exness-Trial' },
-    { label: 'FTMO', server: 'FTMO-Server' },
-    { label: 'Just Markets — Demo', server: 'JustMarkets-Demo' },
-    { label: 'Just Markets — Live', server: 'JustMarkets-Live' },
+    { label: 'Admirals — Demo', server: 'AdmiralMarkets-Demo' },
+    { label: 'Admirals — Live', server: 'AdmiralMarkets-Live' },
+    { label: 'AvaTrade — Demo', server: 'Ava-Demo' },
+    { label: 'AvaTrade — Live', server: 'Ava-Real' },
+    { label: 'Axi — Demo', server: 'Axi-Demo' },
+    { label: 'Axi — Live', server: 'Axi-Live' },
+    { label: 'BlackBull Markets — Demo', server: 'BlackBull-Demo' },
+    { label: 'BlackBull Markets — Live', server: 'BlackBull-Live' },
+    { label: 'Blueberry Markets — Demo', server: 'BlueberryMarkets-Demo' },
+    { label: 'Blueberry Markets — Live', server: 'BlueberryMarkets-Live' },
+    { label: 'Darwinex — Demo', server: 'Darwinex-Demo' },
+    { label: 'Darwinex — Live', server: 'Darwinex-Live' },
+    { label: 'Eightcap — Demo', server: 'Eightcap-Demo' },
+    { label: 'Eightcap — Live', server: 'Eightcap-Live' },
+    { label: 'Exness — Demo', server: 'Exness-Trial' },
+    { label: 'Exness — Live', server: 'Exness-Real' },
+    { label: 'FBS — Demo', server: 'FBS-Demo' },
+    { label: 'FBS — Live', server: 'FBS-Real' },
+    { label: 'FP Markets — Demo', server: 'FPMarkets-Demo' },
+    { label: 'FP Markets — Live', server: 'FPMarkets-Live' },
+    { label: 'FTMO — Demo', server: 'FTMO-Demo' },
+    { label: 'FTMO — Live', server: 'FTMO-Server' },
+    { label: 'Fusion Markets — Demo', server: 'FusionMarkets-Demo' },
+    { label: 'Fusion Markets — Live', server: 'FusionMarkets-Live' },
+    { label: 'FxPro — Demo', server: 'FxPro-Demo' },
+    { label: 'FxPro — Live', server: 'FxPro-Real' },
+    { label: 'HFM (HotForex) — Demo', server: 'HFMarkets-Demo' },
+    { label: 'HFM (HotForex) — Live', server: 'HFMarkets-Live' },
+    { label: 'IC Markets — Demo', server: 'ICMarkets-Demo' },
+    { label: 'IC Markets — Live', server: 'ICMarkets-Live' },
+    { label: 'IG — Demo', server: 'IG-Demo' },
+    { label: 'IG — Live', server: 'IG-Live' },
+    { label: 'IronFX — Demo', server: 'IronFX-Demo' },
+    { label: 'IronFX — Live', server: 'IronFX-Live' },
+    { label: 'JustMarkets — Demo', server: 'JustMarkets-Demo' },
+    { label: 'JustMarkets — Live', server: 'JustMarkets-Live' },
+    { label: 'MultiBank — Demo', server: 'MultiBank-Demo' },
+    { label: 'MultiBank — Live', server: 'MultiBank-Live' },
+    { label: 'OANDA — Demo', server: 'OANDA-Demo' },
+    { label: 'OANDA — Live', server: 'OANDA-Live' },
+    { label: 'OctaFX — Demo', server: 'OctaFX-Demo' },
+    { label: 'OctaFX — Live', server: 'OctaFX-Live' },
+    { label: 'Pepperstone — Demo', server: 'Pepperstone-Demo' },
+    { label: 'Pepperstone — Live', server: 'Pepperstone-Live' },
+    { label: 'RoboForex — Demo', server: 'RoboForex-Demo' },
+    { label: 'RoboForex — Live', server: 'RoboForex-Live' },
+    { label: 'ThinkMarkets — Demo', server: 'ThinkMarkets-Demo' },
+    { label: 'ThinkMarkets — Live', server: 'ThinkMarkets-Live' },
+    { label: 'Tickmill — Demo', server: 'Tickmill-Demo' },
+    { label: 'Tickmill — Live', server: 'Tickmill-Live' },
+    { label: 'TMGM — Demo', server: 'TMGM-Demo' },
+    { label: 'TMGM — Live', server: 'TMGM-Live' },
+    { label: 'Vantage — Demo', server: 'Vantage-Demo' },
+    { label: 'Vantage — Live', server: 'Vantage-Live' },
+    { label: 'XM — Demo', server: 'XM-Demo' },
+    { label: 'XM — Live', server: 'XM-Live' }
   ],
 };
 
@@ -51,12 +165,24 @@ export default function EASetup() {
   const [selectedPlatform, setSelectedPlatform] = useState(null); // 'mt4' | 'mt5' | null
 
   // Form state
-  const [broker, setBroker] = useState('');
-  const [customServer, setCustomServer] = useState('');
+  const [serverName, setServerName] = useState('');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [brokerSearch, setBrokerSearch] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Sync state
   const [syncingAll, setSyncingAll] = useState(false);
@@ -69,7 +195,7 @@ export default function EASetup() {
   const isGrace = plan === 'grace';
   const isSyncAllowed = isActivePro || isGrace;
 
-  const selectedServer = broker === 'custom' ? customServer.trim() : broker;
+  const selectedServer = serverName.trim();
 
   async function handleConnect(e) {
     e.preventDefault();
@@ -79,9 +205,7 @@ export default function EASetup() {
     }
     setConnecting(true);
     try {
-      const friendlyName = broker === 'custom' 
-        ? `Custom · ${login}` 
-        : `${BROKERS[selectedPlatform]?.find(b => b.server === broker)?.label || selectedPlatform.toUpperCase()} · ${login}`;
+      const friendlyName = `${selectedServer} · ${login}`;
       
       const result = await addAccount(
         login,
@@ -93,8 +217,7 @@ export default function EASetup() {
       toast(result.message || 'Broker connected successfully!', 'success');
       setLogin('');
       setPassword('');
-      setBroker('');
-      setCustomServer('');
+      setServerName('');
     } catch (err) {
       toast(getFriendlyErrorMessage(err), 'error');
     } finally {
@@ -199,7 +322,7 @@ export default function EASetup() {
           <div className="grid grid-cols-2 gap-4">
             {/* MT4 Card */}
             <button
-              onClick={() => { setSelectedPlatform('mt4'); setBroker(''); setCustomServer(''); }}
+              onClick={() => { setSelectedPlatform('mt4'); setServerName(''); }}
               className={`relative group p-6 rounded-2xl border-2 transition-all duration-500 ease-[var(--spring-bounce)] hover:scale-[1.03] active:scale-95 ${
                 selectedPlatform === 'mt4'
                   ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
@@ -207,28 +330,36 @@ export default function EASetup() {
               }`}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${
                   selectedPlatform === 'mt4'
                     ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/30'
                     : 'bg-muted border border-border/40 group-hover:border-blue-500/30'
                 }`}>
-                  <span className={`text-lg font-black transition-colors ${selectedPlatform === 'mt4' ? 'text-white' : 'text-foreground/60 group-hover:text-blue-500'}`}>MT4</span>
+                  {/* MT4 Icon — classic figures */}
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Background figures */}
+                    <path d="M12 25 L21 25 L24 35 L9 35 Z" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.4)' : 'rgba(96, 165, 250, 0.4)'} />
+                    <circle cx="16.5" cy="20.5" r="4.5" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.4)' : 'rgba(96, 165, 250, 0.4)'} />
+                    
+                    <path d="M22 17 L30 17 L32 25 L20 25 Z" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.6)' : 'rgba(96, 165, 250, 0.6)'} />
+                    <circle cx="26" cy="13" r="3.5" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.6)' : 'rgba(96, 165, 250, 0.6)'} />
+
+                    <path d="M7 20 L13 20 L15 28 L5 28 Z" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.5)' : 'rgba(96, 165, 250, 0.5)'} />
+                    <circle cx="10" cy="16" r="3" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.5)' : 'rgba(96, 165, 250, 0.5)'} />
+
+                    {/* Big 4 */}
+                    <text x="24" y="32" fontSize="26" fontWeight="900" fill={selectedPlatform === 'mt4' ? '#ffffff' : '#3b82f6'} style={{ fontFamily: 'Arial, sans-serif' }}>4</text>
+                  </svg>
                 </div>
                 <div>
                   <h3 className={`text-sm font-black uppercase tracking-widest transition-colors ${selectedPlatform === 'mt4' ? 'text-primary' : 'text-foreground/80'}`}>MetaTrader 4</h3>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-widest">Classic Platform</p>
                 </div>
               </div>
-              {selectedPlatform === 'mt4' && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center animate-in zoom-in duration-300">
-                  <CheckCircleFill className="w-3 h-3 text-white" />
-                </div>
-              )}
             </button>
 
             {/* MT5 Card */}
             <button
-              onClick={() => { setSelectedPlatform('mt5'); setBroker(''); setCustomServer(''); }}
+              onClick={() => { setSelectedPlatform('mt5'); setServerName(''); }}
               className={`relative group p-6 rounded-2xl border-2 transition-all duration-500 ease-[var(--spring-bounce)] hover:scale-[1.03] active:scale-95 ${
                 selectedPlatform === 'mt5'
                   ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
@@ -236,23 +367,31 @@ export default function EASetup() {
               }`}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${
                   selectedPlatform === 'mt5'
                     ? 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-lg shadow-purple-500/30'
                     : 'bg-muted border border-border/40 group-hover:border-purple-500/30'
                 }`}>
-                  <span className={`text-lg font-black transition-colors ${selectedPlatform === 'mt5' ? 'text-white' : 'text-foreground/60 group-hover:text-purple-500'}`}>MT5</span>
+                  {/* MT5 Icon — classic figures */}
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Background figures */}
+                    <path d="M12 25 L21 25 L24 35 L9 35 Z" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.4)' : 'rgba(167, 139, 250, 0.4)'} />
+                    <circle cx="16.5" cy="20.5" r="4.5" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.4)' : 'rgba(167, 139, 250, 0.4)'} />
+                    
+                    <path d="M22 17 L30 17 L32 25 L20 25 Z" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.6)' : 'rgba(167, 139, 250, 0.6)'} />
+                    <circle cx="26" cy="13" r="3.5" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.6)' : 'rgba(167, 139, 250, 0.6)'} />
+
+                    <path d="M7 20 L13 20 L15 28 L5 28 Z" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.5)' : 'rgba(167, 139, 250, 0.5)'} />
+                    <circle cx="10" cy="16" r="3" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.5)' : 'rgba(167, 139, 250, 0.5)'} />
+
+                    {/* Big 5 */}
+                    <text x="24" y="32" fontSize="26" fontWeight="900" fill={selectedPlatform === 'mt5' ? '#ffffff' : '#8b5cf6'} style={{ fontFamily: 'Arial, sans-serif' }}>5</text>
+                  </svg>
                 </div>
                 <div>
                   <h3 className={`text-sm font-black uppercase tracking-widest transition-colors ${selectedPlatform === 'mt5' ? 'text-primary' : 'text-foreground/80'}`}>MetaTrader 5</h3>
-                  <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-widest">Next-Gen Platform</p>
                 </div>
               </div>
-              {selectedPlatform === 'mt5' && (
-                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center animate-in zoom-in duration-300">
-                  <CheckCircleFill className="w-3 h-3 text-white" />
-                </div>
-              )}
             </button>
           </div>
         </div>
@@ -277,34 +416,75 @@ export default function EASetup() {
             </div>
 
             {/* Broker selector */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Broker</label>
-              <select
-                value={broker}
-                onChange={(e) => setBroker(e.target.value)}
-                className="input-premium h-11 w-full text-sm font-bold"
+            <div className="space-y-2 relative" ref={dropdownRef}>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Broker Preset</label>
+              <button
+                type="button"
+                onClick={() => { setDropdownOpen(!dropdownOpen); setBrokerSearch(''); }}
+                className={`input-premium h-11 w-full text-sm font-bold bg-background text-left flex items-center justify-between transition-all ${dropdownOpen ? 'ring-2 ring-primary/50 border-primary' : ''}`}
               >
-                <option value="">Select your broker…</option>
-                {currentBrokers.map((b) => (
-                  <option key={b.server} value={b.server}>{b.label}</option>
-                ))}
-                <option value="custom">Other (enter server manually)</option>
-              </select>
+                <span className="text-muted-foreground">
+                  Search or select to auto-fill server...
+                </span>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <Motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="absolute z-50 top-full left-0 right-0 mt-2 p-1 rounded-xl border border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl shadow-primary/10 overflow-hidden flex flex-col max-h-80"
+                  >
+                    <div className="p-2 border-b border-border/40 shrink-0">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search brokers..."
+                          value={brokerSearch}
+                          onChange={(e) => setBrokerSearch(e.target.value)}
+                          autoFocus
+                          className="w-full bg-background/50 border border-border/50 rounded-lg pl-9 pr-3 py-2 text-xs font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-shadow"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-y-auto p-1 flex-1">
+                      {currentBrokers.filter(b => b.label.toLowerCase().includes(brokerSearch.toLowerCase())).length > 0 ? (
+                        currentBrokers.filter(b => b.label.toLowerCase().includes(brokerSearch.toLowerCase())).map((b) => (
+                          <button
+                            key={b.server}
+                            type="button"
+                            onClick={() => { setServerName(b.server); setDropdownOpen(false); setBrokerSearch(''); }}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold transition-all text-foreground/80 hover:bg-white/5 hover:text-foreground`}
+                          >
+                            {b.label}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-6 text-center text-xs font-bold text-muted-foreground">No brokers found.</div>
+                      )}
+                    </div>
+                  </Motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Custom server input */}
-            {broker === 'custom' && (
-              <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Server Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. MyBroker-Live01"
-                  value={customServer}
-                  onChange={(e) => setCustomServer(e.target.value)}
-                  className="input-premium h-11 w-full text-sm font-bold"
-                />
-              </div>
-            )}
+            {/* Server Name Input */}
+            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+              <label className="text-[10px] font-black uppercase tracking-widest text-foreground">Server Name <span className="text-muted-foreground/50 ml-1">(Required)</span></label>
+              <input
+                type="text"
+                placeholder="e.g. ICMarketsSC-Demo01"
+                value={serverName}
+                onChange={(e) => setServerName(e.target.value)}
+                className="input-premium h-11 w-full text-sm font-bold border-primary/50 focus:border-primary shadow-[0_0_15px_rgba(139,92,246,0.1)]"
+                required
+              />
+              <p className="text-[9px] text-muted-foreground leading-relaxed mt-1">If your broker has multiple servers (e.g. Real1, Real2), select a preset above and modify this field to match your exact server name.</p>
+            </div>
 
             {/* Login */}
             <div className="space-y-2">
@@ -321,18 +501,19 @@ export default function EASetup() {
             {/* Password */}
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Password</label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Your broker password (investor password works)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-premium h-11 w-full text-sm font-bold pr-12"
+                  className="input-premium h-11 w-full text-sm font-bold pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 transition-colors"
+                  className="absolute right-0 top-0 bottom-0 w-11 flex items-center justify-center text-foreground/40 hover:text-foreground/70 transition-colors"
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeSlashFill className="w-4 h-4" /> : <EyeFill className="w-4 h-4" />}
                 </button>
@@ -340,10 +521,12 @@ export default function EASetup() {
             </div>
 
             {/* Security note */}
-            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-green-500/5 border border-green-500/20">
-              <ShieldLockFill className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
-              <p className="text-[9px] text-green-500/80 leading-relaxed">
-                <strong className="text-green-500">Zero-Knowledge Security.</strong> Your credentials are never stored in our database. They are cached only in your browser for local session management. Removing the account deletes all connection logs from all servers.
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                <ShieldLockFill className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <p className="text-[10px] text-emerald-300 leading-relaxed">
+                <strong className="text-emerald-300 font-black">Zero-Knowledge.</strong> Credentials are never stored on our servers cached in your browser only.
               </p>
             </div>
 
@@ -351,10 +534,28 @@ export default function EASetup() {
             <button
               type="submit"
               disabled={connecting}
-              className="w-full h-12 btn-primary text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 rounded-xl disabled:opacity-50 hover:scale-[1.02] active:scale-95 transition-all duration-300"
+              className="w-full h-12 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2.5 transition-all duration-300 disabled:opacity-50 active:scale-[0.98]"
+              style={{
+                background: connecting
+                  ? 'linear-gradient(135deg, #5b21b6, #7c3aed)'
+                  : 'linear-gradient(135deg, #7c3aed, #6d28d9, #4f46e5)',
+                boxShadow: connecting ? 'none' : '0 0 24px rgba(124, 58, 237, 0.45), 0 4px 12px rgba(0,0,0,0.3)',
+                color: 'white',
+              }}
             >
-              <CloudDownload className={`w-4 h-4 ${connecting ? 'animate-pulse' : ''}`} />
-              {connecting ? 'Connecting…' : 'Connect & Sync'}
+              {connecting ? (
+                <>
+                  <ArrowClockwise className="w-4 h-4 animate-spin" />
+                  Connecting…
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg>
+                  Connect & Sync
+                </>
+              )}
             </button>
           </form>
         )}
@@ -435,14 +636,20 @@ export default function EASetup() {
         )}
 
         {/* ── How It Works ───────────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-border/40 bg-card/30 p-5 space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-widest text-foreground/80">How It Works</h4>
-          <ul className="space-y-2 text-[10px] text-muted-foreground leading-relaxed">
-            <li className="flex items-start gap-2"><span className="text-green-500 shrink-0 mt-px">✓</span> Choose MT4 or MT5 and enter your broker login credentials</li>
-            <li className="flex items-start gap-2"><span className="text-green-500 shrink-0 mt-px">✓</span> We connect directly to your broker's trading server</li>
-            <li className="flex items-start gap-2"><span className="text-green-500 shrink-0 mt-px">✓</span> Closed trades are pulled into your journal automatically</li>
-            <li className="flex items-start gap-2"><span className="text-green-500 shrink-0 mt-px">✓</span> No Expert Advisor required — works with all brokers</li>
-            <li className="flex items-start gap-2"><span className="text-green-500 shrink-0 mt-px">✓</span> Zero-Knowledge: credentials are not stored in our database</li>
+        <div className="rounded-2xl border border-border/40 bg-card p-6 space-y-4">
+          <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/60">How It Works</h4>
+          <ul className="space-y-3 text-[11px] text-muted-foreground leading-relaxed">
+            <li className="flex items-start gap-2.5"><CheckCircleFill className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" /> Choose MT4 or MT5 and enter your broker login credentials</li>
+            <li className="flex items-start gap-2.5"><CheckCircleFill className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" /> We connect directly to your broker's trading server</li>
+            <li className="flex items-start gap-2.5"><CheckCircleFill className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" /> Closed trades are pulled into your journal automatically</li>
+            <li className="flex items-start gap-2.5"><CheckCircleFill className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" /> No Expert Advisor required works with all brokers</li>
+            <li className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500/90 mt-2">
+              <ExclamationTriangleFill className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-amber-500 font-black uppercase tracking-widest text-[10px] block mb-1">Zero-Knowledge Security</strong>
+                Credentials are never stored on our servers. They are cached only in your browser. <strong>If you clear your browser storage, you will need to re-login.</strong>
+              </span>
+            </li>
           </ul>
         </div>
       </div>

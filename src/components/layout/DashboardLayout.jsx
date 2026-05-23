@@ -231,37 +231,6 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
                     </button>
                   )}
 
-                  {/* MT5 SYNC CREDENTIALS — Pro & grace only */}
-                  {(plan === 'pro' || plan === 'grace') && (
-                    <div className="px-3 py-3 border-t border-border/20 mt-1 space-y-2">
-                      <p className="text-[10px] font-black uppercase text-foreground/80 mb-2">MT5 Auto-Sync</p>
-                      {plan === 'grace' && (
-                        <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                          ⚠ Grace period active
-                        </p>
-                      )}
-                      <div className="space-y-1.5">
-                        <p className="text-[9px] uppercase tracking-widest text-foreground/60">Your User ID</p>
-                        <button
-                          onClick={copyUid}
-                          className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-muted/50 border border-border/40 hover:border-primary/40 hover:bg-primary/5 transition-all group"
-                        >
-                          <span className="text-[10px] font-mono text-foreground truncate max-w-[140px]">{user?.uid}</span>
-                          <span className={`text-[9px] font-black uppercase shrink-0 ml-2 transition-colors ${copied ? 'text-green-500' : 'text-primary group-hover:text-primary/80'}`}>
-                            {copied ? '✓ Copied' : 'Copy'}
-                          </span>
-                        </button>
-                        <p className="text-[9px] text-foreground/60 leading-relaxed">Paste into MT5 EA inputs to enable live sync.</p>
-                      </div>
-                      {lastMT5Sync && (
-                        <p className="text-[9px] text-green-500 font-black uppercase tracking-widest flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                          Last sync: {lastMT5Sync.toLocaleTimeString()}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
 
 
                   <button onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-destructive mt-1 hover:bg-destructive/10 rounded-lg transition-all duration-200 group">
