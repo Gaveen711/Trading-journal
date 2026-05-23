@@ -212,10 +212,10 @@ app.post('/broker-login-sync', async (c) => {
       })
     } catch (error: any) {
       console.error('[broker-login-sync] Add account error:', error.message)
-      if (error.message.includes('Invalid') || error.message.includes('Authentication')) {
+      if (error.message.includes('Invalid') || error.message.includes('Authentication') || error.message.includes('password')) {
         return c.json({ error: 'Invalid broker credentials. Please check your login, password, and server.' }, 401)
       }
-      return c.json({ error: 'Failed to connect to broker', message: error.message }, 500)
+      return c.json({ error: `Failed to connect to broker: ${error.message}` }, 500)
     }
   }
 
