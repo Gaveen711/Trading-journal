@@ -6,24 +6,25 @@ type Variables = {}
 
 const app = new Hono<{ Bindings: Env; Variables }>().basePath('/api')
 
-app.get('/', (c) => {
-  return c.json({ status: 'success', message: 'API Gateway Online' })
+// Example 1: Simple GET request
+app.get('/hello', (c) => {
+  return c.json({ message: 'Hello from the monolith!' })
 })
 
-
-app.get('/users/:id', (c) => {
-  const userId = c.req.param('id')
-  return c.json({ userId, name: 'Alex' })
+// Example 2: Dynamic Route (e.g., /api/user/123)
+app.get('/user/:id', (c) => {
+  const id = c.req.param('id')
+  return c.json({ userId: id, status: 'active' })
 })
 
-app.post('/data', async (c) => {
+// Example 3: POST Request
+app.post('/submit', async (c) => {
   const body = await c.req.json()
-  return c.json({ received: true, data: body }, 201)
+  return c.json({ success: true, received: body })
 })
 
-
+// Export handlers for Vercel
 export const GET = handle(app)
 export const POST = handle(app)
 export const PUT = handle(app)
 export const DELETE = handle(app)
-
