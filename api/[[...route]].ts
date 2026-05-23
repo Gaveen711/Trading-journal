@@ -9,9 +9,9 @@ const db: any = _db
 // @ts-ignore
 import resend from './_resend.js'
 // @ts-ignore
-import client, { checkoutNodeJssdk } from './_paypal.js'
+import { createOrder, captureOrder, verifyWebhookSignature } from './_paypal.js'
 // @ts-ignore
-import { fetchBrokerTrades, provisionMetaApiAccount, fetchMetaApiDeals } from './_metaapi-broker.js'
+// Dynamic imports used where needed to prevent metaapi.cloud-sdk from crashing the edge/serverless runtime on load
 
 type Env = {}
 type Variables = Record<string, unknown>
@@ -186,6 +186,7 @@ app.post('/broker-login-sync', async (c) => {
     }
 
     try {
+      const { provisionMetaApiAccount, fetchBrokerTrades } = await import('./_metaapi-broker.js')
       const metaApiAccountId = await provisionMetaApiAccount({ login, password, server, brokerType })
       const testResult = await fetchBrokerTrades({ metaApiAccountId }, null)
       const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
@@ -233,6 +234,7 @@ app.post('/broker-login-sync', async (c) => {
       const account = accountSnap.data()
       const decryptedPassword = decryptCredential(account.encryptedPassword)
 
+      const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
       const brokerTrades = await fetchBrokerTrades(
         {
           metaApiAccountId: account.metaApiAccountId,
@@ -379,6 +381,7 @@ app.post('/connect-broker', async (c) => {
       }, 403)
     }
 
+    const { provisionMetaApiAccount, fetchMetaApiDeals } = await import('./_metaapi-broker.js')
     const metaApiAccountId = await provisionMetaApiAccount({ login: accountId, password, server, brokerType })
     const deals = await fetchMetaApiDeals(metaApiAccountId)
 
@@ -548,9 +551,7 @@ app.post('/checkout', async (c) => {
     }
 
     const amount = planType === 'pro_yearly' ? '104.00' : '14.99'
-    const orderRequest = new checkoutNodeJssdk.orders.OrdersCreateRequest()
-    orderRequest.prefer('return=representation')
-    orderRequest.requestBody({
+    const orderPayload = {
       intent: 'CAPTURE',
       purchase_units: [
         {
@@ -570,17 +571,18 @@ app.post('/checkout', async (c) => {
         return_url: `${origin}/app/checkout-success?planType=${planType}`,
         cancel_url: `${origin}/app/checkout-cancel`,
       },
-    })
+    }
 
-    const order = await client.execute(orderRequest)
-    const approvalLink = order.result.links.find((link: any) => link.rel === 'approve')
+    const order = await createOrder(orderPayload)
+    const approvalLink = order.links?.find((link: any) => link.rel === 'approve')
     if (!approvalLink) {
       throw new Error('PayPal did not return an approval link.')
     }
 
     return c.json({ url: approvalLink.href })
   } catch (error: any) {
-    console.error('[checkout] PayPal error:', error.message || error)
+    console.error('[checkout] PayPal error:', error.message || error, error.stack || '')
+    console.error('[checkout] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
     return c.json({ error: `PayPal checkout failed: ${error.message || 'unknown error'}` }, 500)
   }
 })
@@ -617,10 +619,8 @@ app.post('/paypal-capture', async (c) => {
       return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
     }
 
-    const captureRequest = new checkoutNodeJssdk.orders.OrdersCaptureRequest(orderId)
-    captureRequest.requestBody({})
-    const capture = await client.execute(captureRequest)
-    if (capture.result.status !== 'COMPLETED') {
+    const capture = await captureOrder(orderId)
+    if (capture.status !== 'COMPLETED') {
       return c.json({ error: 'Payment was not completed.' }, 400)
     }
 
@@ -631,7 +631,7 @@ app.post('/paypal-capture', async (c) => {
       plan: 'pro',
       planExpiry: planExpiry.toISOString(),
       paypalOrderId: orderId,
-      paypalCaptureId: capture.result.purchase_units?.[0]?.payments?.captures?.[0]?.id || null,
+      paypalCaptureId: capture.purchase_units?.[0]?.payments?.captures?.[0]?.id || null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true })
 
@@ -674,10 +674,10 @@ app.post('/save-trade', async (c) => {
 
     if (plan !== 'pro') {
       const tradesSnap = await db.collection('users').doc(uid).collection('trades').count().get()
-      if (tradesSnap.data().count >= 25) {
+      if (tradesSnap.data().count >= 50) {
         return c.json({
-          error: 'Free tier limit reached (25 trades). Upgrade to Pro.',
-          code: 'resource-exhausted'
+          error: 'Free tier limit reached (50 trades). Upgrade to Pro.',
+          code: 'limit-reached'
         }, 403)
       }
     }
@@ -1047,8 +1047,9 @@ app.post('/paypal/webhook', async (c) => {
     const transmissionId = getRequiredHeader(c, 'PAYPAL-TRANSMISSION-ID')
     const transmissionSig = getRequiredHeader(c, 'PAYPAL-TRANSMISSION-SIG')
     const certUrl = getRequiredHeader(c, 'PAYPAL-CERT-URL')
+    const transmissionTime = getRequiredHeader(c, 'PAYPAL-TRANSMISSION-TIME')
 
-    if (!authAlgo || !transmissionId || !transmissionSig || !certUrl) {
+    if (!authAlgo || !transmissionId || !transmissionSig || !certUrl || !transmissionTime) {
       return c.json({
         error: 'Missing PayPal webhook verification headers',
         received: {
@@ -1056,6 +1057,7 @@ app.post('/paypal/webhook', async (c) => {
           'PAYPAL-TRANSMISSION-ID': !!transmissionId,
           'PAYPAL-TRANSMISSION-SIG': !!transmissionSig,
           'PAYPAL-CERT-URL': !!certUrl,
+          'PAYPAL-TRANSMISSION-TIME': !!transmissionTime,
         }
       }, 400)
     }
@@ -1068,7 +1070,7 @@ app.post('/paypal/webhook', async (c) => {
       return c.json({ error: 'Invalid JSON payload' }, 400)
     }
 
-    const verification = await new checkoutNodeJssdk.Webhooks().verifyWebhookSignature(
+    const verification = await verifyWebhookSignature(
       webhookId,
       bodyJson,
       {
@@ -1076,17 +1078,18 @@ app.post('/paypal/webhook', async (c) => {
         transmission_id: transmissionId,
         transmission_sig: transmissionSig,
         cert_url: certUrl,
+        transmission_time: transmissionTime,
       }
     )
 
-    if (!verification || verification.status !== 'SUCCESS') {
+    if (!verification || verification.verification_status !== 'SUCCESS') {
       return c.json({
         error: 'PayPal webhook verification failed',
         details: verification
       }, 400)
     }
 
-    const event = verification.event || verification
+    const event = bodyJson
     const eventId = event?.id || event?.resource?.id
     if (!eventId) {
       return c.json({ error: 'Missing PayPal event id in verified payload.' }, 400)
@@ -1203,6 +1206,7 @@ const handleBrokerSyncPoller = async (c: any) => {
 
           const password = decryptCredential(account.encryptedPassword)
 
+          const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
           const brokerTrades = await fetchBrokerTrades(
             {
               login: account.login,
