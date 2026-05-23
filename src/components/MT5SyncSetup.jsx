@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { auth } from "../firebase";
 import { getFriendlyErrorMessage } from "../lib/errorUtils";
+import BrokerConnect from './BrokerConnect';
 import {
   Key,
   Clipboard,
@@ -497,13 +498,7 @@ export default function MT5SyncSetup() {
                 ))}
               </ol>
 
-              {/* Security info */}
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20 text-[10px] text-primary/80 leading-relaxed">
-                <ChevronRight className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Security:</strong> Your credentials are encrypted and never exposed. We only pull closed trade history from your broker.
-                </span>
-              </div>
+              <BrokerConnect />
             </div>
           )}
 
@@ -604,10 +599,8 @@ export default function MT5SyncSetup() {
           )}
         </>
       )}
-      </>)}
       </div>
     </div>
-
   );
 }
 

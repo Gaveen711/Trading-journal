@@ -234,3 +234,9 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+@media (max-width: 440px) {
+  .mobile-nav-label {
+    display: none !important;
+  }
+}

@@ -10,6 +10,7 @@ import { useWallet } from './hooks/useWallet';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { PricingModal } from './components/PricingModal';
+import { ProFeatureUpsellModal } from './components/ProFeatureUpsellModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
@@ -47,6 +48,7 @@ const PageLoader = () => (
 
 function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showBrokerSyncUpsell, setShowBrokerSyncUpsell] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { plan, expiry, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
   const { updateBalance } = useWallet(user);
@@ -82,7 +84,7 @@ function AuthenticatedApp({ user }) {
     <ErrorBoundary>
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openPortal={openPortal} />}>
+        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
           <Route index element={<LogTradePage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="calendar" element={<CalendarPage />} />
@@ -97,6 +99,15 @@ function AuthenticatedApp({ user }) {
     </ErrorBoundary>
 
       {showPricingModal && <PricingModal plan={plan} expiry={expiry} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
+      {showBrokerSyncUpsell && (
+        <ProFeatureUpsellModal
+          feature="broker-sync"
+          plan={plan}
+          onSubscribe={startCheckout}
+          recordProAcceptance={recordProAcceptance}
+          onClose={() => setShowBrokerSyncUpsell(false)}
+        />
+      )}
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onClose={dismissOnboarding} />}
       {!agreedToTerms && !isSubLoading && !isPublicPage && <ConsentModal onAgree={agreeToTerms} />}
     </>

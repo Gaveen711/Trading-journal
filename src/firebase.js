@@ -23,3 +23,6 @@ const auth = getAuth(app);
 export { db, auth, setPersistence, browserLocalPersistence, browserSessionPersistence };
 export const googleProvider = new GoogleAuthProvider();
 export default app;
+
+/** Re-export for broker Cloud Functions (optional — set VITE_USE_FIREBASE_CALLABLE=true) */
+export { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
