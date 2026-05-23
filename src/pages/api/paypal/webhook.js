@@ -1,9 +1,7 @@
 /* eslint-env node */
 /* global process */
-import { checkoutNodeJssdk } from '../../../../api/_paypal.js';
+import { verifyWebhookSignature } from '../../../../api/_paypal.js';
 import { admin, db, initAdmin } from '../../../../api/_firebase.js';
-
-const { Webhooks } = checkoutNodeJssdk;
 
 function getRequiredHeader(req, name) {
   const v = req.headers[name.toLowerCase()];
@@ -68,9 +66,10 @@ export default async function handler(req, res) {
     const transmissionId = getRequiredHeader(req, 'PAYPAL-TRANSMISSION-ID');
     const transmissionSig = getRequiredHeader(req, 'PAYPAL-TRANSMISSION-SIG');
     const certUrl = getRequiredHeader(req, 'PAYPAL-CERT-URL');
+    const transmissionTime = getRequiredHeader(req, 'PAYPAL-TRANSMISSION-TIME');
 
     // Basic presence checks
-    if (!authAlgo || !transmissionId || !transmissionSig || !certUrl) {
+    if (!authAlgo || !transmissionId || !transmissionSig || !certUrl || !transmissionTime) {
       return res.status(400).json({
         error: 'Missing PayPal webhook verification headers',
         received: {
@@ -78,13 +77,13 @@ export default async function handler(req, res) {
           'PAYPAL-TRANSMISSION-ID': !!transmissionId,
           'PAYPAL-TRANSMISSION-SIG': !!transmissionSig,
           'PAYPAL-CERT-URL': !!certUrl,
+          'PAYPAL-TRANSMISSION-TIME': !!transmissionTime,
         }
       });
     }
 
     // Verify webhook signature authenticity
-    // checkout-server-sdk verifies webhook signatures using the headers + raw body
-    const verification = await new Webhooks().verifyWebhookSignature(
+    const verification = await verifyWebhookSignature(
       webhookId,
       req.body,
       {
@@ -92,19 +91,18 @@ export default async function handler(req, res) {
         transmission_id: transmissionId,
         transmission_sig: transmissionSig,
         cert_url: certUrl,
-        // Mode is not strictly required for verification; keep for completeness if SDK needs it.
-        // mode: PAYPAL_MODE,
+        transmission_time: transmissionTime,
       }
     );
 
-    if (!verification || verification.status !== 'SUCCESS') {
+    if (!verification || verification.verification_status !== 'SUCCESS') {
       return res.status(400).json({
         error: 'PayPal webhook verification failed',
         details: verification
       });
     }
 
-    const event = verification.event || verification;
+    const event = req.body;
     const eventId = event?.id || event?.resource?.id;
     if (!eventId) {
       return res.status(400).json({ error: 'Missing PayPal event id in verified payload.' });
