@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /app/
 
-Sitemap: https://www.xaujournal.com/sitemap.xml
+Sitemap: https://xaujournal.vercel.app/sitemap.xml
