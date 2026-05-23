@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import handler from './sync-trade.js';
+import { app } from './[[...route]].ts';
 
 // Mock the firebase admin module
 vi.mock('./_firebase.js', () => {
@@ -29,6 +29,44 @@ vi.mock('./_firebase.js', () => {
     now: () => 'MOCK_TIMESTAMP'
   };
 });
+
+// Mock resend module
+vi.mock('./_resend.js', () => {
+  return {
+    default: {
+      emails: {
+        send: vi.fn()
+      }
+    }
+  };
+});
+
+// Mock paypal module
+vi.mock('./_paypal.js', () => {
+  return {
+    checkoutNodeJssdk: {
+      orders: {
+        OrdersCreateRequest: class {},
+        OrdersCaptureRequest: class {},
+      },
+      Webhooks: class {},
+    },
+    default: {
+      execute: vi.fn()
+    }
+  };
+});
+
+// Mock metaapi-broker helper module
+vi.mock('./_metaapi-broker.js', () => {
+  return {
+    fetchBrokerTrades: vi.fn(),
+    provisionMetaApiAccount: vi.fn(),
+    fetchMetaApiDeals: vi.fn(),
+  };
+});
+
+
 
 import { db } from './_firebase.js';
 
@@ -66,30 +104,24 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
     });
   });
 
-  const createReq = (body) => ({
-    method: 'POST',
-    headers: { 'x-api-key': 'VALID_API_KEY' },
-    body
-  });
-
-  const createRes = () => {
-    const res = {
-      statusCode: null,
-      jsonData: null,
-      headers: {},
-      setHeader(k, v) { this.headers[k] = v; },
-      status(code) { this.statusCode = code; return this; },
-      json(data) { this.jsonData = data; return this; },
-      end() { return this; }
+  const executeRequest = async (body, headers = {}) => {
+    const res = await app.request('/api/sync-trade', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'VALID_API_KEY',
+        ...headers
+      },
+      body: JSON.stringify(body)
+    });
+    return {
+      statusCode: res.status,
+      jsonData: await res.json()
     };
-    return res;
   };
 
   it('rejects missing event/positionId/symbol payload', async () => {
-    const req = createReq({ event: 'open' }); // missing others
-    const res = createRes();
-    
-    await handler(req, res);
+    const res = await executeRequest({ event: 'open' }); // missing others
     
     expect(res.statusCode).toBe(400);
     expect(res.jsonData.error).toContain('Missing');
@@ -109,10 +141,7 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
       swap: 0,
       source: 'mt5'
     };
-    const req = createReq(payload);
-    const res = createRes();
-
-    await handler(req, res);
+    const res = await executeRequest(payload);
 
     expect(res.statusCode).toBe(200);
     expect(res.jsonData.status).toBe('created');
@@ -155,10 +184,7 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
       swap: -2.0,
       profit: 500.00
     };
-    const req = createReq(payload);
-    const res = createRes();
-
-    await handler(req, res);
+    const res = await executeRequest(payload);
 
     expect(res.statusCode).toBe(200);
     expect(res.jsonData.status).toBe('updated');
