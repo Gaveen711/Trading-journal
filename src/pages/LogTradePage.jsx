@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { calcPnl, todayStr, formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
-import { ArrowUpRight, ArrowDownRight, BarChartLine } from 'react-bootstrap-icons';
+import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill } from 'react-bootstrap-icons';
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { CurrencyExchange } from 'react-bootstrap-icons';
@@ -586,7 +586,18 @@ export function LogTradePage() {
 
       {/* PRO RESET OPTION */}
       {plan === 'pro' && (
-        <div className="pt-12 pb-8 flex justify-center animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
+        <div className="pt-12 pb-8 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
+          {isWiping && (
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 max-w-sm flex gap-3 text-left animate-in slide-in-from-bottom-2 duration-300">
+              <ExclamationTriangleFill className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-destructive mb-1">Danger Zone</p>
+                <p className="text-[10px] text-destructive/80 leading-relaxed">
+                  This will permanently delete all trades and reset your balance. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          )}
           <button
             onClick={() => isWiping ? handleWipeTerminal() : setIsWiping(true)}
             className={`px-8 h-10 border text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500 active:scale-95 ${isWiping
