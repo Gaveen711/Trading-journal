@@ -123,7 +123,11 @@ async function syncTrades(uid, account) {
   }
 
   await db.collection('users').doc(uid).set(
-    { lastBrokerSync: FieldValue.serverTimestamp(), lastBrokerSyncCount: newCount },
+    {
+      lastBrokerSync: FieldValue.serverTimestamp(),
+      lastBrokerSyncCount: newCount,
+      lastBrokerSyncStatus: 'success'
+    },
     { merge: true }
   );
 
@@ -190,6 +194,14 @@ exports.connectBroker = onCall(
       };
     } catch (err) {
       console.error('[connectBroker]', err);
+      try {
+        await userRef.set(
+          { lastBrokerSyncStatus: 'failed' },
+          { merge: true }
+        );
+      } catch (dbErr) {
+        console.error('Failed to set failure status in Firestore:', dbErr);
+      }
       const msg = err.message || 'Failed to connect broker';
       if (/invalid|auth|credential|password|login/i.test(msg)) {
         throw new HttpsError('unauthenticated', 'Invalid broker credentials.');
@@ -217,10 +229,48 @@ exports.syncBrokerTrades = onCall(
       await account.waitConnected(120);
 
       const count = await syncTrades(uid, account);
-      return { message: `Synced ${count} new trade(s).`, tradeCount: count };
+      return { message: `Synced ${count} new trade(s).`, tradeCount: count, newTrades: count };
     } catch (err) {
       console.error('[syncBrokerTrades]', err);
+      try {
+        await db.collection('users').doc(uid).set(
+          { lastBrokerSyncStatus: 'failed' },
+          { merge: true }
+        );
+      } catch (dbErr) {
+        console.error('Failed to set sync error in Firestore:', dbErr);
+      }
       throw new HttpsError('internal', err.message || 'Sync failed');
     }
+  }
+);
+
+// ─── 3. DISCONNECT BROKER ───────────────────────────────────────────────────
+exports.disconnectBroker = onCall(
+  { secrets: [metaApiTokenSecret], timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const uid = requireAuth(request);
+    const userRef = db.collection('users').doc(uid);
+    const userDoc = await userRef.get();
+    const metaApiAccountId = userDoc.data()?.metaApiAccountId;
+
+    if (metaApiAccountId) {
+      try {
+        const api = getMetaApi();
+        await api.metatraderAccountApi.removeAccount(metaApiAccountId);
+      } catch (err) {
+        console.error(`Failed to delete MetaApi account ${metaApiAccountId}:`, err.message || err);
+      }
+    }
+
+    await userRef.update({
+      metaApiAccountId: FieldValue.delete(),
+      brokerServer: FieldValue.delete(),
+      brokerPlatform: FieldValue.delete(),
+      brokerLogin: FieldValue.delete(),
+      lastBrokerSyncStatus: FieldValue.delete(),
+    });
+
+    return { message: 'Broker account disconnected successfully.' };
   }
 );
