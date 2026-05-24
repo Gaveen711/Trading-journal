@@ -1,8 +1,14 @@
 // src/hooks/useBrokerAccounts.js
-// Hook for managing broker sync accounts
+// Hook for managing broker sync accounts via Firebase Cloud Functions and Firestore profile
 
 import { useState, useEffect } from 'react';
-import { auth } from '../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../firebase';
+import {
+  connectBrokerCallable,
+  syncBrokerTradesCallable,
+  disconnectBrokerCallable,
+} from '../lib/brokerSync';
 
 export function useBrokerAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -11,71 +17,65 @@ export function useBrokerAccounts() {
 
   useEffect(() => {
     if (!auth.currentUser?.uid) {
+      setAccounts([]);
       setLoading(false);
       return;
     }
 
-    loadAccounts();
+    setLoading(true);
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const unsubscribe = onSnapshot(
+      userRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.metaApiAccountId) {
+            setAccounts([
+              {
+                id: data.metaApiAccountId,
+                accountName: `${data.brokerServer || 'Broker'} · ${data.brokerLogin || ''}`,
+                brokerType: data.brokerPlatform || 'mt5',
+                platform: data.brokerPlatform || 'mt5',
+                server: data.brokerServer || '',
+                login: data.brokerLogin || '',
+                metaApiAccountId: data.metaApiAccountId,
+                isActive: true,
+                lastSyncTime: data.lastBrokerSync
+                  ? (data.lastBrokerSync.toDate
+                      ? data.lastBrokerSync.toDate().toISOString()
+                      : new Date(data.lastBrokerSync).toISOString())
+                  : null,
+                lastSyncStatus: data.lastBrokerSyncStatus || 'success',
+                tradeCount: data.lastBrokerSyncCount || 0,
+              },
+            ]);
+          } else {
+            setAccounts([]);
+          }
+        } else {
+          setAccounts([]);
+        }
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        console.error('Failed to listen to broker details:', err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, [auth.currentUser?.uid]);
 
-  async function getIdToken() {
-    if (!auth.currentUser) throw new Error('Not authenticated');
-    return auth.currentUser.getIdToken();
-  }
-
-  async function callBrokerAPI(action, data = {}) {
-    const token = await getIdToken();
-    const uid = auth.currentUser.uid;
-
-    const response = await fetch('/api/broker-login-sync', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ uid, action, ...data }),
-    });
-
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || result.message || 'Request failed');
-    }
-
-    return result;
-  }
-
-  async function loadAccounts() {
-    setLoading(true);
+  async function addAccount(login, password, server, brokerType, accountName) {
     setError(null);
     try {
-      const result = await callBrokerAPI('list');
-      setAccounts(result.accounts || []);
-    } catch (err) {
-      setError(err.message);
-      console.error('Failed to load broker accounts:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function addAccount(login, password, server, brokerType, accountName) {
-    try {
-      setError(null);
-      const result = await callBrokerAPI('add', {
-        login,
+      const result = await connectBrokerCallable({
+        accountId: login,
         password,
         server,
-        brokerType,
-        accountName,
+        platform: brokerType,
       });
-
-      if (result.ok && result.accountId) {
-        const creds = { login, password, server, brokerType };
-        localStorage.setItem(`xau_broker_creds_${result.accountId}`, btoa(JSON.stringify(creds)));
-      }
-
-      // Reload accounts after adding
-      await loadAccounts();
       return result;
     } catch (err) {
       setError(err.message);
@@ -84,50 +84,20 @@ export function useBrokerAccounts() {
   }
 
   async function syncAccount(accountId) {
+    setError(null);
     try {
-      setError(null);
-      const result = await callBrokerAPI('sync', { accountId });
-
-      // Update account in state
-      setAccounts(prev =>
-        prev.map(acc =>
-          acc.id === accountId
-            ? {
-                ...acc,
-                lastSyncStatus: 'success',
-                lastSyncTime: new Date().toISOString(),
-                tradeCount: result.totalFetched,
-              }
-            : acc
-        )
-      );
-
+      const result = await syncBrokerTradesCallable();
       return result;
     } catch (err) {
       setError(err.message);
-
-      // Update error status
-      setAccounts(prev =>
-        prev.map(acc =>
-          acc.id === accountId
-            ? { ...acc, lastSyncStatus: 'failed' }
-            : acc
-        )
-      );
-
       throw err;
     }
   }
 
   async function removeAccount(accountId) {
+    setError(null);
     try {
-      setError(null);
-      const result = await callBrokerAPI('remove', { accountId });
-
-      localStorage.removeItem(`xau_broker_creds_${accountId}`);
-
-      // Remove from state
-      setAccounts(prev => prev.filter(acc => acc.id !== accountId));
+      const result = await disconnectBrokerCallable();
       return result;
     } catch (err) {
       setError(err.message);
@@ -139,7 +109,6 @@ export function useBrokerAccounts() {
     accounts,
     loading,
     error,
-    loadAccounts,
     addAccount,
     syncAccount,
     removeAccount,
