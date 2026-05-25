@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { motion as Motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
@@ -227,30 +227,49 @@ export function PrivacyPolicyPage() {
               </svg>
             </button>
           </div>
-
-          <Motion.div
-            initial={false}
-            animate={{ opacity: mobileMenuOpen ? 1 : 0, y: mobileMenuOpen ? 0 : -20 }}
-            className={`md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8 ${mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-          >
-            {navLinks.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
-              >
-                {label}
-              </NavLink>
-            ))}
-            <button
-              onClick={() => navigate('/login')}
-              className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
-            >
-              Get started
-            </button>
-          </Motion.div>
         </nav>
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <Motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {/* Close Button on Top Right */}
+              <button 
+                onClick={() => setMobileMenuOpen(false)} 
+                className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]"
+                aria-label="Close menu"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
+                {navLinks.map(({ to, label }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+                <button
+                  onClick={() => navigate('/login')}
+                  className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                >
+                  Get started
+                </button>
+              </div>
+            </Motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
