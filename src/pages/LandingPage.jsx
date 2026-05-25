@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
+import Logo from '../components/Logo';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
@@ -26,7 +27,9 @@ import {
   GearWideConnected,
   DatabaseFill,
   WindowSidebar,
-  Twitter,
+  TwitterX,
+  Facebook,
+  Instagram,
   Discord
 } from 'react-bootstrap-icons';
 
@@ -250,7 +253,7 @@ export function LandingPage() {
           className="fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 bg-background/30 backdrop-blur-md border-b border-border/10 transition-all duration-300"
         >
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
-            <span className="text-xl font-bold tracking-tighter text-foreground">xaujournal</span>
+            <Logo iconSize="w-7 h-7" />
           </button>
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
@@ -596,7 +599,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 md:gap-10">
             <div className="lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
-              <span className="text-2xl font-bold tracking-tighter mb-6 block">xaujournal</span>
+              <Logo iconSize="w-8 h-8" className="mb-6" />
               <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs">
                 The XAU journal for professional gold (XAUUSD) traders MT5 sync, analytics, and secure trade history.
               </p>
@@ -627,13 +630,31 @@ export function LandingPage() {
                   href="#"
                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
                   className="text-muted-foreground transition-colors"
+                  aria-label="Facebook"
                 >
-                  <Twitter size={22} />
+                  <Facebook size={22} />
                 </Motion.a>
                 <Motion.a
                   href="#"
                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
                   className="text-muted-foreground transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Instagram size={22} />
+                </Motion.a>
+                <Motion.a
+                  href="#"
+                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                  className="text-muted-foreground transition-colors"
+                  aria-label="X"
+                >
+                  <TwitterX size={22} />
+                </Motion.a>
+                <Motion.a
+                  href="#"
+                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                  className="text-muted-foreground transition-colors"
+                  aria-label="Discord"
                 >
                   <Discord size={22} />
                 </Motion.a>

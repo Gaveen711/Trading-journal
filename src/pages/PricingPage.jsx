@@ -4,6 +4,7 @@ import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
+import Logo from '../components/Logo';
 import { auth } from '../firebase';
 import { useSubscription } from '../hooks/useSubscription';
 import { ProTermsModal } from '../components/ProTermsModal';
@@ -14,26 +15,24 @@ const FREE_FEATURES = [
   'Basic P&L tracking',
   'Trade calendar',
   'Manual trade entry',
-  'Email support',
+  'Unlmited Journal Notes',
 ];
 
 const PRO_FEATURES = [
   'Unlimited trades',
   'Full analytics suite',
   'Session intelligence',
-  'MT5 Expert Advisor sync',
-  'TradingView webhook',
-  'API key access',
+  'MT4/MT5 Access',
   'Priority support',
   'Early access to new features',
 ];
 
 const FAQ = [
-  { q: 'Can I cancel anytime?', a: 'Yes. Cancel from the billing portal at any time. You keep Pro access until the end of your billing period — no partial-month charges.' },
-  { q: 'Is my trading data secure?', a: 'Your data is secured using industry-standard encryption and isolated cloud storage. Only you have access to your trade history; we cannot read your private logs.' },
-  { q: 'How does broker sync work?', a: 'Broker Sync connects directly to your MT4 or MT5 broker server using your login credentials. Once connected, your closed trades are pulled into your journal automatically — no extra software required.' },
+  { q: 'Can I cancel anytime?', a: 'Yes. Cancel from the billing portal at any time. You keep Pro access until the end of your billing period no partial month charges.' },
+  { q: 'Is my trading data secure?', a: 'Your data is secured using industry standard encryption and isolated cloud storage. Only you have access to your trade history; we cannot read your private logs.' },
+  { q: 'How does broker sync work?', a: 'Broker Sync connects directly to your MT4 or MT5 broker server using your login credentials. Once connected, your closed trades are pulled into your journal automatically no extra software required.' },
   { q: 'What payment methods do you accept?', a: 'All major credit and debit cards and PayPal.' },
-  { q: 'Is there a free trial for Pro?', a: 'The free plan provides full access to the core journaling experience. We are currently developing a Pro trial experience—sign up to be notified when it launches.' },
+  { q: 'Is there a free trial for Pro?', a: 'The free plan provides full access to the core journaling experience. We are currently developing a Pro trial experience, sign up to be notified when it launches.' },
 ];
 
 export function PricingPage() {
@@ -125,7 +124,7 @@ export function PricingPage() {
           }`}
         >
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
-            <span className="text-xl font-bold tracking-tighter">xaujournal</span>
+            <Logo iconSize="w-7 h-7" />
           </button>
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
@@ -316,9 +315,9 @@ export function PricingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="flex flex-col items-center md:items-start gap-4">
-              <span className="text-2xl font-bold tracking-tighter">xaujournal</span>
+              <Logo iconSize="w-8 h-8" className="mb-4" />
               <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left">
-                Empowering traders with clarity and institutional-grade analytics.
+                Empowering traders with clarity and institutional grade analytics.
               </p>
             </div>
             

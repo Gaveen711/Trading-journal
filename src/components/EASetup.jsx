@@ -330,25 +330,55 @@ export default function EASetup() {
               }`}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 p-1.5 ${
                   selectedPlatform === 'mt4'
-                    ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/30'
-                    : 'bg-muted border border-border/40 group-hover:border-blue-500/30'
+                    ? 'bg-blue-500/10 border border-blue-500/30 shadow-lg shadow-blue-500/10'
+                    : 'bg-muted/30 border border-border/30 group-hover:border-blue-500/20 group-hover:bg-blue-500/5'
                 }`}>
-                  {/* MT4 Icon — classic figures */}
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Background figures */}
-                    <path d="M12 25 L21 25 L24 35 L9 35 Z" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.4)' : 'rgba(96, 165, 250, 0.4)'} />
-                    <circle cx="16.5" cy="20.5" r="4.5" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.4)' : 'rgba(96, 165, 250, 0.4)'} />
-                    
-                    <path d="M22 17 L30 17 L32 25 L20 25 Z" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.6)' : 'rgba(96, 165, 250, 0.6)'} />
-                    <circle cx="26" cy="13" r="3.5" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.6)' : 'rgba(96, 165, 250, 0.6)'} />
+                  {/* MT4 Icon — High-Fidelity Official Reconstruction */}
+                  <svg
+                    viewBox="15 20 70 70"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`w-full h-full transition-all duration-500 ${
+                      selectedPlatform === 'mt4' ? 'opacity-100 scale-105 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]' : 'opacity-40 group-hover:opacity-80'
+                    }`}
+                  >
+                    <defs>
+                      <linearGradient id="mt4-green-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#4ade80" />
+                        <stop offset="100%" stop-color="#16a34a" />
+                      </linearGradient>
+                      <linearGradient id="mt4-blue-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#60a5fa" />
+                        <stop offset="100%" stop-color="#1d4ed8" />
+                      </linearGradient>
+                      <path id="mt4-fig-body" d="M 33,58 C 31,56 33,54 35,55 C 41,59 45,62 50,62 C 55,62 59,59 65,55 C 67,54 69,56 67,58 C 62,70 58,74 50,74 C 42,74 38,70 33,58 Z" />
+                    </defs>
 
-                    <path d="M7 20 L13 20 L15 28 L5 28 Z" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.5)' : 'rgba(96, 165, 250, 0.5)'} />
-                    <circle cx="10" cy="16" r="3" fill={selectedPlatform === 'mt4' ? 'rgba(255,255,255,0.5)' : 'rgba(96, 165, 250, 0.5)'} />
+                    {/* Left Figure (Green, 120deg) */}
+                    <g transform="rotate(120 50 50)">
+                      <use href="#mt4-fig-body" fill="url(#mt4-green-gradient)" />
+                      <circle cx="50" cy="80" r="7.5" fill="url(#mt4-green-gradient)" />
+                    </g>
 
-                    {/* Big 4 */}
-                    <text x="24" y="32" fontSize="26" fontWeight="900" fill={selectedPlatform === 'mt4' ? '#ffffff' : '#3b82f6'} style={{ fontFamily: 'Arial, sans-serif' }}>4</text>
+                    {/* Right Figure (Green, 240deg) */}
+                    <g transform="rotate(240 50 50)">
+                      <use href="#mt4-fig-body" fill="url(#mt4-green-gradient)" />
+                      <circle cx="50" cy="80" r="7.5" fill="url(#mt4-green-gradient)" />
+                    </g>
+
+                    {/* Bottom Figure (Blue) */}
+                    <g>
+                      <use href="#mt4-fig-body" fill="url(#mt4-blue-gradient)" />
+                      <circle cx="50" cy="80" r="7.5" fill="url(#mt4-blue-gradient)" />
+                    </g>
+
+                    {/* Central Circle (Blue) */}
+                    <circle cx="50" cy="50" r="16" fill="url(#mt4-blue-gradient)" stroke="#ffffff" strokeWidth="2.5" />
+
+                    {/* Central Text "4" */}
+                    <text x="50" y="56" textAnchor="middle" fill="#ffffff" fontSize="18" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900">4</text>
                   </svg>
                 </div>
                 <div>
@@ -367,25 +397,55 @@ export default function EASetup() {
               }`}
             >
               <div className="flex flex-col items-center gap-3">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 p-1.5 ${
                   selectedPlatform === 'mt5'
-                    ? 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-lg shadow-purple-500/30'
-                    : 'bg-muted border border-border/40 group-hover:border-purple-500/30'
+                    ? 'bg-amber-500/10 border border-amber-500/30 shadow-lg shadow-amber-500/10'
+                    : 'bg-muted/30 border border-border/30 group-hover:border-amber-500/20 group-hover:bg-amber-500/5'
                 }`}>
-                  {/* MT5 Icon — classic figures */}
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Background figures */}
-                    <path d="M12 25 L21 25 L24 35 L9 35 Z" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.4)' : 'rgba(167, 139, 250, 0.4)'} />
-                    <circle cx="16.5" cy="20.5" r="4.5" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.4)' : 'rgba(167, 139, 250, 0.4)'} />
-                    
-                    <path d="M22 17 L30 17 L32 25 L20 25 Z" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.6)' : 'rgba(167, 139, 250, 0.6)'} />
-                    <circle cx="26" cy="13" r="3.5" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.6)' : 'rgba(167, 139, 250, 0.6)'} />
+                  {/* MT5 Icon — High-Fidelity Official Reconstruction */}
+                  <svg
+                    viewBox="15 20 70 70"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`w-full h-full transition-all duration-500 ${
+                      selectedPlatform === 'mt5' ? 'opacity-100 scale-105 filter drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]' : 'opacity-40 group-hover:opacity-80'
+                    }`}
+                  >
+                    <defs>
+                      <linearGradient id="mt5-green-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#4ade80" />
+                        <stop offset="100%" stop-color="#16a34a" />
+                      </linearGradient>
+                      <linearGradient id="mt5-gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fbbf24" />
+                        <stop offset="100%" stop-color="#d97706" />
+                      </linearGradient>
+                      <path id="mt5-fig-body" d="M 33,58 C 31,56 33,54 35,55 C 41,59 45,62 50,62 C 55,62 59,59 65,55 C 67,54 69,56 67,58 C 62,70 58,74 50,74 C 42,74 38,70 33,58 Z" />
+                    </defs>
 
-                    <path d="M7 20 L13 20 L15 28 L5 28 Z" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.5)' : 'rgba(167, 139, 250, 0.5)'} />
-                    <circle cx="10" cy="16" r="3" fill={selectedPlatform === 'mt5' ? 'rgba(255,255,255,0.5)' : 'rgba(167, 139, 250, 0.5)'} />
+                    {/* Left Figure (Green, 120deg) */}
+                    <g transform="rotate(120 50 50)">
+                      <use href="#mt5-fig-body" fill="url(#mt5-green-gradient)" />
+                      <circle cx="50" cy="80" r="7.5" fill="url(#mt5-green-gradient)" />
+                    </g>
 
-                    {/* Big 5 */}
-                    <text x="24" y="32" fontSize="26" fontWeight="900" fill={selectedPlatform === 'mt5' ? '#ffffff' : '#8b5cf6'} style={{ fontFamily: 'Arial, sans-serif' }}>5</text>
+                    {/* Right Figure (Green, 240deg) */}
+                    <g transform="rotate(240 50 50)">
+                      <use href="#mt5-fig-body" fill="url(#mt5-green-gradient)" />
+                      <circle cx="50" cy="80" r="7.5" fill="url(#mt5-green-gradient)" />
+                    </g>
+
+                    {/* Bottom Figure (Gold) */}
+                    <g>
+                      <use href="#mt5-fig-body" fill="url(#mt5-gold-gradient)" />
+                      <circle cx="50" cy="80" r="7.5" fill="url(#mt5-gold-gradient)" />
+                    </g>
+
+                    {/* Central Circle (Gold) */}
+                    <circle cx="50" cy="50" r="16" fill="url(#mt5-gold-gradient)" stroke="#ffffff" strokeWidth="2.5" />
+
+                    {/* Central Text "5" */}
+                    <text x="50" y="56" textAnchor="middle" fill="#ffffff" fontSize="18" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900">5</text>
                   </svg>
                 </div>
                 <div>
