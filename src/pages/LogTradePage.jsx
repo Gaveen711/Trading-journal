@@ -3,7 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { calcPnl, todayStr, formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
-import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill } from 'react-bootstrap-icons';
+import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill } from 'react-bootstrap-icons';
+import { auth } from '../firebase';
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { CurrencyExchange } from 'react-bootstrap-icons';
@@ -214,6 +215,100 @@ export function LogTradePage() {
     }
     return () => clearTimeout(timer);
   }, [isWiping]);
+
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const difference = nextMonth - now;
+
+      if (difference <= 0) {
+        setTimeLeft('00d : 00h : 00m : 00s');
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      const pad = (num) => String(num).padStart(2, '0');
+      setTimeLeft(`${pad(days)}d : ${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  if (isLimitReached) {
+    return (
+      <div className="min-h-[65vh] flex flex-col items-center justify-center text-center p-6 space-y-8 animate-in fade-in zoom-in-95 duration-700">
+        <div className="relative">
+          <div className="absolute inset-0 bg-red-500/20 blur-3xl animate-pulse rounded-full" />
+          <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border border-white/10 group">
+            <LockFill className="w-10 h-10 text-white group-hover:rotate-12 transition-transform duration-500" />
+          </div>
+        </div>
+
+        <div className="max-w-md space-y-3">
+          <h2 className="text-3xl font-black text-gradient-red uppercase tracking-tighter">Terminal Locked</h2>
+          <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest leading-relaxed">
+            Free monthly limit reached ({TRADE_LIMIT}/{TRADE_LIMIT}). <br />
+            <span className="text-destructive font-black">Upgrade to Pro</span> to unlock unlimited operations and cognitive brief logs.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center space-y-3 py-2">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">Time until limit resets:</span>
+          <div className="flex items-center gap-2">
+            {timeLeft.split(' : ').map((part, index) => {
+              const value = part.slice(0, -1);
+              const label = part.slice(-1);
+              const labelName = label === 'd' ? 'Days' : label === 'h' ? 'Hours' : label === 'm' ? 'Mins' : 'Secs';
+              return (
+                <div key={index} className="flex items-center">
+                  <div className="flex flex-col items-center bg-muted/40 border border-border/50 rounded-2xl px-4 py-2.5 min-w-[64px] shadow-sm">
+                    <span className="text-xl font-black tracking-tight text-foreground">{value}</span>
+                    <span className="text-[8px] font-black uppercase tracking-wider text-muted-foreground/60">{labelName}</span>
+                  </div>
+                  {index < 3 && (
+                    <span className="text-sm font-black text-muted-foreground/30 mx-1.5 animate-pulse">:</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
+          <button
+            onClick={() => setShowPricingModal(true)}
+            className="flex-1 h-14 bg-primary text-primary-foreground font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          >
+            Go Pro Now
+          </button>
+          <button
+            onClick={() => auth.signOut()}
+            className="flex-1 h-14 bg-muted border border-border/40 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-muted/80 transition-all text-foreground/50"
+          >
+            Logout
+          </button>
+        </div>
+
+        <style>{`
+          .text-gradient-red {
+            background: linear-gradient(to bottom right, #ef4444, #991b1b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   const currentWalletBalance = (walletBalance || 0) + trades.reduce((s, t) => s + (t.pnl || 0), 0);
   const winRate = chartVisibleTrades.length ? (chartVisibleTrades.filter(t => t.outcome === 'WIN').length / chartVisibleTrades.length * 100).toFixed(0) : 0;
