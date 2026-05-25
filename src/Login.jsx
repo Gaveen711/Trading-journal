@@ -8,6 +8,8 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 import { getFriendlyErrorMessage } from './lib/errorUtils';
+import Logo from './components/Logo';
+
 
 function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -136,8 +138,8 @@ function Login() {
         <div className="card-premium p-8 sm:p-10 space-y-8 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)]">
           {/* Logo & Header */}
           <div className="text-center space-y-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-primary to-purple-500 rounded-2xl mx-auto flex items-center justify-center text-white text-xl font-black shadow-xl shadow-primary/30 rotate-3 hover:rotate-0 transition-transform duration-500">
-              XAU
+            <div className="mx-auto flex items-center justify-center rotate-3 hover:rotate-0 transition-transform duration-500">
+              <Logo onlyIcon={true} iconSize="w-14 h-14" />
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl font-black text-gradient uppercase tracking-tight">

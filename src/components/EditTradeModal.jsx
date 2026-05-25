@@ -50,7 +50,7 @@ export function EditTradeModal({ trade, onSave, onClose }) {
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-background/60 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
       
-      <div className="relative w-full max-w-2xl card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700">
         <div className="flex justify-between items-center">
           <div className="space-y-1">
             <h2 className="text-2xl font-black text-gradient uppercase tracking-tight">Modify Operation</h2>

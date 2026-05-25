@@ -300,7 +300,7 @@ export function CalendarPage() {
       {/* MONTH STATISTICS SUMMARY ROW */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
+          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
             {monthlyPnl >= 0 ? <GraphUp size={36} className="text-green-500" /> : <GraphDown size={36} className="text-red-500" />}
           </div>
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Monthly Net P&L</span>
@@ -311,7 +311,7 @@ export function CalendarPage() {
         </div>
 
         <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
+          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
             <ShieldCheck size={36} className="text-primary" />
           </div>
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Consistency (Win Rate)</span>
@@ -322,7 +322,7 @@ export function CalendarPage() {
         </div>
 
         <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
+          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
             <LightningChargeFill size={36} className="text-yellow-500" />
           </div>
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Total Signals</span>
@@ -333,7 +333,7 @@ export function CalendarPage() {
         </div>
 
         <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 text-foreground/5 opacity-50 group-hover:rotate-12 transition-transform duration-500">
+          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
             <Activity size={36} className="text-sky-500" />
           </div>
           <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Volume & Pips</span>

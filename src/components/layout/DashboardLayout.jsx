@@ -249,54 +249,12 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
 
       {/* MAIN CONTENT */}
       <main className="flex-1 max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8 w-full">
-        {plan === 'free' && thisMonthTradesCount >= 50 ? (
-          <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 space-y-8 animate-in fade-in zoom-in-95 duration-700">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-500/20 blur-3xl animate-pulse rounded-full" />
-              <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border border-white/10 group">
-                <BoxArrowRight className="w-10 h-10 text-white group-hover:rotate-12 transition-transform duration-500" />
-              </div>
-            </div>
-
-            <div className="max-w-md space-y-3">
-              <h2 className="text-3xl font-black text-gradient-red uppercase tracking-tighter">Terminal Locked</h2>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest leading-relaxed">
-                {thisMonthTradesCount >= 50 ? "Free monthly limit reached (50/50)." : "Free journal limit reached (10/10)."} <br />
-                <span className="text-destructive font-black">Upgrade to Pro</span> to unlock unlimited operations and cognitive brief logs.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-              <button
-                onClick={() => setShowPricingModal(true)}
-                className="flex-1 h-14 bg-primary text-primary-foreground font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-              >
-                Go Pro Now
-              </button>
-              <button
-                onClick={() => auth.signOut()}
-                className="flex-1 h-14 bg-muted border border-border/40 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-muted/80 transition-all text-foreground/50"
-              >
-                Logout
-              </button>
-            </div>
-
-            <style>{`
-              .text-gradient-red {
-                background: linear-gradient(to bottom right, #ef4444, #991b1b);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-              }
-            `}</style>
-          </div>
-        ) : (
-          <Outlet context={{
-            user, plan, expiry, totalTrades, setShowPricingModal, openPortal,
-            trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
-            journals, isLoadingJournals, saveJournalEntry, deleteEntry,
-            walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
-          }} />
-        )}
+        <Outlet context={{
+          user, plan, expiry, totalTrades, setShowPricingModal, openPortal,
+          trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
+          journals, isLoadingJournals, saveJournalEntry, deleteEntry,
+          walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
+        }} />
       </main>
 
       {/* FOOTER */}

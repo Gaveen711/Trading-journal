@@ -4,6 +4,8 @@ import { motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
+import Logo from '../components/Logo';
+
 
 const SEO = {
   title: 'Terms of Service | XAU Journal — XAUUSD Gold Trading Journal',
@@ -200,7 +202,7 @@ export function TermsOfServicePage() {
           }`}
         >
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
-            <span className="text-xl font-bold tracking-tighter">xaujournal</span>
+            <Logo iconSize="w-7 h-7" />
           </button>
 
           <ul className="hidden md:flex items-center gap-2">
@@ -348,7 +350,7 @@ export function TermsOfServicePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="flex flex-col items-center md:items-start gap-4">
-              <span className="text-2xl font-bold tracking-tighter">xaujournal</span>
+              <Logo iconSize="w-8 h-8" />
               <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left">
                 Empowering gold traders with institutional-grade analytics and journaling.
               </p>
