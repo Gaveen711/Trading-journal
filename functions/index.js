@@ -36,14 +36,37 @@ function getMetaApi() {
   return new MetaApi(token);
 }
 
+function getTradingSession(date) {
+  if (!date) return 'London';
+  const hour = date.getUTCHours();
+  if (hour >= 13 && hour < 22) return 'NewYork';
+  if (hour >= 8 && hour < 13) return 'London';
+  if (hour >= 22 || hour < 8) {
+    if (hour >= 22 || hour < 0) return 'Sydney';
+    return 'Tokyo';
+  }
+  return 'London';
+}
+
 /** Map MetaApi deal → xaujournal trade document */
-function dealToTrade(deal) {
-  const isBuy = deal.type === 'DEAL_TYPE_BUY';
+function dealToTrade(deal, entryDeal = null) {
+  const isBuy = entryDeal
+    ? entryDeal.type === 'DEAL_TYPE_BUY'
+    : deal.type === 'DEAL_TYPE_SELL';
+
   const closeTime = deal.time ? new Date(deal.time) : new Date();
+  const openTime = entryDeal ? entryDeal.time : null;
+  const openTimeDate = openTime ? new Date(openTime) : null;
+
+  const openPrice = entryDeal ? Number(entryDeal.price) : null;
+  const closePrice = Number(deal.price ?? 0);
+
   const pnl = Number(deal.profit ?? 0);
   const commission = Number(deal.commission ?? 0);
   const swap = Number(deal.swap ?? 0);
   const netPnl = pnl + commission + swap;
+
+  const session = getTradingSession(openTimeDate);
 
   return {
     positionId: String(deal.positionId),
@@ -52,16 +75,16 @@ function dealToTrade(deal) {
     direction: isBuy ? 'BUY' : 'SELL',
     volume: Number(deal.volume ?? 0),
     lots: Number(deal.volume ?? 0),
-    openPrice: deal.openPrice ?? null,
-    closePrice: Number(deal.price ?? 0),
-    entry: Number(deal.openPrice ?? deal.price ?? 0),
-    exit: Number(deal.price ?? 0),
+    openPrice,
+    closePrice,
+    entry: openPrice ?? closePrice,
+    exit: closePrice,
     profit: pnl,
     pnl,
     commission,
     swap,
     netPnl,
-    openTime: deal.openTime ?? null,
+    openTime,
     closeTime: deal.time,
     date: closeTime.toISOString().split('T')[0],
     outcome: netPnl > 0.01 ? 'WIN' : netPnl < -0.01 ? 'LOSS' : 'BE',
@@ -69,6 +92,7 @@ function dealToTrade(deal) {
     source: 'metaapi',
     synced: true,
     status: 'closed',
+    session,
   };
 }
 
@@ -83,6 +107,13 @@ async function syncTrades(uid, account) {
 
   const history = await connection.getDealsByTimeRange(startTime, new Date());
   const rawDeals = Array.isArray(history) ? history : history?.deals ?? [];
+
+  const entryDeals = {};
+  for (const d of rawDeals) {
+    if (d.entryType === 'DEAL_ENTRY_IN' || d.entryType === 'DEAL_ENTRY_INOUT') {
+      entryDeals[d.positionId] = d;
+    }
+  }
 
   const deals = rawDeals.filter(
     (d) =>
@@ -105,7 +136,8 @@ async function syncTrades(uid, account) {
     const snap = await tradeRef.get();
     if (snap.exists) continue;
 
-    const trade = dealToTrade(deal);
+    const entryDeal = entryDeals[deal.positionId] || null;
+    const trade = dealToTrade(deal, entryDeal);
     batch.set(tradeRef, {
       ...trade,
       createdAt: FieldValue.serverTimestamp(),
