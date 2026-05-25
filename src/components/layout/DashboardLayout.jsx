@@ -21,6 +21,7 @@ import {
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { useToast } from '../ToastContext';
+import Logo from '../Logo';
 
 import { useTrades } from '../../hooks/useTrades';
 import { useJournals } from '../../hooks/useJournals';
@@ -108,8 +109,8 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
           <div className="flex h-16 items-center justify-between">
 
             <div className="flex items-center gap-8">
-              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group transition-all duration-300" onClick={() => (window.location.href = '/app')}>
-                <span className="text-lg font-bold tracking-tighter group-hover:text-primary transition-colors duration-300">xaujournal</span>
+              <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group transition-all duration-300" onClick={() => navigate('/app')}>
+                <Logo iconSize="w-7 h-7" />
                 <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-[0.15em] border transition-all duration-500 ${plan === 'pro' ? 'bg-primary/20 text-primary border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.2)]' : 'bg-white/5 text-foreground/40 border-white/10'}`}>
                   {plan}
                 </div>
@@ -248,7 +249,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
 
       {/* MAIN CONTENT */}
       <main className="flex-1 max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8 w-full">
-        {plan === 'free' && (thisMonthTradesCount >= 50 || totalJournals >= 10) ? (
+        {plan === 'free' && thisMonthTradesCount >= 50 ? (
           <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 space-y-8 animate-in fade-in zoom-in-95 duration-700">
             <div className="relative">
               <div className="absolute inset-0 bg-red-500/20 blur-3xl animate-pulse rounded-full" />
@@ -304,7 +305,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
 
           <div className="flex flex-col items-center md:items-start gap-1">
             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <span className="text-lg font-bold tracking-tighter group-hover:text-primary transition-colors duration-300">xaujournal</span>
+              <Logo iconSize="w-7 h-7" />
             </div>
 
           </div>

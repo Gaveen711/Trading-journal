@@ -37,11 +37,7 @@ export function JournalPage() {
     if (!journalDate) return;
     const entryExists = Boolean(journals[journalDate]);
     
-    if (plan === 'free' && !entryExists && Object.keys(journals).length >= SUB_LIMITS.freeJournals) {
-      setShowPricingModal(true);
-      toast(`Free plan limit (${SUB_LIMITS.freeJournals} entries). Upgrade to Pro.`, 'warn');
-      return;
-    }
+    // Unlimited journals allowed on free tier
     
     try {
       await saveJournalEntry(journalDate, journalText, selectedMood);
@@ -126,20 +122,7 @@ export function JournalPage() {
                 ) : 'Save Journal'}
               </button>
 
-              {plan === 'free' && (
-                <div className="space-y-2 pt-2 border-t border-border/30">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-foreground/85 ml-1">
-                    <span>Journal Capacity</span>
-                    <span>{Object.keys(journals).length} / {SUB_LIMITS.freeJournals} Entries</span>
-                  </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/30 shadow-inner">
-                    <div 
-                      className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${Object.keys(journals).length >= SUB_LIMITS.freeJournals ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-primary'}`} 
-                      style={{ width: `${(Object.keys(journals).length / SUB_LIMITS.freeJournals) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+              {/* Capacity limit progress bar removed (journals are unlimited) */}
             </div>
           </div>
         </div>
