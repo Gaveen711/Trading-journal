@@ -146,7 +146,7 @@ export function PricingPage() {
 
           <div className="flex items-center gap-3 z-[101]">
             <button 
-              onClick={toggleTheme} 
+              onClick={toggleTheme}
               className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
               aria-label="Toggle theme"
             >
@@ -168,15 +168,29 @@ export function PricingPage() {
               </svg>
             </button>
           </div>
+        </nav>
 
-          <AnimatePresence>
-            {mobileMenuOpen && (
-              <Motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <Motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {/* Close Button on Top Right */}
+              <button 
+                onClick={() => setMobileMenuOpen(false)} 
+                className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]"
+                aria-label="Close menu"
               >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
                 {navLinks.map(({ to, label }) => (
                   <NavLink 
                     key={to} 
@@ -193,10 +207,10 @@ export function PricingPage() {
                 >
                   Get started
                 </button>
-              </Motion.div>
-            )}
-          </AnimatePresence>
-        </nav>
+              </div>
+            </Motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main className="relative z-10 px-6 pt-32 pb-24 md:pt-40 md:pb-40 max-w-7xl mx-auto">

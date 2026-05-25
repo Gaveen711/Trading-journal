@@ -4,7 +4,7 @@ export function ProTermsModal({ onAccept, onClose }) {
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-2xl animate-in fade-in duration-500" />
+      <div className="absolute inset-0 bg-background/60 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
       
       {/* Modal content */}
       <div className="relative w-full max-w-xl card-premium p-8 sm:p-12 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-[0_0_100px_rgba(139,92,246,0.15)]">
