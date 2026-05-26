@@ -104,7 +104,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricin
         </div>
 
         {/* NAVIGATION LINKS */}
-        <nav className="flex-1 flex flex-col gap-1.5">
+        <nav className="flex-1 flex flex-col gap-3.5">
           {navigation.map((item) => {
             const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
             const Icon = isActive ? item.iconSolid : item.icon;
