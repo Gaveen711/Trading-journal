@@ -656,7 +656,7 @@ export function LandingPage() {
                   <Instagram size={22} />
                 </Motion.a>
                 <Motion.a
-                  href="#"
+                  href="https://x.com/xau_journal"
                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
                   className="text-muted-foreground transition-colors"
                   aria-label="X"
@@ -664,7 +664,9 @@ export function LandingPage() {
                   <TwitterX size={22} />
                 </Motion.a>
                 <Motion.a
-                  href="#"
+                  href="https://discord.gg/smbNwBZC2"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
                   className="text-muted-foreground transition-colors"
                   aria-label="Discord"

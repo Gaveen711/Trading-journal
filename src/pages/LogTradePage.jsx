@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { calcPnl, todayStr, formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
+import { calcPnl, todayStr, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill } from 'react-bootstrap-icons';
 import { auth } from '../firebase';
@@ -18,9 +18,13 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 export function LogTradePage() {
   const {
     trades, addTrade, setShowPricingModal, walletBalance, updateBalance,
-    plan, resetTrades, monthlyGoal, updateMonthlyGoal
+    plan, resetTrades, monthlyGoal, updateMonthlyGoal,
+    journals, saveJournalEntry
   } = useOutletContext();
   const toast = useToast();
+
+  const [activeTab, setActiveTab] = useState('chart'); // 'chart' | 'log' | 'logs'
+  const [reviewText, setReviewText] = useState('');
 
 
 
@@ -33,7 +37,6 @@ export function LogTradePage() {
   const [direction, setDirection] = useState(null);
   const [saving, setSaving] = useState(false);
   const [equityPeriod, setEquityPeriod] = useState('all');
-  const [showExact, setShowExact] = useState({});
 
   const [date, setDate] = useState(todayStr());
   const [entry, setEntry] = useState('');
@@ -322,150 +325,166 @@ export function LogTradePage() {
   const avgProfit = wins.length ? wins.reduce((s, t) => s + (t.pnl || 0), 0) / wins.length : 0;
   const avgLoss = losses.length ? losses.reduce((s, t) => s + (t.pnl || 0), 0) / losses.length : 0;
 
+  const userNick = auth.currentUser?.email?.split('@')[0] || 'Trader';
+
+  const handleAddReview = async (e) => {
+    e.preventDefault();
+    if (!reviewText.trim()) return;
+    try {
+      await saveJournalEntry(todayStr(), reviewText.trim(), 'neutral');
+      setReviewText('');
+      toast('Daily review note saved successfully.', 'success');
+    } catch (err) {
+      toast('Failed to record review: ' + err.message, 'error');
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Log Trade</h1>
-          <p className="text-muted-foreground text-sm font-medium">Welcome back. Enter your trade Logs below.</p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
-          <div className="card-premium p-4 flex flex-col gap-1 min-w-0 sm:min-w-[150px] bg-muted/30 relative group overflow-hidden">
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Wallet Balance</span>
-              {plan === 'pro' && !isEditingBalance && (
-                <button
-                  onClick={() => setIsEditingBalance(true)}
-                  className="text-[9px] font-black uppercase text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 hover:underline"
-                >
-                  Deposit
-                </button>
-              )}
-            </div>
-
-            {isEditingBalance ? (
-              <div className="flex gap-2 items-center animate-in slide-in-from-right-2 duration-300">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={tempBalance}
-                  onChange={e => setTempBalance(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSaveBalance()}
-                  autoFocus
-                  className="bg-background/50 border border-primary/40 rounded-lg px-2 py-1 text-sm font-black w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <button onClick={handleSaveBalance} className="text-[10px] font-black text-primary uppercase hover:scale-110 active:scale-95 transition-all">Save</button>
-              </div>
-            ) : (
-              <span 
-                onClick={() => setShowExact(prev => ({ ...prev, balance: !prev.balance }))}
-                className="text-xl font-black cursor-pointer select-none"
-                title={showExact.balance ? "Click to compact" : "Click to see exact amount"}
-              >
-                {showExact.balance ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance)}
-              </span>
-            )}
-
-            {/* Pulsing light for pro users when balance is active */}
-            {plan === 'pro' && <div className="absolute top-0 right-0 w-1 h-full bg-primary/20 animate-pulse" />}
-          </div>
-          <div className="card-premium p-4 flex flex-col gap-1 min-w-0 sm:min-w-[120px] bg-muted/30">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Win Rate</span>
-            <span className="text-xl font-black">{winRate}%</span>
+      
+      {/* HEADER SECTION */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-6 rounded-3xl border border-border/30 shadow-flat relative group overflow-hidden">
+        <div className="space-y-1 flex-1">
+          <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Selected asset: XAU/USD</span>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-3xl font-black text-foreground tracking-tight">
+              {formatCurrency(thisMonthPnl)}
+            </h1>
+            <span className={`text-[11px] font-black px-1.5 py-0.5 rounded-full ${
+              thisMonthPnl >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+            }`}>
+              {thisMonthPnl >= 0 ? '+' : ''}{thisMonthPnl.toFixed(2)} this month
+            </span>
           </div>
 
-          <div className="card-premium p-4 flex flex-col gap-2 col-span-2 sm:col-span-1 min-w-0 sm:min-w-[200px] bg-muted/30 relative overflow-hidden group">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Objective Progress</span>
-              <button
-                onClick={() => setIsEditingGoal(true)}
-                className="text-[9px] font-black uppercase text-primary opacity-0 group-hover:opacity-100 transition-all hover:underline"
-              >
-                Target
-              </button>
-            </div>
-
-            <div className="flex justify-between items-center">
+          {/* OBJECTIVE PROGRESS BAR */}
+          <div className="pt-2 max-w-md">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase text-muted-foreground tracking-wider mb-1">
+              <span>Objective Target</span>
               {isEditingGoal ? (
-                <div className="flex gap-2 items-center w-full animate-in slide-in-from-right-2">
+                <div className="flex gap-1.5 items-center">
                   <input
                     type="number"
-                    inputMode="decimal"
                     value={tempGoal}
                     onChange={e => setTempGoal(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
-                    autoFocus
-                    className="bg-background/50 border border-primary/40 rounded-lg px-2 py-0.5 text-xs font-black w-full"
+                    className="w-16 h-5 px-1 text-[9px] font-bold border border-primary bg-background rounded"
                   />
-                  <button onClick={handleSaveGoal} className="text-[9px] font-black text-primary uppercase">Set</button>
+                  <button onClick={handleSaveGoal} className="text-primary hover:underline lowercase text-[9px]">save</button>
                 </div>
               ) : (
-                <>
-                  <span 
-                    onClick={() => setShowExact(prev => ({ ...prev, goal: !prev.goal }))}
-                    className={`text-xl font-black cursor-pointer select-none ${thisMonthPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}
-                    title={showExact.goal ? "Click to compact" : "Click to see exact amount"}
-                  >
-                    {showExact.goal ? formatCurrency(thisMonthPnl) : formatCurrencyCompact(thisMonthPnl)}{' '}
-                    <span className="text-[10px] text-muted-foreground">
-                      / {showExact.goal ? formatCurrency(monthlyGoal) : formatCurrencyCompact(monthlyGoal)}
-                    </span>
-                  </span>
-                  <span className="text-[10px] font-black text-primary">{goalProgress.toFixed(0)}%</span>
-                </>
+                <button onClick={() => setIsEditingGoal(true)} className="hover:text-primary transition-colors hover:underline text-[9px] uppercase">
+                  Goal: {formatCurrency(monthlyGoal)} ({goalProgress.toFixed(0)}%)
+                </button>
               )}
             </div>
-
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20 shadow-inner">
-              <div
-                className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${thisMonthPnl >= monthlyGoal ? 'bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-primary'}`}
+            <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
+              <div 
+                className="bg-primary h-full rounded-full transition-all duration-1000" 
                 style={{ width: `${goalProgress}%` }}
               />
             </div>
           </div>
         </div>
+
+        <div className="text-right sm:block hidden shrink-0">
+          <p className="text-sm font-black text-foreground uppercase">Gold USD (XAU-USD)</p>
+          <p className="text-[9px] font-black text-muted-foreground tracking-widest">Active journaling instrument</p>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-5 space-y-6">
-          {plan === 'free' && (
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 flex justify-between items-center group animate-in zoom-in-95 duration-500 delay-150">
-              <div className="space-y-1">
-                <h3 className="font-bold text-primary">Unlock Pro Access</h3>
-                <p className="text-xs text-primary/90">Advanced analytics & unlimited trades.</p>
-              </div>
-              <button
-                onClick={() => setShowPricingModal(true)}
-                className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-              >
-                Upgrade
-              </button>
-            </div>
-          )}
+      {/* TABS SECTION */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/20 pb-4">
+        <div className="flex gap-1.5 bg-muted/20 p-1 rounded-2xl border border-border/10">
+          <button
+            onClick={() => setActiveTab('chart')}
+            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+              activeTab === 'chart' ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'
+            }`}
+          >
+            Performance Chart
+          </button>
+          <button
+            onClick={() => setActiveTab('log')}
+            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+              activeTab === 'log' ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'
+            }`}
+          >
+            Log Trade
+          </button>
+          <button
+            onClick={() => setActiveTab('logs')}
+            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+              activeTab === 'logs' ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'
+            }`}
+          >
+            Recent Logs
+          </button>
+        </div>
 
-          <div className="card-premium p-5 sm:p-10 space-y-8 animate-in slide-in-from-left-4 duration-700 delay-100">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                New Trade
-              </h3>
-            </div>
+        {/* TIMESCALE SELECTORS */}
+        <div className="flex gap-1 bg-muted/20 p-1 rounded-2xl border border-border/10">
+          <button
+            onClick={() => setEquityPeriod('30')}
+            className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+              equityPeriod === '30' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            30 Days
+          </button>
+          <button
+            onClick={() => setEquityPeriod('all')}
+            className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+              equityPeriod === 'all' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            All Time
+          </button>
+        </div>
+      </div>
 
-            <form onSubmit={saveTradeForm} className="space-y-5">
+      {/* ACTIVE VIEW TAB CONTENT */}
+      <div className="transition-all duration-300">
+        {activeTab === 'chart' && (
+          <div className="card-premium p-6 h-[320px] sm:h-[450px] flex flex-col relative overflow-hidden">
+            <div className="flex-1 w-full min-h-0 relative z-10">
+              {trades.length > 0 ? (
+                <Line data={chartData} options={chartOptions} />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-6">
+                  <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner">
+                    <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <span className="text-sm font-bold text-foreground opacity-80">No Performance Data</span>
+                    <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log trades to see your performance curve.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Background Glow */}
+            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          </div>
+        )}
+
+        {activeTab === 'log' && (
+          <div className="card-premium p-6 sm:p-8 space-y-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Record New Gold Trade</h3>
+            <form onSubmit={saveTradeForm} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Date</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Date</label>
                   <DatePicker name="date" value={date} onChange={setDate} />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Market</label>
-                  <div className="h-12 rounded-xl border border-border/50 bg-muted/30 flex items-center px-4 gap-2 overflow-hidden whitespace-nowrap">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Market</label>
+                  <div className="h-11 rounded-xl border border-border/40 bg-muted/10 flex items-center px-3 gap-2 overflow-hidden whitespace-nowrap">
                     <span className="text-[11px] font-black text-primary">XAU/USD</span>
                     <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">· Gold</span>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Session</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Session</label>
                   <CustomSelect
                     name="session"
                     value={session}
@@ -481,23 +500,23 @@ export function LogTradePage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Direction</label>
-                  <div className="flex bg-muted rounded-xl p-1 gap-1 border border-border/50 h-11">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Direction</label>
+                  <div className="flex bg-muted/40 rounded-xl p-1 gap-1 border border-border/40 h-11">
                     <button
                       type="button"
                       onClick={() => setDirection('BUY')}
-                      className={`flex-1 rounded-lg text-xs font-black transition-all ${direction === 'BUY' ? 'bg-green-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
+                      className={`flex-1 rounded-lg text-[10px] font-black transition-all ${direction === 'BUY' ? 'bg-green-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
                     >BUY</button>
                     <button
                       type="button"
                       onClick={() => setDirection('SELL')}
-                      className={`flex-1 rounded-lg text-xs font-black transition-all ${direction === 'SELL' ? 'bg-red-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
+                      className={`flex-1 rounded-lg text-[10px] font-black transition-all ${direction === 'SELL' ? 'bg-red-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
                     >SELL</button>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Setup</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Setup</label>
                   <CustomSelect
                     name="setup"
                     value={setup}
@@ -511,8 +530,8 @@ export function LogTradePage() {
                     ]}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Leverage</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Leverage</label>
                   <CustomSelect
                     name="leverage"
                     value={leverage}
@@ -525,10 +544,7 @@ export function LogTradePage() {
                       { value: '1:100', label: '1:100' },
                       { value: '1:200', label: '1:200' },
                       { value: '1:500', label: '1:500' },
-                      { value: '1:1000', label: '1:1000' },
-                      { value: '1:2000', label: '1:2000' },
-                      { value: '1:3000', label: '1:3000' },
-                      { value: '1:Unlimited', label: '1:Unlimited' }
+                      { value: '1:1000', label: '1:1000' }
                     ]}
                   />
                 </div>
@@ -536,65 +552,62 @@ export function LogTradePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Entry Price</label>
-                  <input type="number" name="entry" inputMode="decimal" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entry Price</label>
+                  <input type="number" name="entry" inputMode="decimal" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Exit Price</label>
-                  <input type="number" name="exit" inputMode="decimal" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Exit Price</label>
+                  <input type="number" name="exit" inputMode="decimal" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Lot Size</label>
-                  <input type="number" name="lots" inputMode="decimal" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.10" />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Lot Size</label>
+                  <input type="number" name="lots" inputMode="decimal" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.10" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Stop Loss</label>
-                  <input type="number" name="sl" inputMode="decimal" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Stop Loss</label>
+                  <input type="number" name="sl" inputMode="decimal" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Take Profit</label>
-                  <input type="number" name="tp" inputMode="decimal" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Take Profit</label>
+                  <input type="number" name="tp" inputMode="decimal" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/90 ml-1">Swap / Fees ($)</label>
-                  <input type="number" name="swap" inputMode="decimal" step="0.01" value={swap} onChange={e => setSwap(e.target.value)} className="input-premium h-12 text-sm font-bold" placeholder="0.00" />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Swap / Fees ($)</label>
+                  <input type="number" name="swap" inputMode="decimal" step="0.01" value={swap} onChange={e => setSwap(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
-
               </div>
 
               {pnlData.pnl !== null && (
-                <div className="p-4 rounded-2xl bg-muted/50 border border-border shadow-inner flex justify-between items-center animate-in slide-in-from-top-2">
+                <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/40 flex justify-between items-center animate-in slide-in-from-top-2">
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">
-                      Forecasted Impact ({pnlData.pips} Pips)
-                    </span>
-                    <span className={`text-xl font-black ${pnlData.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Forecasted Impact ({pnlData.pips} Pips)</span>
+                    <span className={`text-lg font-black ${pnlData.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       {formatCurrency(pnlData.pnl, true)}
                     </span>
                   </div>
                   {pnlData.rr && (
-                    <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-tight ${pnlData.rr >= 2 ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20'}`}>
+                    <div className={`px-2.5 py-1 rounded-xl text-[9px] font-black tracking-tight ${pnlData.rr >= 2 ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20'}`}>
                       R:R {pnlData.rr}
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Trade Notes</label>
-                <textarea name="note" value={note} onChange={e => setNote(e.target.value)} className="input-premium h-24 resize-none text-xs leading-relaxed p-4" placeholder="Market conditions, emotional state, pattern recognized..."></textarea>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Trade Notes</label>
+                <textarea name="note" value={note} onChange={e => setNote(e.target.value)} className="input-premium h-20 resize-none text-xs leading-relaxed p-3" placeholder="Emotional state, pattern recognized, execution comments..."></textarea>
               </div>
 
               {plan === 'free' && (
-                <div className="space-y-2 pt-2">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                <div className="space-y-2 pt-1">
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">
                     <span>Trade Limit</span>
                     <span>{thisMonthTradesCount} / {TRADE_LIMIT} Logs</span>
                   </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border/30 shadow-inner">
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20 shadow-inner">
                     <div
                       className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${isLimitReached ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-primary'}`}
                       style={{ width: `${(thisMonthTradesCount / TRADE_LIMIT) * 100}%` }}
@@ -606,88 +619,178 @@ export function LogTradePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className={`btn-primary w-full h-12 text-sm font-black tracking-widest uppercase shadow-xl active:scale-95 transition-all ${isLimitReached ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                className={`w-full h-12 bg-primary text-white text-[11px] font-black tracking-widest uppercase rounded-xl hover:bg-primary/95 transition-all shadow-xl shadow-primary/10 active:scale-95 hover:shadow-none ${isLimitReached ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
               >
-                {saving ? 'Saving Trade...' : isLimitReached ? 'Limit Exceeded' : 'Save Trade'}
+                {saving ? 'Saving...' : isLimitReached ? 'Limit Exceeded' : 'Save Trade'}
               </button>
             </form>
           </div>
+        )}
+
+        {activeTab === 'logs' && (
+          <div className="card-premium p-6 space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Recent Logs</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border/40 text-muted-foreground uppercase text-[9px] font-black tracking-wider">
+                    <th className="py-2">Date</th>
+                    <th className="py-2">Market</th>
+                    <th className="py-2">Type</th>
+                    <th className="py-2">Lots</th>
+                    <th className="py-2 text-right">PnL</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/10">
+                  {trades.slice(0, 10).map((t, idx) => (
+                    <tr key={idx} className="hover:bg-muted/10 font-semibold text-foreground/80">
+                      <td className="py-2.5 text-muted-foreground">{t.date}</td>
+                      <td className="py-2.5 font-bold text-foreground">{t.market || 'GOLD'}</td>
+                      <td className="py-2.5">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-black tracking-widest ${
+                          t.direction === 'BUY' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                        }`}>{t.direction}</span>
+                      </td>
+                      <td className="py-2.5 font-mono">{t.lots}</td>
+                      <td className={`py-2.5 text-right font-black ${
+                        t.pnl >= 0 ? 'text-green-500' : 'text-red-500'
+                      }`}>{t.pnl >= 0 ? '+' : ''}{formatCurrency(t.pnl)}</td>
+                    </tr>
+                  ))}
+                  {trades.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="py-6 text-center text-muted-foreground">No trades logged yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4 PASTEL CARDS STATS GRID */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Card 1: Win Rate */}
+        <div className="bg-pastel-green p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Win Rate</span>
+          <p className="text-2xl font-black tracking-tight">{winRate}%</p>
+          <p className="text-[9px] font-bold opacity-75">Percentage of winning logs</p>
         </div>
 
-        <div className="lg:col-span-7 space-y-8 animate-in slide-in-from-right-4 duration-700 delay-200">
-          <div className="card-premium p-4 sm:p-8 h-[320px] sm:h-[500px] flex flex-col relative overflow-hidden">
-            <div className="flex justify-between items-center mb-6 relative z-10">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                Equity Curve
-              </h3>
-              <CustomSelect
-                className="min-w-[140px] h-9"
-                value={equityPeriod}
-                onChange={setEquityPeriod}
-                options={[
-                  { value: 'all', label: 'Full Profile' },
-                  { value: '30', label: '30D Snapshot' }
-                ]}
+        {/* Card 2: Avg Profit */}
+        <div className="bg-pastel-blue p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Avg Win</span>
+          <p className="text-2xl font-black tracking-tight">{formatCurrency(avgProfit)}</p>
+          <p className="text-[9px] font-bold opacity-75">Average gain per win</p>
+        </div>
+
+        {/* Card 3: Avg Drawdown */}
+        <div className="bg-pastel-pink p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Avg Loss</span>
+          <p className="text-2xl font-black tracking-tight">{formatCurrency(avgLoss)}</p>
+          <p className="text-[9px] font-bold opacity-75">Average loss per drawdown</p>
+        </div>
+
+        {/* Card 4: Wallet Balance */}
+        <div className="bg-pastel-yellow p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 relative overflow-hidden group">
+          <div className="flex justify-between items-start">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Balance</span>
+            {!isEditingBalance && plan === 'pro' && (
+              <button 
+                onClick={() => setIsEditingBalance(true)}
+                className="text-[8px] font-black uppercase text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:underline"
+              >
+                Deposit
+              </button>
+            )}
+          </div>
+          {isEditingBalance ? (
+            <div className="flex gap-1.5 items-center">
+              <input
+                type="number"
+                value={tempBalance}
+                onChange={e => setTempBalance(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSaveBalance()}
+                className="w-full h-7 px-1 text-xs font-bold border border-primary bg-background rounded"
               />
+              <button onClick={handleSaveBalance} className="text-[10px] font-black text-primary uppercase">Save</button>
             </div>
-            <div className="flex-1 w-full min-h-0 relative z-10">
-              {trades.length > 0 ? (
-                <Line data={chartData} options={chartOptions} />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-6">
-                  <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
-                    <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <span className="text-sm font-bold text-foreground opacity-80">No Data Available</span>
-                    <p className="text-[10px] uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log trades to see your performance curve.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* Background Glow */}
-            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="card-premium p-6 flex items-center justify-between group hover:border-green-500/30 transition-all duration-500">
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Growth</span>
-                <p className="text-2xl font-black text-green-500 tracking-tighter">
-                  {formatCurrency(avgProfit, true)}
-                </p>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-green-500/5 flex items-center justify-center text-green-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-green-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">
-                <ArrowUpRight className="w-6 h-6" />
-              </div>
-            </div>
-            <div className="card-premium p-6 flex items-center justify-between group hover:border-red-500/30 transition-all duration-500">
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Avg Drawdown</span>
-                <p className="text-2xl font-black text-red-500 tracking-tighter">
-                  {formatCurrency(avgLoss, false)}
-                </p>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-red-500/5 flex items-center justify-center text-red-500 text-xl shadow-inner group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-500 ease-[var(--spring-bounce)]">
-                <ArrowDownRight className="w-6 h-6" />
-              </div>
-            </div>
-          </div>
-
-          <CurrencyConverter />
+          ) : (
+            <>
+              <p className="text-2xl font-black tracking-tight">{formatCurrency(currentWalletBalance)}</p>
+              <p className="text-[9px] font-bold opacity-75">Total account equity</p>
+            </>
+          )}
         </div>
+      </div>
+
+      {/* DAILY REVIEW NOTES FEED */}
+      <div className="bg-card p-5 rounded-3xl border border-border/30 shadow-flat flex flex-col gap-5">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-pastel-yellow border border-yellow-400 animate-pulse" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
+              Daily Reviews & Cognitive Thoughts
+            </h3>
+          </div>
+          <span className="text-[9px] font-black bg-pastel-cream px-2 py-0.5 rounded-full">
+            {Object.keys(journals).length} notes logged
+          </span>
+        </div>
+
+        {/* FEED CONTENT */}
+        <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
+          {Object.entries(journals).slice(0, 5).map(([jDate, jData]) => (
+            <div key={jDate} className="bg-pastel-cream p-4 rounded-2xl border border-yellow-100 flex gap-3 text-left animate-in fade-in duration-300">
+              <div className="w-7 h-7 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 text-yellow-600 font-bold text-xs uppercase border border-yellow-200">
+                {jDate.slice(-2)}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-foreground">{userNick}</span>
+                  <span className="text-[8px] font-black uppercase text-muted-foreground/60">{jDate}</span>
+                </div>
+                <p className="text-xs text-foreground/80 leading-relaxed font-semibold">
+                  {jData.text}
+                </p>
+              </div>
+            </div>
+          ))}
+          {Object.keys(journals).length === 0 && (
+            <div className="py-6 text-center text-xs text-muted-foreground">
+              No journal reviews recorded yet. Write your thoughts below to log one.
+            </div>
+          )}
+        </div>
+
+        {/* FEED INPUT FORM */}
+        <form onSubmit={handleAddReview} className="flex gap-2">
+          <input
+            type="text"
+            value={reviewText}
+            onChange={e => setReviewText(e.target.value)}
+            placeholder="Share today's review notes..."
+            className="flex-1 h-11 px-4 rounded-xl border border-border/40 bg-muted/20 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+          />
+          <button
+            type="submit"
+            className="h-11 px-5 bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shrink-0 hover:shadow-none"
+          >
+            Submit
+          </button>
+        </form>
       </div>
 
       {/* PRO RESET OPTION */}
       {plan === 'pro' && (
-        <div className="pt-12 pb-8 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
+        <div className="pt-8 pb-4 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
           {isWiping && (
             <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 max-w-sm flex gap-3 text-left animate-in slide-in-from-bottom-2 duration-300">
               <ExclamationTriangleFill className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-destructive mb-1">Danger Zone</p>
-                <p className="text-[10px] text-destructive/80 leading-relaxed">
+                <p className="text-[10px] text-destructive/80 leading-relaxed font-bold">
                   This will permanently delete all trades and reset your balance. This action cannot be undone.
                 </p>
               </div>
@@ -695,7 +798,7 @@ export function LogTradePage() {
           )}
           <button
             onClick={() => isWiping ? handleWipeTerminal() : setIsWiping(true)}
-            className={`px-8 h-10 border text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500 active:scale-95 ${isWiping
+            className={`px-8 h-10 border text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-500 active:scale-95 hover:shadow-none ${isWiping
                 ? 'bg-destructive/10 text-destructive border-destructive/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
                 : 'bg-muted/30 border-border/40 text-foreground/30 hover:text-foreground/50 hover:bg-muted/50'
               }`}
