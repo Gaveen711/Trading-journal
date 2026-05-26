@@ -68,7 +68,9 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-weight: 500; /* Increased to medium for enhanced readability in light mode */
+    font-size: 16px; /* Explicit base size for readability */
+    font-weight: 500;
+    line-height: 1.6;
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -265,6 +267,14 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
   }
 }
 
+/* Global Readability — raise the floor on micro-text classes */
+.text-\[8px\]  { font-size: 12px !important; }
+.text-\[9px\]  { font-size: 13px !important; }
+.text-\[10px\] { font-size: 13px !important; }
+.text-\[11px\] { font-size: 14px !important; }
+.text-xs       { font-size: 14px !important; }
+.text-sm       { font-size: 15px !important; }
+
 /* Mobile Readability Enhancements */
 @media (max-width: 768px) {
   /* Prevent automatic iOS input zoom and make inputs highly readable */
@@ -273,21 +283,12 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
   }
 
   /* Make micro-labels and tiny text legible on mobile */
-  .text-\[9px\] {
-    font-size: 11px !important;
-  }
-  .text-\[10px\] {
-    font-size: 12px !important;
-  }
-  .text-\[11px\] {
-    font-size: 13px !important;
-  }
-  .text-xs {
-    font-size: 13px !important;
-  }
-  .text-sm {
-    font-size: 14px !important;
-  }
+  .text-\[8px\]  { font-size: 13px !important; }
+  .text-\[9px\]  { font-size: 13px !important; }
+  .text-\[10px\] { font-size: 14px !important; }
+  .text-\[11px\] { font-size: 14px !important; }
+  .text-xs       { font-size: 14px !important; }
+  .text-sm       { font-size: 15px !important; }
 
   /* Boost opacity of muted / light text on mobile for better contrast */
   .text-muted-foreground\/60 {
