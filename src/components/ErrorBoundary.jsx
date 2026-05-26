@@ -11,40 +11,171 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("CRITICAL UI FAILURE:", error, errorInfo);
+    console.error('CRITICAL UI FAILURE:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
+      const msg = this.state.error?.message || 'Unknown error';
+
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
-          <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
-            <div className="w-20 h-20 bg-destructive/10 rounded-3xl mx-auto flex items-center justify-center border border-destructive/20 relative">
-               <div className="absolute inset-0 bg-destructive/20 blur-2xl rounded-full" />
-               <svg className="w-10 h-10 text-destructive relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-               </svg>
-            </div>
-            
-            <div className="space-y-2">
-              <h1 className="text-2xl font-black text-gradient uppercase tracking-tight">System Error</h1>
-              <p className="text-[10px] text-muted-foreground font-bold leading-relaxed uppercase tracking-[0.2em]">
-                The application encountered an unexpected state. Our security protocols have paused the session for your protection.
-              </p>
-            </div>
-            
-            <div className="p-4 bg-muted/20 border border-border/40 rounded-2xl">
-                <p className="text-[9px] font-mono text-muted-foreground/40 tracking-tighter uppercase">
-                   Reference: {this.state.error?.message?.slice(0, 40) || "Integrity Failure"}...
-                </p>
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            fontFamily: "'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            background: 'hsl(224 71.4% 2%)',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '28px',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              padding: '40px 36px',
+              boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
+              textAlign: 'center',
+            }}
+          >
+            {/* Icon */}
+            <div
+              style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '20px',
+                background: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 28px',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '-8px',
+                  borderRadius: '50%',
+                  background: 'rgba(239,68,68,0.08)',
+                  filter: 'blur(16px)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgb(239,68,68)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'relative', zIndex: 1 }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
             </div>
 
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+            {/* Title */}
+            <h1
+              style={{
+                fontSize: '22px',
+                fontWeight: 700,
+                color: '#ffffff',
+                marginBottom: '10px',
+                letterSpacing: '-0.02em',
+              }}
             >
-              Restart Terminal
-            </button>
+              Something went wrong
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              style={{
+                fontSize: '13px',
+                color: 'rgba(255,255,255,0.5)',
+                lineHeight: 1.65,
+                marginBottom: '28px',
+                fontWeight: 500,
+              }}
+            >
+              The app hit an unexpected error. Your data is safe — try refreshing to get back on track.
+            </p>
+
+            {/* Error detail pill */}
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                marginBottom: '28px',
+                textAlign: 'left',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '11px',
+                  fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
+                  color: 'rgba(255,255,255,0.35)',
+                  wordBreak: 'break-all',
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
+                {msg.length > 80 ? msg.slice(0, 80) + '…' : msg}
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderTopColor: 'rgba(255,255,255,0.22)',
+                  background: 'linear-gradient(180deg, rgba(99,102,241,0.9) 0%, rgba(79,70,229,0.95) 100%)',
+                  backdropFilter: 'blur(12px)',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.2), 0 8px 24px rgba(99,102,241,0.25)',
+                  transition: 'opacity 0.2s',
+                  fontFamily: 'inherit',
+                }}
+                onMouseOver={e => e.currentTarget.style.opacity = '0.88'}
+                onMouseOut={e => e.currentTarget.style.opacity = '1'}
+              >
+                Refresh page
+              </button>
+
+              <button
+                onClick={() => window.location.href = '/'}
+                style={{
+                  width: '100%',
+                  height: '44px',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  background: 'rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(12px)',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontFamily: 'inherit',
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+              >
+                Go to home
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -53,4 +184,3 @@ export class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
