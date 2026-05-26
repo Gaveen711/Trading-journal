@@ -296,50 +296,67 @@ export function CalendarPage() {
       </header>
 
       {/* MONTH STATISTICS SUMMARY ROW */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
-            {monthlyPnl >= 0 ? <GraphUp size={36} className="text-green-500" /> : <GraphDown size={36} className="text-red-500" />}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {/* Card 1 — Monthly Net P&L */}
+        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          {/* Icon badge */}
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${monthlyPnl >= 0 ? 'bg-green-500/15 border border-green-500/25' : 'bg-red-500/15 border border-red-500/25'}`}>
+            {monthlyPnl >= 0
+              ? <GraphUp size={18} className="text-green-500" />
+              : <GraphDown size={18} className="text-red-500" />}
           </div>
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Monthly Net P&L</span>
-          <h4 className={`text-2xl font-black tracking-tighter ${monthlyPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {formatCurrency(monthlyPnl, true)}
-          </h4>
-          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">Realized in closed trades</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Monthly Net P&amp;L</span>
+            <span className={`text-xl font-black tracking-tight ${monthlyPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {formatCurrency(monthlyPnl, true)}
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60">Realized in closed trades</span>
+          </div>
         </div>
 
-        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
-            <ShieldCheck size={36} className="text-primary" />
+        {/* Card 2 — Consistency */}
+        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-primary/15 border border-primary/25">
+            <ShieldCheck size={18} className="text-primary" />
           </div>
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Consistency (Win Rate)</span>
-          <h4 className="text-2xl font-black tracking-tighter text-foreground">
-            {consistencyRate.toFixed(1)}%
-          </h4>
-          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{winDays} Green / {activeDays} Traded Days</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Consistency (Win Rate)</span>
+            <span className="text-xl font-black tracking-tight text-foreground">
+              {consistencyRate.toFixed(1)}%
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60">{winDays} Green / {activeDays} Traded Days</span>
+          </div>
         </div>
 
-        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
-            <LightningChargeFill size={36} className="text-yellow-500" />
+        {/* Card 3 — Total Signals */}
+        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-yellow-500/15 border border-yellow-500/25">
+            <LightningChargeFill size={18} className="text-yellow-500" />
           </div>
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Total Signals</span>
-          <h4 className="text-2xl font-black tracking-tighter text-foreground">
-            {totalMonthlyTrades}
-          </h4>
-          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">Executions logged this month</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total Signals</span>
+            <span className="text-xl font-black tracking-tight text-foreground">
+              {totalMonthlyTrades}
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60">Executions logged this month</span>
+          </div>
         </div>
 
-        <div className="card-premium p-4 sm:p-5 flex flex-col justify-between h-[110px] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="absolute right-4 top-4 opacity-10 group-hover:rotate-12 transition-transform duration-500">
-            <Activity size={36} className="text-sky-500" />
+        {/* Card 4 — Volume & Pips */}
+        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-sky-500/15 border border-sky-500/25">
+            <Activity size={18} className="text-sky-500" />
           </div>
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Volume & Pips</span>
-          <h4 className="text-2xl font-black tracking-tighter text-foreground">
-            {totalPips >= 0 ? '+' : ''}{formatNumber(totalPips, 0)} <span className="text-xs text-muted-foreground">Pips</span>
-          </h4>
-          <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">{formatNumber(totalLots, 2)} Total Lots Traded</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Volume &amp; Pips</span>
+            <span className="text-xl font-black tracking-tight text-foreground">
+              {totalPips >= 0 ? '+' : ''}{formatNumber(totalPips, 0)} <span className="text-sm font-bold text-muted-foreground">Pips</span>
+            </span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60">{formatNumber(totalLots, 2)} Total Lots Traded</span>
+          </div>
         </div>
+
       </section>
 
       {/* MAIN CONTAINER: CALENDAR GRID + INTELLIGENCE PANEL */}
