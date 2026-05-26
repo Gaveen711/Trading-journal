@@ -44,7 +44,6 @@ export function CalendarPage() {
   const totalMonthlyTrades = monthlyTrades.length;
 
   let winDays = 0;
-  let lossDays = 0;
   let activeDays = 0;
   
   for (let d = 1; d <= daysInMonth; d++) {
@@ -53,7 +52,6 @@ export function CalendarPage() {
       activeDays++;
       const dayPnl = dayTrs.reduce((sum, t) => sum + (t.pnl || 0), 0);
       if (dayPnl > 0.01) winDays++;
-      else if (dayPnl < -0.01) lossDays++;
     }
   }
   const consistencyRate = activeDays > 0 ? (winDays / activeDays) * 100 : 0;

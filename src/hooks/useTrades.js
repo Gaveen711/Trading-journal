@@ -9,11 +9,15 @@ export function useTrades(user) {
 
   useEffect(() => {
     if (!user) {
-      setIsLoading(false);
+      Promise.resolve().then(() => {
+        setIsLoading(false);
+      });
       return;
     }
 
-    setIsLoading(true);
+    Promise.resolve().then(() => {
+      setIsLoading(true);
+    });
     const q = query(
       collection(db, 'users', user.uid, 'trades'),
       orderBy('date', 'desc')

@@ -16,58 +16,72 @@ export function useBrokerAccounts() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!auth.currentUser?.uid) {
-      setAccounts([]);
-      setLoading(false);
-      return;
-    }
+    let unsubscribeSnapshot = null;
 
-    setLoading(true);
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-    const unsubscribe = onSnapshot(
-      userRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.metaApiAccountId) {
-            setAccounts([
-              {
-                id: data.metaApiAccountId,
-                accountName: `${data.brokerServer || 'Broker'} · ${data.brokerLogin || ''}`,
-                brokerType: data.brokerPlatform || 'mt5',
-                platform: data.brokerPlatform || 'mt5',
-                server: data.brokerServer || '',
-                login: data.brokerLogin || '',
-                metaApiAccountId: data.metaApiAccountId,
-                isActive: true,
-                lastSyncTime: data.lastBrokerSync
-                  ? (data.lastBrokerSync.toDate
-                      ? data.lastBrokerSync.toDate().toISOString()
-                      : new Date(data.lastBrokerSync).toISOString())
-                  : null,
-                lastSyncStatus: data.lastBrokerSyncStatus || 'success',
-                tradeCount: data.lastBrokerSyncCount || 0,
-              },
-            ]);
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+
+      if (!user) {
+        setAccounts([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      const userRef = doc(db, 'users', user.uid);
+      unsubscribeSnapshot = onSnapshot(
+        userRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.metaApiAccountId) {
+              setAccounts([
+                {
+                  id: data.metaApiAccountId,
+                  accountName: `${data.brokerServer || 'Broker'} · ${data.brokerLogin || ''}`,
+                  brokerType: data.brokerPlatform || 'mt5',
+                  platform: data.brokerPlatform || 'mt5',
+                  server: data.brokerServer || '',
+                  login: data.brokerLogin || '',
+                  metaApiAccountId: data.metaApiAccountId,
+                  isActive: true,
+                  lastSyncTime: data.lastBrokerSync
+                    ? (data.lastBrokerSync.toDate
+                        ? data.lastBrokerSync.toDate().toISOString()
+                        : new Date(data.lastBrokerSync).toISOString())
+                    : null,
+                  lastSyncStatus: data.lastBrokerSyncStatus || 'success',
+                  tradeCount: data.lastBrokerSyncCount || 0,
+                },
+              ]);
+            } else {
+              setAccounts([]);
+            }
           } else {
             setAccounts([]);
           }
-        } else {
-          setAccounts([]);
+          setLoading(false);
+        },
+        (err) => {
+          setError(err.message);
+          console.error('Failed to listen to broker details:', err);
+          setLoading(false);
         }
-        setLoading(false);
-      },
-      (err) => {
-        setError(err.message);
-        console.error('Failed to listen to broker details:', err);
-        setLoading(false);
+      );
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
       }
-    );
+    };
+  }, []);
 
-    return () => unsubscribe();
-  }, [auth.currentUser?.uid]);
-
-  async function addAccount(login, password, server, brokerType, accountName) {
+  async function addAccount(login, password, server, brokerType, _accountName) {
     setError(null);
     try {
       const result = await connectBrokerCallable({
@@ -83,7 +97,7 @@ export function useBrokerAccounts() {
     }
   }
 
-  async function syncAccount(accountId) {
+  async function syncAccount(_accountId) {
     setError(null);
     try {
       const result = await syncBrokerTradesCallable();
@@ -94,7 +108,7 @@ export function useBrokerAccounts() {
     }
   }
 
-  async function removeAccount(accountId) {
+  async function removeAccount(_accountId) {
     setError(null);
     try {
       const result = await disconnectBrokerCallable();

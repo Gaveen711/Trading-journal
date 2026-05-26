@@ -1,6 +1,4 @@
 // api/_firebase.js
-/* eslint-env node */
-/* global process */
 // Shared Firebase Admin initializer for all Vercel API routes.
 //
 // WHY THIS EXISTS:
