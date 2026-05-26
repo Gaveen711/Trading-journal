@@ -68,9 +68,9 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 16px; /* Explicit base size for readability */
+    font-size: 15px; /* Explicit base size for readability */
     font-weight: 500;
-    line-height: 1.6;
+    line-height: 1.55;
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -267,13 +267,13 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
   }
 }
 
-/* Global Readability — raise the floor on micro-text classes */
-.text-\[8px\]  { font-size: 12px !important; }
-.text-\[9px\]  { font-size: 13px !important; }
-.text-\[10px\] { font-size: 13px !important; }
-.text-\[11px\] { font-size: 14px !important; }
-.text-xs       { font-size: 14px !important; }
-.text-sm       { font-size: 15px !important; }
+/* Global Readability — gently raise the floor on micro-text classes */
+.text-\[8px\]  { font-size: 11px !important; }
+.text-\[9px\]  { font-size: 11px !important; }
+.text-\[10px\] { font-size: 12px !important; }
+.text-\[11px\] { font-size: 12px !important; }
+.text-xs       { font-size: 13px !important; }
+.text-sm       { font-size: 14px !important; }
 
 /* Mobile Readability Enhancements */
 @media (max-width: 768px) {
@@ -283,12 +283,12 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
   }
 
   /* Make micro-labels and tiny text legible on mobile */
-  .text-\[8px\]  { font-size: 13px !important; }
-  .text-\[9px\]  { font-size: 13px !important; }
-  .text-\[10px\] { font-size: 14px !important; }
-  .text-\[11px\] { font-size: 14px !important; }
-  .text-xs       { font-size: 14px !important; }
-  .text-sm       { font-size: 15px !important; }
+  .text-\[8px\]  { font-size: 12px !important; }
+  .text-\[9px\]  { font-size: 12px !important; }
+  .text-\[10px\] { font-size: 13px !important; }
+  .text-\[11px\] { font-size: 13px !important; }
+  .text-xs       { font-size: 13px !important; }
+  .text-sm       { font-size: 14px !important; }
 
   /* Boost opacity of muted / light text on mobile for better contrast */
   .text-muted-foreground\/60 {
@@ -451,8 +451,8 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
 
 /* Glass Tabs (Segmented Control style) */
 .glass-tab-container {
-  background: rgba(0, 0, 0, 0.25) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 4px;
@@ -461,45 +461,57 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
   gap: 4px;
 }
 .dark .glass-tab-container {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
 }
 
 .glass-tab-button {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
   padding: 8px 16px;
   border-radius: 12px;
   border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.5) !important;
+  /* Light mode: dark readable text; Dark mode: white */
+  color: hsl(var(--foreground) / 0.55) !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   background: transparent !important;
   cursor: pointer;
   box-shadow: none !important;
 }
+.dark .glass-tab-button {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
 .glass-tab-button:hover {
-  color: #ffffff !important;
+  color: hsl(var(--foreground)) !important;
   transform: none !important;
   box-shadow: none !important;
 }
+.dark .glass-tab-button:hover {
+  color: #ffffff !important;
+}
 
 .glass-tab-button-active {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-  box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.06) !important;
   backdrop-filter: blur(8px);
   transform: none !important;
 }
+.dark .glass-tab-button-active {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
 .glass-tab-button-active:hover {
   transform: none !important;
-  box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Yellow Accent button for Submit review notes */
