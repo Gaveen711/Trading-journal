@@ -275,7 +275,7 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
     color: hsl(var(--muted-foreground) / 0.85) !important;
   }
   .text-muted-foreground\/40 {
-    color: hsl(var(--muted-foreground) / 0.7) !important;
+    color: hsl(var(--muted-foreground) / 0.75) !important;
   }
   .text-foreground\/60 {
     color: hsl(var(--foreground) / 0.8) !important;
@@ -287,3 +287,65 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
     color: hsl(var(--muted-foreground) / 0.95) !important;
   }
 }
+
+/* Pastel design tokens */
+.bg-pastel-green {
+  background-color: #EBFDF5 !important;
+  color: #065F46 !important;
+  border-color: #A7F3D0 !important;
+}
+.dark .bg-pastel-green {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #34D399 !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.bg-pastel-pink {
+  background-color: #FDF2F4 !important;
+  color: #9D174D !important;
+  border-color: #FBCFE8 !important;
+}
+.dark .bg-pastel-pink {
+  background-color: rgba(244, 63, 94, 0.1) !important;
+  color: #FB7185 !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+.bg-pastel-blue {
+  background-color: #EFF6FF !important;
+  color: #1E40AF !important;
+  border-color: #BFDBFE !important;
+}
+.dark .bg-pastel-blue {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.bg-pastel-yellow {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+  border-color: #FDE68A !important;
+}
+.dark .bg-pastel-yellow {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: #FBBF24 !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.bg-pastel-cream {
+  background-color: #FDF8F0 !important;
+  color: #854D0E !important;
+  border-color: #FEF08A !important;
+}
+.dark .bg-pastel-cream {
+  background-color: rgba(234, 179, 8, 0.05) !important;
+  color: #FACC15 !important;
+  border-color: rgba(234, 179, 8, 0.1) !important;
+}
+
+/* Custom premium card styles */
+.shadow-flat {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+}
+
