@@ -6,7 +6,7 @@ import { PencilSquare, XLg, EmojiAngryFill, EmojiFrownFill, EmojiNeutralFill, Em
 import { DatePicker } from '../components/ui/DatePicker';
 
 export function JournalPage() {
-  const { journals, saveJournalEntry, deleteEntry, plan, setShowPricingModal } = useOutletContext();
+  const { journals, saveJournalEntry, deleteEntry } = useOutletContext();
   const toast = useToast();
   
   const [journalDate, setJournalDate] = useState(todayStr());
@@ -35,7 +35,6 @@ export function JournalPage() {
 
   const onSaveJournal = async () => {
     if (!journalDate) return;
-    const entryExists = Boolean(journals[journalDate]);
     
     // Unlimited journals allowed on free tier
     

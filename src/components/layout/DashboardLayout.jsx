@@ -20,16 +20,14 @@ import {
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { useToast } from '../ToastContext';
 import Logo from '../Logo';
 
 import { useTrades } from '../../hooks/useTrades';
 import { useJournals } from '../../hooks/useJournals';
 import { useWallet } from '../../hooks/useWallet';
 
-export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
+export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
-  const toast = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -70,18 +68,10 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, totalJournals
 
   const { trades, isLoading: isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const thisMonthTradesCount = trades.filter(t => t.date >= monthStart).length;
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
 
-  const [copied, setCopied] = useState(false);
-  const copyUid = () => {
-    navigator.clipboard.writeText(user?.uid || '');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+
 
   function handleSyncClick() {
     if (!canBrokerSync) {

@@ -157,9 +157,9 @@ const BROKERS = {
 };
 
 export default function EASetup() {
-  const { plan = 'free', expiry = null, setShowPricingModal: onUpgrade, lastMT5Sync } = useOutletContext();
+  const { plan = 'free', expiry = null, setShowPricingModal: onUpgrade } = useOutletContext();
   const toast = useToast();
-  const { accounts, loading: accountsLoading, loadAccounts, addAccount, syncAccount, removeAccount } = useBrokerAccounts();
+  const { accounts, addAccount, syncAccount, removeAccount } = useBrokerAccounts();
 
   // Platform selection
   const [selectedPlatform, setSelectedPlatform] = useState(null); // 'mt4' | 'mt5' | null
@@ -186,7 +186,6 @@ export default function EASetup() {
 
   // Sync state
   const [syncingAll, setSyncingAll] = useState(false);
-  const [syncingId, setSyncingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
 
   // Plan checks
