@@ -381,8 +381,8 @@ export function RefundPolicyPage() {
                 <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
                 <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
               </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 text-center md:text-right">
-                © {new Date().getFullYear()} <span className="animate-rgb">xaujournal</span>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 flex items-center gap-1.5 justify-center md:justify-end">
+                made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               </p>
             </div>
           </div>
