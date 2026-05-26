@@ -24,7 +24,10 @@ vi.mock('./_firebase.js', () => {
   };
 
   return {
-    admin: {},
+    admin: {
+      apps: { length: 1 }
+    },
+    initAdmin: vi.fn(),
     db,
     now: () => 'MOCK_TIMESTAMP'
   };

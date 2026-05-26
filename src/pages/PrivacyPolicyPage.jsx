@@ -86,7 +86,7 @@ If you are located in the European Economic Area (EEA), you have additional righ
     title: '7. Cookies & local storage',
     content: `xaujournal uses minimal browser storage:
 
-• localStorage — stores your onboarding state, starting balance, and theme preference. This data never leaves your device.
+• localStorage — stores your onboarding state, starting balance, theme preference, and optionally your remembered email address if the "Stay signed in" option is checked. This data never leaves your device.
 • Authentication service — stores an authentication token in IndexedDB to keep you logged in between sessions. This is essential for the app to function.
 
 We do not use advertising cookies, tracking pixels, or third-party analytics scripts.`,
