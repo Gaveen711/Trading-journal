@@ -142,12 +142,32 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricin
 
           {/* SIDEBAR ACTIONS (Logout / Theme) */}
           <div className="flex items-center justify-between mt-2">
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 rounded-xl border border-border/40 hover:bg-muted text-foreground/70 hover:text-foreground transition-all hover:shadow-none"
-              title="Toggle theme"
+            {/* iOS-style on/off theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
+              className="relative flex items-center gap-2 group hover:shadow-none"
             >
-              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
+              {/* Track */}
+              <span
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 border ${
+                  isLightMode
+                    ? 'bg-muted border-border/40'
+                    : 'bg-primary border-primary/60'
+                }`}
+              >
+                {/* Thumb with icon */}
+                <span
+                  className={`absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
+                    isLightMode ? 'translate-x-0.5' : 'translate-x-[calc(100%-2px)]'
+                  }`}
+                >
+                  {isLightMode
+                    ? <MoonStarsFill className="w-3 h-3 text-primary" />
+                    : <SunFill className="w-3 h-3 text-amber-400" />
+                  }
+                </span>
+              </span>
             </button>
             <button 
               onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
@@ -172,8 +192,30 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricin
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={toggleTheme} className="p-2 rounded-xl border border-border/40 text-foreground/70 hover:shadow-none">
-                {isLightMode ? <MoonStarsFill className="w-3.5 h-3.5" /> : <SunFill className="w-3.5 h-3.5" />}
+              {/* iOS-style mini toggle for mobile */}
+              <button
+                onClick={toggleTheme}
+                title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
+                className="relative flex items-center hover:shadow-none"
+              >
+                <span
+                  className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-300 border ${
+                    isLightMode
+                      ? 'bg-muted border-border/40'
+                      : 'bg-primary border-primary/60'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
+                      isLightMode ? 'translate-x-0.5' : 'translate-x-[calc(100%-2px)]'
+                    }`}
+                  >
+                    {isLightMode
+                      ? <MoonStarsFill className="w-2.5 h-2.5 text-primary" />
+                      : <SunFill className="w-2.5 h-2.5 text-amber-400" />
+                    }
+                  </span>
+                </span>
               </button>
               <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
