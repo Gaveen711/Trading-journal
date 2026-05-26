@@ -30,7 +30,7 @@ export default {
         loss: "hsl(var(--loss))",
       },
       fontFamily: {
-        'sans': ['Open Sans', 'Inter', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+        'sans': ['Arimo', 'Inter', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
         'mono': ['Consolas', 'Monaco', 'monospace'],
       },
       borderRadius: {
