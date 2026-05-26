@@ -71,6 +71,11 @@
     font-weight: 500; /* Increased to medium for enhanced readability in light mode */
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -134,10 +139,10 @@
   }
 
   /* Global Button Hover Glow */
-  button:not(.btn-premium) {
+  button:not(.btn-premium):not(.btn-no-glow) {
     @apply transition-all duration-300;
   }
-  button:not(.btn-premium):hover {
+  button:not(.btn-premium):not(.btn-no-glow):hover {
     @apply shadow-[0_0_15px_rgba(139,92,246,0.25)] -translate-y-0.5;
   }
 
@@ -238,5 +243,47 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
 @media (max-width: 440px) {
   .mobile-nav-label {
     display: none !important;
+  }
+}
+
+/* Mobile Readability Enhancements */
+@media (max-width: 768px) {
+  /* Prevent automatic iOS input zoom and make inputs highly readable */
+  input, select, textarea, .input-premium, .select-premium {
+    font-size: 16px !important;
+  }
+
+  /* Make micro-labels and tiny text legible on mobile */
+  .text-\[9px\] {
+    font-size: 11px !important;
+  }
+  .text-\[10px\] {
+    font-size: 12px !important;
+  }
+  .text-\[11px\] {
+    font-size: 13px !important;
+  }
+  .text-xs {
+    font-size: 13px !important;
+  }
+  .text-sm {
+    font-size: 14px !important;
+  }
+
+  /* Boost opacity of muted / light text on mobile for better contrast */
+  .text-muted-foreground\/60 {
+    color: hsl(var(--muted-foreground) / 0.85) !important;
+  }
+  .text-muted-foreground\/40 {
+    color: hsl(var(--muted-foreground) / 0.7) !important;
+  }
+  .text-foreground\/60 {
+    color: hsl(var(--foreground) / 0.8) !important;
+  }
+  .text-foreground\/50 {
+    color: hsl(var(--foreground) / 0.75) !important;
+  }
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground) / 0.95) !important;
   }
 }
