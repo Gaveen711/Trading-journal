@@ -8,7 +8,7 @@ const FEATURE_COPY = {
     title: 'Broker sync is a Pro feature',
     description:
       'Upgrade to Pro to pull trades from your MT5 broker into your journal with one tap.',
-    highlights: ['One-tap broker sync', 'MT5 & MetaApi integration', 'Unlimited trades'],
+    highlights: ['One-tap broker sync', 'MT4 & MT5 integration', 'Unlimited trades'],
   },
 };
 

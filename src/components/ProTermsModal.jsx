@@ -5,10 +5,10 @@ export function ProTermsModal({ onAccept, onClose }) {
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-background/60 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
-      
+
       {/* Modal content */}
       <div className="relative w-full max-w-xl card-premium p-8 sm:p-12 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-[0_0_100px_rgba(139,92,246,0.15)]">
-        
+
         {/* Close */}
         <button onClick={onClose} className="absolute top-6 right-6 text-muted-foreground/40 hover:text-foreground transition-all active:scale-75">
           <XLg className="w-5 h-5" />
@@ -32,7 +32,7 @@ export function ProTermsModal({ onAccept, onClose }) {
             <div className="space-y-2">
               <p className="font-black text-foreground uppercase tracking-widest text-[10px]">§ 1. Professional Risk Disclosure</p>
               <p className="text-muted-foreground font-medium">
-                Trading XAU/USD (Gold) involves significant risk of loss. xaujournal is an analytics and journaling tool only. We do not provide financial advice, and you are solely responsible for your trading decisions and capital. 
+                Trading XAU/USD (Gold) involves significant risk of loss. xaujournal is an analytics and journaling tool only. We do not provide financial advice, and you are solely responsible for your trading decisions and capital.
               </p>
             </div>
 
@@ -46,7 +46,7 @@ export function ProTermsModal({ onAccept, onClose }) {
             <div className="space-y-2 border-t border-border/20 pt-4">
               <p className="font-black text-foreground uppercase tracking-widest text-[10px]">§ 3. Subscription & Refund Policy</p>
               <p className="text-muted-foreground font-medium">
-                You agree that all payments for the Pro version are non-refundable. Once digital access to Pro features (unlimited trades, analytics, EA sync) is granted, the service is considered fully rendered. No refunds will be issued for partial months or unused periods.
+                You agree that all payments for the Pro version are non-refundable. Once digital access to Pro features (unlimited trades, analytics) is granted, the service is considered fully rendered. No refunds will be issued for partial months or unused periods.
               </p>
             </div>
 
@@ -57,8 +57,8 @@ export function ProTermsModal({ onAccept, onClose }) {
               </p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={onAccept}
             className="w-full btn-primary h-16 rounded-2xl flex flex-col items-center justify-center gap-1 text-xs font-black uppercase tracking-widest group shadow-2xl active:scale-95 transition-all"
           >
@@ -67,7 +67,7 @@ export function ProTermsModal({ onAccept, onClose }) {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
-          
+
           <p className="text-[9px] text-center text-muted-foreground/50 uppercase tracking-widest font-bold">
             Secure Legal Node | Version 1.0.4 | XAU v1.0
           </p>
