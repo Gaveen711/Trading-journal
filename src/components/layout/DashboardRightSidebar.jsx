@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Bell, ChevronDown, ArrowRight, ArrowUpRight, ArrowDownRight, Gem, Wallet, Book, RefreshCw } from 'lucide-react';
+import { Bell, ChevronDown, ArrowRight, ArrowUpRight, ArrowDownRight, Gem, Wallet, Book, RefreshCw, X } from 'lucide-react';
 import { auth } from '../../firebase';
 import { formatCurrency, formatNumber } from '../../lib/tradeUtils';
 
@@ -117,6 +117,52 @@ export function DashboardRightSidebar({
   const totalTradesCount = trades.length;
   const totalJournalsCount = Object.keys(journals).length;
 
+  // Build contextual notifications from real data
+  const notifications = [];
+  if (totalTradesCount === 0) {
+    notifications.push({ id: 'no-trades', emoji: '📋', title: 'Log your first trade', body: 'Head to the Log tab and record your first XAUUSD trade to start tracking your performance.' });
+  }
+  if (totalTradesCount > 0 && Number(winRate) < 40) {
+    notifications.push({ id: 'low-wr', emoji: '⚠️', title: 'Win rate below 40%', body: `Your current win rate is ${winRate}%. Review your losing trades in History to identify patterns.` });
+  }
+  if (totalTradesCount >= 5 && totalJournalsCount === 0) {
+    notifications.push({ id: 'no-journal', emoji: '📝', title: 'Start journaling', body: 'You have trades logged but no journal entries. Journaling helps you reflect and improve faster.' });
+  }
+  if (totalTradesCount > 0 && Number(winRate) >= 60) {
+    notifications.push({ id: 'good-wr', emoji: '🏆', title: `Strong win rate: ${winRate}%`, body: 'Great consistency! Keep analysing your best trades so you can replicate your edge.' });
+  }
+  if (plan !== 'pro') {
+    notifications.push({ id: 'upgrade', emoji: '⚡', title: 'Unlock Pro features', body: 'Auto-sync your MT5 trades, access advanced analytics, and get priority support with Pro.' });
+  }
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [readIds, setReadIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('xau-notif-read') || '[]'); } catch { return []; }
+  });
+  const notifRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const markRead = (id) => {
+    const updated = [...new Set([...readIds, id])];
+    setReadIds(updated);
+    localStorage.setItem('xau-notif-read', JSON.stringify(updated));
+  };
+
+  const markAllRead = () => {
+    const ids = notifications.map(n => n.id);
+    const updated = [...new Set([...readIds, ...ids])];
+    setReadIds(updated);
+    localStorage.setItem('xau-notif-read', JSON.stringify(updated));
+  };
+
   const userEmail = auth.currentUser?.email || 'Trader';
   const userNick = userEmail.split('@')[0];
 
@@ -124,14 +170,75 @@ export function DashboardRightSidebar({
     <div className="flex flex-col gap-6 w-full">
       {/* HEADER SECTION */}
       <div className="hidden lg:flex items-center justify-between bg-card p-3 rounded-2xl border border-border/30 shadow-flat">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 flex items-center justify-center text-muted-foreground/60 hover:text-foreground cursor-pointer transition-colors">
-            <Search className="w-4 h-4" />
-          </div>
-          <div className="w-5 h-5 flex items-center justify-center text-muted-foreground/60 hover:text-foreground cursor-pointer transition-colors relative">
+        {/* Notification Bell */}
+        <div className="relative" ref={notifRef}>
+          <button
+            type="button"
+            onClick={() => setShowNotifications(v => !v)}
+            className="w-8 h-8 flex items-center justify-center rounded-xl border border-border/40 hover:bg-muted text-muted-foreground/70 hover:text-foreground transition-all relative"
+            title="Notifications"
+          >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-primary rounded-full" />
-          </div>
+            {notifications.some(n => !readIds.includes(n.id)) && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full ring-2 ring-card" />
+            )}
+          </button>
+
+          {/* Dropdown Panel */}
+          {showNotifications && (
+            <div className="absolute top-[calc(100%+8px)] left-0 z-50 w-72 bg-card border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
+              {/* Panel Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/20">
+                <span className="text-[11px] font-black uppercase tracking-widest text-foreground">Notifications</span>
+                <div className="flex items-center gap-2">
+                  {notifications.some(n => !readIds.includes(n.id)) && (
+                    <button
+                      type="button"
+                      onClick={markAllRead}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowNotifications(false)}
+                    className="text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Notification List */}
+              <div className="max-h-72 overflow-y-auto divide-y divide-border/10">
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-[11px] text-muted-foreground font-medium">
+                    You're all caught up 🎉
+                  </div>
+                ) : (
+                  notifications.map(n => (
+                    <div
+                      key={n.id}
+                      className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-default ${
+                        readIds.includes(n.id) ? 'opacity-50' : 'bg-muted/10 hover:bg-muted/20'
+                      }`}
+                      onClick={() => markRead(n.id)}
+                    >
+                      <span className="text-lg leading-none mt-0.5">{n.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-foreground leading-snug">{n.title}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{n.body}</p>
+                      </div>
+                      {!readIds.includes(n.id) && (
+                        <span className="w-2 h-2 bg-primary rounded-full mt-1.5 shrink-0" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2.5">
