@@ -238,7 +238,7 @@ export function DashboardRightSidebar({
           type="button"
           onClick={fetchRate}
           disabled={loading}
-          className="w-full h-11 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary/95 transition-all flex items-center justify-center gap-2 group hover:shadow-lg hover:shadow-primary/10"
+          className="w-full h-11 btn-apple-primary"
         >
           <span>Convert</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

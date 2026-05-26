@@ -290,13 +290,13 @@ export function LogTradePage() {
         <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
           <button
             onClick={() => setShowPricingModal(true)}
-            className="flex-1 h-14 bg-primary text-primary-foreground font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+            className="flex-1 h-14 btn-apple-primary text-xs"
           >
             Go Pro Now
           </button>
           <button
             onClick={() => auth.signOut()}
-            className="flex-1 h-14 bg-muted border border-border/40 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-muted/80 transition-all text-foreground/50"
+            className="flex-1 h-14 btn-apple-secondary text-[10px]"
           >
             Logout
           </button>
@@ -395,48 +395,38 @@ export function LogTradePage() {
 
       {/* TABS SECTION */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/20 pb-4">
-        <div className="flex gap-1.5 bg-muted/20 p-1 rounded-2xl border border-border/10">
+        <div className="glass-tab-container">
           <button
             onClick={() => setActiveTab('chart')}
-            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === 'chart' ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'
-            }`}
+            className={`glass-tab-button ${activeTab === 'chart' ? 'glass-tab-button-active' : ''}`}
           >
             Performance Chart
           </button>
           <button
             onClick={() => setActiveTab('log')}
-            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === 'log' ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'
-            }`}
+            className={`glass-tab-button ${activeTab === 'log' ? 'glass-tab-button-active' : ''}`}
           >
             Log Trade
           </button>
           <button
             onClick={() => setActiveTab('logs')}
-            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-              activeTab === 'logs' ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'
-            }`}
+            className={`glass-tab-button ${activeTab === 'logs' ? 'glass-tab-button-active' : ''}`}
           >
             Recent Logs
           </button>
         </div>
 
         {/* TIMESCALE SELECTORS */}
-        <div className="flex gap-1 bg-muted/20 p-1 rounded-2xl border border-border/10">
+        <div className="glass-tab-container">
           <button
             onClick={() => setEquityPeriod('30')}
-            className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
-              equityPeriod === '30' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'
-            }`}
+            className={`glass-tab-button ${equityPeriod === '30' ? 'glass-tab-button-active' : ''}`}
           >
             30 Days
           </button>
           <button
             onClick={() => setEquityPeriod('all')}
-            className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
-              equityPeriod === 'all' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'
-            }`}
+            className={`glass-tab-button ${equityPeriod === 'all' ? 'glass-tab-button-active' : ''}`}
           >
             All Time
           </button>
@@ -618,8 +608,8 @@ export function LogTradePage() {
 
               <button
                 type="submit"
-                disabled={saving}
-                className={`w-full h-12 bg-primary text-white text-[11px] font-black tracking-widest uppercase rounded-xl hover:bg-primary/95 transition-all shadow-xl shadow-primary/10 active:scale-95 hover:shadow-none ${isLimitReached ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                disabled={saving || isLimitReached}
+                className={`w-full h-12 btn-apple-primary text-[11px] ${isLimitReached ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
               >
                 {saving ? 'Saving...' : isLimitReached ? 'Limit Exceeded' : 'Save Trade'}
               </button>
@@ -672,30 +662,30 @@ export function LogTradePage() {
       {/* 4 PASTEL CARDS STATS GRID */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Card 1: Win Rate */}
-        <div className="bg-pastel-green p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Win Rate</span>
+        <div className="card-pastel-green-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-md">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Win Rate</span>
           <p className="text-2xl font-black tracking-tight">{winRate}%</p>
-          <p className="text-[9px] font-bold opacity-75">Percentage of winning logs</p>
+          <p className="text-[9px] font-bold opacity-70">Percentage of winning logs</p>
         </div>
 
         {/* Card 2: Avg Profit */}
-        <div className="bg-pastel-blue p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Avg Win</span>
+        <div className="card-pastel-blue-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-md">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Avg Win</span>
           <p className="text-2xl font-black tracking-tight">{formatCurrency(avgProfit)}</p>
-          <p className="text-[9px] font-bold opacity-75">Average gain per win</p>
+          <p className="text-[9px] font-bold opacity-70">Average gain per win</p>
         </div>
 
         {/* Card 3: Avg Drawdown */}
-        <div className="bg-pastel-pink p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Avg Loss</span>
+        <div className="card-pastel-pink-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-md">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Avg Loss</span>
           <p className="text-2xl font-black tracking-tight">{formatCurrency(avgLoss)}</p>
-          <p className="text-[9px] font-bold opacity-75">Average loss per drawdown</p>
+          <p className="text-[9px] font-bold opacity-70">Average loss per drawdown</p>
         </div>
 
         {/* Card 4: Wallet Balance */}
-        <div className="bg-pastel-yellow p-5 rounded-3xl border shadow-flat flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 relative overflow-hidden group">
+        <div className="card-pastel-yellow-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 relative overflow-hidden group hover:shadow-md">
           <div className="flex justify-between items-start">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Balance</span>
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Balance</span>
             {!isEditingBalance && plan === 'pro' && (
               <button 
                 onClick={() => setIsEditingBalance(true)}
@@ -712,14 +702,14 @@ export function LogTradePage() {
                 value={tempBalance}
                 onChange={e => setTempBalance(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSaveBalance()}
-                className="w-full h-7 px-1 text-xs font-bold border border-primary bg-background rounded"
+                className="w-full h-7 px-1 text-xs font-bold border border-primary bg-background rounded text-foreground"
               />
               <button onClick={handleSaveBalance} className="text-[10px] font-black text-primary uppercase">Save</button>
             </div>
           ) : (
             <>
               <p className="text-2xl font-black tracking-tight">{formatCurrency(currentWalletBalance)}</p>
-              <p className="text-[9px] font-bold opacity-75">Total account equity</p>
+              <p className="text-[9px] font-bold opacity-70">Total account equity</p>
             </>
           )}
         </div>
@@ -775,7 +765,7 @@ export function LogTradePage() {
           />
           <button
             type="submit"
-            className="h-11 px-5 bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shrink-0 hover:shadow-none"
+            className="h-11 px-5 btn-apple-yellow text-[10px] shrink-0"
           >
             Submit
           </button>
