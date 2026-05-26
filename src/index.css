@@ -67,7 +67,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-weight: 500; /* Increased to medium for enhanced readability in light mode */
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-behavior: smooth;
@@ -181,7 +181,7 @@
 
 /* Typography Enhancements */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-style: normal;
   font-stretch: 100%;
 }
