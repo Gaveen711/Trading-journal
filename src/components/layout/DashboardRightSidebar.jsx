@@ -257,7 +257,7 @@ export function DashboardRightSidebar({
             </div>
             <span className="text-[10px] font-black uppercase tracking-widest text-primary">Upgrade Plan</span>
           </div>
-          <h3 className="text-base font-black tracking-tight mt-1 leading-snug">
+          <h3 className="text-base font-black tracking-tight mt-1 leading-snug text-white">
             {plan === 'pro' ? 'Pro Trading Console Active' : 'Unlock Pro sync with MetaAPI'}
           </h3>
           <p className="text-[10px] text-white/50 leading-relaxed font-bold">
