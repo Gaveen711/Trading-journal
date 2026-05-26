@@ -1,60 +1,12 @@
 import React from 'react';
 
-export function XauEmblem({ className = 'w-6 h-6', glow = true }) {
+export function XauEmblem({ className = 'w-6 h-6' }) {
   return (
-    <svg
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <defs>
-        {glow && (
-          <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.0" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        )}
-        
-        {/* Pink-Purple-Blue gradient matching the user's logo */}
-        <linearGradient id="logo-gradient" x1="15%" y1="85%" x2="85%" y2="15%">
-          <stop offset="0%" stop-color="#ec4899" /> {/* pink-500 */}
-          <stop offset="50%" stop-color="#a855f7" /> {/* purple-500 */}
-          <stop offset="100%" stop-color="#3b82f6" /> {/* blue-500 */}
-        </linearGradient>
-      </defs>
-
-      <g filter={glow ? 'url(#logo-glow)' : undefined}>
-        {/* Outer perfect circle */}
-        <circle cx="50" cy="50" r="38" stroke="url(#logo-gradient)" strokeWidth="4.0" fill="none" />
-
-        {/* Symmetrical Inner Letterforms (X, A, U) with clear spacing to prevent merging */}
-        <g
-          stroke="url(#logo-gradient)"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* X curve on left */}
-          <path d="M 32,25 C 23,32 23,68 32,75" />
-          {/* X diagonals */}
-          <path d="M 23,34 L 37,66" />
-          <path d="M 23,66 L 37,34" />
-          
-          {/* A legs and crossbar (spaced from X and U) */}
-          <path d="M 42,66 L 50,28 L 58,66" />
-          <path d="M 44,54 L 56,54" />
-          
-          {/* U shape (spaced from A) */}
-          <path d="M 63,34 L 63,62 C 63,72 77,72 77,62 L 77,34" />
-          {/* U curve on right */}
-          <path d="M 68,25 C 77,32 77,68 68,75" />
-        </g>
-      </g>
-    </svg>
+    <img 
+      src="/favicon.png" 
+      className={`${className} rounded-full object-contain`} 
+      alt="XAU Emblem" 
+    />
   );
 }
 
@@ -64,11 +16,12 @@ export default function Logo({ className = '', iconSize = 'w-6 h-6', onlyIcon = 
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <XauEmblem className={`${iconSize} shrink-0`} />
-      <span className="text-lg font-black tracking-[0.08em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-indigo-500 to-cyan-400">
-        JOURNAL
-      </span>
+    <div className={`flex items-center ${className}`}>
+      <img 
+        src="/logo-horizontal.png" 
+        className="h-8 md:h-9 object-contain" 
+        alt="xaujournal" 
+      />
     </div>
   );
 }

@@ -66,7 +66,7 @@ export function PricingPage() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -118,10 +118,9 @@ export function PricingPage() {
       </div>
 
       <header>
-        <nav 
-          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
-            isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
-          }`}
+        <nav
+          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
+            }`}
         >
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
             <Logo iconSize="w-7 h-7" />
@@ -129,13 +128,13 @@ export function PricingPage() {
 
           <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
             {navLinks.map(({ to, label }) => (
-              <Motion.li 
+              <Motion.li
                 key={to}
                 whileHover={{ scale: 1.05, y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <NavLink 
-                  to={to} 
+                <NavLink
+                  to={to}
                   className="text-sm font-medium px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
                 >
                   {label}
@@ -145,26 +144,26 @@ export function PricingPage() {
           </ul>
 
           <div className="flex items-center gap-3 z-[101]">
-            <button 
+            <button
               onClick={toggleTheme}
               className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
               aria-label="Toggle theme"
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button 
-              onClick={() => navigate('/login')} 
+            <button
+              onClick={() => navigate('/login')}
               className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
             >
               Get started
             </button>
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
+                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
             </button>
           </div>
@@ -172,7 +171,7 @@ export function PricingPage() {
 
         <AnimatePresence>
           {mobileMenuOpen && (
-            <Motion.div 
+            <Motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -180,8 +179,8 @@ export function PricingPage() {
               onClick={() => setMobileMenuOpen(false)}
             >
               {/* Close Button on Top Right */}
-              <button 
-                onClick={() => setMobileMenuOpen(false)} 
+              <button
+                onClick={() => setMobileMenuOpen(false)}
                 className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]"
                 aria-label="Close menu"
               >
@@ -192,17 +191,17 @@ export function PricingPage() {
 
               <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
                 {navLinks.map(({ to, label }) => (
-                  <NavLink 
-                    key={to} 
-                    to={to} 
-                    onClick={() => setMobileMenuOpen(false)} 
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={() => setMobileMenuOpen(false)}
                     className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
                   >
                     {label}
                   </NavLink>
                 ))}
-                <button 
-                  onClick={() => navigate('/login')} 
+                <button
+                  onClick={() => navigate('/login')}
                   className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
                 >
                   Get started
@@ -214,10 +213,10 @@ export function PricingPage() {
       </header>
 
       <main className="relative z-10 px-6 pt-32 pb-24 md:pt-40 md:pb-40 max-w-7xl mx-auto">
-        <Motion.div 
-          variants={containerVariants} 
-          initial="hidden" 
-          animate="visible" 
+        <Motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
         >
 
@@ -225,14 +224,14 @@ export function PricingPage() {
             XAU journal <span className="text-primary">pricing</span>
           </Motion.h1>
           <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
-            Plans for the best gold (XAUUSD) trading journal — free manual logging or Pro with MT5 auto-sync and full analytics.
+            Plans for the best gold (XAUUSD) trading journal free manual logging or Pro with MT5 auto-sync and full analytics.
           </Motion.p>
         </Motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto mb-32 md:mb-48">
-          <Motion.div 
-            initial={{ opacity: 0, y: 40 }} 
-            whileInView={{ opacity: 1, y: 0 }} 
+          <Motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="p-10 md:p-12 rounded-[3rem] border border-white/20 bg-card/40 backdrop-blur-sm flex flex-col hover:border-white/60 transition-all duration-300 shadow-sm"
@@ -245,35 +244,35 @@ export function PricingPage() {
               </div>
               <p className="text-base text-muted-foreground mt-6 leading-relaxed font-medium">Everything you need to master the habit of journaling.</p>
             </div>
-            
+
             <ul className="flex-1 space-y-5 mb-10">
-              {FREE_FEATURES.map(f=>(
+              {FREE_FEATURES.map(f => (
                 <li key={f} className="flex items-center gap-4 text-sm font-semibold text-foreground/80">
                   <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                   </div>
                   {f}
                 </li>
               ))}
             </ul>
-            
-            <button 
-              onClick={() => navigate('/login')} 
+
+            <button
+              onClick={() => navigate('/login')}
               className="w-full py-3.5 sm:py-5 rounded-2xl border-2 border-border/60 bg-transparent text-foreground font-bold tracking-wide hover:bg-foreground hover:text-background transition-all duration-300"
             >
               Get started free
             </button>
           </Motion.div>
 
-          <Motion.div 
-            initial={{ opacity: 0, y: 40 }} 
-            whileInView={{ opacity: 1, y: 0 }} 
+          <Motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative p-10 md:p-12 rounded-[3rem] border-2 border-white/30 bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            
+
             <div className="mb-10 relative z-10">
               <div className="flex justify-between items-start mb-6">
                 <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">Institutional</p>
@@ -288,20 +287,20 @@ export function PricingPage() {
               <p className="text-sm text-primary font-bold mt-3">Monthly subscription · Cancel anytime</p>
               <p className="text-base text-muted-foreground mt-6 leading-relaxed font-medium">The complete professional suite for high-performance gold traders.</p>
             </div>
-            
+
             <ul className="flex-1 space-y-5 mb-10 relative z-10">
-              {PRO_FEATURES.map(f=>(
+              {PRO_FEATURES.map(f => (
                 <li key={f} className="flex items-center gap-4 text-sm font-bold text-foreground">
                   <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                   </div>
                   {f}
                 </li>
               ))}
             </ul>
-            
-            <button 
-              onClick={handleUpgradeClick} 
+
+            <button
+              onClick={handleUpgradeClick}
               className="w-full py-3.5 sm:py-5 rounded-2xl bg-primary text-primary-foreground font-black tracking-wide shadow-xl shadow-primary/20 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative z-10"
             >
               Upgrade to Pro
@@ -310,17 +309,17 @@ export function PricingPage() {
         </div>
 
         <div className="max-w-3xl mx-auto">
-          <Motion.div 
-            initial={{ opacity: 0, y: 30 }} 
-            whileInView={{ opacity: 1, y: 0 }} 
-            viewport={{ once: true }} 
+          <Motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Common questions</h2>
             <p className="text-muted-foreground font-medium">Everything you need to know about xaujournal Pro.</p>
           </Motion.div>
-          
+
           <FAQAccordion />
         </div>
       </main>
@@ -334,7 +333,7 @@ export function PricingPage() {
                 Empowering traders with clarity and institutional grade analytics.
               </p>
             </div>
-            
+
             <div className="flex flex-col items-center md:items-end gap-6">
               <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end">
                 <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
@@ -349,20 +348,19 @@ export function PricingPage() {
         </div>
       </footer>
 
-      <button 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
-          isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+          }`}
         aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
       </button>
 
       {showTerms && (
-        <ProTermsModal 
-          onAccept={handleAcceptTerms} 
-          onClose={() => setShowTerms(false)} 
+        <ProTermsModal
+          onAccept={handleAcceptTerms}
+          onClose={() => setShowTerms(false)}
         />
       )}
     </div>

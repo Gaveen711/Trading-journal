@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
+import { secureHeaders } from 'hono/secure-headers'
 import crypto from 'crypto'
 
 // Import shared helpers (using JS files under /api)
@@ -20,6 +21,9 @@ type Env = {}
 type Variables = Record<string, unknown>
 
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>().basePath('/api')
+
+// ── Secure Headers Middleware ──────────────────────────────────────────────
+app.use('*', secureHeaders())
 
 // ── CORS Middleware ─────────────────────────────────────────────────────────
 const allowedOrigins = [
