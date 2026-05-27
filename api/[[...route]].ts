@@ -124,7 +124,7 @@ app.post('/auth-utils', async (c) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            event: { token, siteKey: '6LfSRMosAAAAAJkpsSHRweUx48z1amorEE2Abqe7', expectedAction: recaptchaAction }
+            event: { token, siteKey: process.env.VITE_RECAPTCHA_SITE_KEY || '6LfSRMosAAAAAJkpsSHRweUx48z1amorEE2Abqe7', expectedAction: recaptchaAction }
           })
         }
       )
@@ -545,6 +545,17 @@ app.post('/checkout', async (c) => {
     return c.json({ error: 'Missing required checkout fields.' }, 400)
   }
 
+  const ALLOWED_ORIGINS = [
+    'https://xaujournal.com',
+    'https://www.xaujournal.com',
+    'https://xaujournal.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+  ]
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    return c.json({ error: 'Invalid origin' }, 400)
+  }
+
   const authHeader = c.req.header('Authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized: Missing token.' }, 401)
@@ -632,6 +643,11 @@ app.post('/paypal-capture', async (c) => {
       return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
     }
 
+    const existingCapture = await db.collection('paypalCaptures').doc(orderId).get()
+    if (existingCapture.exists) {
+      return c.json({ success: true, alreadyProcessed: true })
+    }
+
     const capture = await captureOrder(orderId)
     if (capture.status !== 'COMPLETED') {
       return c.json({ error: 'Payment was not completed.' }, 400)
@@ -647,6 +663,11 @@ app.post('/paypal-capture', async (c) => {
       paypalCaptureId: capture.purchase_units?.[0]?.payments?.captures?.[0]?.id || null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true })
+
+    await db.collection('paypalCaptures').doc(orderId).set({
+      processedAt: now(),
+      userId
+    })
 
     return c.json({ success: true, planExpiry: planExpiry.toISOString() })
   } catch (error: any) {
@@ -820,6 +841,13 @@ app.post('/sync-trade', async (c) => {
     return c.json({ error: 'Missing: event, positionId, symbol' }, 400)
   }
 
+  if (body.comment && typeof body.comment === 'string' && body.comment.length > 500) {
+    return c.json({ error: 'comment exceeds 500 characters' }, 400)
+  }
+  if (symbol && typeof symbol === 'string' && symbol.length > 20) {
+    return c.json({ error: 'invalid symbol' }, 400)
+  }
+
   const tradeRef = db.collection('users').doc(uid).collection('trades').doc(`pos_${positionId}`)
 
   let result
@@ -837,68 +865,51 @@ app.post('/sync-trade', async (c) => {
 })
 
 // ── 10. Trades Route ─────────────────────────────────────────────────────────
-app.post('/trades', async (c) => {
-  const apiKey = c.req.header('x-api-key')
-  if (!apiKey || !apiKey.startsWith('xau_live_')) {
-    return c.json({ error: 'Missing or invalid API key' }, 401)
-  }
+// Legacy /trades endpoint removed (HIGH-01)
 
-  const snapshot = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get()
-  if (snapshot.empty) {
-    return c.json({ error: 'API key not found' }, 401)
-  }
+// ── 10b. Reset Trades Route ──────────────────────────────────────────────────
+app.post('/reset-trades', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
 
-  const uid = snapshot.docs[0].id
-  const user = snapshot.docs[0].data()
-
-  if (user.plan !== 'pro') {
-    return c.json({ error: 'EA sync requires Pro plan' }, 403)
-  }
-
-  let trade;
+  let uid: string
   try {
-    trade = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
+    initAdmin()
+    const decoded = await admin.auth().verifyIdToken(idToken)
+    uid = decoded.uid
+  } catch (err: any) {
+    console.error('[reset-trades] verifyIdToken failed:', err.message)
+    return c.json({ error: 'Invalid or expired token', details: err.message }, 401)
   }
 
-  const required = ['ticket', 'symbol', 'type', 'lots', 'openPrice', 'closePrice', 'pnl']
-  for (const field of required) {
-    if (trade[field] === undefined || trade[field] === null) {
-      return c.json({ error: `Missing field: ${field}` }, 400)
-    }
-  }
-
-  const tradeRef = db.doc(`users/${uid}/trades/${trade.ticket}`)
-  const existing = await tradeRef.get()
-  if (existing.exists) {
-    return c.json({ ok: true, skipped: 'duplicate' })
-  }
-
-  await Promise.all([
-    tradeRef.set({
-      ticket: String(trade.ticket),
-      symbol: trade.symbol,
-      type: trade.type,
-      lots: Number(trade.lots),
-      openPrice: Number(trade.openPrice),
-      closePrice: Number(trade.closePrice),
-      stopLoss: Number(trade.stopLoss || 0),
-      takeProfit: Number(trade.takeProfit || 0),
-      pnl: Number(trade.pnl),
-      commission: Number(trade.commission || 0),
-      swap: Number(trade.swap || 0),
-      openTime: trade.openTime,
-      closeTime: trade.closeTime,
-      source: 'mt5_ea',
-      syncedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }),
-    db.doc(`users/${uid}`).update({
-      totalTradesLogged: admin.firestore.FieldValue.increment(1),
+  try {
+    const auditRef = db.collection('users').doc(uid).collection('auditLogs').doc()
+    await auditRef.set({
+      action: 'RESET_TRADES',
+      confirmedAt: now(),
+      timestamp: new Date().toISOString(),
     })
-  ])
 
-  return c.json({ ok: true, ticket: trade.ticket })
+    const tradesColRef = db.collection('users').doc(uid).collection('trades')
+    const snapshot = await tradesColRef.get()
+
+    if (!snapshot.empty) {
+      const batch = db.batch()
+      snapshot.docs.forEach((doc: any) => batch.delete(doc.ref))
+      await batch.commit()
+    }
+
+    await db.collection('users').doc(uid).set({
+      totalTradesLogged: 0
+    }, { merge: true })
+
+    console.log(`[reset-trades] Wiped trades for uid=${uid}`)
+    return c.json({ success: true, message: 'All trades reset successfully.' })
+  } catch (err: any) {
+    console.error('[reset-trades] Error resetting trades:', err.message)
+    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+  }
 })
 
 // ── 11. TradingView Webhook Route ────────────────────────────────────────────
@@ -986,6 +997,13 @@ app.post('/tv-webhook', async (c) => {
   const { event, positionId, symbol } = body
   if (!event || !positionId || !symbol) {
     return c.json({ error: 'Missing: event, positionId, symbol' }, 400)
+  }
+
+  if (body.comment && typeof body.comment === 'string' && body.comment.length > 500) {
+    return c.json({ error: 'comment exceeds 500 characters' }, 400)
+  }
+  if (symbol && typeof symbol === 'string' && symbol.length > 20) {
+    return c.json({ error: 'invalid symbol' }, 400)
   }
 
   const tradeRef = db.collection('users').doc(uid).collection('trades').doc(`pos_${positionId}`)
@@ -1164,8 +1182,11 @@ app.post('/paypal/webhook', async (c) => {
 
 // ── 13. Cron Jobs ───────────────────────────────────────────────────────────
 const handleBrokerSyncPoller = async (c: any) => {
-  const cronSecret = c.req.header('x-cron-secret')
-  if (cronSecret !== process.env.CRON_SECRET) {
+  const cronSecret = c.req.header('x-cron-secret') || ''
+  const expectedSecret = process.env.CRON_SECRET || ''
+  const a = crypto.createHash('sha256').update(cronSecret).digest()
+  const b = crypto.createHash('sha256').update(expectedSecret).digest()
+  if (!crypto.timingSafeEqual(a, b)) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 

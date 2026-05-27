@@ -1,5 +1,3 @@
-/* eslint-env node */
-/* global process */
 // MetaApi.cloud — MT4/MT5 broker login & deal history (server-side only)
 
 const MetaApi = require('metaapi.cloud-sdk');

@@ -157,9 +157,9 @@ const BROKERS = {
 };
 
 export default function EASetup() {
-  const { plan = 'free', expiry = null, setShowPricingModal: onUpgrade, lastMT5Sync } = useOutletContext();
+  const { plan = 'free', expiry = null, setShowPricingModal: onUpgrade } = useOutletContext();
   const toast = useToast();
-  const { accounts, loading: accountsLoading, loadAccounts, addAccount, syncAccount, removeAccount } = useBrokerAccounts();
+  const { accounts, addAccount, syncAccount, removeAccount } = useBrokerAccounts();
 
   // Platform selection
   const [selectedPlatform, setSelectedPlatform] = useState(null); // 'mt4' | 'mt5' | null
@@ -186,7 +186,6 @@ export default function EASetup() {
 
   // Sync state
   const [syncingAll, setSyncingAll] = useState(false);
-  const [syncingId, setSyncingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
 
   // Plan checks
@@ -572,7 +571,7 @@ export default function EASetup() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-0 top-0 bottom-0 w-11 flex items-center justify-center text-foreground/40 hover:text-foreground/70 transition-colors"
+                  className="absolute right-0 top-0 bottom-0 w-11 flex items-center justify-center text-foreground/40 hover:text-foreground/70 bg-transparent hover:bg-transparent border-0 hover:border-0 outline-none focus:outline-none z-10 btn-no-glow hover:!shadow-none hover:!translate-y-0 transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeSlashFill className="w-4 h-4" /> : <EyeFill className="w-4 h-4" />}

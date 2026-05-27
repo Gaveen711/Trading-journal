@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, deleteDoc, updateDoc, addDoc, doc, query, orderBy, serverTimestamp, increment, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, serverTimestamp, increment, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useTrades(user) {
@@ -9,11 +9,15 @@ export function useTrades(user) {
 
   useEffect(() => {
     if (!user) {
-      setIsLoading(false);
+      Promise.resolve().then(() => {
+        setIsLoading(false);
+      });
       return;
     }
 
-    setIsLoading(true);
+    Promise.resolve().then(() => {
+      setIsLoading(true);
+    });
     const q = query(
       collection(db, 'users', user.uid, 'trades'),
       orderBy('date', 'desc')
@@ -71,20 +75,33 @@ export function useTrades(user) {
   };
 
   const removeTrade = async (id) => {
-    await deleteDoc(doc(db, 'users', user.uid, 'trades', id));
+    if (!user?.uid) throw new Error('Not authenticated');
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'users', user.uid, 'trades', id));
+    batch.update(doc(db, 'users', user.uid), {
+      totalTradesLogged: increment(-1)
+    });
+    await batch.commit();
   };
 
   const editTrade = async (id, updatedData) => {
-    // We explicitly keep the id if it exists in updatedData to maintain record identity
-    await updateDoc(doc(db, 'users', user.uid, 'trades', id), updatedData);
+    const { id: _drop, ...safeData } = updatedData;
+    await updateDoc(doc(db, 'users', user.uid, 'trades', id), safeData);
   };
 
   const resetTrades = async () => {
-    const { writeBatch, getDocs } = await import('firebase/firestore');
-    const batch    = writeBatch(db);
-    const snapshot = await getDocs(collection(db, 'users', user.uid, 'trades'));
-    snapshot.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
+    if (!user?.uid) throw new Error('Not authenticated');
+    const token = await user.getIdToken();
+    const resp = await fetch('/api/reset-trades', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!resp.ok) {
+      const data = await resp.json();
+      throw new Error(data.error || 'Failed to reset trades');
+    }
   };
 
   return { trades, isLoading, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync };

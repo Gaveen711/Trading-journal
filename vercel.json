@@ -16,7 +16,7 @@
     },
     {
       "path": "/api/cron/broker-sync-poller",
-      "schedule": "0 0 * * *"
+      "schedule": "0 12 * * *"
     }
   ],
   "headers": [

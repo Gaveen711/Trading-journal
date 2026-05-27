@@ -19,6 +19,26 @@ service cloud.firestore {
       match /journals/{journalId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Secure broker accounts
+      match /brokerAccounts/{accountId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Secure API keys (server-only write/read)
+    match /apiKeys/{keyId} {
+      allow read, write: if false;
+    }
+
+    // Secure PayPal Webhooks (server-only)
+    match /paypalWebhookEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Secure PayPal Captures (server-only)
+    match /paypalCaptures/{captureId} {
+      allow read, write: if false;
     }
   }
 }
