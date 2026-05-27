@@ -547,8 +547,124 @@ app.post('/revoke-api-key', async (c) => {
   }
 })
 
-// ── 6. Checkout Route ────────────────────────────────────────────────────────
-// Endpoints temporarily disabled while migrating to Paddle
+// ── 6. Paddle Checkout Verification Route ────────────────────────────────────
+app.post('/paddle-success', async (c) => {
+  let body;
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+
+  const { transactionId, planType = 'pro_monthly', userId } = body
+  if (!transactionId || !userId) {
+    return c.json({ error: 'Missing required validation parameters.' }, 400)
+  }
+
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized: Missing token.' }, 401)
+  }
+
+  const token = authHeader.split(' ')[1]
+
+  try {
+    initAdmin()
+    if (!admin.apps.length) {
+      throw new Error('Firebase Admin not initialised.')
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(token)
+    if (decodedToken.uid !== userId) {
+      return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
+    }
+
+    // Verify transaction with Paddle Billing API
+    const isSandbox = (process.env.VITE_PADDLE_ENVIRONMENT || 'sandbox').toLowerCase() === 'sandbox';
+    const paddleApiUrl = isSandbox ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
+    const paddleApiKey = process.env.PADDLE_API_KEY;
+
+    if (!paddleApiKey) {
+      throw new Error('Server configuration error: Missing Paddle API Key.');
+    }
+
+    const paddleResponse = await fetch(`${paddleApiUrl}/transactions/${transactionId}`, {
+      headers: {
+        'Authorization': `Bearer ${paddleApiKey}`
+      }
+    });
+
+    if (!paddleResponse.ok) {
+      const errorText = await paddleResponse.text();
+      throw new Error(`Failed to verify transaction with Paddle: ${errorText}`);
+    }
+
+    const paddleData: any = await paddleResponse.json();
+    const transaction = paddleData.data;
+
+    if (!transaction) {
+      throw new Error('Invalid transaction response from Paddle.');
+    }
+
+    // Validate transaction details
+    const status = transaction.status?.toLowerCase();
+    if (status !== 'completed' && status !== 'billed') {
+      return c.json({ error: `Transaction is not completed. Status: ${transaction.status}` }, 400);
+    }
+
+    const transactionUserId = transaction.custom_data?.userId;
+    const transactionPlanType = transaction.custom_data?.planType;
+
+    if (transactionUserId !== userId) {
+      return c.json({ error: 'Forbidden: Transaction user ID mismatch.' }, 403);
+    }
+
+    const planExpiryDefault = new Date();
+    planExpiryDefault.setDate(planExpiryDefault.getDate() + 7); // Default fallback
+
+    const subscriptionId = transaction.subscription_id;
+    let isTrial = true;
+    let planExpiry = planExpiryDefault;
+
+    if (subscriptionId) {
+      try {
+        const subResponse = await fetch(`${paddleApiUrl}/subscriptions/${subscriptionId}`, {
+          headers: {
+            'Authorization': `Bearer ${paddleApiKey}`
+          }
+        });
+        if (subResponse.ok) {
+          const subData: any = await subResponse.json();
+          const subscription = subData.data;
+          if (subscription) {
+            isTrial = subscription.status === 'trialing';
+            if (subscription.next_billed_at) {
+              planExpiry = new Date(subscription.next_billed_at);
+            }
+          }
+        } else {
+          console.warn(`[paddle-success] Failed to fetch subscription ${subscriptionId}:`, subResponse.statusText);
+        }
+      } catch (subErr: any) {
+        console.error('[paddle-success] Error fetching subscription details:', subErr.message || subErr);
+      }
+    }
+
+    await db.collection('users').doc(userId).set({
+      plan: 'pro',
+      isTrial,
+      planExpiry: planExpiry.toISOString(),
+      paddleTransactionId: transactionId,
+      paddleSubscriptionId: subscriptionId || null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return c.json({ success: true, planExpiry: planExpiry.toISOString(), isTrial });
+  } catch (error: any) {
+    console.error('[paddle-success] error:', error.message || error);
+    return c.json({ error: `Paddle verification failed: ${error.message || 'unknown error'}` }, 500);
+  }
+})
 
 // ── 8. Save Trade Route ──────────────────────────────────────────────────────
 app.post('/save-trade', async (c) => {

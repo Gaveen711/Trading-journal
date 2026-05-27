@@ -21,6 +21,7 @@ export function useSubscription(user) {
   const [subscription, setSubscription] = useState({ 
     plan: 'free', 
     expiry: null, 
+    isTrial: false,
     isLoading: true, 
     agreedToTerms: false 
   });
@@ -28,7 +29,7 @@ export function useSubscription(user) {
 
   useEffect(() => {
     if (!user) {
-      setSubscription({ plan: 'free', expiry: null, isLoading: false });
+      setSubscription({ plan: 'free', expiry: null, isTrial: false, isLoading: false });
       return;
     }
 
@@ -50,6 +51,7 @@ export function useSubscription(user) {
             setSubscription({ 
               plan: 'free', 
               expiry: data.planExpiry, 
+              isTrial: false,
               totalTrades: data.totalTradesLogged || 0,
               totalJournals: data.totalJournalsLogged || 0,
               agreedToTerms: data.agreedToTerms || false,
@@ -59,6 +61,7 @@ export function useSubscription(user) {
             setSubscription({ 
               plan: 'pro', 
               expiry: data.planExpiry, 
+              isTrial: data.isTrial || false,
               totalTrades: data.totalTradesLogged || 0,
               totalJournals: data.totalJournalsLogged || 0,
               agreedToTerms: data.agreedToTerms || false,
@@ -70,6 +73,7 @@ export function useSubscription(user) {
           setSubscription({ 
             plan: data.plan || 'free', 
             expiry: data.planExpiry || null, 
+            isTrial: data.isTrial || false,
             totalTrades: data.totalTradesLogged || 0,
             totalJournals: data.totalJournalsLogged || 0,
             agreedToTerms: data.agreedToTerms || false,
@@ -79,7 +83,7 @@ export function useSubscription(user) {
       } else {
         // Create profile if missing
         setDoc(doc(db, "users", user.uid), { plan: 'free', totalTradesLogged: 0, totalJournalsLogged: 0, agreedToTerms: false }, { merge: true });
-        setSubscription({ plan: 'free', expiry: null, totalTrades: 0, totalJournals: 0, agreedToTerms: false, isLoading: false });
+        setSubscription({ plan: 'free', expiry: null, isTrial: false, totalTrades: 0, totalJournals: 0, agreedToTerms: false, isLoading: false });
       }
     });
 
@@ -112,6 +116,9 @@ export function useSubscription(user) {
         customData: {
           userId: user.uid,
           planType: planType
+        },
+        settings: {
+          successUrl: `${window.location.origin}/app/checkout-success?planType=${planType}`
         }
       });
     } catch (error) {

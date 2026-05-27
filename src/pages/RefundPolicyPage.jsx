@@ -164,7 +164,7 @@ export function RefundPolicyPage() {
   };
 
   const navLinks = [
-    { to: '/', label: 'Home' },
+    { to: '/#features', label: 'How it works' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' },
   ];

@@ -3,7 +3,7 @@ import { XLg, CheckCircleFill, CheckCircle } from 'react-bootstrap-icons';
 import { ProTermsModal } from './ProTermsModal';
 import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY } from '../lib/pricing';
 
-export function PricingModal({ plan, expiry, onSubscribe, onClose, recordProAcceptance }) {
+export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClose, recordProAcceptance }) {
   const [showTerms, setShowTerms] = useState(false);
   const SUB_LIMITS = { freeTrades: 50, freeJournals: 10 };
 
@@ -105,11 +105,11 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose, recordProAcce
             {plan === 'pro' ? (
               <div className="space-y-2">
                 <button disabled className="w-full py-3.5 rounded-xl bg-primary/10 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">
-                  Pro Active
+                  {isTrial ? 'Pro Active (Trial)' : 'Pro Active'}
                 </button>
                 {expiry && (
                   <p className="text-[9px] text-center text-primary/60 font-black uppercase tracking-widest">
-                    Renews: {new Date(expiry).toLocaleDateString()}
+                    {isTrial ? `Trial Expires: ${new Date(expiry).toLocaleDateString()}` : `Renews: ${new Date(expiry).toLocaleDateString()}`}
                   </p>
                 )}
               </div>
