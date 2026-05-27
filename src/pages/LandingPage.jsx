@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate, Link } from 'react-router-dom';
+import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import Logo from '../components/Logo';
@@ -96,12 +96,25 @@ const STATS = [
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
   const canvasRef = useRef(null);
   const gradientRef = useRef(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+
+  useEffect(() => {
+    if (location.hash === '#features') {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('features');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash]);
 
   useEffect(() => {
     injectJsonLd('ld-org', buildOrganizationSchema());
@@ -249,7 +262,7 @@ export function LandingPage() {
   };
 
   const navLinks = [
-    { to: '/', label: 'Home' },
+    { to: '/#features', label: 'How it works' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' },
   ];
@@ -268,7 +281,13 @@ export function LandingPage() {
         <nav
           className="fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 bg-background/30 backdrop-blur-md border-b border-border/10 transition-all duration-300"
         >
-          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
+          <button
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              navigate('/', { replace: true });
+            }}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]"
+          >
             <Logo iconSize="w-7 h-7" />
           </button>
 
@@ -281,6 +300,15 @@ export function LandingPage() {
               >
                 <NavLink
                   to={to}
+                  onClick={(e) => {
+                    if (to.startsWith('/#')) {
+                      const hash = to.split('#')[1];
+                      if (window.location.pathname === '/') {
+                        e.preventDefault();
+                        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }}
                   className="text-sm font-semibold px-4 py-2 rounded-full text-foreground/80 hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
                 >
                   {label}
@@ -340,7 +368,16 @@ export function LandingPage() {
                   <NavLink
                     key={to}
                     to={to}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={(e) => {
+                      setMobileMenuOpen(false);
+                      if (to.startsWith('/#')) {
+                        const hash = to.split('#')[1];
+                        if (window.location.pathname === '/') {
+                          e.preventDefault();
+                          document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }
+                    }}
                     className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
                   >
                     {label}
@@ -644,7 +681,7 @@ export function LandingPage() {
               <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
                 <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
                 <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-                <li><Link to="/login" className="hover:text-primary transition-colors">Login</Link></li>
+                <li><Link to="/login?mode=signin" className="hover:text-primary transition-colors">Login</Link></li>
               </ul>
             </div>
 

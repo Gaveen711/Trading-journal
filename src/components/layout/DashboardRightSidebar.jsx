@@ -62,6 +62,8 @@ function CurrencySelect({ value, onChange }) {
 
 export function DashboardRightSidebar({
   plan,
+  isTrial = false,
+  expiry = null,
   trades = [],
   journals = [],
   walletBalance = 0,
@@ -362,24 +364,39 @@ export function DashboardRightSidebar({
             <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-primary">
               <Gem className="w-3.5 h-3.5" />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Upgrade Plan</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+              {plan === 'pro' && isTrial ? '7-Day Free Trial' : 'Upgrade Plan'}
+            </span>
           </div>
           <h3 className="text-base font-black tracking-tight mt-1 leading-snug text-white">
-            {plan === 'pro' ? 'Pro Trading Console Active' : 'Unlock Pro sync with MetaAPI'}
+            {plan === 'pro' 
+              ? (isTrial ? 'Pro Trial Active' : 'Pro Trading Console Active') 
+              : 'Unlock Pro sync with MetaAPI'}
           </h3>
           <p className="text-[10px] text-white/50 leading-relaxed font-bold">
-            {plan === 'pro' ? 'Enjoy unlimited sync logs, automated MT5 metrics, and priority analytics.' : 'Ver 1.0.4 · Connect MT5/MT4, enjoy unlimited logs, and premium reports.'}
+            {plan === 'pro' 
+              ? (isTrial 
+                  ? `You are upgraded to Pro tier! Your 7-day free trial is currently active. ${(() => {
+                      if (!expiry) return '7';
+                      const diffTime = new Date(expiry) - new Date();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      return Math.max(0, diffDays);
+                    })()} days remaining.`
+                  : 'Enjoy unlimited sync logs, automated MT5 metrics, and priority analytics.') 
+              : 'Ver 1.0.4 · Connect MT5/MT4, enjoy unlimited logs, and premium reports.'}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowPricingModal?.(true)}
-          className="w-full h-10 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/90 transition-all flex items-center justify-center gap-2 z-10"
-        >
-          <span>Let's Go</span>
-          <ArrowRight className="w-3 h-3 text-black" />
-        </button>
+        {plan === 'pro' && !isTrial ? null : (
+          <button
+            type="button"
+            onClick={() => setShowPricingModal?.(true)}
+            className="w-full h-10 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/90 transition-all flex items-center justify-center gap-2 z-10"
+          >
+            <span>{isTrial ? 'View Plan Details' : 'Let\'s Go'}</span>
+            <ArrowRight className="w-3 h-3 text-black" />
+          </button>
+        )}
       </div>
     </div>
   );

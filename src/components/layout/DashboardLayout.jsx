@@ -28,7 +28,7 @@ import { useWallet } from '../../hooks/useWallet';
 import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 
-export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
+export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,7 +99,9 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricin
           <Logo iconSize="w-8 h-8" />
           <div className="flex flex-col">
             <span className="text-xs font-black tracking-widest uppercase text-foreground">XAU Journal</span>
-            <span className="text-[9px] font-black uppercase text-primary tracking-widest">{plan} tier</span>
+            <span className="text-[9px] font-black uppercase text-primary tracking-widest">
+              {plan === 'pro' && isTrial ? 'Pro (Trial)' : `${plan} tier`}
+            </span>
           </div>
         </div>
 
@@ -250,7 +252,7 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricin
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0">
             <Outlet context={{
-              user, plan, expiry, totalTrades, setShowPricingModal, openPortal,
+              user, plan, expiry, isTrial, totalTrades, setShowPricingModal, openPortal,
               trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
               walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
@@ -261,6 +263,8 @@ export function DashboardLayout({ user, plan, expiry, totalTrades, setShowPricin
           <aside className="w-full lg:w-80 shrink-0">
             <DashboardRightSidebar
               plan={plan}
+              isTrial={isTrial}
+              expiry={expiry}
               trades={trades}
               journals={journals}
               walletBalance={walletBalance}

@@ -50,7 +50,7 @@ function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showBrokerSyncUpsell, setShowBrokerSyncUpsell] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { plan, expiry, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
+  const { plan, expiry, isTrial, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
   const { updateBalance } = useWallet(user);
   const toast = useToast();
 
@@ -84,7 +84,7 @@ function AuthenticatedApp({ user }) {
     <ErrorBoundary>
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
+        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} isTrial={isTrial} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
           <Route index element={<LogTradePage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="calendar" element={<CalendarPage />} />
@@ -98,7 +98,7 @@ function AuthenticatedApp({ user }) {
     </Suspense>
     </ErrorBoundary>
 
-      {showPricingModal && <PricingModal plan={plan} expiry={expiry} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
+      {showPricingModal && <PricingModal plan={plan} expiry={expiry} isTrial={isTrial} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
       {showBrokerSyncUpsell && (
         <ProFeatureUpsellModal
           feature="broker-sync"
@@ -189,7 +189,7 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-and-conditions" element={<TermsOfServicePage />} />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
-            <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login" />} />
+            <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login?mode=signin" />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         )}

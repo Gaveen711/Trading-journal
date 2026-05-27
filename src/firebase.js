@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 
 /** Production project — override via VITE_* in .env (see .env.example) */
 const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429';
@@ -22,6 +22,7 @@ const auth = getAuth(app);
 
 export { db, auth, setPersistence, browserLocalPersistence, browserSessionPersistence };
 export const googleProvider = new GoogleAuthProvider();
+export const facebookProvider = new FacebookAuthProvider();
 export default app;
 
 /** Re-export for broker Cloud Functions (optional — set VITE_USE_FIREBASE_CALLABLE=true) */
