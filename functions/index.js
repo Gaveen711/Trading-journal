@@ -121,32 +121,47 @@ async function syncTrades(uid, account) {
       (d.entryType === 'DEAL_ENTRY_OUT' || d.entryType === undefined)
   );
 
-  const batch = db.batch();
+  const tradesColRef = db.collection('users').doc(uid).collection('trades');
+  
+  const validDeals = deals.filter(
+    (deal) => !(deal.entryType && deal.entryType !== 'DEAL_ENTRY_OUT')
+  );
+
+  const refs = validDeals.map((deal) => tradesColRef.doc(String(deal.positionId)));
+  const snapshots = refs.length > 0 ? await db.getAll(...refs) : [];
+  const existingMap = new Map();
+  snapshots.forEach((snap) => {
+    if (snap.exists) {
+      existingMap.set(snap.id, true);
+    }
+  });
+
   let newCount = 0;
+  const CHUNK_SIZE = 500;
+  for (let i = 0; i < validDeals.length; i += CHUNK_SIZE) {
+    const chunk = validDeals.slice(i, i + CHUNK_SIZE);
+    const batch = db.batch();
+    let chunkWrites = 0;
 
-  for (const deal of deals) {
-    if (deal.entryType && deal.entryType !== 'DEAL_ENTRY_OUT') continue;
+    for (const deal of chunk) {
+      if (existingMap.has(String(deal.positionId))) continue;
 
-    const tradeRef = db
-      .collection('users')
-      .doc(uid)
-      .collection('trades')
-      .doc(String(deal.positionId));
+      const tradeRef = tradesColRef.doc(String(deal.positionId));
+      const entryDeal = entryDeals[deal.positionId] || null;
+      const trade = dealToTrade(deal, entryDeal);
+      batch.set(tradeRef, {
+        ...trade,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      chunkWrites++;
+      newCount++;
+    }
 
-    const snap = await tradeRef.get();
-    if (snap.exists) continue;
-
-    const entryDeal = entryDeals[deal.positionId] || null;
-    const trade = dealToTrade(deal, entryDeal);
-    batch.set(tradeRef, {
-      ...trade,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-    newCount++;
+    if (chunkWrites > 0) {
+      await batch.commit();
+    }
   }
-
-  if (newCount > 0) await batch.commit();
 
   try {
     await connection.close();
