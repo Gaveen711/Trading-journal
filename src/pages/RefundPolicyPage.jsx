@@ -12,7 +12,7 @@ const SEO = {
   description:
     'XAU Journal offers a 7-day money-back guarantee. If you are not satisfied with your Pro subscription within 7 days of purchase, contact us for a full refund — no questions asked.',
   keywords:
-    'xaujournal refund policy, gold trading journal refund, 7 day money back guarantee trading app, xau journal subscription refund, forex journal refund, cancel xaujournal subscription, PayPal subscription refund',
+    'xaujournal refund policy, gold trading journal refund, 7 day money back guarantee trading app, xau journal subscription refund, forex journal refund, cancel xaujournal subscription, payment subscription refund',
   canonical: 'https://www.xaujournal.com/refund-policy',
 };
 
@@ -69,7 +69,7 @@ To request a refund under these exceptions, email info@xaujournal.com with your 
   {
     id: 'chargebacks',
     title: '6. Chargebacks & disputes',
-    content: `If you initiate a chargeback or PayPal dispute without first contacting us, your account will be suspended immediately pending resolution. We strongly encourage you to reach out to us first — we are committed to resolving any billing issues fairly and quickly.
+    content: `If you initiate a chargeback or payment dispute without first contacting us, your account will be suspended immediately pending resolution. We strongly encourage you to reach out to us first — we are committed to resolving any billing issues fairly and quickly.
 
 Filing a fraudulent chargeback or dispute may result in permanent account termination and recovery of any refunded amounts through applicable legal channels.`,
   },
@@ -81,13 +81,13 @@ Filing a fraudulent chargeback or dispute may result in permanent account termin
 If you are on the free tier and wish to upgrade, we recommend reviewing the features available on our Pricing page before subscribing so you can make an informed decision.`,
   },
   {
-    id: 'paypal-payments',
-    title: '8. PayPal payments',
-    content: `All subscription payments are processed securely by PayPal. xaujournal does not store your card details, bank information, or PayPal credentials on our servers.
+    id: 'payment-processing',
+    title: '8. Payment processing',
+    content: `All subscription payments are processed securely by our payment partner. xaujournal does not store your card details, bank information, or payment credentials on our servers.
 
-Refunds approved by xaujournal are processed through PayPal and typically appear in your PayPal account or on your original payment method within 3–5 business days, depending on your bank or card issuer. We have no control over how quickly your bank or PayPal processes the credit to your account.
+Refunds approved by xaujournal are processed through our payment partner and typically appear on your original payment method within 3–5 business days, depending on your bank or card issuer. We have no control over how quickly your bank processes the credit to your account.
 
-For questions about a specific PayPal transaction, you may also contact PayPal support directly at www.paypal.com/help.`,
+For questions about a specific transaction, you may also contact our support directly or reference the support details provided on your billing invoice.`,
   },
   {
     id: 'changes',
@@ -338,7 +338,7 @@ export function RefundPolicyPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
                 <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong>
-                You get a full 7-day money-back guarantee on your first Pro subscription. After 7 days, renewals are non-refundable. Cancel anytime and keep access until your billing period ends. Payments and refunds are handled through PayPal.
+                You get a full 7-day money-back guarantee on your first Pro subscription. After 7 days, renewals are non-refundable. Cancel anytime and keep access until your billing period ends. Payments and refunds are handled securely by our payment processor.
               </p>
             </div>
 

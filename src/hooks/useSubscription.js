@@ -1,8 +1,21 @@
 import { useState, useEffect } from 'react';
 import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
+import { initializePaddle } from '@paddle/paddle-js';
 
 import { db } from '../firebase';
 import { useToast } from '../components/ToastContext';
+
+let paddleInstance = null;
+export async function getPaddle() {
+  if (!paddleInstance) {
+    paddleInstance = await initializePaddle({
+      environment: import.meta.env.VITE_PADDLE_ENVIRONMENT || 'sandbox',
+      token: import.meta.env.VITE_PADDLE_CLIENT_TOKEN || ''
+    });
+  }
+  return paddleInstance;
+}
+
 
 export function useSubscription(user) {
   const [subscription, setSubscription] = useState({ 
@@ -73,41 +86,42 @@ export function useSubscription(user) {
     return () => unsub();
   }, [user, toast]);
 
-  const startCheckout = async () => {
+  const startCheckout = async (planType = 'pro_monthly') => {
     try {
-      const token = await user.getIdToken();
-      const resp = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          origin: window.location.origin,
-          email: user.email,
-          userId: user.uid,
-          planType: 'pro_monthly' // Defaulting to pro_monthly for now
-        })
-      });
-      
-      const data = await resp.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.error || 'Failed to create session');
+      const paddle = await getPaddle();
+      if (!paddle) throw new Error("Paddle could not be initialized.");
+
+      const priceId = planType === 'pro_yearly'
+        ? import.meta.env.VITE_PADDLE_YEARLY_PRICE_ID
+        : import.meta.env.VITE_PADDLE_MONTHLY_PRICE_ID;
+
+      if (!priceId) {
+        throw new Error("Payment price configuration is missing.");
       }
+
+      paddle.Checkout.open({
+        items: [
+          {
+            priceId: priceId,
+            quantity: 1
+          }
+        ],
+        customer: {
+          email: user.email
+        },
+        customData: {
+          userId: user.uid,
+          planType: planType
+        }
+      });
     } catch (error) {
       console.error("Checkout Error:", error);
-      toast("Could not initiate secure checkout. Please try again.", "error");
+      toast(error.message || "Could not initiate secure checkout. Please try again.", "error");
     }
   };
 
   const openPortal = () => {
-    const portalUrl = import.meta.env.MODE === 'production'
-      ? 'https://www.paypal.com/myaccount/autopay/'
-      : 'https://www.sandbox.paypal.com/myaccount/autopay/';
-    window.open(portalUrl, '_blank');
-    toast("Open PayPal autopay settings to manage billing.", "info");
+    toast("Billing portal is currently unavailable during our payment gateway transition.", "info");
   };
 
   const recordProAcceptance = async () => {

@@ -10,7 +10,7 @@ import Logo from '../components/Logo';
 const SEO = {
   title: 'Terms of Service | XAU Journal — XAUUSD Gold Trading Journal',
   description:
-    'Read the XAU Journal terms of service. Understand your rights and responsibilities when using our XAUUSD gold trading journal platform, broker connection via Meta API, and PayPal subscription.',
+    'Read the XAU Journal terms of service. Understand your rights and responsibilities when using our XAUUSD gold trading journal platform, broker connection via Meta API, and Pro subscription.',
   keywords:
     'xaujournal terms of service, gold trading journal terms, XAUUSD journal user agreement, xau journal legal, forex trading app terms, Meta API broker connection terms, xaujournal subscription terms, gold trader app terms and conditions',
   canonical: 'https://www.xaujournal.com/terms-and-conditions',
@@ -43,7 +43,7 @@ We reserve the right to suspend or terminate accounts that violate these Terms, 
   {
     id: 'subscriptions',
     title: '4. Subscriptions & billing',
-    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely via PayPal.
+    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely via our payment processor.
 
 Subscriptions auto-renew each billing cycle unless cancelled before the renewal date. You may cancel at any time via the billing portal in your account settings. Cancellation takes effect at the end of the current billing period — you retain Pro access until then.
 
@@ -338,7 +338,7 @@ export function TermsOfServicePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
                 <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">TL;DR:</strong>
-                Use xaujournal responsibly. Your data is yours. We don't give financial advice. Connect your broker securely via Meta API. Pro subscriptions are billed via PayPal, auto-renew monthly, and come with a 7-day money-back guarantee.
+                Use xaujournal responsibly. Your data is yours. We don't give financial advice. Connect your broker securely via Meta API. Pro subscriptions are billed securely, auto-renew monthly, and come with a 7-day money-back guarantee.
               </p>
             </div>
 

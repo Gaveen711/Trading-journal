@@ -25,11 +25,11 @@ Before scaling to real users, you MUST set up budget alerts to prevent unexpecte
 If you ever committed secrets (like Stripe Private Keys or Firebase Service Accounts) to Git history, they are considered compromised.
 
 ### Steps to Rotate:
-1. **Payments (PayPal / provider keys)**:
-   - Go to your payment provider's developer dashboard (e.g., PayPal Developer Dashboard) and locate your client ID and secret.
+1. **Payments (Paddle / provider keys)**:
+   - Go to your payment provider's developer dashboard (e.g., Paddle Dashboard) and locate your client/API keys and secrets.
    - Create new credentials if you suspect compromise.
-   - Update the corresponding environment variables in Vercel (e.g., `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`).
-   - Ensure no legacy payment-provider secrets (e.g., `STRIPE_*`) remain configured in Vercel if they are not used.
+   - Update the corresponding environment variables in Vercel (e.g., `PADDLE_API_KEY`, etc. once integrated).
+   - Ensure no legacy payment-provider secrets (e.g., `PAYPAL_*`, `STRIPE_*`) remain configured in Vercel.
 
 
 

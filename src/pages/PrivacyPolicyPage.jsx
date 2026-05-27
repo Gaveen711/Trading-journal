@@ -28,7 +28,7 @@ const SECTIONS = [
 
 • Usage telemetry — basic interaction signals (feature usage frequency, session counts) used solely to enforce plan limits and improve the product. We never track keystrokes or screen content.
 
-• Billing data — your subscription status and PayPal payment customer ID. We do not store or process card numbers or bank details; all payment data is handled securely by PayPal.`,
+• Billing data — your subscription status and secure customer reference ID. We do not store or process card numbers or bank details; all payment data is handled securely by our payment processor.`,
   },
   {
     id: 'data-security',
@@ -51,11 +51,11 @@ xaujournal is not affiliated with, endorsed by, or responsible for any broker yo
   {
     id: 'payments',
     title: '4. Payments & subscriptions',
-    content: `All financial transactions are processed securely by PayPal. xaujournal does not store credit card numbers, CVVs, PayPal credentials, or bank details on our servers.
+    content: `All financial transactions are processed securely by our PCI-compliant payment partner. xaujournal does not store credit card numbers, CVVs, payment credentials, or bank details on our servers.
 
-When you upgrade to Pro, we create a subscription record linked to your PayPal account and your unique xaujournal identifier. Subscription status (active, cancelled, past due) is synced to our database and used to gate Pro features. You can manage or cancel your subscription at any time via the billing portal in your account settings.
+When you upgrade to Pro, we create a subscription record linked to your payment profile and your unique xaujournal identifier. Subscription status (active, cancelled, past due) is synced to our database and used to gate Pro features. You can manage or cancel your subscription at any time via the billing portal in your account settings.
 
-PayPal maintains its own privacy and security standards including PCI DSS compliance. For information on how PayPal handles your payment data, please refer to PayPal's Privacy Policy at www.paypal.com/privacy.`,
+Our payment partner maintains strict privacy and security standards including PCI DSS compliance. For information on how they handle your payment data, please refer to their privacy policy available during checkout.`,
   },
   {
     id: 'data-sharing',
@@ -63,7 +63,7 @@ PayPal maintains its own privacy and security standards including PCI DSS compli
     content: `We do not sell, rent, or share your personal or trading data with any third party for advertising or commercial purposes. The only third-party services that process your data are:
 
 • Infrastructure partners — secure authentication (Firebase) and cloud storage (Firestore), which provide user-level data isolation.
-• PayPal — payment processing and subscription management for xaujournal Pro.
+• Payment partner — payment processing and subscription management for xaujournal Pro.
 • Vercel — serverless function hosting for the Meta API sync and backend services.
 
 Each of these services maintains its own privacy and security certifications (SOC 2, ISO 27001, PCI DSS). Links to their privacy policies are available on their respective websites.`,
@@ -319,7 +319,7 @@ export function PrivacyPolicyPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
                 <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong>
-                We only collect what's needed to run the app. Your trading data belongs to you. We don't sell it. Payments are handled by PayPal. You can delete everything at any time.
+                We only collect what's needed to run the app. Your trading data belongs to you. We don't sell it. Payments are handled securely. You can delete everything at any time.
               </p>
             </div>
 
