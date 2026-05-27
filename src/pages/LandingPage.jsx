@@ -102,18 +102,6 @@ export function LandingPage() {
   const canvasRef = useRef(null);
   const gradientRef = useRef(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
-  const [heroMouse, setHeroMouse] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const heroRef = useRef(null);
-
-  const handleHeroMouseMove = (e) => {
-    if (!heroRef.current) return;
-    const rect = heroRef.current.getBoundingClientRect();
-    setHeroMouse({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
 
   useEffect(() => {
     injectJsonLd('ld-org', buildOrganizationSchema());
@@ -372,10 +360,6 @@ export function LandingPage() {
 
       <main>
         <section
-          ref={heroRef}
-          onMouseMove={handleHeroMouseMove}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
           className="relative z-10 min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center overflow-hidden"
         >
 
