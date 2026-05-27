@@ -248,29 +248,51 @@ app.post('/broker-login-sync', async (c) => {
       let newTradesCount = 0
       let updatedTradesCount = 0
       const tradesRef = db.collection('users').doc(uid).collection('trades')
-      const batch = db.batch()
 
-      for (const trade of brokerTrades) {
+      const refs = brokerTrades.map((trade: any) => {
         const tradeDocId = `broker_${account.id}_${trade.closeDealTicket}`
-        const tradeRef = tradesRef.doc(tradeDocId)
-        const existing = await tradeRef.get()
-        const tradeData = {
-          ...trade,
-          accountId: account.id,
-          syncedAt: now(),
-          updatedAt: now(),
+        return tradesRef.doc(tradeDocId)
+      })
+
+      const snapshots = refs.length > 0 ? await db.getAll(...refs) : []
+      const existingMap = new Map()
+      snapshots.forEach((snap: any) => {
+        if (snap.exists) {
+          existingMap.set(snap.id, snap.data())
+        }
+      })
+
+      const CHUNK_SIZE = 500
+      for (let i = 0; i < brokerTrades.length; i += CHUNK_SIZE) {
+        const chunk = brokerTrades.slice(i, i + CHUNK_SIZE)
+        const batch = db.batch()
+        let chunkWrites = 0
+
+        for (const trade of chunk) {
+          const tradeDocId = `broker_${account.id}_${trade.closeDealTicket}`
+          const tradeRef = tradesRef.doc(tradeDocId)
+          const exists = existingMap.has(tradeDocId)
+          const tradeData = {
+            ...trade,
+            accountId: account.id,
+            syncedAt: now(),
+            updatedAt: now(),
+          }
+
+          if (!exists) {
+            (tradeData as any).createdAt = now()
+            newTradesCount++
+          } else {
+            updatedTradesCount++
+          }
+          batch.set(tradeRef, tradeData, { merge: true })
+          chunkWrites++
         }
 
-        if (!existing.exists) {
-          (tradeData as any).createdAt = now()
-          newTradesCount++
-        } else {
-          updatedTradesCount++
+        if (chunkWrites > 0) {
+          await batch.commit()
         }
-        batch.set(tradeRef, tradeData, { merge: true })
       }
-
-      await batch.commit()
       await accountRef.update({
         lastSyncTime: now(),
         lastSyncStatus: 'success',
@@ -1250,28 +1272,49 @@ const handleBrokerSyncPoller = async (c: any) => {
           )
 
           const tradesRef = db.collection('users').doc(uid).collection('trades')
-          const batch = db.batch()
+          const refs = brokerTrades.map((trade: any) => {
+            const tradeDocId = `broker_${accountId}_${trade.closeDealTicket}`
+            return tradesRef.doc(tradeDocId)
+          })
+
+          const snapshots = refs.length > 0 ? await db.getAll(...refs) : []
+          const existingMap = new Map()
+          snapshots.forEach((snap: any) => {
+            if (snap.exists) {
+              existingMap.set(snap.id, snap.data())
+            }
+          })
 
           let newCount = 0
-          for (const trade of brokerTrades) {
-            const tradeDocId = `broker_${accountId}_${trade.closeDealTicket}`
-            const tradeRef = tradesRef.doc(tradeDocId)
-            const existing = await tradeRef.get()
+          const CHUNK_SIZE = 500
+          for (let i = 0; i < brokerTrades.length; i += CHUNK_SIZE) {
+            const chunk = brokerTrades.slice(i, i + CHUNK_SIZE)
+            const batch = db.batch()
+            let chunkWrites = 0
 
-            if (!existing.exists) {
-              newCount++
+            for (const trade of chunk) {
+              const tradeDocId = `broker_${accountId}_${trade.closeDealTicket}`
+              const tradeRef = tradesRef.doc(tradeDocId)
+              const exists = existingMap.has(tradeDocId)
+
+              if (!exists) {
+                newCount++
+              }
+
+              batch.set(tradeRef, {
+                ...trade,
+                accountId,
+                syncedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                ...(exists ? {} : { createdAt: new Date().toISOString() }),
+              }, { merge: true })
+              chunkWrites++
             }
 
-            batch.set(tradeRef, {
-              ...trade,
-              accountId,
-              syncedAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              ...(existing.exists ? {} : { createdAt: new Date().toISOString() }),
-            }, { merge: true })
+            if (chunkWrites > 0) {
+              await batch.commit()
+            }
           }
-
-          await batch.commit()
 
           const accountRef = db
             .collection('users').doc(uid)
