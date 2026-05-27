@@ -67,7 +67,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 15px; /* Explicit base size for readability */
     font-weight: 500;
     line-height: 1.55;
@@ -183,7 +183,7 @@
 
 /* Typography Enhancements */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-style: normal;
   font-stretch: 100%;
 }

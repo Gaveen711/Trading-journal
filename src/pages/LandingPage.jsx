@@ -63,7 +63,7 @@ const FEATURES = [
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
     title: 'Session Intelligence',
-    body: 'London, New York, Tokyo — see exactly which session your edge lives in and schedule your trading around it.',
+    body: 'London, New York, Tokyo, Sydney — see exactly which session your edge lives in and schedule your trading around it.',
   },
 ];
 
@@ -102,6 +102,18 @@ export function LandingPage() {
   const canvasRef = useRef(null);
   const gradientRef = useRef(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [heroMouse, setHeroMouse] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const heroRef = useRef(null);
+
+  const handleHeroMouseMove = (e) => {
+    if (!heroRef.current) return;
+    const rect = heroRef.current.getBoundingClientRect();
+    setHeroMouse({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
 
   useEffect(() => {
     injectJsonLd('ld-org', buildOrganizationSchema());
@@ -116,7 +128,7 @@ export function LandingPage() {
   function createGradient(lightMode) {
     const lightColors = [
       { color: '#ffffff', enabled: true },
-      { color: '#f6f7fb', enabled: true },
+      { color: '#2C00FF', enabled: true },
       { color: '#A623F3', enabled: true },
       { color: '#f6f7fb', enabled: true },
       { color: '#ffffff', enabled: true },
@@ -124,9 +136,9 @@ export function LandingPage() {
 
     const darkColors = [
       { color: '#000000', enabled: true },
-      { color: '#000000', enabled: true },
-      { color: '#A623F3', enabled: true },
-      { color: '#000000', enabled: true },
+      { color: '#2C00FF', enabled: true },
+      { color: '#A954FF', enabled: true },
+      { color: '#04001F', enabled: true },
       { color: '#000000', enabled: true },
     ];
 
@@ -224,12 +236,28 @@ export function LandingPage() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.25
+      }
+    },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+    hidden: { opacity: 0, y: 35, scale: 0.97 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 80,
+        damping: 15,
+        mass: 1.1
+      }
+    },
   };
 
   const navLinks = [
@@ -309,8 +337,8 @@ export function LandingPage() {
               onClick={() => setMobileMenuOpen(false)}
             >
               {/* Close Button on Top Right */}
-              <button 
-                onClick={() => setMobileMenuOpen(false)} 
+              <button
+                onClick={() => setMobileMenuOpen(false)}
                 className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]"
                 aria-label="Close menu"
               >
@@ -343,26 +371,34 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="relative z-10 min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center">
-          <Motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-5xl mx-auto flex flex-col items-center">
+        <section
+          ref={heroRef}
+          onMouseMove={handleHeroMouseMove}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="relative z-10 min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 text-center overflow-hidden"
+        >
+
+          <Motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-5xl mx-auto flex flex-col items-center relative z-10">
             <Motion.div
               variants={itemVariants}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-black uppercase mb-10 shadow-[0_0_25px_rgba(139,92,246,0.4)] backdrop-blur-md relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-              Exclusively for gold traders · XAUUSD
+              MT5 Auto-Sync · XAUUSD Specialist
             </Motion.div>
 
             <Motion.div variants={itemVariants}>
-              <h1 className="text-[clamp(2.5rem,8vw,6.5rem)] font-black leading-[0.95] tracking-tighter mb-6 text-foreground">
-                The <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400">XAU journal</span>
-                <span className="block mt-3 text-[clamp(1.5rem,5vw,3.5rem)]">built for gold traders.</span>
+              <h1 className="!text-[clamp(2.5rem,9vw,7.5rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
+                Every trade <br />
+                you make <br />
+                <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic">tells a story.</span>
               </h1>
             </Motion.div>
 
             <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
-              The dedicated XAUUSD trading journal with automated MT5 sync, session analytics, and a P&amp;L calendar built only for XAU/USD, not generic forex pairs.
+              XAU Journal is the precision trading journal built for gold traders track, analyse, and master your edge in XAUUSD.
             </Motion.p>
 
             <Motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
@@ -372,13 +408,13 @@ export function LandingPage() {
               >
                 Start journaling free
               </button>
-              <Link
-                to="/pricing"
+              <button
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="w-full sm:w-auto px-6 py-3 sm:py-5 sm:px-10 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-xs sm:text-base transition-all duration-300 flex items-center justify-center gap-2"
               >
-                See pricing
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </Link>
+                See how it works
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 9l-7 7-7-7" /></svg>
+              </button>
             </Motion.div>
 
             <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 w-full max-w-4xl px-4">
@@ -584,7 +620,7 @@ export function LandingPage() {
             className="max-w-4xl mx-auto relative z-10"
           >
             <span className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-10 inline-block px-4 py-2 rounded-full bg-primary/10">Start for free</span>
-            <h2 className="text-[clamp(3rem,8vw,6rem)] font-black leading-[1] tracking-tighter mb-10 text-foreground">
+            <h2 className="!text-[clamp(4rem,5.5vw,9rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
               Stop guessing.<br />
               <span className="text-gradient">Start knowing.</span>
             </h2>
@@ -637,46 +673,46 @@ export function LandingPage() {
               </ul>
             </div>
 
-            <div className="flex flex-col items-center md:items-end text-center md:text-right">
-              <div className="flex gap-6 mb-8">
-                <Motion.a
-                  href="#"
-                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                  className="text-muted-foreground transition-colors"
-                  aria-label="Facebook"
-                >
-                  <Facebook size={22} />
-                </Motion.a>
-                <Motion.a
-                  href="#"
-                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                  className="text-muted-foreground transition-colors"
-                  aria-label="Instagram"
-                >
-                  <Instagram size={22} />
-                </Motion.a>
-                <Motion.a
-                  href="https://x.com/xau_journal"
-                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                  className="text-muted-foreground transition-colors"
-                  aria-label="X"
-                >
-                  <TwitterX size={22} />
-                </Motion.a>
-                <Motion.a
-                  href="https://discord.gg/smbNwBZC2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                  className="text-muted-foreground transition-colors"
-                  aria-label="Discord"
-                >
-                  <Discord size={22} />
-                </Motion.a>
-              </div>
-              <div className="mt-auto flex flex-col items-center md:items-end gap-2">
+            <div className="flex flex-col items-center md:items-end text-center md:text-right justify-end">
+              <div className="mt-auto flex flex-col items-center md:items-end gap-5">
+                <div className="flex gap-6">
+                  <Motion.a
+                    href="#"
+                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                    className="text-muted-foreground transition-colors"
+                    aria-label="Facebook"
+                  >
+                    <Facebook size={22} />
+                  </Motion.a>
+                  <Motion.a
+                    href="#"
+                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                    className="text-muted-foreground transition-colors"
+                    aria-label="Instagram"
+                  >
+                    <Instagram size={22} />
+                  </Motion.a>
+                  <Motion.a
+                    href="https://x.com/xau_journal"
+                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                    className="text-muted-foreground transition-colors"
+                    aria-label="X"
+                  >
+                    <TwitterX size={22} />
+                  </Motion.a>
+                  <Motion.a
+                    href="https://discord.gg/smbNwBZC2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
+                    className="text-muted-foreground transition-colors"
+                    aria-label="Discord"
+                  >
+                    <Discord size={22} />
+                  </Motion.a>
+                </div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
-                  made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                 </p>
               </div>
             </div>

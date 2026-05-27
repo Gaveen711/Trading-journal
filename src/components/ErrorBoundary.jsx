@@ -26,7 +26,7 @@ export class ErrorBoundary extends React.Component {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '24px',
-            fontFamily: "'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            fontFamily: "'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             background: 'hsl(224 71.4% 2%)',
           }}
         >
