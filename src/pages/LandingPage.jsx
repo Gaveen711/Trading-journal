@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion as Motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion, useScroll, useTransform } from 'framer-motion';
 import Lenis from 'lenis';
 import Logo from '../components/Logo';
 import { NeatGradient } from '@firecms/neat';
@@ -40,26 +40,31 @@ const FEATURES = [
     title: 'Instant MT5 Sync',
     body: 'Effortlessly capture your trade history and sync your performance data to the cloud. Eliminate manual logging and ensure 100% accuracy for every position closed.',
   },
+  
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>,
     title: 'Deep Analytics',
     body: 'Win-rate by session, drawdown clusters, streak analysis, and behavioural heatmaps, every metric purpose-built for clarity.',
   },
+
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
     title: 'Trade Calendar',
     body: 'A month-view calendar shows your P&L heat at a glance. Identify your best and worst days in a single look.',
   },
-  {
-    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>,
-    title: 'Trade Journal',
-    body: 'Attach thoughts, emotions, and notes to each trade. Build an annotated playbook straight from your own history.',
-  },
+  
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
     title: 'Private & Secure Data',
     body: 'Your trading data is yours alone. We use industry-standard encryption and isolated storage protocols to ensure your sensitive performance data remains 100% private. We never track or share your trade details.',
   },
+
+  {
+    icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>,
+    title: 'Trade Journal',
+    body: 'Attach thoughts, emotions, and notes to each trade. Build an annotated playbook straight from your own history.',
+  },
+
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
     title: 'Session Intelligence',
@@ -103,6 +108,20 @@ export function LandingPage() {
   const canvasRef = useRef(null);
   const gradientRef = useRef(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+
+  // Always land on hero section on mount/refresh
+  // Disable browser scroll restoration first so it doesn't override our scroll
+  useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+    return () => {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (location.hash === '#features') {
@@ -467,15 +486,25 @@ export function LandingPage() {
               </p>
             </Motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+            {/* Desktop: draggable + auto-scrolling infinite marquee */}
+            <DraggableMarquee className="hidden sm:block">
+              {[...FEATURES, ...FEATURES].map((f, i) => (
+                <div key={`${f.title}-${i}`} className="w-[300px] lg:w-[340px] shrink-0 px-3">
+                  <FeatureCard {...f} index={i % FEATURES.length} />
+                </div>
+              ))}
+            </DraggableMarquee>
+
+            {/* Mobile: clean full-width accordion */}
+            <div className="sm:hidden mt-8 flex flex-col gap-3">
               {FEATURES.map((f, i) => (
-                <FeatureCard key={f.title} {...f} index={i} />
+                <MobileFeatureAccordion key={f.title} {...f} index={i} />
               ))}
             </div>
           </div>
         </section>
 
-        <section className="relative z-10 py-32 md:py-48 px-6 bg-muted/5 border-y border-border/40 overflow-hidden">
+        <section className="relative z-10 py-32 md:py-48 px-6 bg-muted/5 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
           <div className="max-w-7xl mx-auto">
             <Motion.div
@@ -521,53 +550,9 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="relative z-10 py-32 md:py-48 px-6">
-          <div className="max-w-5xl mx-auto">
-            <Motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-24 md:mb-32"
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest mb-6">
-                <Stars className="w-3 h-3" /> Architecture
-              </div>
-              <h2 className="text-[clamp(2rem,6vw,4rem)] font-black leading-tight tracking-tight mb-8">Built for Scale</h2>
-              <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-                An institutional-grade pipeline ensures your data is always synced, secured, and ready for analysis.
-              </p>
-            </Motion.div>
+        <ScaleTimeline />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
-              {[
-                { label: 'Mobile Access', sub: 'Universal MT5 connectivity for traders on the move.', icon: <Phone className="w-5 h-5" /> },
-                { label: 'Broker Agnostic', sub: 'Seamlessly connects with any MT5 broker worldwide.', icon: <HddNetwork className="w-5 h-5" /> },
-                { label: 'Automated Sync', sub: 'Zero manual entry — your trades are recorded instantly.', icon: <Display className="w-5 h-5" /> },
-                { label: 'Cloud Processing', sub: 'Advanced logic layer handles all complex calculations.', icon: <GearWideConnected className="w-5 h-5" /> },
-                { label: 'Encrypted Vault', sub: 'Military-grade protection for your private trade data.', icon: <DatabaseFill className="w-5 h-5" /> },
-                { label: 'Intelligence Suite', sub: 'Professional dashboard for deep performance insights.', icon: <WindowSidebar className="w-5 h-5" /> },
-              ].map((step, i) => (
-                <Motion.div
-                  key={step.label}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: i * 0.1 }}
-                  className="flex items-center gap-6 bg-card/30 backdrop-blur-md border border-border/40 p-8 rounded-[2.5rem] hover:bg-card/60 hover:border-primary/60 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500 group cursor-default"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                    {step.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{step.label}</h3>
-                    <p className="text-sm text-muted-foreground font-medium leading-tight">{step.sub}</p>
-                  </div>
-                </Motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+
 
         <section id="faq" className="relative z-10 py-32 md:py-40 px-6">
           <div className="max-w-3xl mx-auto">
@@ -753,28 +738,318 @@ export function LandingPage() {
   );
 }
 
+// Desktop marquee card — hover to reveal description
 function FeatureCard({ icon, title, body, index }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <Motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -10, scale: 1.02 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{
-        type: "spring",
-        stiffness: 400,
-        damping: 25,
-        delay: index * 0.05
-      }}
-      className="p-10 rounded-[3rem] bg-card/60 backdrop-blur-md border border-white/20 hover:border-white/60 hover:bg-primary transition-all duration-300 ease-out group shadow-sm hover:shadow-[0_20px_50px_-15px_rgba(139,92,246,0.5)] h-full flex flex-col cursor-default"
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.5, delay: index * 0.07 }}
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+      className="p-8 rounded-[2.5rem] flex flex-col cursor-default select-none transition-all duration-500 ease-out group border border-transparent hover:bg-white/5 hover:border-white/15 hover:shadow-[0_8px_40px_-12px_rgba(139,92,246,0.5)]"
     >
-      <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 flex items-center justify-center text-primary mb-8 group-hover:scale-110 group-hover:bg-white group-hover:text-primary transition-all duration-300 shadow-inner">
+      <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-5 transition-all duration-300 group-hover:bg-primary/25">
         {icon}
       </div>
-      <h3 className="text-2xl font-bold mb-4 tracking-tight group-hover:text-white transition-colors duration-300">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed font-medium text-base group-hover:text-white/90 transition-colors duration-300">{body}</p>
+      <h3 className="text-lg font-bold tracking-tight text-foreground/90 group-hover:text-foreground transition-colors duration-300">{title}</h3>
+      <Motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="overflow-hidden"
+      >
+        <p className="text-muted-foreground leading-relaxed text-sm mt-3">{body}</p>
+      </Motion.div>
     </Motion.div>
   );
 }
 
+// Mobile accordion card — always visible, tap to expand
+function MobileFeatureAccordion({ icon, title, body, index }) {
+  const [isOpen, setIsOpen] = useState(false);
 
+  return (
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
+      className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${
+        isOpen
+          ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_-8px_rgba(139,92,246,0.4)]'
+          : 'bg-white/5 border-white/10'
+      }`}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen(o => !o)}
+        className="w-full flex items-center gap-4 p-4 text-left"
+        aria-expanded={isOpen}
+      >
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+          isOpen ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'
+        }`}>
+          {icon}
+        </div>
+        <span className="flex-1 text-base font-bold text-foreground leading-tight">{title}</span>
+        <Motion.span
+          animate={{ rotate: isOpen ? 45 : 0 }}
+          transition={{ duration: 0.25 }}
+          className="text-primary text-xl font-light shrink-0"
+        >
+          +
+        </Motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <Motion.div
+            key="body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="px-4 pb-4 pl-[3.5rem] text-sm text-muted-foreground leading-relaxed">
+              {body}
+            </p>
+          </Motion.div>
+        )}
+      </AnimatePresence>
+    </Motion.div>
+  );
+}
+
+/**
+ * DraggableMarquee
+ * ─ Auto-scrolls left at a steady pace.
+ * ─ User can grab and drag in either direction at any time.
+ * ─ Loops infinitely by snapping to the halfway point.
+ * ─ Pointer Events API works for both mouse and touch.
+ */
+function DraggableMarquee({ children, className = '', speed = 0.6 }) {
+  const outerRef = useRef(null);
+  const trackRef = useRef(null);
+  const posRef   = useRef(0);
+  const rafRef   = useRef(null);
+  const dragRef  = useRef({ active: false, startX: 0, startPos: 0 });
+  const [grabbing, setGrabbing] = useState(false);
+
+  useEffect(() => {
+    function tick() {
+      const track = trackRef.current;
+      if (!track) { rafRef.current = requestAnimationFrame(tick); return; }
+
+      // Advance position when not dragging
+      if (!dragRef.current.active) {
+        posRef.current -= speed;
+      }
+
+      // Seamless loop: reset at the midpoint (half of total duplicated content)
+      const half = track.scrollWidth / 2;
+      if (posRef.current <= -half) posRef.current += half;
+      if (posRef.current > 0)      posRef.current -= half;
+
+      track.style.transform = `translateX(${posRef.current}px)`;
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [speed]);
+
+  const onPointerDown = (e) => {
+    dragRef.current = { active: true, startX: e.clientX, startPos: posRef.current };
+    outerRef.current?.setPointerCapture(e.pointerId);
+    setGrabbing(true);
+  };
+
+  const onPointerMove = (e) => {
+    if (!dragRef.current.active) return;
+    posRef.current = dragRef.current.startPos + (e.clientX - dragRef.current.startX);
+  };
+
+  const onPointerUp = () => {
+    dragRef.current.active = false;
+    setGrabbing(false);
+  };
+
+  return (
+    <div
+      ref={outerRef}
+      className={`w-full overflow-hidden relative py-10 ${className}`}
+      style={{
+        cursor: grabbing ? 'grabbing' : 'grab',
+        maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+        userSelect: 'none',
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <div
+        ref={trackRef}
+        className="flex items-stretch will-change-transform"
+        style={{ touchAction: 'none' }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   ScaleTimeline
+   Scroll-driven vertical center line + cards
+   branching left & right as the line passes them
+───────────────────────────────────────────── */
+const TIMELINE_ITEMS = [
+  { label: 'Mobile Access',     sub: 'Universal MT5 connectivity for traders on the move.',      icon: <Phone className="w-5 h-5" />,            story: 'Start anywhere.',     side: 'left'  },
+  { label: 'Broker Agnostic',   sub: 'Seamlessly connects with any MT5 broker worldwide.',       icon: <HddNetwork className="w-5 h-5" />,       story: 'Connect everything.', side: 'right' },
+  { label: 'Automated Sync',    sub: 'Zero manual entry — your trades are recorded instantly.',  icon: <Display className="w-5 h-5" />,          story: 'Never miss a trade.', side: 'left'  },
+  { label: 'Cloud Processing',  sub: 'Advanced logic layer handles all complex calculations.',   icon: <GearWideConnected className="w-5 h-5" />, story: 'Crunch the numbers.', side: 'right' },
+  { label: 'Encrypted Vault',   sub: 'Military-grade protection for your private trade data.',  icon: <DatabaseFill className="w-5 h-5" />,     story: 'Stay private.',       side: 'left'  },
+  { label: 'Intelligence Suite',sub: 'Professional dashboard for deep performance insights.',   icon: <WindowSidebar className="w-5 h-5" />,    story: 'Find your edge.',     side: 'right' },
+];
+
+function ScaleTimeline() {
+  const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start 80%', 'end 20%'],
+  });
+  const lineHeight = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+
+  return (
+    <section ref={sectionRef} className="relative z-10 py-20 md:py-28 px-6 overflow-hidden">
+      <div className="max-w-4xl mx-auto">
+
+        {/* Heading */}
+        <Motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, margin: '-60px' }}
+          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center mb-16 md:mb-20"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest mb-5">
+            <Stars className="w-3 h-3" /> Architecture
+          </div>
+          <h2 className="text-[clamp(2rem,6vw,4rem)] font-black leading-tight tracking-tight mb-4">Built for Scale</h2>
+          <p className="text-base md:text-lg text-muted-foreground font-medium max-w-xl mx-auto leading-relaxed">
+            An institutional-grade pipeline ensures your data is always synced, secured, and ready for analysis.
+          </p>
+        </Motion.div>
+
+        {/* Timeline */}
+        <div className="relative">
+
+          {/* Center vertical line track (background) */}
+          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-border/30" />
+
+          {/* Animated line that draws downward on scroll */}
+          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px overflow-hidden">
+            <Motion.div
+              className="w-full bg-gradient-to-b from-primary via-primary/70 to-primary/20 origin-top"
+              style={{ height: lineHeight }}
+            />
+          </div>
+
+          {/* Cards */}
+          <div className="flex flex-col gap-8 md:gap-10">
+            {TIMELINE_ITEMS.map((item, i) => {
+              const isLeft = item.side === 'left';
+              return (
+                <div key={item.label} className="relative flex items-center md:grid md:grid-cols-2 md:gap-8">
+
+                  {/* Left slot */}
+                  <div className={`md:flex md:justify-end ${isLeft ? '' : 'md:invisible'}`}>
+                    {isLeft && (
+                      <Motion.div
+                        initial={{ opacity: 0, x: -80 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: false, margin: '-30px' }}
+                        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.2)] transition-all duration-500 group cursor-default"
+                      >
+                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+                          {item.icon}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-primary/50 bg-primary/5 px-1.5 py-0.5 rounded-full">{item.story}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
+                        </div>
+                      </Motion.div>
+                    )}
+                  </div>
+
+                  {/* Center dot on the line */}
+                  <Motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    viewport={{ once: false, margin: '-30px' }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary shadow-[0_0_12px_rgba(139,92,246,0.8)] z-10"
+                  />
+
+                  {/* Right slot */}
+                  <div className={`md:flex md:justify-start ${!isLeft ? '' : 'md:invisible'}`}>
+                    {!isLeft && (
+                      <Motion.div
+                        initial={{ opacity: 0, x: 80 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: false, margin: '-30px' }}
+                        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.2)] transition-all duration-500 group cursor-default"
+                      >
+                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+                          {item.icon}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-primary/50 bg-primary/5 px-1.5 py-0.5 rounded-full">{item.story}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
+                        </div>
+                      </Motion.div>
+                    )}
+                  </div>
+
+                  {/* Mobile: full-width stacked layout */}
+                  <Motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: false, margin: '-20px' }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="md:hidden w-full flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground mb-0.5">{item.label}</h3>
+                      <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
+                    </div>
+                  </Motion.div>
+
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
