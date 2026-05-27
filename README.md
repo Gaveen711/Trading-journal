@@ -29,7 +29,7 @@ The xaujournal project aims to provide traders with a frictionless, insight-driv
 *   **Frontend**: React (Vite), TailwindCSS-inspired Premium CSS, Chart.js.
 *   **Backend**: Node.js ESM Serverless Functions (Vercel).
 *   **Database & Auth**: Firebase Firestore & Auth.
-*   **Payments**: PayPal (migration in progress) / payment provider.
+*   **Payments**: Paddle (migration in progress) / payment provider.
 *   **Emails**: Resend.
 
 ## ⚖️ Compliance

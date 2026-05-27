@@ -31,7 +31,7 @@ const FAQ = [
   { q: 'Can I cancel anytime?', a: 'Yes. Cancel from the billing portal at any time. You keep Pro access until the end of your billing period no partial month charges.' },
   { q: 'Is my trading data secure?', a: 'Your data is secured using industry standard encryption and isolated cloud storage. Only you have access to your trade history; we cannot read your private logs.' },
   { q: 'How does broker sync work?', a: 'Broker Sync connects directly to your MT4 or MT5 broker server using your login credentials. Once connected, your closed trades are pulled into your journal automatically no extra software required.' },
-  { q: 'What payment methods do you accept?', a: 'All major credit and debit cards and PayPal.' },
+  { q: 'What payment methods do you accept?', a: 'All major credit and debit cards.' },
   { q: 'Is there a free trial for Pro?', a: 'The free plan provides full access to the core journaling experience. We are currently developing a Pro trial experience, sign up to be notified when it launches.' },
 ];
 
