@@ -40,7 +40,7 @@ const FEATURES = [
     title: 'Instant MT5 Sync',
     body: 'Effortlessly capture your trade history and sync your performance data to the cloud. Eliminate manual logging and ensure 100% accuracy for every position closed.',
   },
-  
+
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>,
     title: 'Deep Analytics',
@@ -52,7 +52,7 @@ const FEATURES = [
     title: 'Trade Calendar',
     body: 'A month-view calendar shows your P&L heat at a glance. Identify your best and worst days in a single look.',
   },
-  
+
   {
     icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
     title: 'Private & Secure Data',
@@ -653,26 +653,29 @@ export function LandingPage() {
 
       <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 md:gap-10">
-            <div className="lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 md:gap-10">
+            <div className="lg:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
               <Logo iconSize="w-8 h-8" className="mb-6" />
-              <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs">
+              <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs mb-4">
                 The XAU journal for professional gold (XAUUSD) traders MT5 sync, analytics, and secure trade history.
+              </p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
+                Copyright © 2026 xaujournal. All Rights Reserved
               </p>
             </div>
 
-            <div className="text-center md:text-left">
+            <div className="text-center md:text-center flex flex-col items-center md:items-center">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Platform</h4>
-              <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
+              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center">
                 <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
                 <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
                 <li><Link to="/login?mode=signin" className="hover:text-primary transition-colors">Login</Link></li>
               </ul>
             </div>
 
-            <div className="text-center md:text-left">
+            <div className="text-center md:text-center flex flex-col items-center md:items-center">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Legal</h4>
-              <ul className="space-y-4 text-sm font-semibold text-muted-foreground">
+              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center">
                 <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms of Service</Link></li>
                 <li><Link to="/refund-policy" className="hover:text-primary transition-colors">Refund Policy</Link></li>
@@ -778,11 +781,10 @@ function MobileFeatureAccordion({ icon, title, body, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
-      className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${
-        isOpen
-          ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_-8px_rgba(139,92,246,0.4)]'
-          : 'bg-white/5 border-white/10'
-      }`}
+      className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${isOpen
+        ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_-8px_rgba(139,92,246,0.4)]'
+        : 'bg-white/5 border-white/10'
+        }`}
     >
       <button
         type="button"
@@ -790,9 +792,8 @@ function MobileFeatureAccordion({ icon, title, body, index }) {
         className="w-full flex items-center gap-4 p-4 text-left"
         aria-expanded={isOpen}
       >
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
-          isOpen ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'
-        }`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${isOpen ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'
+          }`}>
           {icon}
         </div>
         <span className="flex-1 text-base font-bold text-foreground leading-tight">{title}</span>
@@ -835,9 +836,9 @@ function MobileFeatureAccordion({ icon, title, body, index }) {
 function DraggableMarquee({ children, className = '', speed = 0.6 }) {
   const outerRef = useRef(null);
   const trackRef = useRef(null);
-  const posRef   = useRef(0);
-  const rafRef   = useRef(null);
-  const dragRef  = useRef({ active: false, startX: 0, startPos: 0 });
+  const posRef = useRef(0);
+  const rafRef = useRef(null);
+  const dragRef = useRef({ active: false, startX: 0, startPos: 0 });
   const [grabbing, setGrabbing] = useState(false);
 
   useEffect(() => {
@@ -853,7 +854,7 @@ function DraggableMarquee({ children, className = '', speed = 0.6 }) {
       // Seamless loop: reset at the midpoint (half of total duplicated content)
       const half = track.scrollWidth / 2;
       if (posRef.current <= -half) posRef.current += half;
-      if (posRef.current > 0)      posRef.current -= half;
+      if (posRef.current > 0) posRef.current -= half;
 
       track.style.transform = `translateX(${posRef.current}px)`;
       rafRef.current = requestAnimationFrame(tick);
@@ -912,12 +913,12 @@ function DraggableMarquee({ children, className = '', speed = 0.6 }) {
    branching left & right as the line passes them
 ───────────────────────────────────────────── */
 const TIMELINE_ITEMS = [
-  { label: 'Mobile Access',     sub: 'Universal MT5 connectivity for traders on the move.',      icon: <Phone className="w-5 h-5" />,            story: 'Start anywhere.',     side: 'left'  },
-  { label: 'Broker Agnostic',   sub: 'Seamlessly connects with any MT5 broker worldwide.',       icon: <HddNetwork className="w-5 h-5" />,       story: 'Connect everything.', side: 'right' },
-  { label: 'Automated Sync',    sub: 'Zero manual entry — your trades are recorded instantly.',  icon: <Display className="w-5 h-5" />,          story: 'Never miss a trade.', side: 'left'  },
-  { label: 'Cloud Processing',  sub: 'Advanced logic layer handles all complex calculations.',   icon: <GearWideConnected className="w-5 h-5" />, story: 'Crunch the numbers.', side: 'right' },
-  { label: 'Encrypted Vault',   sub: 'Military-grade protection for your private trade data.',  icon: <DatabaseFill className="w-5 h-5" />,     story: 'Stay private.',       side: 'left'  },
-  { label: 'Intelligence Suite',sub: 'Professional dashboard for deep performance insights.',   icon: <WindowSidebar className="w-5 h-5" />,    story: 'Find your edge.',     side: 'right' },
+  { label: 'Mobile Access', sub: 'Universal MT5 connectivity for traders on the move.', icon: <Phone className="w-5 h-5" />, side: 'left' },
+  { label: 'Broker Agnostic', sub: 'Seamlessly connects with any MT5 broker worldwide.', icon: <HddNetwork className="w-5 h-5" />, side: 'right' },
+  { label: 'Automated Sync', sub: 'Zero manual entry — your trades are recorded instantly.', icon: <Display className="w-5 h-5" />, side: 'left' },
+  { label: 'Cloud Processing', sub: 'Advanced logic layer handles all complex calculations.', icon: <GearWideConnected className="w-5 h-5" />, side: 'right' },
+  { label: 'Encrypted Vault', sub: 'Military-grade protection for your private trade data.', icon: <DatabaseFill className="w-5 h-5" />, side: 'left' },
+  { label: 'Intelligence Suite', sub: 'Professional dashboard for deep performance insights.', icon: <WindowSidebar className="w-5 h-5" />, side: 'right' },
 ];
 
 function ScaleTimeline() {
@@ -971,14 +972,14 @@ function ScaleTimeline() {
                 <div key={item.label} className="relative flex items-center md:grid md:grid-cols-2 md:gap-8">
 
                   {/* Left slot */}
-                  <div className={`md:flex md:justify-end ${isLeft ? '' : 'md:invisible'}`}>
+                  <div className={`hidden md:flex md:justify-end ${isLeft ? '' : 'md:invisible'}`}>
                     {isLeft && (
                       <Motion.div
                         initial={{ opacity: 0, x: -80 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: false, margin: '-30px' }}
                         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.2)] transition-all duration-500 group cursor-default"
+                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
                       >
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                           {item.icon}
@@ -1004,14 +1005,14 @@ function ScaleTimeline() {
                   />
 
                   {/* Right slot */}
-                  <div className={`md:flex md:justify-start ${!isLeft ? '' : 'md:invisible'}`}>
+                  <div className={`hidden md:flex md:justify-start ${!isLeft ? '' : 'md:invisible'}`}>
                     {!isLeft && (
                       <Motion.div
                         initial={{ opacity: 0, x: 80 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: false, margin: '-30px' }}
                         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.2)] transition-all duration-500 group cursor-default"
+                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
                       >
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                           {item.icon}
@@ -1027,19 +1028,22 @@ function ScaleTimeline() {
                     )}
                   </div>
 
-                  {/* Mobile: full-width stacked layout */}
+                  {/* Mobile: full-width stacked layout with left/right scroll animation */}
                   <Motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: false, margin: '-20px' }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="md:hidden w-full flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl"
+                    initial={{ opacity: 0, x: isLeft ? -100 : 100 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: false, margin: '-40px' }}
+                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="md:hidden w-full flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 transition-all duration-500 group"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                       {item.icon}
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-foreground mb-0.5">{item.label}</h3>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/50 bg-primary/5 px-1.5 py-0.5 rounded-full">{item.story}</span>
+                      </div>
                       <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
                     </div>
                   </Motion.div>

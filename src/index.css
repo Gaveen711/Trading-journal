@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 240 5% 96%;
-    --foreground: 240 10% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 4%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-to: 270 95% 75%;
+    --background: 54 27% 95%; /* #F7F6ED */
+    --foreground: 24 33% 3%; /* #0A0705 */
+    --card: 54 27% 98%; /* slightly lighter cream */
+    --card-foreground: 24 33% 3%;
+    --popover: 54 27% 98%;
+    --popover-foreground: 24 33% 3%;
+    --primary: 277 91% 29%; /* #59078D */
+    --primary-to: 263 71% 19%; /* #280E51 */
     --primary-foreground: 210 20% 98%;
-    --secondary: 240 5% 90%;
-    --secondary-foreground: 240 10% 4%;
-    --muted: 240 5% 90%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 262.1 83.3% 57.8%;
-    --accent-foreground: 240 10% 4%;
+    --secondary: 54 27% 88%;
+    --secondary-foreground: 24 33% 3%;
+    --muted: 54 27% 88%;
+    --muted-foreground: 24 15% 40%;
+    --accent: 277 91% 29%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 20% 98%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 262.1 83.3% 57.8%;
+    --border: 54 27% 86%;
+    --input: 54 27% 86%;
+    --ring: 277 91% 29%;
     --radius: 1rem;
     
     --apple-ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -35,26 +35,26 @@
 
   .dark {
     color-scheme: dark;
-    --background: 224 71.4% 2%;
-    --foreground: 0 0% 100%;
-    --card: 224 71.4% 3%;
-    --card-foreground: 0 0% 100%;
-    --popover: 224 71.4% 3%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 263.4 70% 50.4%;
-    --primary-to: 270 95% 75%;
+    --background: 24 33% 3%; /* #0A0705 */
+    --foreground: 54 27% 95%; /* #F7F6ED */
+    --card: 24 12% 8%; /* Premium dark charcoal/obsidian instead of purple #280E51 */
+    --card-foreground: 54 27% 95%;
+    --popover: 24 12% 8%;
+    --popover-foreground: 54 27% 95%;
+    --primary: 277 91% 65%; /* Bright purple accent for branding/highlights */
+    --primary-to: 263 71% 75%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 215 27.9% 12%;
-    --secondary-foreground: 210 20% 100%;
-    --muted: 215 27.9% 12%;
-    --muted-foreground: 217.9 10.6% 85%;
-    --accent: 263.4 70% 50.4%;
-    --accent-foreground: 210 20% 100%;
-    --destructive: 0 62.8% 30.6%;
+    --secondary: 24 10% 14%;
+    --secondary-foreground: 54 27% 98%;
+    --muted: 24 10% 14%;
+    --muted-foreground: 24 8% 65%;
+    --accent: 277 91% 65%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 12%;
-    --input: 215 27.9% 12%;
-    --ring: 263.4 70% 50.4%;
+    --border: 24 10% 15%; /* Premium dark neutral border instead of purple */
+    --input: 24 10% 13%;
+    --ring: 277 91% 65%;
 
     --win: 142.1 70.6% 45.3%;
     --loss: 0 84.2% 60.2%;
@@ -67,7 +67,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Poppins', 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 15px; /* Explicit base size for readability */
     font-weight: 500;
     line-height: 1.55;
@@ -183,7 +183,7 @@
 
 /* Typography Enhancements */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Poppins', 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-style: normal;
   font-stretch: 100%;
 }

@@ -126,23 +126,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
           })}
         </nav>
 
-        {/* SIDEBAR BOTTOM STATUS CARD */}
+        {/* SIDEBAR ACTIONS (Logout / Theme) */}
         <div className="mt-auto pt-6 border-t border-border/20 flex flex-col gap-4">
-          <div className="bg-muted/30 border border-border/30 rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 absolute top-4 right-4 animate-pulse" />
-            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Status</p>
-            <p className="text-[11px] font-bold text-foreground leading-tight">
-              {lastMT5Sync ? 'Live MT5 broker terminal connected' : 'Manual logging mode active'}
-            </p>
-            <button 
-              onClick={handleSyncClick}
-              className="text-[9px] font-black uppercase text-primary hover:underline text-left mt-1 hover:shadow-none"
-            >
-              {lastMT5Sync ? 'Manage Sync' : 'Connect Broker ->'}
-            </button>
-          </div>
-
-          {/* SIDEBAR ACTIONS (Logout / Theme) */}
           <div className="flex items-center justify-between mt-2">
             {/* iOS-style on/off theme toggle */}
             <button
@@ -152,7 +137,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
             >
               {/* Track */}
               <span
-                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 border ${
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 border ${
                   isLightMode
                     ? 'bg-muted border-border/40'
                     : 'bg-primary border-primary/60'
@@ -160,8 +145,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
               >
                 {/* Thumb with icon */}
                 <span
-                  className={`absolute top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
-                    isLightMode ? 'translate-x-0.5' : 'translate-x-[calc(100%-2px)]'
+                  className={`absolute left-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
+                    isLightMode ? 'translate-x-0' : 'translate-x-5'
                   }`}
                 >
                   {isLightMode
@@ -208,8 +193,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
-                      isLightMode ? 'translate-x-0.5' : 'translate-x-[calc(100%-2px)]'
+                    className={`absolute left-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
+                      isLightMode ? 'translate-x-0' : 'translate-x-6'
                     }`}
                   >
                     {isLightMode
@@ -259,25 +244,27 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
             }} />
           </main>
 
-          {/* RIGHT COLUMN - SIDEBAR */}
-          <aside className="w-full lg:w-80 shrink-0">
-            <DashboardRightSidebar
-              plan={plan}
-              isTrial={isTrial}
-              expiry={expiry}
-              trades={trades}
-              journals={journals}
-              walletBalance={walletBalance}
-              setShowPricingModal={setShowPricingModal}
-              toast={toast}
-            />
-          </aside>
+          {/* RIGHT COLUMN - SIDEBAR (Only visible on Log page) */}
+          {(location.pathname === '/app' || location.pathname === '/app/') && (
+            <aside className="w-full lg:w-80 shrink-0">
+              <DashboardRightSidebar
+                plan={plan}
+                isTrial={isTrial}
+                expiry={expiry}
+                trades={trades}
+                journals={journals}
+                walletBalance={walletBalance}
+                setShowPricingModal={setShowPricingModal}
+                toast={toast}
+              />
+            </aside>
+          )}
         </div>
 
         {/* FOOTER */}
         <footer className="w-full py-8 px-4 border-t border-border/10 bg-muted/5 text-center">
-          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30">
-            &copy; {new Date().getFullYear()} XAU Journal. All rights reserved.
+          <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30">
+            Copyright © 2026 xaujournal. All Rights Reserved
           </p>
         </footer>
       </div>
