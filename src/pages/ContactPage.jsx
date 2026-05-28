@@ -298,8 +298,11 @@ export function ContactPage() {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                         <div className="flex flex-col items-center md:items-start gap-4">
                             <Logo iconSize="w-8 h-8" className="mb-4" />
-                            <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left">
+                            <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left mb-2">
                                 Here to support your trading journey every step of the way.
+                            </p>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
+                                Copyright © 2026 xaujournal. All Rights Reserved
                             </p>
                         </div>
 

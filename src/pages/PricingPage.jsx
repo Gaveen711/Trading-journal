@@ -32,7 +32,7 @@ const FAQ = [
   { q: 'Is my trading data secure?', a: 'Your data is secured using industry standard encryption and isolated cloud storage. Only you have access to your trade history; we cannot read your private logs.' },
   { q: 'How does broker sync work?', a: 'Broker Sync connects directly to your MT4 or MT5 broker server using your login credentials. Once connected, your closed trades are pulled into your journal automatically no extra software required.' },
   { q: 'What payment methods do you accept?', a: 'All major credit and debit cards.' },
-  { q: 'Is there a free trial for Pro?', a: 'The free plan provides full access to the core journaling experience. We are currently developing a Pro trial experience, sign up to be notified when it launches.' },
+  { q: 'Is there a free trial for Pro?', a: 'Yes! We offer a 7-day free trial for xaujournal Pro. You can test all features including MT4/MT5 auto-sync and full analytics risk-free before being charged.' },
 ];
 
 export function PricingPage() {
@@ -284,7 +284,7 @@ export function PricingPage() {
                 <span className="text-6xl font-black tracking-tighter leading-none text-primary">{PRO_MONTHLY_DISPLAY}</span>
                 <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">/mo</span>
               </div>
-              <p className="text-sm text-primary font-bold mt-3">Monthly subscription · Cancel anytime</p>
+              <p className="text-sm text-primary font-bold mt-3">7-Day Free Trial · Cancel anytime</p>
               <p className="text-base text-muted-foreground mt-6 leading-relaxed font-medium">The complete professional suite for high-performance gold traders.</p>
             </div>
 
@@ -303,7 +303,7 @@ export function PricingPage() {
               onClick={handleUpgradeClick}
               className="w-full py-3.5 sm:py-5 rounded-2xl bg-primary text-primary-foreground font-black tracking-wide shadow-xl shadow-primary/20 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative z-10"
             >
-              Upgrade to Pro
+              Start 7-Day Free Trial
             </button>
           </Motion.div>
         </div>
@@ -329,8 +329,11 @@ export function PricingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="flex flex-col items-center md:items-start gap-4">
               <Logo iconSize="w-8 h-8" className="mb-4" />
-              <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left">
+              <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left mb-2">
                 Empowering traders with clarity and institutional grade analytics.
+              </p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
+                Copyright © 2026 xaujournal. All Rights Reserved
               </p>
             </div>
 

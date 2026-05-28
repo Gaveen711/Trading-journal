@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Bar, Line } from 'react-chartjs-2';
-import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
+import { Bar, Line, Pie } from 'react-chartjs-2';
+import { formatCurrencyCompact, formatCurrency, formatNumber } from '../lib/tradeUtils';
 import { BarChartLine, ClockFill, LightningFill, ShieldExclamation } from 'react-bootstrap-icons';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 const AnalyticsSkeleton = () => (
   <div className="space-y-8 animate-pulse">
@@ -84,41 +84,114 @@ export function AnalyticsPage() {
     if (t.outcome === 'WIN') setupDataMap[set].wins++;
   });
 
-  const sessionChartData = {
-    labels: Object.keys(sessionDataMap),
+  // 1. Equity Curve
+  let runningBalance = walletBalance || 0;
+  const equityCurvePoints = [runningBalance];
+  const equityCurveLabels = ['Start'];
+  sortedTrades.forEach(t => {
+    runningBalance += t.pnl;
+    equityCurvePoints.push(parseFloat(runningBalance.toFixed(2)));
+    equityCurveLabels.push(t.date);
+  });
+
+  const equityCurveChartData = {
+    labels: equityCurveLabels,
     datasets: [{
-      label: 'Session P&L',
-      data: Object.values(sessionDataMap).map(d => d.pnl),
-      backgroundColor: Object.values(sessionDataMap).map(d => d.pnl >= 0 ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'),
-      borderColor: Object.values(sessionDataMap).map(d => d.pnl >= 0 ? '#22c55e' : '#ef4444'),
-      borderWidth: 1,
+      label: 'Equity Curve',
+      data: equityCurvePoints,
+      borderColor: 'rgb(59, 130, 246)', // elegant blue line
+      backgroundColor: 'rgba(59, 130, 246, 0.05)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0, // no visible dots on the line
+      pointHoverRadius: 6,
+      borderWidth: 2.5,
+    }]
+  };
+
+  // 2. Monthly P/L
+  const monthlyPnlMap = {};
+  trades.forEach(t => {
+    if (!t.date) return;
+    const dateObj = new Date(t.date);
+    const monthName = dateObj.toLocaleString('en-US', { month: 'short' }); // "May", "Jun", etc.
+    monthlyPnlMap[monthName] = (monthlyPnlMap[monthName] || 0) + t.pnl;
+  });
+
+  const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthlyPnlLabels = monthsOrder.filter(m => monthlyPnlMap[m] !== undefined || Object.keys(monthlyPnlMap).includes(m));
+  const monthlyPnlValues = monthlyPnlLabels.map(m => monthlyPnlMap[m] || 0);
+
+  const monthlyPnlChartData = {
+    labels: monthlyPnlLabels,
+    datasets: [{
+      label: 'Monthly P/L',
+      data: monthlyPnlValues,
+      backgroundColor: monthlyPnlValues.map(v => v >= 0 ? 'rgba(163, 230, 53, 0.6)' : 'rgba(248, 113, 113, 0.6)'),
+      borderColor: monthlyPnlValues.map(v => v >= 0 ? '#84cc16' : '#ef4444'),
+      borderWidth: 1.5,
       borderRadius: 8,
     }]
   };
 
-  const setupChartData = {
-    labels: Object.keys(setupDataMap),
+  // 3. Session Performance Pie Chart
+  const sessionNames = ['London', 'New York', 'Tokyo', 'Sydney'];
+  const sessionPnlMap = { London: 0, 'New York': 0, Tokyo: 0, Sydney: 0 };
+  
+  trades.forEach(t => {
+    // Standardize casing for key matching
+    let s = t.session || '';
+    if (s.toLowerCase() === 'london') sessionPnlMap.London += t.pnl;
+    else if (s.toLowerCase() === 'new york' || s.toLowerCase() === 'new-york' || s.toLowerCase() === 'newyork') sessionPnlMap['New York'] += t.pnl;
+    else if (s.toLowerCase() === 'tokyo') sessionPnlMap.Tokyo += t.pnl;
+    else if (s.toLowerCase() === 'sydney') sessionPnlMap.Sydney += t.pnl;
+  });
+
+  const sessionChartLabels = sessionNames.map(name => {
+    const val = sessionPnlMap[name];
+    const sign = val >= 0 ? '+' : '';
+    return `${name}: ${sign}${formatCurrency(val)}`;
+  });
+
+  const sessionChartData = {
+    labels: sessionChartLabels,
     datasets: [{
-      label: 'Setup P&L',
-      data: Object.values(setupDataMap).map(d => d.pnl),
-      backgroundColor: '#8B5CF622',
-      borderColor: '#8B5CF6',
-      borderWidth: 2,
-      borderRadius: 12,
+      data: sessionNames.map(name => Math.max(1, Math.abs(sessionPnlMap[name]))), // segment sizing by volume weight
+      backgroundColor: [
+        'rgb(59, 130, 246)',   // London (Blue)
+        'rgb(16, 185, 129)',   // New York (Green)
+        'rgb(245, 158, 11)',   // Tokyo (Orange)
+        'rgb(239, 68, 68)'     // Sydney (Red)
+      ],
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 1,
     }]
   };
 
-  const drawdownChartData = {
-    labels: drawdownLabels,
+  // 4. Performance by Day
+  const dayPnlMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0 };
+  trades.forEach(t => {
+    if (!t.date) return;
+    const dateObj = new Date(t.date);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = days[dateObj.getDay()];
+    if (dayName && dayPnlMap[dayName] !== undefined) {
+      dayPnlMap[dayName] += t.pnl;
+    }
+  });
+
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const dayValues = dayLabels.map(d => dayPnlMap[d]);
+
+  const performanceByDayChartData = {
+    labels: dayLabels,
     datasets: [{
-      label: 'Underwater Drawdown',
-      data: drawdownCurve,
-      borderColor: '#ef4444',
-      backgroundColor: 'rgba(239, 68, 68, 0.05)',
-      fill: true,
-      tension: 0.4,
-      pointRadius: 0,
-      borderWidth: 2,
+      label: 'Performance by Day',
+      data: dayValues,
+      backgroundColor: 'rgba(77, 124, 15, 0.85)', // darker shade of green
+      borderColor: '#4d7c0f',
+      borderWidth: 1.5,
+      borderRadius: 8,
     }]
   };
 
@@ -136,7 +209,7 @@ export function AnalyticsPage() {
     },
     scales: {
       y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#64748b', font: { size: 10 } } },
-      x: { grid: { display: false }, ticks: { display: false } }
+      x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
     }
   };
 
@@ -228,38 +301,87 @@ export function AnalyticsPage() {
         ))}
       </div>
 
+      {/* 2x2 Grid of Performance Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Chart 1: Equity Curve */}
         <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300">
           <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-            <ClockFill className="w-4 h-4 text-primary" />
-            Session Efficiency
+            <BarChartLine className="w-4 h-4 text-primary" />
+            Equity Curve
           </h3>
-          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Performance distribution across London, NY, and Asian sessions.</p>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Progression of total account equity over logged operations.</p>
           <div className="h-64">
-            <Bar data={sessionChartData} options={chartOptions} />
+            <Line data={equityCurveChartData} options={{
+              ...chartOptions,
+              scales: {
+                ...chartOptions.scales,
+                x: { ...chartOptions.scales.x, display: true }
+              }
+            }} />
           </div>
         </div>
 
+        {/* Chart 2: Monthly P/L */}
         <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-right-4 duration-700 delay-300">
           <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-            <LightningFill className="w-4 h-4 text-primary" />
-            Strategy Intelligence
+            <BarChartLine className="w-4 h-4 text-primary" />
+            Monthly P/L
           </h3>
-          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Detailed P&L breakdown for each individual trading setup.</p>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distribution across individual calendar months.</p>
           <div className="h-64">
-            <Bar data={setupChartData} options={chartOptions} />
+            <Bar data={monthlyPnlChartData} options={{
+              ...chartOptions,
+              scales: {
+                ...chartOptions.scales,
+                x: { ...chartOptions.scales.x, display: true }
+              }
+            }} />
           </div>
         </div>
-      </div>
 
-      <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
-        <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80 text-red-500">
-          <ShieldExclamation className="w-4 h-4" />
-          Peak-to-Valley Drawdown
-        </h3>
-        <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Tracks losses relative to your previous peak balance (how far "underwater" you are).</p>
-        <div className="h-64">
-          <Line data={drawdownChartData} options={chartOptions} />
+        {/* Chart 3: Session Performance */}
+        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
+          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
+            <BarChartLine className="w-4 h-4 text-primary" />
+            Session Performance
+          </h3>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distributed across global trading sessions.</p>
+          <div className="h-64 flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center">
+              <Pie data={sessionChartData} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'right',
+                    labels: {
+                      color: 'hsl(var(--foreground))',
+                      font: { size: 10, weight: 'bold' },
+                      padding: 12
+                    }
+                  }
+                }
+              }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Chart 4: Performance by Day */}
+        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
+          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
+            <BarChartLine className="w-4 h-4 text-primary" />
+            Performance by Day
+          </h3>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Historical trading day edge and net efficiency performance.</p>
+          <div className="h-64">
+            <Bar data={performanceByDayChartData} options={{
+              ...chartOptions,
+              scales: {
+                ...chartOptions.scales,
+                x: { ...chartOptions.scales.x, display: true }
+              }
+            }} />
+          </div>
         </div>
       </div>
 

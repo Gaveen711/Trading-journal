@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, ArrowRight, ArrowUpRight, ArrowDownRight, Gem, Wallet, Book, RefreshCw, X } from 'lucide-react';
 import { auth } from '../../firebase';
 import { formatCurrency, formatNumber } from '../../lib/tradeUtils';
@@ -31,14 +32,25 @@ function CurrencySelect({ value, onChange }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-background/80 hover:bg-muted border border-border/40 transition-all text-[11px] font-bold"
+        className="flex items-center gap-2 px-2 py-1 rounded-lg bg-background/80 hover:bg-muted border border-border/40 transition-all text-[11px] font-bold"
       >
+        <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/20 flex-shrink-0">
+          <img 
+            src={`/flags/${selected?.country?.toLowerCase()}.svg`} 
+            alt="" 
+            className="w-full h-full object-cover" 
+            onError={(e) => { 
+              if (selected?.code === 'EUR') e.target.src = '/flags/fr.svg';
+              else e.target.src = 'https://placehold.co/40x30/1e1e2e/64748b?text=' + selected?.code; 
+            }}
+          />
+        </div>
         <span>{selected?.code}</span>
         <ChevronDown className="w-3 h-3 text-muted-foreground" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-50 p-1 rounded-xl border border-border/50 bg-background shadow-xl min-w-[80px]">
+        <div className="absolute right-0 top-[calc(100%+4px)] z-50 p-1 rounded-xl border border-border/50 bg-background shadow-xl min-w-[95px] space-y-0.5">
           {CURRENCIES.map(c => (
             <button
               key={c.code}
@@ -47,10 +59,20 @@ function CurrencySelect({ value, onChange }) {
                 onChange(c.code);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-2 py-1 text-[10px] font-bold rounded-lg hover:bg-muted block ${
-                value === c.code ? 'text-primary' : 'text-foreground/70'
+              className={`w-full flex items-center gap-2 px-2 py-1 text-[10px] font-bold rounded-lg hover:bg-muted ${
+                value === c.code ? 'text-primary bg-primary/5' : 'text-foreground/70'
               }`}
             >
+              <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/10 flex-shrink-0">
+                <img 
+                  src={`/flags/${c.country?.toLowerCase()}.svg`} 
+                  alt="" 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => { 
+                    if (c.code === 'EUR') e.target.src = '/flags/fr.svg';
+                  }}
+                />
+              </div>
               {c.code}
             </button>
           ))}
@@ -70,6 +92,7 @@ export function DashboardRightSidebar({
   setShowPricingModal,
   _toast
 }) {
+  const navigate = useNavigate();
   const [amount, setAmount] = useState('1000');
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('EUR');
@@ -282,7 +305,10 @@ export function DashboardRightSidebar({
         
         <div className="grid grid-cols-2 gap-3">
           {/* Card 1: Logged Trades */}
-          <div className="bg-card p-4 rounded-2xl border border-border/30 shadow-flat flex items-center gap-3">
+          <div 
+            onClick={() => navigate('/app/history')}
+            className="bg-card p-4 rounded-2xl border border-border/30 shadow-flat flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-300 active:scale-[0.98]"
+          >
             <div className="w-8 h-8 rounded-xl bg-pastel-blue flex items-center justify-center shrink-0">
               <Wallet className="w-4 h-4" />
             </div>
@@ -293,7 +319,10 @@ export function DashboardRightSidebar({
           </div>
 
           {/* Card 2: Journal Entries */}
-          <div className="bg-card p-4 rounded-2xl border border-border/30 shadow-flat flex items-center gap-3">
+          <div 
+            onClick={() => navigate('/app/journal')}
+            className="bg-card p-4 rounded-2xl border border-border/30 shadow-flat flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-300 active:scale-[0.98]"
+          >
             <div className="w-8 h-8 rounded-xl bg-pastel-pink flex items-center justify-center shrink-0">
               <Book className="w-4 h-4" />
             </div>
