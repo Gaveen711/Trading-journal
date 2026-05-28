@@ -446,7 +446,7 @@ export function LandingPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-              MT5 Auto-Sync · XAUUSD Specialist
+              MT5 Auto-Sync · Exclusively for XAUUSD Traders
             </Motion.div>
 
             <Motion.div variants={itemVariants}>
@@ -464,7 +464,7 @@ export function LandingPage() {
             <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">
               <button
                 onClick={() => navigate('/login')}
-                className="button-animated w-full max-w-[320px] sm:w-auto px-8 shadow-2xl active:scale-95 transition-all duration-300"
+                className="button-animated w-half max-w-[320px] sm:w-auto px-8 shadow-2xl active:scale-95 transition-all duration-300"
               >
                 <span className="button-bg">
                   <span className="button-bg-layers">
@@ -662,7 +662,7 @@ export function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <button
                 onClick={() => navigate('/login')}
-                className="button-animated w-full sm:w-auto px-10 shadow-2xl active:scale-95 transition-all duration-300"
+                className="button-animated w-half sm:w-auto px-10 shadow-2xl active:scale-95 transition-all duration-300"
               >
                 <span className="button-bg">
                   <span className="button-bg-layers">
@@ -755,7 +755,8 @@ export function LandingPage() {
                     made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                   </p>
                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right">
-                    Copyright © 2026 xaujournal. All Rights Reserved
+                    All Rights Reserved <br></br>
+                    Copyright © 2026 xaujournal.
                   </p>
                 </div>
               </div>
