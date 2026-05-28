@@ -3,6 +3,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency, formatNumber } from '../lib/tradeUtils';
 import { BarChartLine, ClockFill, LightningFill, ShieldExclamation } from 'react-bootstrap-icons';
+import { useAppTheme } from '../hooks/useAppTheme';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
@@ -27,6 +28,7 @@ const AnalyticsSkeleton = () => (
 export function AnalyticsPage() {
   const { trades, isLoadingTrades, walletBalance } = useOutletContext();
   const navigate = useNavigate();
+  const { isLightMode } = useAppTheme();
   
   const [showExact, setShowExact] = useState({});
 
@@ -208,8 +210,8 @@ export function AnalyticsPage() {
       }
     },
     scales: {
-      y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#64748b', font: { size: 10 } } },
-      x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+      y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } },
+      x: { grid: { display: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } }
     }
   };
 
@@ -355,8 +357,8 @@ export function AnalyticsPage() {
                   legend: {
                     position: 'right',
                     labels: {
-                      color: 'hsl(var(--foreground))',
-                      font: { size: 10, weight: 'bold' },
+                      color: isLightMode ? '#1e293b' : '#e2e8f0',
+                      font: { size: 12, weight: 'bold' },
                       padding: 12
                     }
                   }

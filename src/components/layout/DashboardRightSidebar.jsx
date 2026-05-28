@@ -5,17 +5,841 @@ import { auth } from '../../firebase';
 import { formatCurrency, formatNumber } from '../../lib/tradeUtils';
 
 const CURRENCIES = [
-  { code: 'USD', name: 'US Dollar', country: 'US' },
-  { code: 'EUR', name: 'Euro', country: 'EU' },
-  { code: 'GBP', name: 'British Pound', country: 'GB' },
-  { code: 'JPY', name: 'Japanese Yen', country: 'JP' },
-  { code: 'AUD', name: 'Australian Dollar', country: 'AU' },
-  { code: 'CAD', name: 'Canadian Dollar', country: 'CA' },
-  { code: 'CHF', name: 'Swiss Franc', country: 'CH' }
+  {
+    "code": "AED",
+    "name": "United Arab Emirates Dirham",
+    "country": "AE"
+  },
+  {
+    "code": "AFN",
+    "name": "Afghan Afghani",
+    "country": "AF"
+  },
+  {
+    "code": "ALL",
+    "name": "Albanian Lek",
+    "country": "AL"
+  },
+  {
+    "code": "AMD",
+    "name": "Armenian Dram",
+    "country": "AM"
+  },
+  {
+    "code": "ANG",
+    "name": "Netherlands Antillean Guilder",
+    "country": "CW"
+  },
+  {
+    "code": "AOA",
+    "name": "Angolan Kwanza",
+    "country": "AO"
+  },
+  {
+    "code": "ARS",
+    "name": "Argentine Peso",
+    "country": "AR"
+  },
+  {
+    "code": "AUD",
+    "name": "Australian Dollar",
+    "country": "AU"
+  },
+  {
+    "code": "AWG",
+    "name": "Aruban Florin",
+    "country": "AW"
+  },
+  {
+    "code": "AZN",
+    "name": "Azerbaijani Manat",
+    "country": "AZ"
+  },
+  {
+    "code": "BAM",
+    "name": "Bosnia-Herzegovina Convertible Mark",
+    "country": "BA"
+  },
+  {
+    "code": "BBD",
+    "name": "Barbadian Dollar",
+    "country": "BB"
+  },
+  {
+    "code": "BDT",
+    "name": "Bangladeshi Taka",
+    "country": "BD"
+  },
+  {
+    "code": "BGN",
+    "name": "Bulgarian Lev",
+    "country": "BG"
+  },
+  {
+    "code": "BHD",
+    "name": "Bahraini Dinar",
+    "country": "BH"
+  },
+  {
+    "code": "BIF",
+    "name": "Burundian Franc",
+    "country": "BI"
+  },
+  {
+    "code": "BMD",
+    "name": "Bermudan Dollar",
+    "country": "BM"
+  },
+  {
+    "code": "BND",
+    "name": "Brunei Dollar",
+    "country": "BN"
+  },
+  {
+    "code": "BOB",
+    "name": "Bolivian Boliviano",
+    "country": "BO"
+  },
+  {
+    "code": "BRL",
+    "name": "Brazilian Real",
+    "country": "BR"
+  },
+  {
+    "code": "BSD",
+    "name": "Bahamian Dollar",
+    "country": "BS"
+  },
+  {
+    "code": "BTN",
+    "name": "Bhutanese Ngultrum",
+    "country": "BT"
+  },
+  {
+    "code": "BWP",
+    "name": "Botswanan Pula",
+    "country": "BW"
+  },
+  {
+    "code": "BYN",
+    "name": "Belarusian Ruble",
+    "country": "BY"
+  },
+  {
+    "code": "BZD",
+    "name": "Belize Dollar",
+    "country": "BZ"
+  },
+  {
+    "code": "CAD",
+    "name": "Canadian Dollar",
+    "country": "CA"
+  },
+  {
+    "code": "CDF",
+    "name": "Congolese Franc",
+    "country": "CD"
+  },
+  {
+    "code": "CHF",
+    "name": "Swiss Franc",
+    "country": "CH"
+  },
+  {
+    "code": "CLF",
+    "name": "Chilean Unit of Account (UF)",
+    "country": "CL"
+  },
+  {
+    "code": "CLP",
+    "name": "Chilean Peso",
+    "country": "CL"
+  },
+  {
+    "code": "CNH",
+    "name": "Chinese Yuan (Offshore)",
+    "country": "CN"
+  },
+  {
+    "code": "CNY",
+    "name": "Chinese Yuan",
+    "country": "CN"
+  },
+  {
+    "code": "COP",
+    "name": "Colombian Peso",
+    "country": "CO"
+  },
+  {
+    "code": "CRC",
+    "name": "Costa Rican Colón",
+    "country": "CR"
+  },
+  {
+    "code": "CUP",
+    "name": "Cuban Peso",
+    "country": "CU"
+  },
+  {
+    "code": "CVE",
+    "name": "Cape Verdean Escudo",
+    "country": "CV"
+  },
+  {
+    "code": "CZK",
+    "name": "Czech Republic Koruna",
+    "country": "CZ"
+  },
+  {
+    "code": "DJF",
+    "name": "Djiboutian Franc",
+    "country": "DJ"
+  },
+  {
+    "code": "DKK",
+    "name": "Danish Krone",
+    "country": "DK"
+  },
+  {
+    "code": "DOP",
+    "name": "Dominican Peso",
+    "country": "DO"
+  },
+  {
+    "code": "DZD",
+    "name": "Algerian Dinar",
+    "country": "DZ"
+  },
+  {
+    "code": "EGP",
+    "name": "Egyptian Pound",
+    "country": "EG"
+  },
+  {
+    "code": "ERN",
+    "name": "Eritrean Nakfa",
+    "country": "ER"
+  },
+  {
+    "code": "ETB",
+    "name": "Ethiopian Birr",
+    "country": "ET"
+  },
+  {
+    "code": "EUR",
+    "name": "Euro",
+    "country": "EU"
+  },
+  {
+    "code": "FJD",
+    "name": "Fijian Dollar",
+    "country": "FJ"
+  },
+  {
+    "code": "FKP",
+    "name": "Falkland Islands Pound",
+    "country": "FK"
+  },
+  {
+    "code": "FOK",
+    "name": "FOK Currency",
+    "country": "FO"
+  },
+  {
+    "code": "GBP",
+    "name": "British Pound Sterling",
+    "country": "GB"
+  },
+  {
+    "code": "GEL",
+    "name": "Georgian Lari",
+    "country": "GE"
+  },
+  {
+    "code": "GGP",
+    "name": "Guernsey Pound",
+    "country": "GG"
+  },
+  {
+    "code": "GHS",
+    "name": "Ghanaian Cedi",
+    "country": "GH"
+  },
+  {
+    "code": "GIP",
+    "name": "Gibraltar Pound",
+    "country": "GI"
+  },
+  {
+    "code": "GMD",
+    "name": "Gambian Dalasi",
+    "country": "GM"
+  },
+  {
+    "code": "GNF",
+    "name": "Guinean Franc",
+    "country": "GN"
+  },
+  {
+    "code": "GTQ",
+    "name": "Guatemalan Quetzal",
+    "country": "GT"
+  },
+  {
+    "code": "GYD",
+    "name": "Guyanaese Dollar",
+    "country": "GY"
+  },
+  {
+    "code": "HKD",
+    "name": "Hong Kong Dollar",
+    "country": "HK"
+  },
+  {
+    "code": "HNL",
+    "name": "Honduran Lempira",
+    "country": "HN"
+  },
+  {
+    "code": "HRK",
+    "name": "Croatian Kuna",
+    "country": "HR"
+  },
+  {
+    "code": "HTG",
+    "name": "Haitian Gourde",
+    "country": "HT"
+  },
+  {
+    "code": "HUF",
+    "name": "Hungarian Forint",
+    "country": "HU"
+  },
+  {
+    "code": "IDR",
+    "name": "Indonesian Rupiah",
+    "country": "ID"
+  },
+  {
+    "code": "ILS",
+    "name": "Israeli New Sheqel",
+    "country": "IL"
+  },
+  {
+    "code": "IMP",
+    "name": "Manx pound",
+    "country": "IM"
+  },
+  {
+    "code": "INR",
+    "name": "Indian Rupee",
+    "country": "IN"
+  },
+  {
+    "code": "IQD",
+    "name": "Iraqi Dinar",
+    "country": "IQ"
+  },
+  {
+    "code": "IRR",
+    "name": "Iranian Rial",
+    "country": "IR"
+  },
+  {
+    "code": "ISK",
+    "name": "Icelandic Króna",
+    "country": "IS"
+  },
+  {
+    "code": "JEP",
+    "name": "Jersey Pound",
+    "country": "JE"
+  },
+  {
+    "code": "JMD",
+    "name": "Jamaican Dollar",
+    "country": "JM"
+  },
+  {
+    "code": "JOD",
+    "name": "Jordanian Dinar",
+    "country": "JO"
+  },
+  {
+    "code": "JPY",
+    "name": "Japanese Yen",
+    "country": "JP"
+  },
+  {
+    "code": "KES",
+    "name": "Kenyan Shilling",
+    "country": "KE"
+  },
+  {
+    "code": "KGS",
+    "name": "Kyrgystani Som",
+    "country": "KG"
+  },
+  {
+    "code": "KHR",
+    "name": "Cambodian Riel",
+    "country": "KH"
+  },
+  {
+    "code": "KID",
+    "name": "KID Currency",
+    "country": "KI"
+  },
+  {
+    "code": "KMF",
+    "name": "Comorian Franc",
+    "country": "KM"
+  },
+  {
+    "code": "KRW",
+    "name": "South Korean Won",
+    "country": "KR"
+  },
+  {
+    "code": "KWD",
+    "name": "Kuwaiti Dinar",
+    "country": "KW"
+  },
+  {
+    "code": "KYD",
+    "name": "Cayman Islands Dollar",
+    "country": "KY"
+  },
+  {
+    "code": "KZT",
+    "name": "Kazakhstani Tenge",
+    "country": "KZ"
+  },
+  {
+    "code": "LAK",
+    "name": "Laotian Kip",
+    "country": "LA"
+  },
+  {
+    "code": "LBP",
+    "name": "Lebanese Pound",
+    "country": "LB"
+  },
+  {
+    "code": "LKR",
+    "name": "Sri Lankan Rupee",
+    "country": "LK"
+  },
+  {
+    "code": "LRD",
+    "name": "Liberian Dollar",
+    "country": "LR"
+  },
+  {
+    "code": "LSL",
+    "name": "Lesotho Loti",
+    "country": "LS"
+  },
+  {
+    "code": "LYD",
+    "name": "Libyan Dinar",
+    "country": "LY"
+  },
+  {
+    "code": "MAD",
+    "name": "Moroccan Dirham",
+    "country": "MA"
+  },
+  {
+    "code": "MDL",
+    "name": "Moldovan Leu",
+    "country": "MD"
+  },
+  {
+    "code": "MGA",
+    "name": "Malagasy Ariary",
+    "country": "MG"
+  },
+  {
+    "code": "MKD",
+    "name": "Macedonian Denar",
+    "country": "MK"
+  },
+  {
+    "code": "MMK",
+    "name": "Myanma Kyat",
+    "country": "MM"
+  },
+  {
+    "code": "MNT",
+    "name": "Mongolian Tugrik",
+    "country": "MN"
+  },
+  {
+    "code": "MOP",
+    "name": "Macanese Pataca",
+    "country": "MO"
+  },
+  {
+    "code": "MRU",
+    "name": "Mauritanian Ouguiya",
+    "country": "MR"
+  },
+  {
+    "code": "MUR",
+    "name": "Mauritian Rupee",
+    "country": "MU"
+  },
+  {
+    "code": "MVR",
+    "name": "Maldivian Rufiyaa",
+    "country": "MV"
+  },
+  {
+    "code": "MWK",
+    "name": "Malawian Kwacha",
+    "country": "MW"
+  },
+  {
+    "code": "MXN",
+    "name": "Mexican Peso",
+    "country": "MX"
+  },
+  {
+    "code": "MYR",
+    "name": "Malaysian Ringgit",
+    "country": "MY"
+  },
+  {
+    "code": "MZN",
+    "name": "Mozambican Metical",
+    "country": "MZ"
+  },
+  {
+    "code": "NAD",
+    "name": "Namibian Dollar",
+    "country": "NA"
+  },
+  {
+    "code": "NGN",
+    "name": "Nigerian Naira",
+    "country": "NG"
+  },
+  {
+    "code": "NIO",
+    "name": "Nicaraguan Córdoba",
+    "country": "NI"
+  },
+  {
+    "code": "NOK",
+    "name": "Norwegian Krone",
+    "country": "NO"
+  },
+  {
+    "code": "NPR",
+    "name": "Nepalese Rupee",
+    "country": "NP"
+  },
+  {
+    "code": "NZD",
+    "name": "New Zealand Dollar",
+    "country": "NZ"
+  },
+  {
+    "code": "OMR",
+    "name": "Omani Rial",
+    "country": "OM"
+  },
+  {
+    "code": "PAB",
+    "name": "Panamanian Balboa",
+    "country": "PA"
+  },
+  {
+    "code": "PEN",
+    "name": "Peruvian Nuevo Sol",
+    "country": "PE"
+  },
+  {
+    "code": "PGK",
+    "name": "Papua New Guinean Kina",
+    "country": "PG"
+  },
+  {
+    "code": "PHP",
+    "name": "Philippine Peso",
+    "country": "PH"
+  },
+  {
+    "code": "PKR",
+    "name": "Pakistani Rupee",
+    "country": "PK"
+  },
+  {
+    "code": "PLN",
+    "name": "Polish Zloty",
+    "country": "PL"
+  },
+  {
+    "code": "PYG",
+    "name": "Paraguayan Guarani",
+    "country": "PY"
+  },
+  {
+    "code": "QAR",
+    "name": "Qatari Rial",
+    "country": "QA"
+  },
+  {
+    "code": "RON",
+    "name": "Romanian Leu",
+    "country": "RO"
+  },
+  {
+    "code": "RSD",
+    "name": "Serbian Dinar",
+    "country": "RS"
+  },
+  {
+    "code": "RUB",
+    "name": "Russian Ruble",
+    "country": "RU"
+  },
+  {
+    "code": "RWF",
+    "name": "Rwandan Franc",
+    "country": "RW"
+  },
+  {
+    "code": "SAR",
+    "name": "Saudi Riyal",
+    "country": "SA"
+  },
+  {
+    "code": "SBD",
+    "name": "Solomon Islands Dollar",
+    "country": "SB"
+  },
+  {
+    "code": "SCR",
+    "name": "Seychellois Rupee",
+    "country": "SC"
+  },
+  {
+    "code": "SDG",
+    "name": "Sudanese Pound",
+    "country": "SD"
+  },
+  {
+    "code": "SEK",
+    "name": "Swedish Krona",
+    "country": "SE"
+  },
+  {
+    "code": "SGD",
+    "name": "Singapore Dollar",
+    "country": "SG"
+  },
+  {
+    "code": "SHP",
+    "name": "Saint Helena Pound",
+    "country": "SH"
+  },
+  {
+    "code": "SLE",
+    "name": "Sierra Leonean Leone",
+    "country": "SL"
+  },
+  {
+    "code": "SLL",
+    "name": "Sierra Leonean Leone (Old)",
+    "country": "SL"
+  },
+  {
+    "code": "SOS",
+    "name": "Somali Shilling",
+    "country": "SO"
+  },
+  {
+    "code": "SRD",
+    "name": "Surinamese Dollar",
+    "country": "SR"
+  },
+  {
+    "code": "SSP",
+    "name": "South Sudanese Pound",
+    "country": "SS"
+  },
+  {
+    "code": "STN",
+    "name": "São Tomé and Príncipe Dobra",
+    "country": "ST"
+  },
+  {
+    "code": "SYP",
+    "name": "Syrian Pound",
+    "country": "SY"
+  },
+  {
+    "code": "SZL",
+    "name": "Swazi Lilangeni",
+    "country": "SZ"
+  },
+  {
+    "code": "THB",
+    "name": "Thai Baht",
+    "country": "TH"
+  },
+  {
+    "code": "TJS",
+    "name": "Tajikistani Somoni",
+    "country": "TJ"
+  },
+  {
+    "code": "TMT",
+    "name": "Turkmenistani Manat",
+    "country": "TM"
+  },
+  {
+    "code": "TND",
+    "name": "Tunisian Dinar",
+    "country": "TN"
+  },
+  {
+    "code": "TOP",
+    "name": "Tongan Pa'anga",
+    "country": "TO"
+  },
+  {
+    "code": "TRY",
+    "name": "Turkish Lira",
+    "country": "TR"
+  },
+  {
+    "code": "TTD",
+    "name": "Trinidad and Tobago Dollar",
+    "country": "TT"
+  },
+  {
+    "code": "TVD",
+    "name": "TVD Currency",
+    "country": "TV"
+  },
+  {
+    "code": "TWD",
+    "name": "New Taiwan Dollar",
+    "country": "TW"
+  },
+  {
+    "code": "TZS",
+    "name": "Tanzanian Shilling",
+    "country": "TZ"
+  },
+  {
+    "code": "UAH",
+    "name": "Ukrainian Hryvnia",
+    "country": "UA"
+  },
+  {
+    "code": "UGX",
+    "name": "Ugandan Shilling",
+    "country": "UG"
+  },
+  {
+    "code": "USD",
+    "name": "United States Dollar",
+    "country": "US"
+  },
+  {
+    "code": "UYU",
+    "name": "Uruguayan Peso",
+    "country": "UY"
+  },
+  {
+    "code": "UZS",
+    "name": "Uzbekistan Som",
+    "country": "UZ"
+  },
+  {
+    "code": "VES",
+    "name": "Venezuelan Bolívar Soberano",
+    "country": "VE"
+  },
+  {
+    "code": "VND",
+    "name": "Vietnamese Dong",
+    "country": "VN"
+  },
+  {
+    "code": "VUV",
+    "name": "Vanuatu Vatu",
+    "country": "VU"
+  },
+  {
+    "code": "WST",
+    "name": "Samoan Tala",
+    "country": "WS"
+  },
+  {
+    "code": "XAF",
+    "name": "CFA Franc BEAC",
+    "country": "CM"
+  },
+  {
+    "code": "XCD",
+    "name": "East Caribbean Dollar",
+    "country": "AG"
+  },
+  {
+    "code": "XCG",
+    "name": "Caribbean Guilder",
+    "country": "NL"
+  },
+  {
+    "code": "XDR",
+    "name": "Special Drawing Rights",
+    "country": "EU"
+  },
+  {
+    "code": "XOF",
+    "name": "CFA Franc BCEAO",
+    "country": "SN"
+  },
+  {
+    "code": "XPF",
+    "name": "CFP Franc",
+    "country": "PF"
+  },
+  {
+    "code": "YER",
+    "name": "Yemeni Rial",
+    "country": "YE"
+  },
+  {
+    "code": "ZAR",
+    "name": "South African Rand",
+    "country": "ZA"
+  },
+  {
+    "code": "ZMW",
+    "name": "Zambian Kwacha",
+    "country": "ZM"
+  },
+  {
+    "code": "ZWG",
+    "name": "Zimbabwean ZiG",
+    "country": "ZW"
+  },
+  {
+    "code": "ZWL",
+    "name": "Zimbabwean Dollar",
+    "country": "ZW"
+  }
 ];
 
 function CurrencySelect({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const containerRef = useRef(null);
   const selected = CURRENCIES.find(c => c.code === value);
 
@@ -26,6 +850,15 @@ function CurrencySelect({ value, onChange }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) setSearch('');
+  }, [isOpen]);
+
+  const filteredCurrencies = CURRENCIES.filter(c => 
+    c.code.toLowerCase().includes(search.toLowerCase()) || 
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="relative" ref={containerRef}>
@@ -50,32 +883,51 @@ function CurrencySelect({ value, onChange }) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-50 p-1 rounded-xl border border-border/50 bg-background shadow-xl min-w-[95px] space-y-0.5">
-          {CURRENCIES.map(c => (
-            <button
-              key={c.code}
-              type="button"
-              onClick={() => {
-                onChange(c.code);
-                setIsOpen(false);
-              }}
-              className={`w-full flex items-center gap-2 px-2 py-1 text-[10px] font-bold rounded-lg hover:bg-muted ${
-                value === c.code ? 'text-primary bg-primary/5' : 'text-foreground/70'
-              }`}
-            >
-              <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/10 flex-shrink-0">
-                <img 
-                  src={`/flags/${c.country?.toLowerCase()}.svg`} 
-                  alt="" 
-                  className="w-full h-full object-cover" 
-                  onError={(e) => { 
-                    if (c.code === 'EUR') e.target.src = '/flags/fr.svg';
-                  }}
-                />
-              </div>
-              {c.code}
-            </button>
-          ))}
+        <div className="absolute right-0 top-[calc(100%+4px)] z-50 p-1.5 rounded-xl border border-border/50 bg-background shadow-xl min-w-[160px] max-w-[200px] flex flex-col gap-1">
+          <div className="px-1 py-0.5">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="w-full h-7 px-2 rounded-md border border-border/40 bg-muted/20 text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-primary/50 text-foreground"
+              autoFocus
+            />
+          </div>
+          <div className="space-y-0.5 max-h-[160px] overflow-y-auto custom-scrollbar pr-1 pl-0.5">
+            {filteredCurrencies.map(c => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => {
+                  onChange(c.code);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold rounded-lg hover:bg-muted ${
+                  value === c.code ? 'text-primary bg-primary/5' : 'text-foreground/70'
+                }`}
+                title={c.name}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/10 flex-shrink-0">
+                    <img 
+                      src={`/flags/${c.country?.toLowerCase()}.svg`} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { 
+                        if (c.code === 'EUR') e.target.src = '/flags/fr.svg';
+                      }}
+                    />
+                  </div>
+                  <span>{c.code}</span>
+                </div>
+                {value === c.code && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+              </button>
+            ))}
+            {filteredCurrencies.length === 0 && (
+              <div className="text-center py-2 text-[9px] text-muted-foreground font-semibold">No results</div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -90,7 +942,8 @@ export function DashboardRightSidebar({
   journals = [],
   walletBalance = 0,
   setShowPricingModal,
-  _toast
+  _toast,
+  openPortal
 }) {
   const navigate = useNavigate();
   const [amount, setAmount] = useState('1000');
@@ -98,6 +951,25 @@ export function DashboardRightSidebar({
   const [to, setTo] = useState('EUR');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hoursStr = String(hours).padStart(2, '0');
+      setCurrentTime(`${hoursStr}:${minutes}:${seconds} ${ampm}`);
+    };
+
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchRate = useCallback(async () => {
     const val = parseFloat(amount);
@@ -269,11 +1141,16 @@ export function DashboardRightSidebar({
         <div className="flex items-center gap-2.5">
           <div className="text-right">
             <p className="text-xs font-bold text-foreground capitalize">{userNick}</p>
-            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">@{userNick}</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{currentTime}</p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase">
+          <button
+            type="button"
+            onClick={openPortal || (() => setShowPricingModal?.(true))}
+            className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
+            title="Manage Subscription / Billing"
+          >
             {userNick.slice(0, 2)}
-          </div>
+          </button>
         </div>
       </div>
 
@@ -376,10 +1253,16 @@ export function DashboardRightSidebar({
           type="button"
           onClick={fetchRate}
           disabled={loading}
-          className="w-full h-11 btn-apple-primary"
+          className="btn-convert-animated"
         >
-          <span>Convert</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          <svg xmlns="http://www.w3.org/2000/svg" className="arr-2" viewBox="0 0 24 24">
+            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+          </svg>
+          <span className="circle" />
+          <span className="text">Convert</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="arr-1" viewBox="0 0 24 24">
+            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+          </svg>
         </button>
       </div>
 
@@ -417,14 +1300,23 @@ export function DashboardRightSidebar({
         </div>
 
         {plan === 'pro' && !isTrial ? null : (
-          <button
-            type="button"
-            onClick={() => setShowPricingModal?.(true)}
-            className="w-full h-10 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/90 transition-all flex items-center justify-center gap-2 z-10"
-          >
-            <span>{isTrial ? 'View Plan Details' : 'Let\'s Go'}</span>
-            <ArrowRight className="w-3 h-3 text-black" />
-          </button>
+          <div className="relative group w-full z-10">
+            <button
+              type="button"
+              onClick={() => setShowPricingModal?.(true)}
+              className="relative inline-flex w-full p-px font-semibold leading-6 text-white bg-gray-800 shadow-2xl cursor-pointer rounded-xl shadow-zinc-900 transition-transform duration-300 ease-in-out hover:scale-[1.02] active:scale-95"
+            >
+              <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <span className="relative z-10 flex items-center justify-center w-full px-4 py-2 rounded-xl bg-gray-950">
+                <div className="relative z-10 flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest transition-all duration-500 group-hover:translate-x-1">
+                    {isTrial ? 'View Plan Details' : "Let's Go"}
+                  </span>
+                  <ArrowRight className="w-3 h-3 transition-transform duration-500 group-hover:translate-x-1" />
+                </div>
+              </span>
+            </button>
+          </div>
         )}
       </div>
     </div>

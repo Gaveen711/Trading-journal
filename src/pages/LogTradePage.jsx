@@ -4,6 +4,7 @@ import { Line } from 'react-chartjs-2';
 import { calcPnl, todayStr, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill } from 'react-bootstrap-icons';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { auth } from '../firebase';
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
@@ -21,6 +22,7 @@ export function LogTradePage() {
     plan, resetTrades, monthlyGoal, updateMonthlyGoal,
     journals, saveJournalEntry
   } = useOutletContext();
+  const { isLightMode } = useAppTheme();
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState('chart'); // 'chart' | 'log' | 'logs'
@@ -171,7 +173,7 @@ export function LogTradePage() {
       x: { display: false },
       y: {
         grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
-        ticks: { color: '#64748b', font: { size: 10 } }
+        ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } }
       }
     }
   };
@@ -325,7 +327,7 @@ export function LogTradePage() {
   const avgProfit = wins.length ? wins.reduce((s, t) => s + (t.pnl || 0), 0) / wins.length : 0;
   const avgLoss = losses.length ? losses.reduce((s, t) => s + (t.pnl || 0), 0) / losses.length : 0;
 
-  const userNick = auth.currentUser?.email?.split('@')[0] || 'Trader';
+  const userDisplayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
 
   const handleAddReview = async (e) => {
     e.preventDefault();
@@ -738,7 +740,7 @@ export function LogTradePage() {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase text-foreground">{userNick}</span>
+                  <span className="text-[10px] font-black uppercase text-foreground">{userDisplayName}</span>
                   <span className="text-[8px] font-black uppercase text-muted-foreground/60">{jDate}</span>
                 </div>
                 <p className="text-xs text-foreground/80 leading-relaxed font-semibold">
@@ -765,7 +767,7 @@ export function LogTradePage() {
           />
           <button
             type="submit"
-            className="h-11 px-5 btn-apple-yellow text-[10px] shrink-0"
+            className="btn-apple-yellow shrink-0"
           >
             Submit
           </button>
