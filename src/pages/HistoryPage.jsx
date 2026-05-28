@@ -108,8 +108,11 @@ export function HistoryPage() {
           <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Trade History</h1>
           <p className="text-muted-foreground text-sm font-medium">A comprehensive log of your past performance.</p>
         </div>
-        <button onClick={onExportCSV} className="btn-secondary gap-2 text-[11px] font-black uppercase tracking-widest px-5 h-10 w-full sm:w-auto justify-center">
-          <Download className="w-3.5 h-3.5" /> Export Data
+        <button onClick={onExportCSV} className="learn-more">
+          <span className="circle" aria-hidden="true">
+            <span className="icon arrow" />
+          </span>
+          <span className="button-text">Export Data</span>
         </button>
       </header>
       
@@ -149,10 +152,10 @@ export function HistoryPage() {
             placeholder="All sessions"
             options={[
               { value: '', label: 'All sessions' },
-              { value: 'Asian', label: 'Asian' },
+              { value: 'Sydney', label: 'Sydney' },
+              { value: 'Tokyo', label: 'Tokyo' },
               { value: 'London', label: 'London' },
-              { value: 'NY', label: 'New York' },
-              { value: 'LN-NY', label: 'London–NY' }
+              { value: 'NewYork', label: 'New York' }
             ]}
           />
           <CustomSelect 

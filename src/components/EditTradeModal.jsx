@@ -73,10 +73,10 @@ export function EditTradeModal({ trade, onSave, onClose }) {
                 value={session} 
                 onChange={setSession}
                 options={[
-                  { value: 'Asian', label: 'Asian' },
+                  { value: 'Sydney', label: 'Sydney' },
+                  { value: 'Tokyo', label: 'Tokyo' },
                   { value: 'London', label: 'London' },
-                  { value: 'NY', label: 'New York' },
-                  { value: 'LN-NY', label: 'London–NY' }
+                  { value: 'NewYork', label: 'New York' }
                 ]}
               />
             </div>

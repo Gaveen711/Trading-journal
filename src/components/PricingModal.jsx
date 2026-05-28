@@ -112,6 +112,28 @@ export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClo
                     {isTrial ? `Trial Expires: ${new Date(expiry).toLocaleDateString()}` : `Renews: ${new Date(expiry).toLocaleDateString()}`}
                   </p>
                 )}
+                {isTrial && (
+                  <div className="flex flex-col items-center gap-3 pt-3 border-t border-primary/10 mt-2">
+                    <p className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-widest">
+                      Skip the wait — subscribe now
+                    </p>
+                    <button
+                      data-tooltip="$14.99 / mo"
+                      className="btn-buy-now"
+                      onClick={onSubscribe}
+                      style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}
+                    >
+                      <div className="btn-buy-now-wrapper">
+                        <div className="btn-buy-now-text">Buy Now</div>
+                        <span className="btn-buy-now-icon">
+                          <svg viewBox="0 0 16 16" fill="currentColor" height={18} width={18} xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5zM3.14 5l1.25 5h8.22l1.25-5H3.14zM5 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0zm9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0z" />
+                          </svg>
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button

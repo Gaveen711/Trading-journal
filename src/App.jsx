@@ -32,17 +32,45 @@ const ContactPage = lazy(() => import('./pages/ContactPage.jsx').then(m => ({ de
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
 const Login = lazy(() => import('./Login.jsx'));
 
-const PageLoader = () => (
+const PageLoader = ({ text = "Syncing Terminal" }) => (
   <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6">
     <div className="relative">
-      <div className="absolute inset-0 bg-primary/20 blur-3xl animate-pulse rounded-full" />
-      <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-500 rounded-2xl flex items-center justify-center shadow-2xl relative z-10 animate-bounce duration-1000">
-        <img src="/favicon.png" alt="Loading" className="w-8 h-8 object-contain" />
+      <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full" />
+      <div className="loader-wrapper relative z-10 animate-in fade-in duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 120" width="380" height="76" className="inline-block select-none max-w-full">
+          <defs>
+            <linearGradient gradientUnits="userSpaceOnUse" y2={0} x2={600} y1={0} x1={0} id="loader-grad">
+              <stop stopColor="#973BED" offset="0%" />
+              <stop stopColor="#007CFF" offset="33%" />
+              <stop stopColor="#00E0ED" offset="66%" />
+              <stop stopColor="#00DA72" offset="100%" />
+            </linearGradient>
+          </defs>
+          <text
+            x="50%"
+            y="55%"
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fontFamily="'Poppins', 'Montserrat', -apple-system, sans-serif"
+            fontWeight="900"
+            fontSize="54"
+            letterSpacing="8"
+            stroke="url(#loader-grad)"
+            strokeWidth="3.5"
+            fill="none"
+            className="dash-text"
+            pathLength="360"
+          >
+            XAU JOURNAL
+          </text>
+        </svg>
       </div>
     </div>
-    <div className="flex flex-col items-center gap-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary animate-pulse">Syncing Terminal</p>
-    </div>
+    {text && text !== "Syncing Terminal" && (
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">{text}</p>
+      </div>
+    )}
   </div>
 );
 
@@ -50,7 +78,7 @@ function AuthenticatedApp({ user }) {
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showBrokerSyncUpsell, setShowBrokerSyncUpsell] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { plan, expiry, isTrial, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
+  const { plan, expiry, isTrial, isTrialExpired, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
   const { updateBalance } = useWallet(user);
   const toast = useToast();
 
@@ -84,7 +112,7 @@ function AuthenticatedApp({ user }) {
     <ErrorBoundary>
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} isTrial={isTrial} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
+        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
           <Route index element={<LogTradePage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="calendar" element={<CalendarPage />} />
@@ -173,10 +201,7 @@ function App() {
           </div>
         ) : loading ? (
           localStorage.getItem('xau-auth-hint') === 'true' ? (
-            <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
-              <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Restoring Secure Session</p>
-            </div>
+            <PageLoader text="Restoring Secure Session" />
           ) : (
             <PageLoader />
           )

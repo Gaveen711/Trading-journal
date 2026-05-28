@@ -73,12 +73,13 @@ export function CalendarPage() {
     winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
   })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
 
-  const sessionStats = { 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 }, 'Asian': { pnl: 0, count: 0 }, };
+  const sessionStats = { 'Sydney': { pnl: 0, count: 0 }, 'Tokyo': { pnl: 0, count: 0 }, 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 } };
   monthlyTrades.forEach(t => {
     let s = t.session || '';
-    if (s.toLowerCase().includes('london')) s = 'London';
-    else if (s.toLowerCase().includes('york') || s.toLowerCase().includes('ny')) s = 'New York';
-    else if (s.toLowerCase().includes('asia') || s.toLowerCase().includes('tokyo')) s = 'Asian';
+    if (s.toLowerCase().includes('sydney')) s = 'Sydney';
+    else if (s.toLowerCase().includes('tokyo') || s.toLowerCase().includes('tokoyo') || s.toLowerCase().includes('asia')) s = 'Tokyo';
+    else if (s.toLowerCase().includes('london')) s = 'London';
+    else if (s.toLowerCase().includes('york') || s.toLowerCase().includes('new') || s.toLowerCase().includes('ny')) s = 'New York';
     else return;
 
     sessionStats[s].pnl += (t.pnl || 0);

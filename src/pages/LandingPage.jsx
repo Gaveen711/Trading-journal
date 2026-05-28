@@ -346,9 +346,19 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
+              className="hidden md:block button-animated button-animated-sm px-6 active:scale-95 transition-all duration-300"
             >
-              Get started
+              <span className="button-bg">
+                <span className="button-bg-layers">
+                  <span className="button-bg-layer button-bg-layer-1" />
+                  <span className="button-bg-layer button-bg-layer-2" />
+                  <span className="button-bg-layer button-bg-layer-3" />
+                </span>
+              </span>
+              <span className="button-inner">
+                <span className="button-inner-static">Get started</span>
+                <span className="button-inner-hover">Get started</span>
+              </span>
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -404,9 +414,19 @@ export function LandingPage() {
                 ))}
                 <button
                   onClick={() => navigate('/login')}
-                  className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                  className="button-animated w-full max-w-[280px] px-8 mt-4 shadow-xl active:scale-95 transition-all duration-300"
                 >
-                  Get started
+                  <span className="button-bg">
+                    <span className="button-bg-layers">
+                      <span className="button-bg-layer button-bg-layer-1" />
+                      <span className="button-bg-layer button-bg-layer-2" />
+                      <span className="button-bg-layer button-bg-layer-3" />
+                    </span>
+                  </span>
+                  <span className="button-inner">
+                    <span className="button-inner-static">Get started</span>
+                    <span className="button-inner-hover">Get started</span>
+                  </span>
                 </button>
               </div>
             </Motion.div>
@@ -441,20 +461,26 @@ export function LandingPage() {
               XAU Journal is the precision trading journal built for gold traders track, analyse, and master your edge in XAUUSD.
             </Motion.p>
 
-            <Motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full sm:w-auto">
+            <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">
               <button
                 onClick={() => navigate('/login')}
-                className="w-full sm:w-auto px-6 py-3 sm:py-5 sm:px-10 rounded-full bg-foreground text-background font-bold text-xs sm:text-base shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
+                className="button-animated w-full max-w-[320px] sm:w-auto px-8 shadow-2xl active:scale-95 transition-all duration-300"
               >
-                Start journaling free
+                <span className="button-bg">
+                  <span className="button-bg-layers">
+                    <span className="button-bg-layer button-bg-layer-1" />
+                    <span className="button-bg-layer button-bg-layer-2" />
+                    <span className="button-bg-layer button-bg-layer-3" />
+                  </span>
+                </span>
+                <span className="button-inner">
+                  <span className="button-inner-static">Try 7-Day Free Trial</span>
+                  <span className="button-inner-hover">Try 7-Day Free Trial</span>
+                </span>
               </button>
-              <button
-                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto px-6 py-3 sm:py-5 sm:px-10 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-xs sm:text-base transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                See how it works
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 9l-7 7-7-7" /></svg>
-              </button>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-1">
+                7-day free trial · Cancel anytime · No card required
+              </span>
             </Motion.div>
 
             <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-24 md:mt-32 w-full max-w-4xl px-4">
@@ -636,9 +662,19 @@ export function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <button
                 onClick={() => navigate('/login')}
-                className="w-full sm:w-auto px-8 py-3.5 sm:py-6 sm:px-12 rounded-full bg-foreground text-background font-bold text-sm sm:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
+                className="button-animated w-full sm:w-auto px-10 shadow-2xl active:scale-95 transition-all duration-300"
               >
-                Create free account
+                <span className="button-bg">
+                  <span className="button-bg-layers">
+                    <span className="button-bg-layer button-bg-layer-1" />
+                    <span className="button-bg-layer button-bg-layer-2" />
+                    <span className="button-bg-layer button-bg-layer-3" />
+                  </span>
+                </span>
+                <span className="button-inner">
+                  <span className="button-inner-static">Create free account</span>
+                  <span className="button-inner-hover">Create free account</span>
+                </span>
               </button>
               <Link
                 to="/pricing"
@@ -653,15 +689,19 @@ export function LandingPage() {
 
       <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 md:gap-10">
-            <div className="lg:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
-              <Logo iconSize="w-8 h-8" className="mb-6" />
-              <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-xs mb-4">
-                The XAU journal for professional gold (XAUUSD) traders MT5 sync, analytics, and secure trade history.
-              </p>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
-                Copyright © 2026 xaujournal. All Rights Reserved
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 md:gap-10">
+            <div className="flex flex-col items-center md:items-start text-center md:text-left">
+              <Link to="/" className="mb-6 inline-block">
+                <div className="footer-logo-btn">
+                  <div className="box">X</div>
+                  <div className="box">A</div>
+                  <div className="box">U</div>
+                  <div className="box extra"></div>
+                  <div className="box extra"></div>
+                  <div className="box extra"></div>
+                  <div className="box extra"></div>
+                </div>
+              </Link>
             </div>
 
             <div className="text-center md:text-center flex flex-col items-center md:items-center">
@@ -684,45 +724,40 @@ export function LandingPage() {
 
             <div className="flex flex-col items-center md:items-end text-center md:text-right justify-end">
               <div className="mt-auto flex flex-col items-center md:items-end gap-5">
-                <div className="flex gap-6">
-                  <Motion.a
-                    href="#"
-                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                    className="text-muted-foreground transition-colors"
-                    aria-label="Facebook"
-                  >
-                    <Facebook size={22} />
-                  </Motion.a>
-                  <Motion.a
-                    href="#"
-                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                    className="text-muted-foreground transition-colors"
-                    aria-label="Instagram"
-                  >
-                    <Instagram size={22} />
-                  </Motion.a>
-                  <Motion.a
-                    href="https://x.com/xau_journal"
-                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                    className="text-muted-foreground transition-colors"
-                    aria-label="X"
-                  >
-                    <TwitterX size={22} />
-                  </Motion.a>
-                  <Motion.a
-                    href="https://discord.gg/smbNwBZC2"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    whileHover={{ y: -5, scale: 1.2, color: 'hsl(var(--primary))' }}
-                    className="text-muted-foreground transition-colors"
-                    aria-label="Discord"
-                  >
-                    <Discord size={22} />
-                  </Motion.a>
+                <ul className="example-2">
+                  <li className="icon-content">
+                    <a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
+                      <div className="filled" />
+                      <Facebook />
+                    </a>
+                  </li>
+                  <li className="icon-content">
+                    <a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
+                      <div className="filled" />
+                      <Instagram />
+                    </a>
+                  </li>
+                  <li className="icon-content">
+                    <a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer">
+                      <div className="filled" />
+                      <TwitterX />
+                    </a>
+                  </li>
+                  <li className="icon-content">
+                    <a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer">
+                      <div className="filled" />
+                      <Discord />
+                    </a>
+                  </li>
+                </ul>
+                <div className="flex flex-col items-center md:items-end gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
+                    made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                  </p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right">
+                    Copyright © 2026 xaujournal. All Rights Reserved
+                  </p>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
-                  made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
-                </p>
               </div>
             </div>
           </div>

@@ -28,7 +28,7 @@ import { useWallet } from '../../hooks/useWallet';
 import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 
-export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
+export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -98,7 +98,6 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
         <div className="flex items-center gap-2.5 mb-8 cursor-pointer" onClick={() => navigate('/app')}>
           <Logo iconSize="w-8 h-8" />
           <div className="flex flex-col">
-            <span className="text-xs font-black tracking-widest uppercase text-foreground">XAU Journal</span>
             <span className="text-[9px] font-black uppercase text-primary tracking-widest">
               {plan === 'pro' && isTrial ? 'Pro (Trial)' : `${plan} tier`}
             </span>
@@ -129,40 +128,29 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
         {/* SIDEBAR ACTIONS (Logout / Theme) */}
         <div className="mt-auto pt-6 border-t border-border/20 flex flex-col gap-4">
           <div className="flex items-center justify-between mt-2">
-            {/* iOS-style on/off theme toggle */}
-            <button
-              onClick={toggleTheme}
-              title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
-              className="relative flex items-center gap-2 group hover:shadow-none"
-            >
-              {/* Track */}
-              <span
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 border ${
-                  isLightMode
-                    ? 'bg-muted border-border/40'
-                    : 'bg-primary border-primary/60'
-                }`}
-              >
-                {/* Thumb with icon */}
-                <span
-                  className={`absolute left-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
-                    isLightMode ? 'translate-x-0' : 'translate-x-5'
-                  }`}
-                >
-                  {isLightMode
-                    ? <MoonStarsFill className="w-3 h-3 text-primary" />
-                    : <SunFill className="w-3 h-3 text-amber-400" />
-                  }
-                </span>
-              </span>
-            </button>
+            {/* Custom 3D rotate theme switch */}
+            <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+              <div className="check">
+                <input
+                  id="check-desktop"
+                  type="checkbox"
+                  checked={!isLightMode}
+                  onChange={toggleTheme}
+                />
+                <label htmlFor="check-desktop" />
+              </div>
+            </div>
             <button 
               onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
-              className="flex items-center gap-2 px-3 py-2 text-destructive hover:bg-destructive/10 rounded-xl transition-all font-black text-[10px] uppercase hover:shadow-none"
+              className="Btn"
               title="Log out"
             >
-              <BoxArrowRight className="w-4 h-4" />
-              <span>Logout</span>
+              <div className="sign">
+                <svg viewBox="0 0 512 512">
+                  <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" fill="white" />
+                </svg>
+              </div>
+              <div className="text">Logout</div>
             </button>
           </div>
         </div>
@@ -175,35 +163,21 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
           <div className="h-16 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/app')}>
               <Logo iconSize="w-7 h-7" />
-              <span className="text-xs font-black uppercase tracking-widest">XAU Journal</span>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* iOS-style mini toggle for mobile */}
-              <button
-                onClick={toggleTheme}
-                title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
-                className="relative flex items-center hover:shadow-none"
-              >
-                <span
-                  className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-300 border ${
-                    isLightMode
-                      ? 'bg-muted border-border/40'
-                      : 'bg-primary border-primary/60'
-                  }`}
-                >
-                  <span
-                    className={`absolute left-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${
-                      isLightMode ? 'translate-x-0' : 'translate-x-6'
-                    }`}
-                  >
-                    {isLightMode
-                      ? <MoonStarsFill className="w-2.5 h-2.5 text-primary" />
-                      : <SunFill className="w-2.5 h-2.5 text-amber-400" />
-                    }
-                  </span>
-                </span>
-              </button>
+              {/* Custom 3D rotate theme switch */}
+              <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+                <div className="check">
+                  <input
+                    id="check-mobile"
+                    type="checkbox"
+                    checked={!isLightMode}
+                    onChange={toggleTheme}
+                  />
+                  <label htmlFor="check-mobile" />
+                </div>
+              </div>
               <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="w-8 h-8 rounded-xl bg-muted border border-border/40 flex items-center justify-center hover:shadow-none"
@@ -222,10 +196,15 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
               </div>
               <button 
                 onClick={() => { setShowProfileMenu(false); auth.signOut(); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg text-[10px] font-black uppercase hover:shadow-none"
+                className="Btn"
+                title="Log out"
               >
-                <BoxArrowRight className="w-3.5 h-3.5" />
-                <span>Logout</span>
+                <div className="sign">
+                  <svg viewBox="0 0 512 512">
+                    <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" fill="white" />
+                  </svg>
+                </div>
+                <div className="text">Logout</div>
               </button>
             </div>
           )}
@@ -236,8 +215,28 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
           
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0">
+            {isTrialExpired && (
+              <div className="mb-6 p-4 md:p-5 rounded-[2rem] bg-amber-500/10 border border-amber-500/20 text-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm backdrop-blur-md relative overflow-hidden group">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">7-Day Pro Trial Expired</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground font-medium leading-relaxed uppercase tracking-wider">
+                    You've been downgraded to the Basic tier. Upgrade to Pro to resume MT4/MT5 auto-sync and unlimited trades.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowPricingModal(true)}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 active:scale-95 shadow-md flex-shrink-0"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
+
             <Outlet context={{
-              user, plan, expiry, isTrial, totalTrades, setShowPricingModal, openPortal,
+              user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
               trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
               walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
@@ -256,6 +255,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, totalTrades, setS
                 walletBalance={walletBalance}
                 setShowPricingModal={setShowPricingModal}
                 toast={toast}
+                openPortal={openPortal}
               />
             </aside>
           )}

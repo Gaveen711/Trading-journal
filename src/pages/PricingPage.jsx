@@ -153,9 +153,19 @@ export function PricingPage() {
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="hidden sm:block px-6 py-2 rounded-full bg-foreground text-background text-sm font-bold hover:opacity-90 transition-all active:scale-95"
+              className="hidden md:block button-animated button-animated-sm px-6 active:scale-95 transition-all duration-300"
             >
-              Get started
+              <span className="button-bg">
+                <span className="button-bg-layers">
+                  <span className="button-bg-layer button-bg-layer-1" />
+                  <span className="button-bg-layer button-bg-layer-2" />
+                  <span className="button-bg-layer button-bg-layer-3" />
+                </span>
+              </span>
+              <span className="button-inner">
+                <span className="button-inner-static">Get started</span>
+                <span className="button-inner-hover">Get started</span>
+              </span>
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -202,9 +212,19 @@ export function PricingPage() {
                 ))}
                 <button
                   onClick={() => navigate('/login')}
-                  className="mt-4 px-10 py-4 rounded-full bg-primary text-primary-foreground text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                  className="button-animated w-full max-w-[280px] px-8 mt-4 shadow-xl active:scale-95 transition-all duration-300"
                 >
-                  Get started
+                  <span className="button-bg">
+                    <span className="button-bg-layers">
+                      <span className="button-bg-layer button-bg-layer-1" />
+                      <span className="button-bg-layer button-bg-layer-2" />
+                      <span className="button-bg-layer button-bg-layer-3" />
+                    </span>
+                  </span>
+                  <span className="button-inner">
+                    <span className="button-inner-static">Get started</span>
+                    <span className="button-inner-hover">Get started</span>
+                  </span>
                 </button>
               </div>
             </Motion.div>
@@ -258,7 +278,7 @@ export function PricingPage() {
 
             <button
               onClick={() => navigate('/login')}
-              className="w-full py-3.5 sm:py-5 rounded-2xl border-2 border-border/60 bg-transparent text-foreground font-bold tracking-wide hover:bg-foreground hover:text-background transition-all duration-300"
+              className="btn-pricing-custom mt-auto"
             >
               Get started free
             </button>
@@ -301,7 +321,7 @@ export function PricingPage() {
 
             <button
               onClick={handleUpgradeClick}
-              className="w-full py-3.5 sm:py-5 rounded-2xl bg-primary text-primary-foreground font-black tracking-wide shadow-xl shadow-primary/20 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative z-10"
+              className="btn-pricing-custom mt-auto"
             >
               Start 7-Day Free Trial
             </button>
@@ -328,13 +348,17 @@ export function PricingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="flex flex-col items-center md:items-start gap-4">
-              <Logo iconSize="w-8 h-8" className="mb-4" />
-              <p className="text-sm text-muted-foreground font-medium max-w-xs text-center md:text-left mb-2">
-                Empowering traders with clarity and institutional grade analytics.
-              </p>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
-                Copyright © 2026 xaujournal. All Rights Reserved
-              </p>
+              <NavLink to="/" className="mb-4 inline-block">
+                <div className="footer-logo-btn">
+                  <div className="box">X</div>
+                  <div className="box">A</div>
+                  <div className="box">U</div>
+                  <div className="box extra"></div>
+                  <div className="box extra"></div>
+                  <div className="box extra"></div>
+                  <div className="box extra"></div>
+                </div>
+              </NavLink>
             </div>
 
             <div className="flex flex-col items-center md:items-end gap-6">
@@ -343,9 +367,14 @@ export function PricingPage() {
                 <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
                 <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
               </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 mt-2 flex items-center gap-1.5 justify-center md:justify-end">
-                made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              </p>
+              <div className="flex flex-col items-center md:items-end gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
+                  made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right">
+                  Copyright © 2026 xaujournal. All Rights Reserved
+                </p>
+              </div>
             </div>
           </div>
         </div>

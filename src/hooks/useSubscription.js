@@ -40,9 +40,10 @@ export function useSubscription(user) {
         const expiryDate = data.planExpiry ? new Date(data.planExpiry) : null;
         const now = new Date();
         const GRACE_PERIOD_MS = 4 * 24 * 60 * 60 * 1000;
+        const graceMs = data.isTrial ? 0 : GRACE_PERIOD_MS;
 
         if (isPro && expiryDate) {
-          const cutoffDate = new Date(expiryDate.getTime() + GRACE_PERIOD_MS);
+          const cutoffDate = new Date(expiryDate.getTime() + graceMs);
           
           if (now > cutoffDate) {
             if (data.plan !== 'free') {
@@ -52,6 +53,7 @@ export function useSubscription(user) {
               plan: 'free', 
               expiry: data.planExpiry, 
               isTrial: false,
+              isTrialExpired: data.isTrial || false,
               totalTrades: data.totalTradesLogged || 0,
               totalJournals: data.totalJournalsLogged || 0,
               agreedToTerms: data.agreedToTerms || false,
@@ -62,6 +64,7 @@ export function useSubscription(user) {
               plan: 'pro', 
               expiry: data.planExpiry, 
               isTrial: data.isTrial || false,
+              isTrialExpired: false,
               totalTrades: data.totalTradesLogged || 0,
               totalJournals: data.totalJournalsLogged || 0,
               agreedToTerms: data.agreedToTerms || false,
@@ -70,10 +73,12 @@ export function useSubscription(user) {
             });
           }
         } else {
+          const isTrialExpired = data.isTrial && expiryDate && now > expiryDate;
           setSubscription({ 
             plan: data.plan || 'free', 
             expiry: data.planExpiry || null, 
             isTrial: data.isTrial || false,
+            isTrialExpired: isTrialExpired || false,
             totalTrades: data.totalTradesLogged || 0,
             totalJournals: data.totalJournalsLogged || 0,
             agreedToTerms: data.agreedToTerms || false,
@@ -81,9 +86,30 @@ export function useSubscription(user) {
           });
         }
       } else {
-        // Create profile if missing
-        setDoc(doc(db, "users", user.uid), { plan: 'free', totalTradesLogged: 0, totalJournalsLogged: 0, agreedToTerms: false }, { merge: true });
-        setSubscription({ plan: 'free', expiry: null, isTrial: false, totalTrades: 0, totalJournals: 0, agreedToTerms: false, isLoading: false });
+        // Create profile with 7-day Pro trial
+        const trialExpiry = new Date();
+        trialExpiry.setDate(trialExpiry.getDate() + 7);
+        const planExpiryStr = trialExpiry.toISOString();
+        
+        setDoc(doc(db, "users", user.uid), { 
+          plan: 'pro', 
+          isTrial: true, 
+          planExpiry: planExpiryStr, 
+          totalTradesLogged: 0, 
+          totalJournalsLogged: 0, 
+          agreedToTerms: false 
+        }, { merge: true });
+        
+        setSubscription({ 
+          plan: 'pro', 
+          expiry: planExpiryStr, 
+          isTrial: true, 
+          isTrialExpired: false, 
+          totalTrades: 0, 
+          totalJournals: 0, 
+          agreedToTerms: false, 
+          isLoading: false 
+        });
       }
     });
 

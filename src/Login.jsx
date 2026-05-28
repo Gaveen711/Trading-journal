@@ -68,13 +68,18 @@ function Login() {
         
         await updateProfile(user, { displayName: `${firstName} ${lastName}` });
         
-        // Write profile details immediately to Firestore
+        const trialExpiry = new Date();
+        trialExpiry.setDate(trialExpiry.getDate() + 7);
+        
+        // Write profile details immediately to Firestore with a 7-day Pro trial
         await setDoc(doc(db, "users", user.uid), {
           email: user.email,
           firstName,
           lastName,
           displayName: `${firstName} ${lastName}`,
-          plan: 'free',
+          plan: 'pro',
+          isTrial: true,
+          planExpiry: trialExpiry.toISOString(),
           totalTradesLogged: 0,
           totalJournalsLogged: 0,
           agreedToTerms: false,
@@ -351,9 +356,23 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-[#18181b] hover:bg-[#27272a] active:scale-[0.98] text-white text-sm font-semibold rounded-2xl transition-all duration-300 flex items-center justify-center shadow-md disabled:opacity-50"
+            className="button-animated button-animated-sm login-btn-override w-full shadow-md disabled:opacity-50"
           >
-            {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Get Started'}
+            <span className="button-bg">
+              <span className="button-bg-layers">
+                <span className="button-bg-layer button-bg-layer-1" />
+                <span className="button-bg-layer button-bg-layer-2" />
+                <span className="button-bg-layer button-bg-layer-3" />
+              </span>
+            </span>
+            <span className="button-inner">
+              <span className="button-inner-static">
+                {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Get Started'}
+              </span>
+              <span className="button-inner-hover">
+                {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Get Started'}
+              </span>
+            </span>
           </button>
 
           {/* Stay Signed In Switch */}
