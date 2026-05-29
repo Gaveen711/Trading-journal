@@ -2185,4 +2185,82 @@ button.learn-more:active {
   opacity: 0.8;
 }
 
+/* Custom Cyber Workflow Card Style */
+.cyber-step-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 40px;
+  padding-top: 60px;
+  background-color: #000000 !important;
+  border-radius: 32px;
+  cursor: pointer;
+  z-index: 1;
+  transition: all 0.5s ease;
+  border: none !important;
+}
+
+.cyber-step-card::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  margin: auto;
+  border-radius: 34px;
+  background: linear-gradient(-45deg, #e81cff 0%, #40c9ff 100% );
+  z-index: -10;
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cyber-step-card::after {
+  content: "";
+  z-index: -11;
+  position: absolute;
+  inset: 0;
+  border-radius: 32px;
+  background: linear-gradient(-45deg, #fc00ff 0%, #00dbde 100% );
+  transform: translate3d(0, 0, 0) scale(0.95);
+  filter: blur(20px);
+  transition: filter 0.6s ease;
+}
+
+/* Hover Effects scoped to hover-capable devices */
+@media (hover: hover) {
+  .cyber-step-card:hover::after {
+    filter: blur(30px);
+  }
+
+  .cyber-step-card:hover::before {
+    transform: rotate(-90deg) scaleX(1.15) scaleY(0.92);
+  }
+}
+
+.cyber-step-card h3 {
+  color: #ffffff !important;
+  transition: color 0.3s ease;
+}
+
+.cyber-step-card p {
+  color: rgba(255, 255, 255, 0.7) !important;
+  transition: color 0.3s ease;
+}
+
+.cyber-step-card .step-number {
+  color: rgba(255, 255, 255, 0.03) !important;
+  transition: color 0.3s ease;
+}
+
+@media (hover: hover) {
+  .cyber-step-card:hover h3 {
+    color: #40c9ff !important;
+  }
+
+  .cyber-step-card:hover .step-number {
+    color: rgba(232, 28, 255, 0.08) !important;
+  }
+}
+
+
+
 
