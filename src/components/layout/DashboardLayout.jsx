@@ -246,6 +246,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 setShowPricingModal={setShowPricingModal}
                 toast={toast}
                 openPortal={openPortal}
+                resetTrades={resetTrades}
+                updateBalance={updateBalance}
               />
             </aside>
           )}
