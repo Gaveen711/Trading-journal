@@ -97,16 +97,36 @@ export function useTrades(user) {
 
   const resetTrades = async () => {
     if (!user?.uid) throw new Error('Not authenticated');
-    const token = await user.getIdToken();
-    const resp = await fetch('/api/reset-trades', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch('/api/reset-trades', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!resp.ok) {
+        const data = await resp.json();
+        throw new Error(data.error || 'Failed to reset trades via API');
       }
-    });
-    if (!resp.ok) {
-      const data = await resp.json();
-      throw new Error(data.error || 'Failed to reset trades');
+    } catch (apiError) {
+      console.warn('API reset failed or unavailable. Falling back to direct client-side wipe:', apiError);
+      
+      // Direct Firestore client-side deletion fallback
+      const { getDocs, query, collection, writeBatch, doc } = await import('firebase/firestore');
+      const q = query(collection(db, 'users', user.uid, 'trades'));
+      const snapshot = await getDocs(q);
+      
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((documentSnapshot) => {
+        batch.delete(doc(db, 'users', user.uid, 'trades', documentSnapshot.id));
+      });
+      
+      batch.update(doc(db, 'users', user.uid), {
+        totalTradesLogged: 0
+      });
+      
+      await batch.commit();
     }
   };
 

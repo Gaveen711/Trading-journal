@@ -1346,7 +1346,7 @@ export function DashboardRightSidebar({
         )}
       </div>
       {/* PRO RESET OPTION (Mobile View Only) */}
-      {plan === 'pro' && (
+      {(plan === 'pro' || import.meta.env.DEV) && (
         <div className="pt-6 pb-2 flex md:hidden flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
           {isWiping && (
             <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 max-w-sm flex gap-3 text-left animate-in slide-in-from-bottom-2 duration-300">
