@@ -1891,7 +1891,13 @@ button.learn-more:active {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   text-decoration: none;
+  padding: 12px 20px;
+  min-height: 48px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-cta-underline span {
@@ -1905,15 +1911,16 @@ button.learn-more:active {
 }
 
 .btn-cta-underline svg {
-  transform: translateX(-8px);
+  transform: translateX(-4px);
   transition: all 0.3s ease;
   fill: currentColor;
   color: hsl(var(--foreground));
   flex-shrink: 0;
 }
 
-.btn-cta-underline:hover svg {
-  transform: translateX(0);
+.btn-cta-underline:active {
+  opacity: 0.7;
+  transform: scale(0.98);
 }
 
 .btn-cta-underline:active svg {
@@ -1938,9 +1945,16 @@ button.learn-more:active {
   transition: transform 0.25s ease-out;
 }
 
-.btn-cta-underline:hover .hover-underline-animation:after {
-  transform: scaleX(1);
-  transform-origin: bottom left;
+/* Hover effects only on devices that support hover (non-touch) */
+@media (hover: hover) {
+  .btn-cta-underline:hover svg {
+    transform: translateX(2px);
+  }
+
+  .btn-cta-underline:hover .hover-underline-animation:after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
 }
 
 
