@@ -10,7 +10,6 @@ import {
 import { doc, setDoc } from 'firebase/firestore';
 import { db, auth, googleProvider, facebookProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 import { getFriendlyErrorMessage } from './lib/errorUtils';
-import { useToast } from './components/ToastContext';
 
 function Login() {
   const location = useLocation();
@@ -28,7 +27,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const toast = useToast();
+
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

@@ -844,15 +844,14 @@ function CurrencySelect({ value, onChange, label }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setSearch('');
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (!isOpen) setSearch('');
-  }, [isOpen]);
 
   const filteredCurrencies = CURRENCIES.filter(c => 
     c.code.toLowerCase().includes(search.toLowerCase()) || 
@@ -864,7 +863,10 @@ function CurrencySelect({ value, onChange, label }) {
       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{label}</label>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (isOpen) setSearch('');
+        }}
         className={`w-full h-12 px-4 rounded-xl border flex items-center justify-between transition-all duration-300 ${
           isOpen ? 'bg-muted/50 border-primary/50 ring-2 ring-primary/10' : 'bg-muted/30 border-border/50 hover:border-primary/30'
         }`}
@@ -906,6 +908,7 @@ function CurrencySelect({ value, onChange, label }) {
                 onClick={() => {
                   onChange(c.code);
                   setIsOpen(false);
+                  setSearch('');
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
                   value === c.code ? 'bg-primary text-white' : 'hover:bg-white/5 text-foreground/70 hover:text-foreground'

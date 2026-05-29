@@ -193,10 +193,6 @@ export default function EASetup() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Sync state
-  const [syncingAll, setSyncingAll] = useState(false);
-  const [removingId, setRemovingId] = useState(null);
-
   // Plan checks
   const nowMs = Date.now();
   const isActivePro = plan === 'pro' || (plan === 'pro' && expiry && new Date(expiry).getTime() > nowMs);
@@ -233,33 +229,13 @@ export default function EASetup() {
     }
   }
 
-  async function handleSyncAll() {
-    if (accounts.length === 0) return;
-    setSyncingAll(true);
-    try {
-      let totalNew = 0;
-      for (const account of accounts) {
-        const result = await syncAccount(account.id);
-        totalNew += result.newTrades || 0;
-      }
-      toast(`Sync completed. ${totalNew} new trade(s) synced.`, 'success');
-    } catch (err) {
-      toast(getFriendlyErrorMessage(err), 'error');
-    } finally {
-      setSyncingAll(false);
-    }
-  }
-
   async function handleRemove(accountId) {
     if (!window.confirm('Remove this broker account? Historical trades will remain.')) return;
-    setRemovingId(accountId);
     try {
       await removeAccount(accountId);
       toast('Account removed.', 'success');
     } catch (err) {
       toast(getFriendlyErrorMessage(err), 'error');
-    } finally {
-      setRemovingId(null);
     }
   }
 
