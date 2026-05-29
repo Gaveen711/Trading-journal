@@ -464,12 +464,9 @@ export function LandingPage() {
             <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">
               <button
                 onClick={() => navigate('/login')}
-                className="btn-subscribe-slide"
+                className="btn-menu-underline"
               >
-                <p data-text="Try 7-Day Free Trial">Try 7-Day Free Trial</p>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
+                Try 7-Day Free Trial
               </button>
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-1">
                 7-day free trial · Cancel anytime · No card required

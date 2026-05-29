@@ -2136,81 +2136,43 @@ button.learn-more:active {
   }
 }
 
-/* Custom Subscribe Slide Button Style */
-.btn-subscribe-slide {
-  padding: 0;
-  margin: 0;
+/* Custom Menu Link Underline Button Style */
+.btn-menu-underline {
   border: none;
   background: none;
   cursor: pointer;
-  --primary-color: hsl(var(--foreground));
-  --hovered-color: #c84747;
+  padding: 0;
+  margin: 0;
+  color: hsl(var(--foreground));
+  line-height: 2;
   position: relative;
-  display: inline-flex;
-  font-weight: 600;
   font-size: 20px;
-  gap: 0.5rem;
-  align-items: center;
+  font-weight: 600;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease;
 }
 
-.btn-subscribe-slide p {
-  margin: 0;
-  position: relative;
-  font-size: 20px;
-  color: var(--primary-color);
-}
-
-.btn-subscribe-slide::after {
-  position: absolute;
-  content: "";
+.btn-menu-underline::before {
+  content: '';
   width: 0;
-  left: 0;
-  bottom: -7px;
-  background: var(--hovered-color);
   height: 2px;
-  transition: 0.3s ease-out;
-}
-
-.btn-subscribe-slide p::before {
+  border-radius: 2px;
+  background-color: hsl(var(--foreground));
   position: absolute;
-  content: attr(data-text);
-  width: 0%;
-  inset: 0;
-  color: var(--hovered-color);
-  overflow: hidden;
-  transition: 0.3s ease-out;
-  white-space: nowrap;
+  bottom: -.25rem;
+  left: 0;
+  transition: width .4s;
 }
 
-.btn-subscribe-slide svg {
-  color: var(--primary-color);
-  transition: transform 0.2s, color 0.2s;
-  position: relative;
-  width: 18px;
-  height: 18px;
-  transition-delay: 0.1s;
-}
-
-/* Hover effect on desktop */
 @media (hover: hover) {
-  .btn-subscribe-slide:hover::after {
+  .btn-menu-underline:hover::before {
     width: 100%;
-  }
-
-  .btn-subscribe-slide:hover p::before {
-    width: 100%;
-  }
-
-  .btn-subscribe-slide:hover svg {
-    transform: translateX(4px);
-    color: var(--hovered-color);
   }
 }
 
-/* Touch friendly Active State */
-.btn-subscribe-slide:active {
+.btn-menu-underline:active {
   opacity: 0.8;
 }
+
 
