@@ -546,15 +546,17 @@ export function LandingPage() {
                   transition={{ duration: 0.7, delay: i * 0.2 }}
                   className="cyber-step-card group"
                 >
-                  <div className="absolute -top-10 left-10 w-20 h-20 rounded-3xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500">
+                  <div className="cyber-step-card-bg" />
+
+                  <div className="absolute -top-10 left-10 w-20 h-20 rounded-3xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 z-20">
                     {step.icon}
                   </div>
 
-                  <div className="absolute top-10 right-10 text-8xl font-black step-number select-none">
+                  <div className="absolute top-10 right-10 text-8xl font-black step-number select-none z-10">
                     {step.id}
                   </div>
 
-                  <div className="mt-12">
+                  <div className="mt-12 relative z-10">
                     <h3 className="text-2xl font-bold mb-5 tracking-tight">{step.title}</h3>
                     <p className="text-base leading-relaxed font-medium">
                       {step.body}

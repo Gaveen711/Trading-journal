@@ -2196,7 +2196,7 @@ button.learn-more:active {
   justify-content: flex-end;
   padding: 40px;
   padding-top: 60px;
-  background-color: #000000 !important;
+  background-color: transparent !important;
   border-radius: 32px;
   cursor: pointer;
   z-index: 1;
@@ -2204,6 +2204,15 @@ button.learn-more:active {
   border: none !important;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.cyber-step-card-bg {
+  position: absolute;
+  inset: 0;
+  background-color: #000000;
+  border-radius: 32px;
+  z-index: 0;
+  transition: all 0.5s ease;
 }
 
 .cyber-step-card::before {
