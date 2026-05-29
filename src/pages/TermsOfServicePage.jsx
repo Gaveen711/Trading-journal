@@ -232,19 +232,13 @@ export function TermsOfServicePage() {
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="hidden md:block button-animated button-animated-sm px-6 active:scale-95 transition-all duration-300"
+              className="hidden md:flex cta active:scale-95 transition-all duration-300"
             >
-              <span className="button-bg">
-                <span className="button-bg-layers">
-                  <span className="button-bg-layer button-bg-layer-1" />
-                  <span className="button-bg-layer button-bg-layer-2" />
-                  <span className="button-bg-layer button-bg-layer-3" />
-                </span>
-              </span>
-              <span className="button-inner">
-                <span className="button-inner-static">Get started</span>
-                <span className="button-inner-hover">Get started</span>
-              </span>
+              <span>Get Started</span>
+              <svg width="15px" height="10px" viewBox="0 0 13 10">
+                <path d="M1,5 L11,5" />
+                <polyline points="8 1 12 5 8 9" />
+              </svg>
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
