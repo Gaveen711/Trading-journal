@@ -292,7 +292,7 @@ export function LandingPage() {
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
         <canvas
           ref={canvasRef}
-          style={{ width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
         />
       </div>
 
