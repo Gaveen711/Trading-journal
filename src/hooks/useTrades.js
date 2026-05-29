@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, serverTimestamp, increment, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, increment, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useTrades(user) {
