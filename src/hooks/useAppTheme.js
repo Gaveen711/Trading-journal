@@ -39,6 +39,8 @@ export function useAppTheme() {
       root.classList.add('dark');
     }
 
+    localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
+
     if (isInitialMount.current) {
       window.getComputedStyle(root).opacity;
       document.head.removeChild(css);
@@ -49,8 +51,6 @@ export function useAppTheme() {
       }, 250);
       return () => clearTimeout(timer);
     }
-
-    localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
   }, [isLightMode]);
 
   // ── Cross-tab sync via storage event ───────────────────────────────────
