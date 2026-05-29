@@ -678,9 +678,12 @@ export function LandingPage() {
               </button>
               <Link
                 to="/pricing"
-                className="w-full sm:w-auto px-8 py-3.5 sm:py-6 sm:px-12 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-sm sm:text-lg transition-all duration-300"
+                className="btn-cta-underline"
               >
-                View pricing
+                <span className="hover-underline-animation">View pricing</span>
+                <svg id="arrow-horizontal" xmlns="http://www.w3.org/2000/svg" width={30} height={10} viewBox="0 0 46 16">
+                  <path id="Path_10" data-name="Path 10" d="M8,0,6.545,1.455l5.506,5.506H-30V9.039H12.052L6.545,14.545,8,16l8-8Z" transform="translate(30)" />
+                </svg>
               </Link>
             </div>
           </Motion.div>

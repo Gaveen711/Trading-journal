@@ -1884,6 +1884,66 @@ button.learn-more:active {
   transition-duration: 0.3s;
 }
 
+/* Custom CTA Button Style */
+.btn-cta-underline {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.btn-cta-underline span {
+  padding-bottom: 7px;
+  letter-spacing: 4px;
+  font-size: 14px;
+  padding-right: 15px;
+  text-transform: uppercase;
+  color: hsl(var(--foreground));
+  font-weight: 700;
+}
+
+.btn-cta-underline svg {
+  transform: translateX(-8px);
+  transition: all 0.3s ease;
+  fill: currentColor;
+  color: hsl(var(--foreground));
+  flex-shrink: 0;
+}
+
+.btn-cta-underline:hover svg {
+  transform: translateX(0);
+}
+
+.btn-cta-underline:active svg {
+  transform: scale(0.9);
+}
+
+.btn-cta-underline .hover-underline-animation {
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.btn-cta-underline .hover-underline-animation:after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: hsl(var(--foreground));
+  transform-origin: bottom right;
+  transition: transform 0.25s ease-out;
+}
+
+.btn-cta-underline:hover .hover-underline-animation:after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+
 
 
 
