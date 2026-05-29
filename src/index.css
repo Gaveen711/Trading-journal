@@ -870,6 +870,14 @@ a[href*="neat.firecms.co"] {
   color: #ffffff !important;
 }
 
+@media (max-width: 640px) {
+  .glass-tab-button {
+    padding: 8px 4px !important;
+    font-size: 8.5px !important;
+    letter-spacing: 0.03em !important;
+  }
+}
+
 .glass-tab-button-active {
   background: rgba(255, 255, 255, 0.9) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;

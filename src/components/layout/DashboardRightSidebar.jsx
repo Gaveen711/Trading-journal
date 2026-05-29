@@ -1086,8 +1086,18 @@ export function DashboardRightSidebar({
     localStorage.setItem('xau-notif-read', JSON.stringify(updated));
   };
 
-  const userEmail = auth.currentUser?.email || 'Trader';
-  const userNick = userEmail.split('@')[0];
+  const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
+  
+  // Helper to get initials
+  const getInitials = (name) => {
+    if (!name) return 'TR';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+  const initials = getInitials(displayName);
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -1166,7 +1176,7 @@ export function DashboardRightSidebar({
 
         <div className="flex items-center gap-2.5">
           <div className="text-right">
-            <p className="text-xs font-bold text-foreground capitalize">{userNick}</p>
+            <p className="text-xs font-bold text-foreground capitalize">{displayName}</p>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{currentTime}</p>
           </div>
           <button
@@ -1175,7 +1185,7 @@ export function DashboardRightSidebar({
             className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
             title="Manage Subscription / Billing"
           >
-            {userNick.slice(0, 2)}
+            {initials}
           </button>
         </div>
       </div>

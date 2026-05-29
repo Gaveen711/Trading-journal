@@ -20,6 +20,7 @@ import {
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import { useBrokerAccounts } from '../../hooks/useBrokerAccounts';
 import Logo from '../Logo';
 
 import { useTrades } from '../../hooks/useTrades';
@@ -30,10 +31,25 @@ import { DashboardRightSidebar } from './DashboardRightSidebar';
 
 export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
+  const { accounts, syncAccount } = useBrokerAccounts();
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Background sync on dashboard load / mount
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const activeAccount = accounts[0];
+      syncAccount(activeAccount.id)
+        .then(() => {
+          console.log('Background broker sync successful.');
+        })
+        .catch((err) => {
+          console.warn('Background broker sync failed:', err);
+        });
+    }
+  }, [accounts.length]);
 
   const profileMenuRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);

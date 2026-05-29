@@ -181,6 +181,44 @@ async function syncTrades(uid, account) {
   return newCount;
 }
 
+async function transientSyncTrades(uid, server, accountId, password, platform) {
+  const api = getMetaApi();
+  const provisioningApi = api.metatraderAccountApi;
+
+  let account = null;
+  try {
+    // 1. Create a temporary MetaApi account config
+    account = await provisioningApi.createAccount({
+      name: `XAUJournal-Temp-${uid}-${Date.now()}`,
+      type: 'cloud',
+      login: String(accountId),
+      password,
+      server,
+      platform: platform === 'mt4' ? 'mt4' : 'mt5',
+      application: 'MetaApi',
+      magic: 0,
+    });
+
+    // 2. Deploy it
+    await account.deploy();
+    await account.waitConnected(120);
+
+    // 3. Sync the trades
+    const count = await syncTrades(uid, account);
+    return count;
+  } finally {
+    // 4. Always clean up and delete the temporary account configuration
+    if (account) {
+      try {
+        await account.remove();
+        console.log(`[transientSyncTrades] Successfully cleaned up MetaApi account: ${account.id}`);
+      } catch (cleanupErr) {
+        console.error(`[transientSyncTrades] Failed to remove MetaApi account ${account.id}:`, cleanupErr.message || cleanupErr);
+      }
+    }
+  }
+}
+
 // ─── 1. CONNECT BROKER ───────────────────────────────────────────────────────
 exports.connectBroker = onCall(
   { secrets: [metaApiTokenSecret], timeoutSeconds: 540, memory: '1GiB' },
@@ -192,57 +230,17 @@ exports.connectBroker = onCall(
       throw new HttpsError('invalid-argument', 'Missing server, accountId, or password.');
     }
 
-    const api = getMetaApi();
-    const provisioningApi = api.metatraderAccountApi;
-
-    const userRef = db.collection('users').doc(uid);
-    const userDoc = await userRef.get();
-    const existingMetaApiId = userDoc.data()?.metaApiAccountId;
-
-    let account;
-
     try {
-      if (existingMetaApiId) {
-        account = await provisioningApi.getAccount(existingMetaApiId);
-        if (account.state !== 'DEPLOYED') await account.deploy();
-      } else {
-        account = await provisioningApi.createAccount({
-          name: `XAUJournal-${uid}`,
-          type: 'cloud',
-          login: String(accountId),
-          password,
-          server,
-          platform: platform === 'mt4' ? 'mt4' : 'mt5',
-          application: 'MetaApi',
-          magic: 0,
-        });
-
-        await account.deploy();
-
-        await userRef.set(
-          {
-            metaApiAccountId: account.id,
-            brokerServer: server,
-            brokerPlatform: platform,
-            brokerLogin: String(accountId),
-          },
-          { merge: true }
-        );
-      }
-
-      await account.waitConnected(120);
-
-      const count = await syncTrades(uid, account);
+      const count = await transientSyncTrades(uid, server, accountId, password, platform);
 
       return {
         message: `Broker connected and ${count} new trade(s) synced successfully.`,
         tradeCount: count,
-        metaApiAccountId: account.id,
       };
     } catch (err) {
       console.error('[connectBroker]', err);
       try {
-        await userRef.set(
+        await db.collection('users').doc(uid).set(
           { lastBrokerSyncStatus: 'failed' },
           { merge: true }
         );
@@ -260,22 +258,17 @@ exports.connectBroker = onCall(
 
 // ─── 2. SYNC TRADES ─────────────────────────────────────────────────────────
 exports.syncBrokerTrades = onCall(
-  { secrets: [metaApiTokenSecret], timeoutSeconds: 300, memory: '512MiB' },
+  { secrets: [metaApiTokenSecret], timeoutSeconds: 540, memory: '1GiB' },
   async (request) => {
     const uid = requireAuth(request);
+    const { server, accountId, password, platform = 'mt5' } = request.data || {};
 
-    const userDoc = await db.collection('users').doc(uid).get();
-    const metaApiAccountId = userDoc.data()?.metaApiAccountId;
-    if (!metaApiAccountId) {
-      throw new HttpsError('failed-precondition', 'No broker connected. Use Connect first.');
+    if (!server || !accountId || !password) {
+      throw new HttpsError('invalid-argument', 'Missing server, accountId, or password.');
     }
 
     try {
-      const api = getMetaApi();
-      const account = await api.metatraderAccountApi.getAccount(metaApiAccountId);
-      await account.waitConnected(120);
-
-      const count = await syncTrades(uid, account);
+      const count = await transientSyncTrades(uid, server, accountId, password, platform);
       return { message: `Synced ${count} new trade(s).`, tradeCount: count, newTrades: count };
     } catch (err) {
       console.error('[syncBrokerTrades]', err);
@@ -298,17 +291,6 @@ exports.disconnectBroker = onCall(
   async (request) => {
     const uid = requireAuth(request);
     const userRef = db.collection('users').doc(uid);
-    const userDoc = await userRef.get();
-    const metaApiAccountId = userDoc.data()?.metaApiAccountId;
-
-    if (metaApiAccountId) {
-      try {
-        const api = getMetaApi();
-        await api.metatraderAccountApi.removeAccount(metaApiAccountId);
-      } catch (err) {
-        console.error(`Failed to delete MetaApi account ${metaApiAccountId}:`, err.message || err);
-      }
-    }
 
     await userRef.update({
       metaApiAccountId: FieldValue.delete(),
@@ -316,6 +298,8 @@ exports.disconnectBroker = onCall(
       brokerPlatform: FieldValue.delete(),
       brokerLogin: FieldValue.delete(),
       lastBrokerSyncStatus: FieldValue.delete(),
+      lastBrokerSync: FieldValue.delete(),
+      lastBrokerSyncCount: FieldValue.delete(),
     });
 
     return { message: 'Broker account disconnected successfully.' };

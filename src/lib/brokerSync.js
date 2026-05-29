@@ -24,8 +24,8 @@ export function connectBrokerCallable(payload) {
   return callCallable('connectBroker', payload, 540000);
 }
 
-export function syncBrokerTradesCallable() {
-  return callCallable('syncBrokerTrades', {}, 300000);
+export function syncBrokerTradesCallable(payload = {}) {
+  return callCallable('syncBrokerTrades', payload, 300000);
 }
 
 export function disconnectBrokerCallable() {

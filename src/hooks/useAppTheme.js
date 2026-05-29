@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, createElement } from 'react';
 
-export function useAppTheme() {
+const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
   const [isLightMode, setIsLightMode] = useState(() => {
     const saved = localStorage.getItem('xau-theme');
     return saved === 'light';
@@ -70,5 +72,17 @@ export function useAppTheme() {
     setIsLightMode(prev => !prev);
   };
 
-  return { isLightMode, toggleTheme };
+  return createElement(
+    ThemeContext.Provider,
+    { value: { isLightMode, toggleTheme } },
+    children
+  );
+}
+
+export function useAppTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useAppTheme must be used within a ThemeProvider');
+  }
+  return context;
 }

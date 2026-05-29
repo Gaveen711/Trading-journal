@@ -305,13 +305,24 @@ export default function EASetup() {
         </div>
       )}
 
-      {/* ── Bank-Grade Security Alert Banner ─────────────────────────────── */}
+      {/* ── Client-Side Security Alert Banner ─────────────────────────────── */}
       <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-primary/5 border border-primary/10 max-w-none">
         <ShieldLockFill className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-black uppercase tracking-wide text-primary">Bank-Grade Security</p>
+          <p className="text-xs font-black uppercase tracking-wide text-primary">Strict Client-Side Security</p>
           <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-            All API keys are encrypted with AES-256 and stored in an isolated vault. We use read-only access by default and never request trading permissions. Your credentials are never logged or transmitted in plain text.
+            We do not store your broker credentials on our servers or database. Your login and password remain entirely in your local browser storage. When syncing, credentials are passed securely via an encrypted HTTPS connection, and the connection is immediately deleted from the bridge right after the sync completes.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Multi-Device Warning / Privacy Banner ─────────────────────────────── */}
+      <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 max-w-none">
+        <ExclamationCircleFill className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-xs font-black uppercase tracking-wide text-amber-500">Local Browser Storage Notice (Multi-Device)</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+            For maximum privacy, your broker credentials are saved **strictly on this browser and device**. If you access XAU Journal from another browser or mobile phone, you will need to re-enter your credentials on that device to sync your trades.
           </p>
         </div>
       </div>
@@ -453,7 +464,7 @@ export default function EASetup() {
             </div>
           ) : (
             /* MT4 or MT5 Active Form/Stats Panel */
-            <div className="card-premium p-6 space-y-6">
+            <div className="card-premium p-4 sm:p-6 space-y-6">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/20 pb-5">
                 <div className="flex items-center gap-3">
