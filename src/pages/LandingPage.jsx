@@ -464,19 +464,17 @@ export function LandingPage() {
             <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">
               <button
                 onClick={() => navigate('/login')}
-                className="button-animated w-half max-w-[320px] sm:w-auto px-8 shadow-2xl active:scale-95 transition-all duration-300"
+                className="btn-play-cyber"
               >
-                <span className="button-bg">
-                  <span className="button-bg-layers">
-                    <span className="button-bg-layer button-bg-layer-1" />
-                    <span className="button-bg-layer button-bg-layer-2" />
-                    <span className="button-bg-layer button-bg-layer-3" />
-                  </span>
-                </span>
-                <span className="button-inner">
-                  <span className="button-inner-static">Try 7-Day Free Trial</span>
-                  <span className="button-inner-hover">Try 7-Day Free Trial</span>
-                </span>
+                Try 7-Day Free Trial
+                <div id="clip">
+                  <div id="leftTop" className="corner" />
+                  <div id="rightBottom" className="corner" />
+                  <div id="rightTop" className="corner" />
+                  <div id="leftBottom" className="corner" />
+                </div>
+                <span id="rightArrow" className="arrow" />
+                <span id="leftArrow" className="arrow" />
               </button>
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-1">
                 7-day free trial · Cancel anytime · No card required
