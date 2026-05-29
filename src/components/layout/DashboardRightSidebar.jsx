@@ -845,15 +845,14 @@ function CurrencySelect({ value, onChange }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setSearch('');
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (!isOpen) setSearch('');
-  }, [isOpen]);
 
   const filteredCurrencies = CURRENCIES.filter(c => 
     c.code.toLowerCase().includes(search.toLowerCase()) || 
@@ -864,7 +863,10 @@ function CurrencySelect({ value, onChange }) {
     <div className="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (isOpen) setSearch('');
+        }}
         className="flex items-center gap-2 px-2 py-1 rounded-lg bg-background/80 hover:bg-muted border border-border/40 transition-all text-[11px] font-bold"
       >
         <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/20 flex-shrink-0">
@@ -902,6 +904,7 @@ function CurrencySelect({ value, onChange }) {
                 onClick={() => {
                   onChange(c.code);
                   setIsOpen(false);
+                  setSearch('');
                 }}
                 className={`w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold rounded-lg hover:bg-muted ${
                   value === c.code ? 'text-primary bg-primary/5' : 'text-foreground/70'

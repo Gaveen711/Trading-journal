@@ -1002,7 +1002,7 @@ function ScaleTimeline() {
 
           {/* Cards */}
           <div className="flex flex-col gap-8 md:gap-10">
-            {TIMELINE_ITEMS.map((item, i) => {
+            {TIMELINE_ITEMS.map((item) => {
               const isLeft = item.side === 'left';
               return (
                 <div key={item.label} className="relative flex items-center md:grid md:grid-cols-2 md:gap-8">

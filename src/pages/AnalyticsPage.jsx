@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line, Pie } from 'react-chartjs-2';
-import { formatCurrencyCompact, formatCurrency, formatNumber } from '../lib/tradeUtils';
+import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
 import { BarChartLine, ClockFill, LightningFill, ShieldExclamation } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {

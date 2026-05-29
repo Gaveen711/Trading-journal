@@ -28,14 +28,12 @@ import { useWallet } from '../../hooks/useWallet';
 import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 
-export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
+export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-
-  const canBrokerSync = plan === 'pro' || plan === 'grace';
 
   const profileMenuRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -71,14 +69,6 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
-
-  function handleSyncClick() {
-    if (!canBrokerSync) {
-      openBrokerSyncUpsell?.();
-      return;
-    }
-    navigate('/app/sync');
-  }
 
   const navigation = [
     { id: '', name: 'Log', icon: House, iconSolid: HouseFill },
