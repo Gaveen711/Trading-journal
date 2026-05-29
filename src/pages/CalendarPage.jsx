@@ -449,35 +449,37 @@ export function CalendarPage() {
               {/* Trade Signal Feed */}
               <div className="space-y-3">
                 <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest">Signal Executions</p>
-                {selectedTrades.map((trade, idx) => (
-                  <div 
-                    key={trade.id} 
-                    className="flex items-center justify-between p-4 rounded-2xl border border-border/40 hover:bg-muted/20 transition-all group animate-in slide-in-from-bottom-2 duration-500"
-                    style={{ animationDelay: `${idx * 80}ms` }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-transform group-hover:rotate-12 ${
-                        trade.direction?.toUpperCase() === 'BUY' 
-                          ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
-                          : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                      }`}>
-                        {trade.direction ? trade.direction[0] : 'S'}
+                <div className="space-y-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                  {selectedTrades.map((trade, idx) => (
+                    <div 
+                      key={trade.id} 
+                      className="flex items-center justify-between p-4 rounded-2xl border border-border/40 hover:bg-muted/20 transition-all group animate-in slide-in-from-bottom-2 duration-500"
+                      style={{ animationDelay: `${idx * 80}ms` }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-transform group-hover:rotate-12 ${
+                          trade.direction?.toUpperCase() === 'BUY' 
+                            ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                            : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                        }`}>
+                          {trade.direction ? trade.direction[0] : 'S'}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-black text-foreground tracking-tight">XAU/USD</span>
+                          <span className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest truncate max-w-[120px]">{trade.setup || 'Direct Execution'}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-foreground tracking-tight">XAU/USD</span>
-                        <span className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest truncate max-w-[120px]">{trade.setup || 'Direct Execution'}</span>
+                      <div className="flex flex-col items-end">
+                        <span className={`text-xs font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {formatCurrency(trade.pnl, true)}
+                        </span>
+                        <span className="text-[8px] font-bold text-muted-foreground/50 uppercase flex items-center gap-1">
+                          <Clock size={8} /> {trade.session || 'N/A'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <span className={`text-xs font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {formatCurrency(trade.pnl, true)}
-                      </span>
-                      <span className="text-[8px] font-bold text-muted-foreground/50 uppercase flex items-center gap-1">
-                        <Clock size={8} /> {trade.session || 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
