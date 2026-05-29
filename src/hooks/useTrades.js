@@ -51,33 +51,15 @@ export function useTrades(user) {
   }, [user]);
 
   const addTrade = async (tradeData) => {
-    if (!user?.uid) throw new Error('Not authenticated');
-
-    const BASE_URL = window.location.origin;
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${BASE_URL}/api/save-trade`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(tradeData),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(data.error || 'Failed to log trade');
-      }
-
-      const data = await res.json().catch(() => ({ id: null }));
-      return { id: data.id };
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request was cancelled');
-      }
-      throw error;
-    }
+    const collRef = collection(db, 'users', user.uid, 'trades');
+    const docRef  = await addDoc(collRef, tradeData);
+    // Persist the ID inside the document to prevent orphaned record risk
+    await updateDoc(docRef, { id: docRef.id });
+    
+    await updateDoc(doc(db, 'users', user.uid), {
+      totalTradesLogged: increment(1)
+    });
+    return docRef;
   };
 
   const removeTrade = async (id) => {
