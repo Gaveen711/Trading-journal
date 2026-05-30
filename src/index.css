@@ -1207,15 +1207,10 @@ a[data-n="1"], a[href*="neat.firecms.co"] {
 }
 
 
-/* Smooth transition for theme colors across the application during manual toggling */
+/* Instant theme switch — no transition delay */
 .theme-toggling,
 .theme-toggling * {
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              fill 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: none !important;
 }
 
 /* Screen Loader Styles */

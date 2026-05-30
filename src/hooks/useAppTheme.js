@@ -44,10 +44,10 @@ export function useAppTheme() {
       document.head.removeChild(css);
       isInitialMount.current = false;
     } else {
-      const timer = setTimeout(() => {
+      // Remove class on next frame — transitions are instant, no delay needed
+      requestAnimationFrame(() => {
         root.classList.remove('theme-toggling');
-      }, 250);
-      return () => clearTimeout(timer);
+      });
     }
 
     localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
