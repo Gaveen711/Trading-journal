@@ -39,14 +39,13 @@ export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClo
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-300" />
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
 
       {/* Modal Card */}
       <div
-        className="card-premium max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-10 relative z-10 animate-in zoom-in-95 duration-300 shadow-2xl shadow-primary/10 border-primary/10"
-        onClick={e => e.stopPropagation()}
+        className="relative w-full max-w-2xl my-8 card-premium p-6 sm:p-10 z-10 animate-in zoom-in-95 duration-300 shadow-2xl shadow-primary/10 border-primary/10"
       >
         {/* Close */}
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-all active:scale-75 z-20">

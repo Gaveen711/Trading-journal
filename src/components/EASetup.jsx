@@ -766,29 +766,16 @@ export default function EASetup() {
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between opacity-50">
-                    <div>
-                      <div className="text-sm font-bold text-foreground">Execute Trades <span className="text-[10px] text-rose-500 font-bold ml-1">[DISABLED]</span></div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">Place and manage orders</div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled
-                      className="w-9 h-5 rounded-full relative p-0.5 bg-muted cursor-not-allowed border-none outline-none focus:outline-none"
-                    >
-                      <span className="block w-4 h-4 rounded-full bg-white/60 translate-x-0" />
-                    </button>
-                  </div>
+
                 </div>
               </div>
 
               {/* Sync Settings */}
               <div className="space-y-4 border-t border-border/20 pt-5">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/60">Sync Settings</h4>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sync Interval</label>
                   <div className="glass-tab-container max-w-md">
-                    {['250ms', '500ms', '1s', '5s', 'Manual'].map((interval) => (
+                    {['250ms', '500ms', '1s', '5s'].map((interval) => (
                       <button
                         key={interval}
                         type="button"

@@ -178,8 +178,11 @@ export function PrivacyPolicyPage() {
 
       <header>
         <nav
-          className={`fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 flex items-center justify-between px-6 md:px-12 transition-all duration-300 ease-in-out ${
-            isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border/40 shadow-sm' : 'bg-transparent border-transparent'
+          style={{ transform: 'translateX(-50%)' }}
+          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl z-[100] h-16 flex items-center justify-between px-6 md:px-10 rounded-2xl md:rounded-full border transition-all duration-300 ease-in-out ${
+            isScrolled
+              ? 'bg-card/90 backdrop-blur-xl border-border/40 shadow-2xl'
+              : 'bg-card/75 backdrop-blur-md border-border/20 shadow-lg'
           }`}
         >
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
@@ -365,35 +368,20 @@ export function PrivacyPolicyPage() {
       <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
-            <div className="flex flex-col items-center md:items-start gap-4">
-              <NavLink to="/" className="mb-4 inline-block">
-                <div className="footer-logo-btn">
-                  <div className="box">X</div>
-                  <div className="box">A</div>
-                  <div className="box">U</div>
-                  <div className="box extra"></div>
-                  <div className="box extra"></div>
-                  <div className="box extra"></div>
-                  <div className="box extra"></div>
-                </div>
-              </NavLink>
+            <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-start">
+              <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
+              <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+              <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
+              <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
             </div>
-            <div className="flex flex-col items-center md:items-end gap-6">
-              <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end">
-                <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
-                <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
-                <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
-                <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
-              </div>
-              <div className="flex flex-col items-center md:items-end gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
-                  made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                </p>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right">
-                  Copyright © 2026 xaujournal. All Rights Reserved
-                </p>
-              </div>
-            </div>
+          </div>
+          <div className="mt-16 pt-8 border-t border-border/20 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
+              © Copyright 2026 Xau Journal. All Rights Reserved.
+            </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
+              made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </p>
           </div>
         </div>
       </footer>

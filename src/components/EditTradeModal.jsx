@@ -1,15 +1,95 @@
 import { useState, useMemo } from 'react';
-import { XLg, Check2Circle } from 'react-bootstrap-icons';
+import { XLg, Check2Circle, CloudArrowUp, Trash, LockFill } from 'react-bootstrap-icons';
 import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
 import { calcPnl, formatCurrency } from '../lib/tradeUtils';
+import { auth, storage } from '../firebase';
+import { useToast } from './ToastContext';
 
-export function EditTradeModal({ trade, onSave, onClose }) {
+export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClose }) {
   const [formData, setFormData] = useState({ ...trade });
   const [direction, setDirection] = useState(trade.direction);
   const [session, setSession] = useState(trade.session || '');
   const [setup, setSetup] = useState(trade.setup || '');
   const [date, setDate] = useState(trade.date);
+  
+  const toast = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (plan !== 'pro') {
+      setShowPricingModal?.(true);
+      toast?.('Upgrade to Pro to attach analysis screenshots.', 'warn');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    const uploadedUrls = [];
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      toast?.('Please sign in to upload images.', 'error');
+      setUploading(false);
+      return;
+    }
+
+    const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
+
+    try {
+      let completedCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uniqueName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${file.name}`;
+        const storageRef = ref(storage, `users/${userId}/trades/${uniqueName}`);
+        
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const totalProgress = ((completedCount + fileProgress / 100) / files.length) * 100;
+              setUploadProgress(Math.round(totalProgress));
+            },
+            (err) => {
+              console.error('File upload error in modal:', err);
+              reject(err);
+            },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              uploadedUrls.push(url);
+              completedCount++;
+              resolve();
+            }
+          );
+        });
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        screenshots: [...(prev.screenshots || []), ...uploadedUrls]
+      }));
+      toast?.('Images uploaded successfully.', 'success');
+    } catch (err) {
+      console.error('Upload error in modal:', err);
+      toast?.('Failed to upload some images. Please try again.', 'error');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const removeScreenshot = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      screenshots: (prev.screenshots || []).filter((_, i) => i !== indexToRemove)
+    }));
+  };
 
   const derivedMetrics = useMemo(() => {
     const res = calcPnl(
@@ -31,6 +111,16 @@ export function EditTradeModal({ trade, onSave, onClose }) {
     };
   }, [formData.entry, formData.exit, formData.lots, formData.swap, formData.sl, formData.tp, direction]);
 
+  const handleNumericChange = (field) => (e) => {
+    const val = e.target.value;
+    if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: val.replace(',', '.')
+      }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(trade.id, {
@@ -47,14 +137,13 @@ export function EditTradeModal({ trade, onSave, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
+    <div className="fixed inset-0 z-[150] overflow-y-auto flex items-start sm:items-center justify-center p-4">
+      <div className="fixed inset-0 bg-background/60 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
       
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700">
-        <div className="flex justify-between items-center">
+      <div className="relative w-full max-w-2xl my-8 card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700 z-10">
+        <div className="flex justify-between items-center text-left">
           <div className="space-y-1">
             <h2 className="text-2xl font-black text-gradient uppercase tracking-tight">Modify Operation</h2>
-            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest leading-relaxed">Adjusting intelligence log for operation #{trade.id.slice(-6)}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-all active:scale-90">
             <XLg className="w-4 h-4" />
@@ -115,10 +204,10 @@ export function EditTradeModal({ trade, onSave, onClose }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Lot Size</label>
               <input 
-                type="number" 
-                step="0.01"
+                type="text" 
+                inputMode="decimal"
                 value={formData.lots} 
-                onChange={e => setFormData({ ...formData, lots: e.target.value })}
+                onChange={handleNumericChange('lots')}
                 className="input-premium h-11 text-sm font-bold" 
               />
             </div>
@@ -128,20 +217,20 @@ export function EditTradeModal({ trade, onSave, onClose }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Entry Price</label>
               <input 
-                type="number" 
-                step="0.00001"
+                type="text" 
+                inputMode="decimal"
                 value={formData.entry} 
-                onChange={e => setFormData({ ...formData, entry: e.target.value })}
+                onChange={handleNumericChange('entry')}
                 className="input-premium h-11 text-sm font-bold" 
               />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Exit Price</label>
               <input 
-                type="number" 
-                step="0.00001"
+                type="text" 
+                inputMode="decimal"
                 value={formData.exit} 
-                onChange={e => setFormData({ ...formData, exit: e.target.value })}
+                onChange={handleNumericChange('exit')}
                 className="input-premium h-11 text-sm font-bold" 
               />
             </div>
@@ -167,6 +256,70 @@ export function EditTradeModal({ trade, onSave, onClose }) {
               onChange={e => setFormData({ ...formData, note: e.target.value })}
               className="input-premium h-24 resize-none text-xs leading-relaxed p-4 w-full" 
             />
+          </div>
+
+          {/* Screenshots Upload & Edit Zone */}
+          <div className="space-y-2 text-left">
+            <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1 flex justify-between">
+              <span>Analysis Screenshots</span>
+              {plan !== 'pro' && <span className="text-[8px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
+            </label>
+
+            {plan === 'pro' ? (
+              <div className="space-y-3">
+                <div className="relative border border-dashed border-border/60 hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-300 bg-muted/10 group hover:bg-muted/20">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <CloudArrowUp className="w-7 h-7 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                  <span className="text-[11px] font-black text-foreground/80 uppercase tracking-widest">
+                    {uploading ? `Uploading (${uploadProgress}%)...` : 'Drag & Drop or Click to Add Screenshots'}
+                  </span>
+                  <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">PNG, JPG or WEBP (Max 5MB each)</span>
+                </div>
+
+                {uploading && (
+                  <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
+                    <div 
+                      className="bg-primary h-full rounded-full transition-all duration-300" 
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+
+                {formData.screenshots && formData.screenshots.length > 0 && (
+                  <div className="flex flex-wrap gap-2.5 pt-1">
+                    {formData.screenshots.map((url, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-xl border border-border/50 overflow-hidden bg-muted group/thumb shadow-sm">
+                        <img src={url} alt="screenshot preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeScreenshot(i)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive/85 text-white flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow active:scale-90"
+                          title="Delete screenshot"
+                        >
+                          <Trash className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div 
+                onClick={() => { setShowPricingModal?.(true); toast?.('Upgrade to Pro to attach analysis screenshots.', 'warn'); }}
+                className="border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/5 opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <LockFill className="w-6 h-6 text-muted-foreground/40" />
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Attach Analysis Screenshots</span>
+                <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 mt-1">Unlock with Pro</span>
+              </div>
+            )}
           </div>
 
           <button type="submit" className="w-full btn-primary h-12 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">

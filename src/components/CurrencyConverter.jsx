@@ -1020,9 +1020,15 @@ export function CurrencyConverter() {
         <div className="space-y-2 flex flex-col items-center">
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Enter Amount</label>
           <input 
-            type="number" 
+            type="text" 
+            inputMode="decimal"
             value={amount} 
-            onChange={e => setAmount(e.target.value)}
+            onChange={e => {
+              const val = e.target.value;
+              if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                setAmount(val.replace(',', '.'));
+              }
+            }}
             className="input-premium h-12 text-sm font-bold text-center max-w-[220px]"
             placeholder="100"
           />

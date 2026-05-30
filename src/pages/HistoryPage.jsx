@@ -236,7 +236,7 @@ export function HistoryPage() {
                     <div className="flex items-center justify-between sm:justify-end gap-6">
                       <div className="flex flex-col items-end">
                         <span className={`text-lg font-black tracking-tight ${isWin ? 'text-green-500' : 'text-red-500'}`}>
-                          {isWin ? '+' : ''}{formattedPnL}
+                          {formattedPnL}
                         </span>
                         <span className="text-[10px] text-muted-foreground font-bold mt-0.5">{formattedPips}</span>
                       </div>
@@ -338,6 +338,8 @@ export function HistoryPage() {
       {editingTrade && (
         <EditTradeModal 
           trade={editingTrade} 
+          plan={plan}
+          setShowPricingModal={setShowPricingModal}
           onSave={onSaveEdit} 
           onClose={() => setEditingTrade(null)} 
         />

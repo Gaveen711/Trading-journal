@@ -1,17 +1,19 @@
+import { useState } from 'react';
 import { XLg } from 'react-bootstrap-icons';
 
 export function OnboardingModal({ onClose, onComplete }) {
+  const [val, setVal] = useState('');
+
   const complete = () => {
-    const val = parseFloat(document.getElementById('onboard-wallet')?.value || 0);
-    onComplete(val);
+    onComplete(parseFloat(val) || 0);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-md animate-in fade-in duration-500" onClick={onClose}></div>
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-4">
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-md animate-in fade-in duration-500" onClick={onClose}></div>
 
       <div
-        className="card-premium max-w-md w-full p-10 relative z-10 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-2xl border-primary/10"
+        className="relative w-full max-w-md my-8 card-premium p-10 z-10 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-2xl border-primary/10"
       >
         {/* Close button */}
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-all active:scale-75 z-20" aria-label="Close modal">
@@ -34,7 +36,15 @@ export function OnboardingModal({ onClose, onComplete }) {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
               <input
                 id="onboard-wallet"
-                type="number"
+                type="text"
+                inputMode="decimal"
+                value={val}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v === '' || /^[0-9]*[.,]?[0-9]*$/.test(v)) {
+                    setVal(v.replace(',', '.'));
+                  }
+                }}
                 placeholder="0.00"
                 autoFocus
                 className="input-premium pl-8 text-lg font-bold"

@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 /** Production project — override via VITE_* in .env (see .env.example) */
 const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429';
@@ -19,8 +20,9 @@ const firebase = {
 const app = initializeApp(firebase);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
-export { db, auth, setPersistence, browserLocalPersistence, browserSessionPersistence };
+export { db, auth, storage, setPersistence, browserLocalPersistence, browserSessionPersistence };
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
 export default app;

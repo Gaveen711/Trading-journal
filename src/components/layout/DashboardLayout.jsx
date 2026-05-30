@@ -15,7 +15,6 @@ import {
   PersonCircle,
   Lightning,
   LightningFill,
-  ArrowClockwise,
   LockFill
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
@@ -87,7 +86,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
 
   const navigation = [
-    { id: '', name: 'Log', icon: House, iconSolid: HouseFill },
+    { id: '', name: 'Dashboard', icon: House, iconSolid: HouseFill },
     { id: 'history', name: 'History', icon: ClockHistory, iconSolid: ClockFill },
     { id: 'calendar', name: 'Calendar', icon: Calendar3, iconSolid: Calendar3Fill },
     { id: 'analytics', name: 'Analytics', icon: BarChartLine, iconSolid: BarChartLineFill },
@@ -113,14 +112,18 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         {/* NAVIGATION LINKS */}
         <nav className="flex-1 flex flex-col gap-3.5">
           {navigation.map((item) => {
-            const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
+            const isActive = item.id === ''
+              ? (location.pathname === '/app' || location.pathname === '/app/') && !location.search.includes('tab=log')
+              : item.id.startsWith('?tab=')
+                ? location.search.includes(item.id.slice(1))
+                : location.pathname.startsWith(`/app/${item.id}`);
             const Icon = isActive ? item.iconSolid : item.icon;
             return (
               <NavLink
                 key={item.name}
                 to={`/app/${item.id}`}
                 className={`flex items-center gap-3 h-11 px-4 rounded-xl transition-all duration-300 ${isActive
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/10'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/15'
                   : 'text-foreground/75 hover:bg-muted hover:text-foreground'
                 }`}
               >
@@ -165,8 +168,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       {/* MAIN CONTAINER */}
       <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         {/* MOBILE HEADER (only visible on mobile/tablet) */}
-        <header className={`md:hidden sticky top-0 z-40 bg-card/85 backdrop-blur-md border-b border-border/40 transition-all duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-          <div className="h-16 px-4 flex items-center justify-between">
+        <header className={`md:hidden fixed top-3 left-3 right-3 z-40 bg-card/95 backdrop-blur-xl border border-border/30 rounded-2xl shadow-xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
+          <div className="h-14 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/app')}>
               <Logo iconSize="w-7 h-7" />
             </div>
@@ -217,7 +220,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </header>
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
-        <div className="flex-1 flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto p-4 md:p-8 gap-8 pb-24 md:pb-8">
+        <div className="flex-1 flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto pt-20 px-4 pb-4 md:p-8 gap-8 md:pb-8">
           
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0">

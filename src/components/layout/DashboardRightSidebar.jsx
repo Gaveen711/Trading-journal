@@ -1255,9 +1255,15 @@ export function DashboardRightSidebar({
           {/* Input field */}
           <div className="flex items-center justify-between bg-muted/30 hover:bg-muted/50 border border-border/20 rounded-xl px-3 py-2.5 transition-colors">
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                  setAmount(val.replace(',', '.'));
+                }
+              }}
               className="bg-transparent border-0 text-xs font-bold text-foreground focus:outline-none focus:ring-0 p-0 w-24"
               placeholder="0.00"
             />

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useLocation } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { calcPnl, todayStr, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
-import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill } from 'react-bootstrap-icons';
+import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill, CloudArrowUp, Trash } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { auth } from '../firebase';
+import { auth, storage } from '../firebase';
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { CurrencyExchange } from 'react-bootstrap-icons';
@@ -24,9 +24,17 @@ export function LogTradePage() {
   } = useOutletContext();
   const { isLightMode } = useAppTheme();
   const toast = useToast();
+  const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState('chart'); // 'chart' | 'log' | 'logs'
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
+
+  const [activeTab, setActiveTab] = useState(tabParam || 'chart'); // 'chart' | 'log' | 'logs'
   const [reviewText, setReviewText] = useState('');
+
+  useEffect(() => {
+    setActiveTab(tabParam || 'chart');
+  }, [tabParam]);
 
 
 
@@ -51,6 +59,86 @@ export function LogTradePage() {
   const [leverage, setLeverage] = useState('');
   const [session, setSession] = useState('');
   const [setup, setSetup] = useState('');
+
+  const [screenshots, setScreenshots] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (plan !== 'pro') {
+      setShowPricingModal(true);
+      toast('Upgrade to Pro to attach analysis screenshots.', 'warn');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    const uploadedUrls = [];
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      toast('Please sign in to upload images.', 'error');
+      setUploading(false);
+      return;
+    }
+
+    const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
+
+    try {
+      let completedCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uniqueName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${file.name}`;
+        const storageRef = ref(storage, `users/${userId}/trades/${uniqueName}`);
+        
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const totalProgress = ((completedCount + fileProgress / 100) / files.length) * 100;
+              setUploadProgress(Math.round(totalProgress));
+            },
+            (err) => {
+              console.error('File upload task error:', err);
+              reject(err);
+            },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              uploadedUrls.push(url);
+              completedCount++;
+              resolve();
+            }
+          );
+        });
+      }
+
+      setScreenshots(prev => [...prev, ...uploadedUrls]);
+      toast('Images uploaded successfully.', 'success');
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast('Failed to upload some images. Please try again.', 'error');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const removeScreenshot = (indexToRemove) => {
+    setScreenshots(prev => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const handleNumericChange = (setter) => (e) => {
+    const val = e.target.value;
+    if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+      setter(val.replace(',', '.'));
+    }
+  };
+
   const pnlData = calcPnl(
     parseFloat(entry) || 0, parseFloat(exit) || 0,
     parseFloat(lots) || 0, 0,
@@ -91,7 +179,7 @@ export function LogTradePage() {
 
     const tradeData = {
       date, direction, entry: entryVal, exit: exitVal, lots: lotsVal, swap: swapVal, sl: slVal, tp: tpVal, rr, pips, session, setup, market: 'GOLD', leverage: leverageVal,
-      pnl: parseFloat(pnl.toFixed(2)), outcome, note: noteVal, timestamp: new Date()
+      pnl: parseFloat(pnl.toFixed(2)), outcome, note: noteVal, screenshots, timestamp: new Date()
     };
 
     try {
@@ -99,7 +187,7 @@ export function LogTradePage() {
       e.target.reset();
       setDirection(null);
       setDate(todayStr());
-      setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup('');
+      setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup(''); setScreenshots([]);
       toast(`Trade recorded: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
     } catch (err) {
       toast(err?.message || 'Failed to record trade. Please try again.', 'error');
@@ -366,9 +454,10 @@ export function LogTradePage() {
               {isEditingGoal ? (
                 <div className="flex gap-1.5 items-center">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={tempGoal}
-                    onChange={e => setTempGoal(e.target.value)}
+                    onChange={handleNumericChange(setTempGoal)}
                     onKeyDown={e => e.key === 'Enter' && handleSaveGoal()}
                     className="w-16 h-5 px-1 text-[9px] font-bold border border-primary bg-background rounded"
                   />
@@ -545,30 +634,30 @@ export function LogTradePage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entry Price</label>
-                  <input type="number" name="entry" inputMode="decimal" step="0.00001" value={entry} onChange={e => setEntry(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
+                  <input type="text" name="entry" inputMode="decimal" value={entry} onChange={handleNumericChange(setEntry)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Exit Price</label>
-                  <input type="number" name="exit" inputMode="decimal" step="0.00001" value={exit} onChange={e => setExit(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
+                  <input type="text" name="exit" inputMode="decimal" value={exit} onChange={handleNumericChange(setExit)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Lot Size</label>
-                  <input type="number" name="lots" inputMode="decimal" step="0.01" value={lots} onChange={e => setLots(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.10" />
+                  <input type="text" name="lots" inputMode="decimal" value={lots} onChange={handleNumericChange(setLots)} className="input-premium h-11 text-xs font-bold" placeholder="0.10" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Stop Loss</label>
-                  <input type="number" name="sl" inputMode="decimal" step="0.00001" value={sl} onChange={e => setSl(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
+                  <input type="text" name="sl" inputMode="decimal" value={sl} onChange={handleNumericChange(setSl)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Take Profit</label>
-                  <input type="number" name="tp" inputMode="decimal" step="0.00001" value={tp} onChange={e => setTp(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
+                  <input type="text" name="tp" inputMode="decimal" value={tp} onChange={handleNumericChange(setTp)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Swap / Fees ($)</label>
-                  <input type="number" name="swap" inputMode="decimal" step="0.01" value={swap} onChange={e => setSwap(e.target.value)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
+                  <input type="text" name="swap" inputMode="decimal" value={swap} onChange={handleNumericChange(setSwap)} className="input-premium h-11 text-xs font-bold" placeholder="0.00" />
                 </div>
               </div>
 
@@ -591,6 +680,70 @@ export function LogTradePage() {
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Trade Notes</label>
                 <textarea name="note" value={note} onChange={e => setNote(e.target.value)} className="input-premium h-20 resize-none text-xs leading-relaxed p-3" placeholder="Emotional state, pattern recognized, execution comments..."></textarea>
+              </div>
+
+              {/* Screenshots Upload Zone */}
+              <div className="space-y-2 text-left">
+                <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex justify-between">
+                  <span>Analysis Screenshots</span>
+                  {plan !== 'pro' && <span className="text-[8px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
+                </label>
+
+                {plan === 'pro' ? (
+                  <div className="space-y-3">
+                    <div className="relative border border-dashed border-border/60 hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-300 bg-muted/10 group hover:bg-muted/20">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <CloudArrowUp className="w-7 h-7 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                      <span className="text-[11px] font-black text-foreground/80 uppercase tracking-widest">
+                        {uploading ? `Uploading (${uploadProgress}%)...` : 'Drag & Drop or Click to Upload'}
+                      </span>
+                      <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">PNG, JPG or WEBP (Max 5MB each)</span>
+                    </div>
+
+                    {uploading && (
+                      <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
+                        <div 
+                          className="bg-primary h-full rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {screenshots.length > 0 && (
+                      <div className="flex flex-wrap gap-2.5 pt-1">
+                        {screenshots.map((url, i) => (
+                          <div key={i} className="relative w-16 h-16 rounded-xl border border-border/50 overflow-hidden bg-muted group/thumb shadow-sm">
+                            <img src={url} alt="upload preview" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeScreenshot(i)}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive/85 text-white flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow active:scale-90"
+                              title="Delete screenshot"
+                            >
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => { setShowPricingModal(true); toast('Upgrade to Pro to attach analysis screenshots.', 'warn'); }}
+                    className="border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/5 opacity-60 hover:opacity-100 transition-opacity"
+                  >
+                    <LockFill className="w-6 h-6 text-muted-foreground/40" />
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Attach Analysis Screenshots</span>
+                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 mt-1">Unlock with Pro</span>
+                  </div>
+                )}
               </div>
 
               {plan === 'free' && (
@@ -700,9 +853,10 @@ export function LogTradePage() {
           {isEditingBalance ? (
             <div className="flex gap-1.5 items-center">
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={tempBalance}
-                onChange={e => setTempBalance(e.target.value)}
+                onChange={handleNumericChange(setTempBalance)}
                 onKeyDown={e => e.key === 'Enter' && handleSaveBalance()}
                 className="w-full h-7 px-1 text-xs font-bold border border-primary bg-background rounded text-foreground"
               />

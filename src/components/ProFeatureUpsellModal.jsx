@@ -31,12 +31,11 @@ export function ProFeatureUpsellModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6" onClick={onClose}>
-      <div className="absolute inset-0 bg-background/85 backdrop-blur-md animate-in fade-in duration-300" />
+    <div className="fixed inset-0 z-[60] overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 bg-background/85 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
 
       <div
-        className="card-premium max-w-md w-full p-6 sm:p-8 relative z-10 animate-in zoom-in-95 duration-300 shadow-2xl shadow-primary/15 border-primary/20"
-        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md my-8 card-premium p-6 sm:p-8 z-10 animate-in zoom-in-95 duration-300 shadow-2xl shadow-primary/15 border-primary/20"
       >
         <button
           type="button"

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -10,6 +10,8 @@ import {
 import { doc, setDoc } from 'firebase/firestore';
 import { db, auth, googleProvider, facebookProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 import { getFriendlyErrorMessage } from './lib/errorUtils';
+import { NeatGradient } from '@firecms/neat';
+import { useAppTheme } from './hooks/useAppTheme';
 
 function Login() {
   const location = useLocation();
@@ -27,6 +29,86 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  const canvasRef = useRef(null);
+  const gradientRef = useRef(null);
+  const { isLightMode } = useAppTheme();
+
+  function createGradient(lightMode) {
+    const lightColors = [
+      { color: '#ffffff', enabled: true },
+      { color: '#f6f7fb', enabled: true },
+      { color: '#A623F3', enabled: true },
+      { color: '#f6f7fb', enabled: true },
+      { color: '#ffffff', enabled: true },
+    ];
+
+    const darkColors = [
+      { color: '#000000', enabled: true },
+      { color: '#000000', enabled: true },
+      { color: '#A623F3', enabled: true },
+      { color: '#000000', enabled: true },
+      { color: '#000000', enabled: true },
+    ];
+
+    return new NeatGradient({
+      ref: canvasRef.current,
+      colors: lightMode ? lightColors : darkColors,
+      speed: 10,
+      horizontalPressure: 6,
+      verticalPressure: 5,
+      waveFrequencyX: 4,
+      waveFrequencyY: 10,
+      waveAmplitude: 1,
+      shadows: 2,
+      highlights: 2,
+      colorBrightness: lightMode ? 1.2 : 1,
+      colorSaturation: lightMode ? 0.2 : -1,
+      wireframe: false,
+      colorBlending: 8,
+      backgroundColor: lightMode ? '#f8fafc' : '#010101',
+      backgroundAlpha: 1,
+      grainScale: 2,
+      grainSparsity: 0,
+      grainIntensity: 0,
+      grainSpeed: 1,
+      resolution: 0.75,
+      flowEnabled: false,
+      enableProceduralTexture: false,
+      domainWarpEnabled: false,
+      vignetteIntensity: 0,
+      vignetteRadius: 0.8,
+      fresnelEnabled: false,
+      iridescenceEnabled: false,
+      bloomIntensity: 0,
+      chromaticAberration: 0,
+    });
+  }
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    if (gradientRef.current) {
+      gradientRef.current.destroy();
+      gradientRef.current = null;
+    }
+    gradientRef.current = createGradient(isLightMode);
+
+    const handleScroll = () => {
+      if (gradientRef.current) {
+        gradientRef.current.yOffset = window.scrollY * 0.3;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (gradientRef.current) {
+        gradientRef.current.destroy();
+        gradientRef.current = null;
+      }
+    };
+  }, [isLightMode]);
 
 
   useEffect(() => {
@@ -190,9 +272,16 @@ function Login() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/login_bg.png')" }}
+      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none bg-background text-foreground"
     >
+      {/* NeatGradient animated background */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <canvas
+          ref={canvasRef}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
+        />
+      </div>
+
       {/* Background Decorative Rings */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full border border-white/20 opacity-40" />
@@ -200,36 +289,27 @@ function Login() {
         <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full border border-white/5 opacity-20" />
       </div>
 
-      {/* Back button */}
-      <div className="absolute top-6 left-6 z-10">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
-          Back
-        </Link>
-      </div>
+
 
       {/* Glass Login Card */}
-      <div className="w-full max-w-[420px] bg-white/70 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-8 sm:p-10 space-y-6 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.06)] relative z-10 animate-in fade-in zoom-in-95 duration-700">
+      <div className="w-full max-w-[420px] bg-white/70 dark:bg-card/75 backdrop-blur-xl border border-white/40 dark:border-border/60 rounded-[2.5rem] p-8 sm:p-10 space-y-6 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.06)] dark:shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-700">
         
         {/* Top Icon Link */}
         <Link 
           to="/" 
-          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/50 mx-auto hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+          className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/50 dark:border-zinc-700/50 mx-auto hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="dark:stroke-white">
             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
           </svg>
         </Link>
 
         {/* Header */}
         <div className="text-center space-y-1.5">
-          <h1 className="text-xl font-bold text-[#1a1a24] tracking-tight">
+          <h1 className="text-xl font-bold text-[#1a1a24] dark:text-foreground tracking-tight">
             {isSignUp ? 'Create account' : 'Sign in with email'}
           </h1>
-          <p className="text-xs text-slate-500 max-w-[280px] mx-auto leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-muted-foreground max-w-[280px] mx-auto leading-relaxed">
             {isSignUp 
               ? 'Create a free terminal profile to bring your journals, data, and trades together.'
               : 'Access your terminal to bring your trades, data, and strategies together. For free'}
@@ -255,7 +335,7 @@ function Login() {
                   onChange={e => setFirstName(e.target.value)}
                   placeholder="First name"
                   required
-                  className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-100/60 border border-slate-200/20 focus:border-slate-200/80 focus:bg-white focus:ring-0 transition-all font-medium text-sm text-slate-800 placeholder-slate-400/80 outline-none"
+                  className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/20 dark:border-white/5 focus:border-slate-200/80 dark:focus:border-primary/50 focus:bg-white dark:focus:bg-black/20 focus:ring-0 transition-all font-medium text-sm text-slate-800 dark:text-white placeholder-slate-400/80 dark:placeholder-slate-500 outline-none"
                 />
               </div>
 
@@ -272,7 +352,7 @@ function Login() {
                   onChange={e => setLastName(e.target.value)}
                   placeholder="Last name"
                   required
-                  className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-100/60 border border-slate-200/20 focus:border-slate-200/80 focus:bg-white focus:ring-0 transition-all font-medium text-sm text-slate-800 placeholder-slate-400/80 outline-none"
+                  className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/20 dark:border-white/5 focus:border-slate-200/80 dark:focus:border-primary/50 focus:bg-white dark:focus:bg-black/20 focus:ring-0 transition-all font-medium text-sm text-slate-800 dark:text-white placeholder-slate-400/80 dark:placeholder-slate-500 outline-none"
                 />
               </div>
             </div>
@@ -292,7 +372,7 @@ function Login() {
               onChange={e => setEmail(e.target.value)}
               placeholder="Email"
               required
-              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-100/60 border border-slate-200/20 focus:border-slate-200/80 focus:bg-white focus:ring-0 transition-all font-medium text-sm text-slate-800 placeholder-slate-400/80 outline-none"
+              className="w-full h-12 pl-11 pr-4 rounded-2xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/20 dark:border-white/5 focus:border-slate-200/80 dark:focus:border-primary/50 focus:bg-white dark:focus:bg-black/20 focus:ring-0 transition-all font-medium text-sm text-slate-800 dark:text-white placeholder-slate-400/80 dark:placeholder-slate-500 outline-none"
             />
           </div>
 
@@ -310,12 +390,12 @@ function Login() {
               onChange={e => setPassword(e.target.value)}
               placeholder="Password"
               required
-              className="w-full h-12 pl-11 pr-11 rounded-2xl bg-slate-100/60 border border-slate-200/20 focus:border-slate-200/80 focus:bg-white focus:ring-0 transition-all font-medium text-sm text-slate-800 placeholder-slate-400/80 outline-none"
+              className="w-full h-12 pl-11 pr-11 rounded-2xl bg-slate-100/60 dark:bg-white/5 border border-slate-200/20 dark:border-white/5 focus:border-slate-200/80 dark:focus:border-primary/50 focus:bg-white dark:focus:bg-black/20 focus:ring-0 transition-all font-medium text-sm text-slate-800 dark:text-white placeholder-slate-400/80 dark:placeholder-slate-500 outline-none"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#1a1a24] transition-colors bg-transparent border-0 outline-none hover:shadow-none"
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#1a1a24] dark:hover:text-white transition-colors bg-transparent border-0 outline-none hover:shadow-none"
             >
               {showPassword ? (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
@@ -331,7 +411,7 @@ function Login() {
               <button
                 type="button"
                 onClick={handleResetPassword}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
               >
                 Forgot password?
               </button>
@@ -379,11 +459,11 @@ function Login() {
             <div className="flex items-center gap-3">
               <div
                 onClick={() => setRememberMe(!rememberMe)}
-                className={`w-9 h-5 rounded-full transition-all duration-300 cursor-pointer relative ${rememberMe ? 'bg-[#18181b]' : 'bg-slate-200'}`}
+                className={`w-9 h-5 rounded-full transition-all duration-300 cursor-pointer relative ${rememberMe ? 'bg-[#18181b] dark:bg-primary' : 'bg-slate-200 dark:bg-zinc-800'}`}
               >
                 <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 ${rememberMe ? 'left-[18px]' : 'left-0.5'}`} />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400/80">Stay signed in</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400/80 dark:text-muted-foreground/80">Stay signed in</span>
             </div>
           </div>
 
@@ -391,36 +471,26 @@ function Login() {
 
         {/* Divider */}
         <div className="flex items-center gap-3 py-1">
-          <div className="flex-1 border-t border-dotted border-slate-300" />
-          <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Or sign in with</span>
-          <div className="flex-1 border-t border-dotted border-slate-300" />
+          <div className="flex-1 border-t border-dotted border-slate-300 dark:border-zinc-800" />
+          <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-medium uppercase tracking-wider">Or sign in with</span>
+          <div className="flex-1 border-t border-dotted border-slate-300 dark:border-zinc-800" />
         </div>
 
-        {/* Social Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Google Auth Button */}
+        <div>
           <button
             type="button"
             onClick={handleGoogle}
             disabled={loading}
-            className="h-12 bg-white hover:bg-slate-50 border border-slate-200/60 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-[0.98] shadow-sm"
+            className="w-full h-12 bg-white dark:bg-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-700/50 border border-slate-200/60 dark:border-zinc-700/50 rounded-2xl flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.98] shadow-sm font-semibold text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white"
           >
-            <svg width="18" height="18" viewBox="0 0 18 18" className="mx-auto">
+            <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
               <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
               <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
               <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
             </svg>
-          </button>
-          
-          <button
-            type="button"
-            onClick={handleFacebook}
-            disabled={loading}
-            className="h-12 bg-white hover:bg-slate-50 border border-slate-200/60 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-[0.98] shadow-sm"
-          >
-            <svg width="18" height="18" fill="#1877F2" viewBox="0 0 24 24" className="mx-auto">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
+            <span>Continue with Google</span>
           </button>
         </div>
 
@@ -432,7 +502,7 @@ function Login() {
               setError('');
               navigate(`/login?mode=${isSignUp ? 'signin' : 'signup'}`);
             }}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-800 transition-colors tracking-wide"
+            className="text-xs font-semibold text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition-colors tracking-wide"
           >
             {isSignUp ? 'Already a member? Sign in' : "Don't have an account? Sign up"}
           </button>

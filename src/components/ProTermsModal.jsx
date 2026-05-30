@@ -2,12 +2,12 @@ import { ShieldCheck, ArrowRight, XLg } from 'react-bootstrap-icons';
 
 export function ProTermsModal({ onAccept, onClose }) {
   return (
-    <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[250] overflow-y-auto flex items-start sm:items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
+      <div className="fixed inset-0 bg-background/60 backdrop-blur-2xl animate-in fade-in duration-500" onClick={onClose} />
 
       {/* Modal content */}
-      <div className="relative w-full max-w-xl card-premium p-8 sm:p-12 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-[0_0_100px_rgba(139,92,246,0.15)]">
+      <div className="relative w-full max-w-xl my-8 card-premium p-8 sm:p-12 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-[0_0_100px_rgba(139,92,246,0.15)] z-10">
 
         {/* Close */}
         <button onClick={onClose} className="absolute top-6 right-6 text-muted-foreground/40 hover:text-foreground transition-all active:scale-75">
