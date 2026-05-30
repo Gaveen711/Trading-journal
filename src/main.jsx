@@ -11,15 +11,18 @@ import './index.css'
 import App from './App.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastContext'
+import { ThemeProvider } from './hooks/useAppTheme'
  
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <ToastProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

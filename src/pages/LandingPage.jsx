@@ -292,7 +292,7 @@ export function LandingPage() {
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
         <canvas
           ref={canvasRef}
-          style={{ width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
         />
       </div>
 
@@ -344,22 +344,18 @@ export function LandingPage() {
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="hidden md:block button-animated button-animated-sm px-6 active:scale-95 transition-all duration-300"
-            >
-              <span className="button-bg">
-                <span className="button-bg-layers">
-                  <span className="button-bg-layer button-bg-layer-1" />
-                  <span className="button-bg-layer button-bg-layer-2" />
-                  <span className="button-bg-layer button-bg-layer-3" />
-                </span>
-              </span>
-              <span className="button-inner">
-                <span className="button-inner-static">Get started</span>
-                <span className="button-inner-hover">Get started</span>
-              </span>
-            </button>
+            <div className="hidden md:block">
+              <button
+                onClick={() => navigate('/login')}
+                className="cta active:scale-95 transition-all duration-300"
+              >
+                <span>Get Started</span>
+                <svg width="15px" height="10px" viewBox="0 0 13 10">
+                  <path d="M1,5 L11,5" />
+                  <polyline points="8 1 12 5 8 9" />
+                </svg>
+              </button>
+            </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground"
@@ -464,19 +460,9 @@ export function LandingPage() {
             <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">
               <button
                 onClick={() => navigate('/login')}
-                className="button-animated w-half max-w-[320px] sm:w-auto px-8 shadow-2xl active:scale-95 transition-all duration-300"
+                className="btn-menu-underline"
               >
-                <span className="button-bg">
-                  <span className="button-bg-layers">
-                    <span className="button-bg-layer button-bg-layer-1" />
-                    <span className="button-bg-layer button-bg-layer-2" />
-                    <span className="button-bg-layer button-bg-layer-3" />
-                  </span>
-                </span>
-                <span className="button-inner">
-                  <span className="button-inner-static">Try 7-Day Free Trial</span>
-                  <span className="button-inner-hover">Try 7-Day Free Trial</span>
-                </span>
+                Try 7-Day Free Trial
               </button>
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-1">
                 7-day free trial · Cancel anytime · No card required
@@ -554,19 +540,21 @@ export function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.7, delay: i * 0.2 }}
-                  className="relative p-10 rounded-[3rem] bg-card border border-border/40 shadow-2xl group hover:border-primary/40 transition-all duration-500"
+                  className="cyber-step-card group"
                 >
-                  <div className="absolute -top-10 left-10 w-20 h-20 rounded-3xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500">
+                  <div className="cyber-step-card-bg" />
+
+                  <div className="absolute -top-10 left-10 w-20 h-20 rounded-3xl bg-primary text-primary-foreground flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 z-20">
                     {step.icon}
                   </div>
 
-                  <div className="absolute top-10 right-10 text-8xl font-black text-foreground/[0.03] select-none group-hover:text-primary/[0.05] transition-colors duration-700">
+                  <div className="absolute top-10 right-10 text-8xl font-black step-number select-none z-10">
                     {step.id}
                   </div>
 
-                  <div className="mt-12">
-                    <h3 className="text-2xl font-bold mb-5 tracking-tight group-hover:text-primary transition-colors">{step.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed font-medium text-base">
+                  <div className="mt-12 relative z-10">
+                    <h3 className="text-2xl font-bold mb-5 tracking-tight">{step.title}</h3>
+                    <p className="text-base leading-relaxed font-medium">
                       {step.body}
                     </p>
                   </div>
@@ -678,9 +666,12 @@ export function LandingPage() {
               </button>
               <Link
                 to="/pricing"
-                className="w-full sm:w-auto px-8 py-3.5 sm:py-6 sm:px-12 rounded-full border border-border/60 hover:bg-muted/50 font-semibold text-sm sm:text-lg transition-all duration-300"
+                className="btn-cta-underline"
               >
-                View pricing
+                <span className="hover-underline-animation">View pricing</span>
+                <svg id="arrow-horizontal" xmlns="http://www.w3.org/2000/svg" width={30} height={10} viewBox="0 0 46 16">
+                  <path id="Path_10" data-name="Path 10" d="M8,0,6.545,1.455l5.506,5.506H-30V9.039H12.052L6.545,14.545,8,16l8-8Z" transform="translate(30)" />
+                </svg>
               </Link>
             </div>
           </Motion.div>
@@ -1002,7 +993,7 @@ function ScaleTimeline() {
 
           {/* Cards */}
           <div className="flex flex-col gap-8 md:gap-10">
-            {TIMELINE_ITEMS.map((item, i) => {
+            {TIMELINE_ITEMS.map((item) => {
               const isLeft = item.side === 'left';
               return (
                 <div key={item.label} className="relative flex items-center md:grid md:grid-cols-2 md:gap-8">

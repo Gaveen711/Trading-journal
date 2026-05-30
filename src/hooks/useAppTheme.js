@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, createElement } from 'react';
 
-export function useAppTheme() {
+const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
   const [isLightMode, setIsLightMode] = useState(() => {
     const saved = localStorage.getItem('xau-theme');
     return saved === 'light';
@@ -39,6 +41,8 @@ export function useAppTheme() {
       root.classList.add('dark');
     }
 
+    localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
+
     if (isInitialMount.current) {
       window.getComputedStyle(root).opacity;
       document.head.removeChild(css);
@@ -49,8 +53,6 @@ export function useAppTheme() {
         root.classList.remove('theme-toggling');
       });
     }
-
-    localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
   }, [isLightMode]);
 
   // ── Cross-tab sync via storage event ───────────────────────────────────
@@ -70,5 +72,17 @@ export function useAppTheme() {
     setIsLightMode(prev => !prev);
   };
 
-  return { isLightMode, toggleTheme };
+  return createElement(
+    ThemeContext.Provider,
+    { value: { isLightMode, toggleTheme } },
+    children
+  );
+}
+
+export function useAppTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useAppTheme must be used within a ThemeProvider');
+  }
+  return context;
 }

@@ -20,6 +20,7 @@ import {
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import { useBrokerAccounts } from '../../hooks/useBrokerAccounts';
 import Logo from '../Logo';
 
 import { useTrades } from '../../hooks/useTrades';
@@ -28,14 +29,27 @@ import { useWallet } from '../../hooks/useWallet';
 import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 
-export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openBrokerSyncUpsell, openPortal }) {
+export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
   const { isLightMode, toggleTheme } = useAppTheme();
+  const { accounts, syncAccount } = useBrokerAccounts();
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  const canBrokerSync = plan === 'pro' || plan === 'grace';
+  // Background sync on dashboard load / mount
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const activeAccount = accounts[0];
+      syncAccount(activeAccount.id)
+        .then(() => {
+          console.log('Background broker sync successful.');
+        })
+        .catch((err) => {
+          console.warn('Background broker sync failed:', err);
+        });
+    }
+  }, [accounts.length]);
 
   const profileMenuRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -71,14 +85,6 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
-
-  function handleSyncClick() {
-    if (!canBrokerSync) {
-      openBrokerSyncUpsell?.();
-      return;
-    }
-    navigate('/app/sync');
-  }
 
   const navigation = [
     { id: '', name: 'Log', icon: House, iconSolid: HouseFill },
@@ -256,14 +262,19 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 setShowPricingModal={setShowPricingModal}
                 toast={toast}
                 openPortal={openPortal}
+                resetTrades={resetTrades}
+                updateBalance={updateBalance}
               />
             </aside>
           )}
         </div>
 
         {/* FOOTER */}
-        <footer className="w-full py-8 px-4 border-t border-border/10 bg-muted/5 text-center">
-          <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30">
+        <footer className="w-full py-8 px-4 border-t border-border/10 bg-muted/5 flex flex-col items-center justify-center gap-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center animate-pulse">
+            made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+          </p>
+          <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30 text-center">
             Copyright © 2026 xaujournal. All Rights Reserved
           </p>
         </footer>

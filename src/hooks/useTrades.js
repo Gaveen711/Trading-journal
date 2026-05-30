@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, serverTimestamp, increment, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, increment, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export function useTrades(user) {
@@ -51,27 +51,15 @@ export function useTrades(user) {
   }, [user]);
 
   const addTrade = async (tradeData) => {
-    if (!user?.uid) throw new Error('Not authenticated');
-
-    const { timestamp, ...rest } = tradeData;
-    const payload = {
-      ...rest,
-      ...(timestamp != null && {
-        timestamp: timestamp instanceof Date ? timestamp.toISOString() : timestamp,
-      }),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    const docRef = await addDoc(collection(db, 'users', user.uid, 'trades'), payload);
-
-    await setDoc(
-      doc(db, 'users', user.uid),
-      { totalTradesLogged: increment(1) },
-      { merge: true }
-    );
-
-    return { id: docRef.id };
+    const collRef = collection(db, 'users', user.uid, 'trades');
+    const docRef  = await addDoc(collRef, tradeData);
+    // Persist the ID inside the document to prevent orphaned record risk
+    await updateDoc(docRef, { id: docRef.id });
+    
+    await updateDoc(doc(db, 'users', user.uid), {
+      totalTradesLogged: increment(1)
+    });
+    return docRef;
   };
 
   const removeTrade = async (id) => {
@@ -91,16 +79,36 @@ export function useTrades(user) {
 
   const resetTrades = async () => {
     if (!user?.uid) throw new Error('Not authenticated');
-    const token = await user.getIdToken();
-    const resp = await fetch('/api/reset-trades', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch('/api/reset-trades', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!resp.ok) {
+        const data = await resp.json();
+        throw new Error(data.error || 'Failed to reset trades via API');
       }
-    });
-    if (!resp.ok) {
-      const data = await resp.json();
-      throw new Error(data.error || 'Failed to reset trades');
+    } catch (apiError) {
+      console.warn('API reset failed or unavailable. Falling back to direct client-side wipe:', apiError);
+      
+      // Direct Firestore client-side deletion fallback
+      const { getDocs, query, collection, writeBatch, doc } = await import('firebase/firestore');
+      const q = query(collection(db, 'users', user.uid, 'trades'));
+      const snapshot = await getDocs(q);
+      
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((documentSnapshot) => {
+        batch.delete(doc(db, 'users', user.uid, 'trades', documentSnapshot.id));
+      });
+      
+      batch.update(doc(db, 'users', user.uid), {
+        totalTradesLogged: 0
+      });
+      
+      await batch.commit();
     }
   };
 
