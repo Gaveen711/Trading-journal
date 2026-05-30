@@ -22,7 +22,7 @@
     "@paddle/paddle-js": "^1.6.4",
     "@radix-ui/react-slot": "^1.2.4",
     "@vercel/speed-insights": "^2.0.0",
-    "axios": "^1.15.0",
+    "axios": "^1.16.1",
     "bootstrap-icons": "^1.13.1",
     "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
