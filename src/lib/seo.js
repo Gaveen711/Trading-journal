@@ -1,6 +1,6 @@
 import { PRO_MONTHLY_PRICE, PRO_YEARLY_PRICE } from './pricing';
 
-export const SITE_URL = 'https://xaujournal.vercel.app';
+export const SITE_URL = 'https://xaujournal.com';
 export const SITE_NAME = 'xaujournal';
 export const SITE_TAGLINE = 'XAU Journal — Gold (XAUUSD) Trading Journal';
 
