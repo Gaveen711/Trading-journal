@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
+import { MoonStarsFill, SunFill, Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
 import { auth } from '../firebase';
 import { useSubscription } from '../hooks/useSubscription';
@@ -130,7 +130,7 @@ export function PricingPage() {
             <Logo iconSize="w-7 h-7" />
           </button>
 
-          <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
+          <ul className="hidden lg:flex items-center gap-2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2">
             {navLinks.map(({ to, label }) => (
               <Motion.li
                 key={to}
@@ -155,7 +155,7 @@ export function PricingPage() {
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <button
                 onClick={() => navigate('/login')}
                 className="cta active:scale-95 transition-all duration-300"
@@ -169,7 +169,7 @@ export function PricingPage() {
             </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-foreground"
+              className="lg:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -185,7 +185,7 @@ export function PricingPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
               onClick={() => setMobileMenuOpen(false)}
             >
               {/* Close Button on Top Right */}
@@ -210,21 +210,9 @@ export function PricingPage() {
                     {label}
                   </NavLink>
                 ))}
-                <button
-                  onClick={() => navigate('/login')}
-                  className="button-animated w-full max-w-[280px] px-8 mt-4 shadow-xl active:scale-95 transition-all duration-300"
-                >
-                  <span className="button-bg">
-                    <span className="button-bg-layers">
-                      <span className="button-bg-layer button-bg-layer-1" />
-                      <span className="button-bg-layer button-bg-layer-2" />
-                      <span className="button-bg-layer button-bg-layer-3" />
-                    </span>
-                  </span>
-                  <span className="button-inner">
-                    <span className="button-inner-static">Get started</span>
-                    <span className="button-inner-hover">Get started</span>
-                  </span>
+                <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300 w-full max-w-[280px]">
+                  <span>Get started</span>
+                  <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
                 </button>
               </div>
             </Motion.div>
@@ -355,11 +343,19 @@ export function PricingPage() {
           </div>
           <div className="mt-16 pt-8 border-t border-border/20 flex flex-col md:flex-row items-center justify-between gap-6">
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
-              © Copyright 2026 Xau Journal. All Rights Reserved.
+              © Copyright 2026 Xau Journal.<br />All Rights Reserved.
             </p>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
-              made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            </p>
+            <div className="flex flex-col items-center md:items-end gap-4">
+              <ul className="example-2">
+                <li className="icon-content"><a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><div className="filled" /><Facebook /></a></li>
+                <li className="icon-content"><a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><div className="filled" /><Instagram /></a></li>
+                <li className="icon-content"><a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer"><div className="filled" /><TwitterX /></a></li>
+                <li className="icon-content"><a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer"><div className="filled" /><Discord /></a></li>
+              </ul>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
+                made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </p>
+            </div>
           </div>
         </div>
       </footer>

@@ -306,7 +306,7 @@ function StoryChapter({ chapter, label, headline, sub, accent, glow, index }) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 30 }}
           transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="text-lg md:text-xl text-muted-foreground leading-relaxed font-medium"
+          className="text-sm md:text-xl text-muted-foreground leading-relaxed font-medium"
         >
           {sub}
         </Motion.p>
@@ -357,7 +357,6 @@ export function LandingPage() {
   const heroY = useTransform(heroProgress, [0, 1], ['0%', '30%']);
   const heroOpacity = useTransform(heroProgress, [0, 0.7], [1, 0]);
   const heroScale = useTransform(heroProgress, [0, 1], [1, 0.92]);
-  const scrollHintOpacity = useTransform(scrollY, [0, 80], [1, 0]);
 
   useEffect(() => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -444,7 +443,7 @@ export function LandingPage() {
             <Logo iconSize="w-7 h-7" />
           </button>
 
-          <ul className="hidden md:flex items-center gap-2 ml-auto mr-10">
+          <ul className="hidden lg:flex items-center gap-2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2">
             {navLinks.map(({ to, label }) => (
               <Motion.li key={to} whileHover={{ scale: 1.05, y: -2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
                 <NavLink
@@ -470,13 +469,13 @@ export function LandingPage() {
             <button onClick={toggleTheme} className="p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground" aria-label="Toggle theme">
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300">
                 <span>Get Started</span>
                 <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
               </button>
             </div>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-foreground" aria-label="Toggle menu">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-foreground" aria-label="Toggle menu">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
@@ -490,7 +489,7 @@ export function LandingPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
               onClick={() => setMobileMenuOpen(false)}
             >
               <button onClick={() => setMobileMenuOpen(false)} className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]" aria-label="Close menu">
@@ -502,9 +501,9 @@ export function LandingPage() {
                     {label}
                   </NavLink>
                 ))}
-                <button onClick={() => navigate('/login')} className="button-animated w-full max-w-[280px] px-8 mt-4 shadow-xl active:scale-95 transition-all duration-300">
-                  <span className="button-bg"><span className="button-bg-layers"><span className="button-bg-layer button-bg-layer-1" /><span className="button-bg-layer button-bg-layer-2" /><span className="button-bg-layer button-bg-layer-3" /></span></span>
-                  <span className="button-inner"><span className="button-inner-static">Get started</span><span className="button-inner-hover">Get started</span></span>
+                <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300 w-full max-w-[280px]">
+                  <span>Get started</span>
+                  <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
                 </button>
               </div>
             </Motion.div>
@@ -524,17 +523,17 @@ export function LandingPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-                MT5 Auto-Sync · Exclusively for XAUUSD Traders
+               Exclusively for Gold Traders
               </Motion.div>
 
               <Motion.div variants={itemVariants}>
-                <h1 className="!text-[clamp(2.5rem,9vw,7.5rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
+                <h1 className="!text-[clamp(3rem,10vw,8.5rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
                   Every trade <br />you make <br />
                   <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic">tells a story.</span>
                 </h1>
               </Motion.div>
 
-              <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
+              <Motion.p variants={itemVariants} className="text-sm md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
                 XAU Journal is the precision trading journal built for gold traders — track, analyse, and master your edge in XAUUSD.
               </Motion.p>
 
@@ -560,21 +559,6 @@ export function LandingPage() {
             </Motion.div>
           </Motion.div>
 
-          {/* Scroll hint */}
-          <button
-            onClick={() => document.getElementById('story')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{ opacity: scrollHintOpacity }}
-            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-20 hover:scale-105 active:scale-95 transition-all bg-transparent border-none outline-none focus:outline-none"
-          >
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 dark:text-muted-foreground/40 hover:text-primary transition-colors">Scroll to discover</span>
-            <Motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-5 h-8 rounded-full border border-border/30 dark:border-border/20 flex items-start justify-center pt-1.5"
-            >
-              <div className="w-1 h-2 rounded-full bg-primary/60" />
-            </Motion.div>
-          </button>
         </section>
 
         {/* ─── STORY NARRATIVE ─── */}
@@ -614,7 +598,7 @@ export function LandingPage() {
               <h2 className="text-[clamp(2.5rem,6vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-8">
                 Every tool you need.<br />Nothing you don't.
               </h2>
-              <p className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed">
+              <p className="text-sm md:text-xl text-muted-foreground font-medium leading-relaxed">
                 Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
               </p>
             </Motion.div>
@@ -754,7 +738,7 @@ export function LandingPage() {
               Stop guessing.<br />
               <span className="text-gradient">Start knowing.</span>
             </h2>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-16 font-medium max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-2xl text-muted-foreground mb-16 font-medium max-w-2xl mx-auto leading-relaxed">
               Join thousands of traders who have standardized their journaling with xaujournal.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -804,7 +788,7 @@ export function LandingPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
                   made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                 </p>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right whitespace-nowrap">© Copyright 2026 Xau Journal. All Rights Reserved.</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right">© Copyright 2026 Xau Journal.<br />All Rights Reserved.</p>
               </div>
             </div>
           </div>

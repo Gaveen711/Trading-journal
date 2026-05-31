@@ -189,7 +189,7 @@ export function PrivacyPolicyPage() {
             <Logo iconSize="w-7 h-7" />
           </button>
 
-          <ul className="hidden md:flex items-center gap-2">
+          <ul className="hidden lg:flex items-center gap-2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2">
             {navLinks.map(({ to, label }) => (
               <li key={to}>
                 <NavLink
@@ -214,7 +214,7 @@ export function PrivacyPolicyPage() {
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <button
                 onClick={() => navigate('/login')}
                 className="cta active:scale-95 transition-all duration-300"
@@ -228,7 +228,7 @@ export function PrivacyPolicyPage() {
             </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-foreground"
+              className="lg:hidden p-2 text-foreground"
               aria-label="Toggle menu"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -244,7 +244,7 @@ export function PrivacyPolicyPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="md:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
               onClick={() => setMobileMenuOpen(false)}
             >
               {/* Close Button on Top Right */}
@@ -269,21 +269,9 @@ export function PrivacyPolicyPage() {
                     {label}
                   </NavLink>
                 ))}
-                <button
-                  onClick={() => navigate('/login')}
-                  className="button-animated w-full max-w-[280px] px-8 mt-4 shadow-xl active:scale-95 transition-all duration-300"
-                >
-                  <span className="button-bg">
-                    <span className="button-bg-layers">
-                      <span className="button-bg-layer button-bg-layer-1" />
-                      <span className="button-bg-layer button-bg-layer-2" />
-                      <span className="button-bg-layer button-bg-layer-3" />
-                    </span>
-                  </span>
-                  <span className="button-inner">
-                    <span className="button-inner-static">Get started</span>
-                    <span className="button-inner-hover">Get started</span>
-                  </span>
+                <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300 w-full max-w-[280px]">
+                  <span>Get started</span>
+                  <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
                 </button>
               </div>
             </Motion.div>

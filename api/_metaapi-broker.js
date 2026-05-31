@@ -25,6 +25,9 @@ function normalizeDeal(deal, ctx) {
   const swap = Number(deal.swap ?? 0);
   const netPnl = profit + commission + swap;
   const ticket = String(deal.id ?? deal.ticket ?? deal.dealId ?? `${closeTime.getTime()}`);
+  const openPrice = Number(deal.openPrice ?? price);
+  const diff = isBuy ? price - openPrice : openPrice - price;
+  const pips = Math.round(diff / 0.1);
 
   return {
     positionId: String(deal.positionId ?? deal.position ?? ticket),
@@ -33,7 +36,7 @@ function normalizeDeal(deal, ctx) {
     direction: isBuy ? 'buy' : 'sell',
     lots: volume,
     closePrice: price,
-    openPrice: Number(deal.openPrice ?? price),
+    openPrice,
     closeTime: closeTime.toISOString(),
     openTime: deal.openTime ? new Date(deal.openTime).toISOString() : closeTime.toISOString(),
     date: closeTime.toISOString().split('T')[0],
@@ -41,7 +44,7 @@ function normalizeDeal(deal, ctx) {
     commission,
     swap,
     netPnl,
-    pips: null,
+    pips,
     status: 'closed',
     source: 'BROKER_METAAPI',
     brokerType: ctx.brokerType,

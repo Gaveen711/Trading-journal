@@ -311,18 +311,7 @@ export default function EASetup() {
         <div>
           <p className="text-xs font-black uppercase tracking-wide text-primary">Strict Client-Side Security</p>
           <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-            Your broker credentials are saved locally in this browser and are never stored in our database. During synchronization, credentials are securely transmitted over an encrypted HTTPS connection to establish a transient bridge, which is automatically destroyed immediately after your trade history is retrieved.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Multi-Device Warning / Privacy Banner ─────────────────────────────── */}
-      <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 max-w-none">
-        <ExclamationCircleFill className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-xs font-black uppercase tracking-wide text-amber-500">Local Storage Notice (Multi-Device)</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-            For maximum privacy, your broker credentials remain <strong>strictly local to this specific browser and device</strong>. If you sign in to XAU Journal from another device, private window, or mobile browser, you will need to re-configure your credentials on that device to sync your trades.
+            Your broker credentials remain 100% private. They are stored strictly local to this browser and device, and are never saved in our database. Synchronization establishes a transient, end-to-end encrypted connection to retrieve your trade history, which is immediately destroyed after use. Because storage is local, you will need to re-configure your credentials if you switch devices or browsers.
           </p>
         </div>
       </div>

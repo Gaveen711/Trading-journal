@@ -282,14 +282,6 @@ function Login() {
         />
       </div>
 
-      {/* Background Decorative Rings */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full border border-white/20 opacity-40" />
-        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full border border-white/10 opacity-30" />
-        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full border border-white/5 opacity-20" />
-      </div>
-
-
 
       {/* Glass Login Card */}
       <div className="w-full max-w-[420px] bg-white/70 dark:bg-card/75 backdrop-blur-xl border border-white/40 dark:border-border/60 rounded-[2.5rem] p-8 sm:p-10 space-y-6 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.06)] dark:shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-700">
@@ -431,28 +423,15 @@ function Login() {
             </div>
           )}
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="button-animated button-animated-sm login-btn-override w-full shadow-md disabled:opacity-50"
-          >
-            <span className="button-bg">
-              <span className="button-bg-layers">
-                <span className="button-bg-layer button-bg-layer-1" />
-                <span className="button-bg-layer button-bg-layer-2" />
-                <span className="button-bg-layer button-bg-layer-3" />
-              </span>
-            </span>
-            <span className="button-inner">
-              <span className="button-inner-static">
-                {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Get Started'}
-              </span>
-              <span className="button-inner-hover">
-                {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Get Started'}
-              </span>
-            </span>
-          </button>
+          <div className="flex justify-center pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full max-w-[200px] h-12 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black font-black text-[10px] uppercase tracking-[0.18em] hover:scale-105 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 flex items-center justify-center shadow-lg dark:shadow-[0_8px_30px_rgba(255,255,255,0.05)] border-0 cursor-pointer"
+            >
+              {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Login'}
+            </button>
+          </div>
 
           {/* Stay Signed In Switch */}
           <div className="flex items-center justify-between px-1 pt-1">

@@ -47,6 +47,54 @@ app.use('*', async (c, next) => {
   await next()
 })
 
+// ── Rate Limiting Middleware ─────────────────────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+let lastCleanup = Date.now()
+
+const cleanupExpiredLimits = () => {
+  const now = Date.now()
+  if (now - lastCleanup < 5 * 60 * 1000) return // Limit cleanup to once every 5 minutes
+  lastCleanup = now
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip)
+    }
+  }
+}
+
+app.use('*', async (c, next) => {
+  if (c.req.method === 'OPTIONS') {
+    return await next()
+  }
+
+  cleanupExpiredLimits()
+
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0].trim() || c.req.header('x-real-ip') || '127.0.0.1'
+  const now = Date.now()
+  const windowMs = 60 * 1000 // 1 minute window
+  const maxRequests = 100 // Maximum 100 requests per window
+
+  const limitData = rateLimitMap.get(ip)
+  if (!limitData || now > limitData.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+  } else {
+    limitData.count++
+    if (limitData.count > maxRequests) {
+      c.header('Retry-After', Math.ceil((limitData.resetTime - now) / 1000).toString())
+      return c.json({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' }, 429)
+    }
+  }
+
+  const currentLimit = rateLimitMap.get(ip)
+  if (currentLimit) {
+    c.header('X-RateLimit-Limit', maxRequests.toString())
+    c.header('X-RateLimit-Remaining', Math.max(0, maxRequests - currentLimit.count).toString())
+    c.header('X-RateLimit-Reset', Math.ceil(currentLimit.resetTime / 1000).toString())
+  }
+
+  await next()
+})
+
 // ── Shared plan guard ────────────────────────────────────────────────────────
 function isSyncAllowed(userData: any) {
   const { plan, planExpiry, graceUntil } = userData || {}

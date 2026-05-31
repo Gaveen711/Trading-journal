@@ -201,4 +201,23 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
       pips: 100
     }));
   });
+
+  it('triggers rate limiting and returns 429 after 100 requests', async () => {
+    const payload = {
+      event: 'open',
+      positionId: '98765',
+      symbol: 'XAUUSD',
+      direction: 'buy',
+    };
+    
+    const testIp = '192.168.1.50';
+    for (let i = 0; i < 100; i++) {
+      const res = await executeRequest(payload, { 'x-forwarded-for': testIp });
+      expect(res.statusCode).toBe(200);
+    }
+    
+    const res = await executeRequest(payload, { 'x-forwarded-for': testIp });
+    expect(res.statusCode).toBe(429);
+    expect(res.jsonData.error).toBe('Too Many Requests');
+  });
 });
