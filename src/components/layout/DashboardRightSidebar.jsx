@@ -958,8 +958,10 @@ export function DashboardRightSidebar({
   const [result, setResult] = useState(null);
   const [currentTime, setCurrentTime] = useState('');
   const [isWiping, setIsWiping] = useState(false);
+  const [isWipingDb, setIsWipingDb] = useState(false);
 
   const handleWipeTerminal = async () => {
+    setIsWipingDb(true);
     try {
       await resetTrades();
       await updateBalance(0);
@@ -968,6 +970,8 @@ export function DashboardRightSidebar({
       toast("Terminal wiped. Setup new balance.", "warn");
     } catch (e) {
       toast("Failed to reset terminal: " + e.message, "error");
+    } finally {
+      setIsWipingDb(false);
     }
   };
 
@@ -1378,7 +1382,8 @@ export function DashboardRightSidebar({
           <button
             type="button"
             onClick={() => isWiping ? handleWipeTerminal() : setIsWiping(true)}
-            className="reset-trash-btn"
+            disabled={isWipingDb}
+            className={`reset-trash-btn ${isWipingDb ? 'opacity-70 cursor-not-allowed' : ''}`}
             title="Reset Terminal"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 69 14" className="svgIcon bin-top">
@@ -1401,7 +1406,7 @@ export function DashboardRightSidebar({
                 </clipPath>
               </defs>
             </svg>
-            <span className="button-text">{isWiping ? 'Confirm?' : 'Reset'}</span>
+            <span className="button-text">{isWipingDb ? 'Wiping...' : isWiping ? 'Confirm?' : 'Reset'}</span>
           </button>
         </div>
       )}

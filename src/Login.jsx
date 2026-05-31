@@ -8,7 +8,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { db, auth, googleProvider, facebookProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
+import { db, auth, googleProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 import { getFriendlyErrorMessage } from './lib/errorUtils';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from './hooks/useAppTheme';
@@ -149,23 +149,30 @@ function Login() {
         
         await updateProfile(user, { displayName: `${firstName} ${lastName}` });
         
-        const trialExpiry = new Date();
-        trialExpiry.setDate(trialExpiry.getDate() + 7);
-        
-        // Write profile details immediately to Firestore with a 7-day Pro trial
+        // Write profile details immediately to Firestore without sensitive subscription info
         await setDoc(doc(db, "users", user.uid), {
           email: user.email,
           firstName,
           lastName,
           displayName: `${firstName} ${lastName}`,
-          plan: 'pro',
-          isTrial: true,
-          planExpiry: trialExpiry.toISOString(),
           totalTradesLogged: 0,
           totalJournalsLogged: 0,
           agreedToTerms: false,
           createdAt: new Date().toISOString()
         }, { merge: true });
+
+        // Retrieve token to authenticate the server call
+        const token = await user.getIdToken();
+        const initResponse = await fetch('/api/init-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!initResponse.ok) {
+          throw new Error('Failed to initialize user subscription.');
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -174,9 +181,13 @@ function Login() {
       // Trigger Login Alert Email
       try {
         const token = await auth.currentUser.getIdToken();
-        fetch('/api/auth-utils?action=login-alert', {
+        fetch('/api/auth-utils', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ action: 'send-login-alert' })
         }).catch(e => {
           if (e.name !== 'AbortError') {
             console.error("Failed to trigger login alert:", e);
@@ -222,9 +233,13 @@ function Login() {
       // Trigger Login Alert Email
       try {
         const token = await auth.currentUser.getIdToken();
-        fetch('/api/auth-utils?action=login-alert', {
+        fetch('/api/auth-utils', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ action: 'send-login-alert' })
         }).catch(e => {
           if (e.name !== 'AbortError') {
             console.error("Failed to trigger login alert:", e);
@@ -240,35 +255,7 @@ function Login() {
     }
   };
 
-  const handleFacebook = async () => {
-    setError('');
-    setMessage('');
-    setLoading(true);
-    try {
-      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      await signInWithPopup(auth, facebookProvider);
-      localStorage.setItem('xau-auth-hint', 'true');
 
-      // Trigger Login Alert Email
-      try {
-        const token = await auth.currentUser.getIdToken();
-        fetch('/api/auth-utils?action=login-alert', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        }).catch(e => {
-          if (e.name !== 'AbortError') {
-            console.error("Failed to trigger login alert:", e);
-          }
-        });
-      } catch (e) {
-        console.error("Failed to trigger login alert:", e);
-      }
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div 

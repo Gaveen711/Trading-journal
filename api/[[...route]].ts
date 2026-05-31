@@ -69,7 +69,17 @@ app.use('*', async (c, next) => {
 
   cleanupExpiredLimits()
 
-  const ip = c.req.header('x-forwarded-for')?.split(',')[0].trim() || c.req.header('x-real-ip') || '127.0.0.1'
+  const xRealIp = c.req.header('x-real-ip')
+  let ip = '127.0.0.1'
+  if (xRealIp) {
+    ip = xRealIp
+  } else {
+    const xForwardedFor = c.req.header('x-forwarded-for')
+    if (xForwardedFor) {
+      const parts = xForwardedFor.split(',')
+      ip = parts[parts.length - 1].trim()
+    }
+  }
   const now = Date.now()
   const windowMs = 60 * 1000 // 1 minute window
   const maxRequests = 100 // Maximum 100 requests per window
@@ -98,58 +108,96 @@ app.use('*', async (c, next) => {
 // ── Shared plan guard ────────────────────────────────────────────────────────
 function isSyncAllowed(userData: any) {
   const { plan, planExpiry, graceUntil } = userData || {}
-  const nowMs = Date.now()
   if (plan === 'pro') {
-    if (!planExpiry) return true; // Lifetime pro or missing expiry
-    if (new Date(planExpiry).getTime() > nowMs) return true;
+    if (!planExpiry) return true
+    const expiry = new Date(planExpiry)
+    if (expiry.getTime() > Date.now()) return true
+    if (graceUntil) {
+      const grace = new Date(graceUntil)
+      if (grace.getTime() > Date.now()) return true
+    }
   }
-  if (graceUntil && new Date(graceUntil).getTime() > nowMs) return true
   return false
 }
 
-// ── 1. Auth Utils Route ──────────────────────────────────────────────────────
+// ── 1. Authentication Utilities Route ────────────────────────────────────────
 app.post('/auth-utils', async (c) => {
-  const action = c.req.query('action')
-  if (action === 'login-alert') {
-    try {
-      const authHeader = c.req.header('Authorization')
-      if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Unauthorised' }, 401)
-      }
-      const token = authHeader.split('Bearer ')[1]
-      const decoded = await admin.auth().verifyIdToken(token)
-      const email = decoded.email
-      if (!email) {
-        return c.json({ error: 'Email not found' }, 400)
-      }
-      try {
-        await resend.emails.send({
-          from: 'xaujournal <security@xaujournal.com>',
-          to: email,
-          subject: 'Security Alert: New Login Detected',
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #0d0d14; color: #ffffff; border-radius: 24px; border: 1px solid #ffffff10;">
-              <h1 style="font-size: 24px; font-weight: 900; letter-spacing: -0.05em; margin-bottom: 8px; color: #facc15;">SECURITY ALERT</h1>
-              <p style="font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 32px;">New Terminal Access Detected</p>
-              <p style="font-size: 16px; line-height: 1.6; color: #ffffff;">We detected a new sign-in to your xaujournal account.</p>
-              <div style="margin: 32px 0; padding: 24px; background: #1a1a24; border-radius: 16px; border: 1px solid #ffffff05;">
-                <p style="margin: 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">Access Details</p>
-                <p style="margin: 4px 0; font-size: 13px; color: #ffffff;"><strong>Email:</strong> ${email}</p>
-                <p style="margin: 4px 0; font-size: 13px; color: #ffffff;"><strong>Time:</strong> ${new Date().toUTCString()}</p>
-              </div>
-              <p style="font-size: 13px; color: #64748b; line-height: 1.6;">If this was you, you can safely ignore this message. If you do not recognise this activity, please reset your password immediately.</p>
-              <p style="margin-top: 40px; font-size: 12px; color: #475569; border-top: 1px solid #ffffff10; padding-top: 20px;">SECURED BY XAUJOURNAL INFRASTRUCTURE.</p>
-            </div>
-          `
-        })
-      } catch (emailErr: any) {
-        console.error('Email Send Failed (Resend):', emailErr.message)
-      }
-      return c.json({ success: true })
-    } catch (err) {
-      console.error('Login Alert Error:', err)
-      return c.json({ error: 'Internal server error' }, 500)
+  let body: any
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'Missing body payload' }, 400)
+  }
+
+  const { action } = body
+
+  if (action === 'send-login-alert') {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: 'Unauthorized: Missing token.' }, 401)
     }
+    const token = authHeader.split('Bearer ')[1]
+    
+    let email: string
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(token)
+      email = decodedToken.email
+      if (!email) {
+        return c.json({ error: 'Email not found in token' }, 400)
+      }
+    } catch (err: any) {
+      console.error('[send-login-alert] Auth verification failed:', err.message)
+      return c.json({ error: 'Unauthorized: Invalid token' }, 401)
+    }
+
+    // Extract client IP address securely
+    const xRealIp = c.req.header('x-real-ip')
+    let ipAddress = '127.0.0.1'
+    if (xRealIp) {
+      ipAddress = xRealIp
+    } else {
+      const xForwardedFor = c.req.header('x-forwarded-for')
+      if (xForwardedFor) {
+        const parts = xForwardedFor.split(',')
+        ipAddress = parts[parts.length - 1].trim()
+      }
+    }
+
+    const userAgent = body.userAgent || c.req.header('user-agent') || 'Unknown'
+    const time = body.time || new Date().toUTCString()
+
+    try {
+      await resend.emails.send({
+        from: 'XauJournal Security <security@xaujournal.com>',
+        to: email,
+        subject: '[XauJournal] New Login Detected',
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; color: #f1f5f9; background: #0f172a; border-radius: 8px;">
+            <h2 style="color: #38bdf8; margin-bottom: 20px;">New Login Alert</h2>
+            <p>We detected a new login to your XauJournal account.</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8; width: 120px;">IP Address:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${ipAddress}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8;">Device/Browser:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${userAgent || 'Unknown'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8;">Time:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${time || new Date().toUTCString()}</td>
+              </tr>
+            </table>
+            <p style="font-size: 13px; color: #64748b; line-height: 1.6;">If this was you, you can safely ignore this message. If you do not recognise this activity, please reset your password immediately.</p>
+            <p style="margin-top: 40px; font-size: 12px; color: #475569; border-top: 1px solid #ffffff10; padding-top: 20px;">SECURED BY XAUJOURNAL INFRASTRUCTURE.</p>
+          </div>
+        `
+      })
+    } catch (emailErr: any) {
+      console.error('Email Send Failed (Resend):', emailErr.message)
+    }
+    return c.json({ success: true })
   }
 
   if (action === 'recaptcha') {
@@ -157,10 +205,10 @@ app.post('/auth-utils', async (c) => {
     try {
       body = await c.req.json()
     } catch {
-      return c.json({ valid: true, score: null })
+      return c.json({ valid: false, score: 0, blocked: true, error: 'Invalid JSON body' })
     }
     const { token, recaptchaAction } = body
-    if (!token) return c.json({ valid: true, score: null })
+    if (!token) return c.json({ valid: false, score: 0, blocked: true, error: 'Missing token' })
 
     try {
       const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429'
@@ -175,16 +223,20 @@ app.post('/auth-utils', async (c) => {
         }
       )
 
-      const data: any = await response.json()
-      const score = data?.riskAnalysis?.score ?? 1
-      const valid = data?.tokenProperties?.valid ?? true
-      const blocked = valid && score < 0.5
+      if (!response.ok) {
+        throw new Error(`reCAPTCHA API returned HTTP ${response.status}`)
+      }
 
-      console.log(`reCAPTCHA: action=${recaptchaAction}, score=${score}, valid=${valid}`)
+      const data: any = await response.json()
+      const valid = data?.tokenProperties?.valid === true
+      const score = data?.riskAnalysis?.score ?? 0
+      const blocked = !valid || score < 0.5
+
+      console.log(`reCAPTCHA: action=${recaptchaAction}, score=${score}, valid=${valid}, blocked=${blocked}`)
       return c.json({ valid, score, blocked })
     } catch (err) {
       console.error('reCAPTCHA assessment error:', err)
-      return c.json({ valid: true, score: null, blocked: false })
+      return c.json({ valid: false, score: 0, blocked: true, error: 'reCAPTCHA validation failed' })
     }
   }
 
@@ -595,6 +647,66 @@ app.post('/revoke-api-key', async (c) => {
   }
 })
 
+
+// ── 5.5. Initialize User Route (Server-side Secure Trial Assignment) ─────────
+app.post('/init-user', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
+
+  let uid: string
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken)
+    uid = decoded.uid
+  } catch (err: any) {
+    console.error('[init-user] verifyIdToken failed:', err?.message || err)
+    return c.json({ error: 'Invalid or expired token' }, 401)
+  }
+
+  try {
+    const userDocRef = db.collection('users').doc(uid)
+    const userDoc = await userDocRef.get()
+
+    if (userDoc.exists) {
+      const data = userDoc.data() || {}
+      if (data.plan) {
+        // User already initialized, return current plan details idempotently
+        return c.json({
+          success: true,
+          plan: data.plan,
+          isTrial: data.isTrial || false,
+          planExpiry: data.planExpiry || null,
+        })
+      }
+    }
+
+    // New user signup, provision the 7-day Pro trial securely on the server
+    const trialExpiry = new Date()
+    trialExpiry.setDate(trialExpiry.getDate() + 7)
+
+    const initData = {
+      plan: 'pro',
+      isTrial: true,
+      planExpiry: trialExpiry.toISOString(),
+      createdAt: now(),
+      updatedAt: now(),
+    }
+
+    await userDocRef.set(initData, { merge: true })
+    console.log(`[init-user] Created initial Pro trial for new user uid=${uid}`)
+
+    return c.json({
+      success: true,
+      plan: 'pro',
+      isTrial: true,
+      planExpiry: trialExpiry.toISOString(),
+    })
+  } catch (err: any) {
+    console.error('[init-user] Error initializing user:', err.message)
+    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+  }
+})
+
 // ── 6. Paddle Checkout Verification Route ────────────────────────────────────
 app.post('/paddle-success', async (c) => {
   let body;
@@ -604,7 +716,7 @@ app.post('/paddle-success', async (c) => {
     return c.json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { transactionId, planType = 'pro_monthly', userId } = body
+  const { transactionId, userId } = body
   if (!transactionId || !userId) {
     return c.json({ error: 'Missing required validation parameters.' }, 400)
   }
@@ -627,92 +739,221 @@ app.post('/paddle-success', async (c) => {
       return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
     }
 
-    // Verify transaction with Paddle Billing API
-    const isSandbox = (process.env.VITE_PADDLE_ENVIRONMENT || 'sandbox').toLowerCase() === 'sandbox';
-    const paddleApiUrl = isSandbox ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
-    const paddleApiKey = process.env.PADDLE_API_KEY;
+    // VULN-03 Refactor: Instead of checking Paddle API directly and setting plan=pro
+    // based on user request (which is bypassable), the webhook is now the sole source of truth.
+    // This route only checks Firestore to see if the webhook has already updated the plan.
+    const userDoc = await db.collection('users').doc(userId).get()
+    const userData = userDoc.data() || {}
 
-    if (!paddleApiKey) {
-      throw new Error('Server configuration error: Missing Paddle API Key.');
+    if (userData.paddleTransactionId === transactionId && userData.plan === 'pro') {
+      return c.json({
+        success: true,
+        planExpiry: userData.planExpiry,
+        isTrial: userData.isTrial || false,
+        status: 'completed'
+      })
     }
 
-    const paddleResponse = await fetch(`${paddleApiUrl}/transactions/${transactionId}`, {
-      headers: {
-        'Authorization': `Bearer ${paddleApiKey}`
-      }
-    });
-
-    if (!paddleResponse.ok) {
-      const errorText = await paddleResponse.text();
-      throw new Error(`Failed to verify transaction with Paddle: ${errorText}`);
-    }
-
-    const paddleData: any = await paddleResponse.json();
-    const transaction = paddleData.data;
-
-    if (!transaction) {
-      throw new Error('Invalid transaction response from Paddle.');
-    }
-
-    // Validate transaction details
-    const status = transaction.status?.toLowerCase();
-    if (status !== 'completed' && status !== 'billed') {
-      return c.json({ error: `Transaction is not completed. Status: ${transaction.status}` }, 400);
-    }
-
-    const transactionUserId = transaction.custom_data?.userId;
-    const transactionPlanType = transaction.custom_data?.planType;
-
-    if (transactionUserId !== userId) {
-      return c.json({ error: 'Forbidden: Transaction user ID mismatch.' }, 403);
-    }
-
-    const planExpiryDefault = new Date();
-    planExpiryDefault.setDate(planExpiryDefault.getDate() + 7); // Default fallback
-
-    const subscriptionId = transaction.subscription_id;
-    let isTrial = true;
-    let planExpiry = planExpiryDefault;
-
-    if (subscriptionId) {
-      try {
-        const subResponse = await fetch(`${paddleApiUrl}/subscriptions/${subscriptionId}`, {
-          headers: {
-            'Authorization': `Bearer ${paddleApiKey}`
-          }
-        });
-        if (subResponse.ok) {
-          const subData: any = await subResponse.json();
-          const subscription = subData.data;
-          if (subscription) {
-            isTrial = subscription.status === 'trialing';
-            if (subscription.next_billed_at) {
-              planExpiry = new Date(subscription.next_billed_at);
-            }
-          }
-        } else {
-          console.warn(`[paddle-success] Failed to fetch subscription ${subscriptionId}:`, subResponse.statusText);
-        }
-      } catch (subErr: any) {
-        console.error('[paddle-success] Error fetching subscription details:', subErr.message || subErr);
-      }
-    }
-
-    await db.collection('users').doc(userId).set({
-      plan: 'pro',
-      isTrial,
-      planExpiry: planExpiry.toISOString(),
-      paddleTransactionId: transactionId,
-      paddleSubscriptionId: subscriptionId || null,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    return c.json({ success: true, planExpiry: planExpiry.toISOString(), isTrial });
+    // If webhook hasn't processed it yet, return 202 Accepted to signal polling is in progress
+    return c.json({
+      success: false,
+      status: 'processing',
+      message: 'Subscription is processing. Please wait.'
+    }, 202)
   } catch (error: any) {
     console.error('[paddle-success] error:', error.message || error);
-    return c.json({ error: `Paddle verification failed: ${error.message || 'unknown error'}` }, 500);
+    return c.json({ error: `Verification failed: ${error.message || 'unknown error'}` }, 500);
   }
 })
+
+// Helper to verify Paddle signature manually using crypto HMAC-SHA256
+function verifyPaddleSignature(rawBody: string, signatureHeader: string, secret: string): boolean {
+  if (!signatureHeader || !secret) return false
+
+  const parts = signatureHeader.split(';')
+  let ts = ''
+  let h1 = ''
+
+  for (const part of parts) {
+    const [key, val] = part.split('=')
+    if (key === 'ts') ts = val
+    if (key === 'h1') h1 = val
+  }
+
+  if (!ts || !h1) return false
+
+  const payload = `${ts}:${rawBody}`
+  const computedHash = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest()
+
+  try {
+    const headerBuffer = Buffer.from(h1, 'hex')
+    if (computedHash.length !== headerBuffer.length) return false
+    return crypto.timingSafeEqual(computedHash, headerBuffer)
+  } catch {
+    return false
+  }
+}
+
+// ── 7. Paddle Webhook Route ──────────────────────────────────────────────────
+app.post('/paddle-webhook', async (c) => {
+  const rawBody = await c.req.text()
+  const signatureHeader = c.req.header('Paddle-Signature') || ''
+  const secret = process.env.PADDLE_WEBHOOK_SECRET || ''
+
+  if (!verifyPaddleSignature(rawBody, signatureHeader, secret)) {
+    console.error('[paddle-webhook] Signature verification failed')
+    return c.json({ error: 'Unauthorized: Invalid signature' }, 401)
+  }
+
+  let body: any
+  try {
+    body = JSON.parse(rawBody)
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+
+  const { event_type: eventType, data } = body
+  console.log(`[paddle-webhook] Received event: ${eventType} for subscription: ${data?.id}`)
+
+  if (
+    eventType === 'subscription.canceled' ||
+    eventType === 'subscription.cancelled' ||
+    eventType === 'subscription.past_due'
+  ) {
+    const subscriptionId = data?.id
+    if (!subscriptionId) {
+      return c.json({ error: 'No subscription ID in payload' }, 400)
+    }
+
+    try {
+      const usersSnap = await db.collection('users')
+        .where('paddleSubscriptionId', '==', subscriptionId)
+        .limit(1)
+        .get()
+
+      if (usersSnap.empty) {
+        console.warn(`[paddle-webhook] No matching user found for subscription: ${subscriptionId}`)
+        return c.json({ success: true, message: 'No matching user found' })
+      }
+
+      const userDoc = usersSnap.docs[0]
+      const userId = userDoc.id
+
+      const keySnap = await db.collection('apiKeys').where('uid', '==', userId).get()
+      const batch = db.batch()
+      keySnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+
+      batch.update(db.collection('users').doc(userId), {
+        plan: 'free',
+        planExpiry: null,
+        graceUntil: null,
+        graceReason: null,
+        mt5SyncEnabled: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      })
+
+      await batch.commit()
+      console.log(`[paddle-webhook] Downgraded user ${userId} and revoked keys due to ${eventType}`)
+      return c.json({ success: true, message: `User downgraded due to ${eventType}` })
+    } catch (err: any) {
+      console.error('[paddle-webhook] Firestore update failed:', err.message)
+      return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    }
+  }
+
+  return c.json({ success: true, message: 'Event ignored' })
+})
+
+interface SanitizedTrade {
+  date: string
+  direction: 'BUY' | 'SELL'
+  entry: number
+  exit: number
+  lots: number
+  swap: number
+  sl: number | null
+  tp: number | null
+  rr: number | null
+  pips: number | null
+  session: string
+  setup: string
+  market: string
+  leverage: string
+  pnl: number
+  outcome: 'WIN' | 'LOSS' | 'BE'
+  note: string
+  screenshots: string[]
+  source: 'manual'
+}
+
+function sanitizeAndValidateTrade(payload: any): SanitizedTrade | null {
+  if (!payload || typeof payload !== 'object') return null
+
+  // Required fields check
+  if (typeof payload.date !== 'string' || !payload.date) return null
+  if (payload.direction !== 'BUY' && payload.direction !== 'SELL') return null
+  
+  const entry = Number(payload.entry)
+  const exit = Number(payload.exit)
+  const lots = Number(payload.lots)
+  
+  if (isNaN(entry) || isNaN(exit) || isNaN(lots)) return null
+
+  // Optional/coerced fields
+  const swap = typeof payload.swap !== 'undefined' ? Number(payload.swap) : 0
+  const sl = (payload.sl !== null && typeof payload.sl !== 'undefined') ? Number(payload.sl) : null
+  const tp = (payload.tp !== null && typeof payload.tp !== 'undefined') ? Number(payload.tp) : null
+  const rr = (payload.rr !== null && typeof payload.rr !== 'undefined') ? Number(payload.rr) : null
+  const pips = (payload.pips !== null && typeof payload.pips !== 'undefined') ? Number(payload.pips) : null
+  
+  const session = typeof payload.session === 'string' ? payload.session.slice(0, 100) : ''
+  const setup = typeof payload.setup === 'string' ? payload.setup.slice(0, 100) : ''
+  const market = typeof payload.market === 'string' ? payload.market.slice(0, 100) : 'GOLD'
+  const leverage = typeof payload.leverage === 'string' ? payload.leverage.slice(0, 50) : ''
+  
+  const pnl = typeof payload.pnl !== 'undefined' ? Number(payload.pnl) : 0
+  
+  let outcome: 'WIN' | 'LOSS' | 'BE' = 'BE'
+  if (payload.outcome === 'WIN' || payload.outcome === 'LOSS' || payload.outcome === 'BE') {
+    outcome = payload.outcome
+  }
+
+  const note = typeof payload.note === 'string' ? payload.note.slice(0, 5000) : ''
+  
+  const screenshots: string[] = []
+  if (Array.isArray(payload.screenshots)) {
+    for (const url of payload.screenshots) {
+      if (typeof url === 'string' && url.length < 2000) {
+        screenshots.push(url)
+      }
+    }
+  }
+
+  return {
+    date: payload.date,
+    direction: payload.direction,
+    entry,
+    exit,
+    lots,
+    swap: isNaN(swap) ? 0 : swap,
+    sl: isNaN(sl as number) ? null : sl,
+    tp: isNaN(tp as number) ? null : tp,
+    rr: isNaN(rr as number) ? null : rr,
+    pips: isNaN(pips as number) ? null : pips,
+    session,
+    setup,
+    market,
+    leverage,
+    pnl: isNaN(pnl) ? 0 : pnl,
+    outcome,
+    note,
+    screenshots,
+    source: 'manual'
+  }
+}
 
 // ── 8. Save Trade Route ──────────────────────────────────────────────────────
 app.post('/save-trade', async (c) => {
@@ -741,6 +982,11 @@ app.post('/save-trade', async (c) => {
       return c.json({ error: 'Missing trade data payload' }, 400)
     }
 
+    const sanitizedTrade = sanitizeAndValidateTrade(tradeData)
+    if (!sanitizedTrade) {
+      return c.json({ error: 'Invalid or missing trade fields' }, 400)
+    }
+
     const userDoc = await db.collection('users').doc(uid).get()
     const plan = userDoc.exists ? (userDoc.data().plan || 'free') : 'free'
 
@@ -759,7 +1005,7 @@ app.post('/save-trade', async (c) => {
 
     await Promise.all([
       newTradeDoc.set({
-        ...tradeData,
+        ...sanitizedTrade,
         createdAt: now(),
         updatedAt: now()
       }),

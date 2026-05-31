@@ -131,23 +131,35 @@ const STORY_CHAPTERS = [
 
 /* ─── Floating particles ─── */
 function Particles({ count = 18, isLightMode }) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-  }, []);
-  const activeCount = isMobile ? 6 : count;
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
-  const particles = useRef(
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 12 + 8,
-      delay: Math.random() * 6,
-      opacity: Math.random() * 0.4 + 0.1,
-    }))
-  ).current;
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const [particles] = useState(() =>
+    Array.from({ length: count }, (_, i) => {
+      const pseudoRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      };
+      return {
+        id: i,
+        x: pseudoRandom(i + 1) * 100,
+        y: pseudoRandom(i + 2) * 100,
+        size: pseudoRandom(i + 3) * 3 + 1,
+        duration: pseudoRandom(i + 4) * 12 + 8,
+        delay: pseudoRandom(i + 5) * 6,
+        opacity: pseudoRandom(i + 6) * 0.4 + 0.1,
+      };
+    })
+  );
+
+  const activeCount = isMobile ? 6 : count;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
@@ -350,7 +362,7 @@ export function LandingPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   const heroRef = useRef(null);
-  const { scrollYProgress: heroProgress, scrollY } = useScroll({
+  const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });

@@ -86,29 +86,29 @@ export function useSubscription(user) {
           });
         }
       } else {
-        // Create profile with 7-day Pro trial
-        const trialExpiry = new Date();
-        trialExpiry.setDate(trialExpiry.getDate() + 7);
-        const planExpiryStr = trialExpiry.toISOString();
-        
-        setDoc(doc(db, "users", user.uid), { 
-          plan: 'pro', 
-          isTrial: true, 
-          planExpiry: planExpiryStr, 
-          totalTradesLogged: 0, 
-          totalJournalsLogged: 0, 
-          agreedToTerms: false 
-        }, { merge: true });
-        
+        // VULN-02: Do not write subscription fields client-side.
+        // Retrieve the token and trigger server-side user initialization.
+        user.getIdToken().then((token) => {
+          fetch('/api/init-user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }).catch((err) => {
+            console.error('[useSubscription] server-side init failed:', err);
+          });
+        });
+
         setSubscription({ 
-          plan: 'pro', 
-          expiry: planExpiryStr, 
-          isTrial: true, 
+          plan: 'free', 
+          expiry: null, 
+          isTrial: false, 
           isTrialExpired: false, 
           totalTrades: 0, 
           totalJournals: 0, 
           agreedToTerms: false, 
-          isLoading: false 
+          isLoading: true 
         });
       }
     });

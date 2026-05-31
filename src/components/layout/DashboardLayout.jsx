@@ -48,6 +48,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           console.warn('Background broker sync failed:', err);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts.length]);
 
   const profileMenuRef = useRef(null);

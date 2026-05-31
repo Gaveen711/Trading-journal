@@ -103,8 +103,6 @@ export function useBrokerAccounts() {
 
       // Save credentials strictly on the client side (localStorage)
       const localKey = `xau-broker-accounts-${user.uid}`;
-      const localSaved = localStorage.getItem(localKey);
-      const localList = localSaved ? JSON.parse(localSaved) : [];
 
       // We only support one connected account for now
       const newAccount = {
@@ -119,7 +117,7 @@ export function useBrokerAccounts() {
       localStorage.setItem(localKey, JSON.stringify([newAccount]));
 
       // Trigger a state reload
-      setAccounts(prev => [
+      setAccounts([
         {
           ...newAccount,
           isActive: true,
@@ -162,7 +160,7 @@ export function useBrokerAccounts() {
     }
   }
 
-  async function removeAccount(accountId) {
+  async function removeAccount(_accountId) {
     setError(null);
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
