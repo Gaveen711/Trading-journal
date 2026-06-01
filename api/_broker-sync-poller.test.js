@@ -146,15 +146,10 @@ vi.mock('./_resend.js', () => {
 
 // Mock metaapi-broker helper module
 vi.mock('./_metaapi-broker.js', () => {
-  const fetchBrokerTrades = vi.fn().mockResolvedValue([]);
-  const mockModule = {
-    fetchBrokerTrades,
+  return {
+    fetchBrokerTrades: vi.fn().mockResolvedValue([]),
     provisionMetaApiAccount: vi.fn(),
     fetchMetaApiDeals: vi.fn(),
-  };
-  return {
-    ...mockModule,
-    default: mockModule,
   };
 });
 
