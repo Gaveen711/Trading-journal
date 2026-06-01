@@ -9,6 +9,8 @@ import resend from './_resend.js'
 
 import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
 import { isSyncAllowed, getUidFromContext, verifyIdToken } from './_auth.js'
+// @ts-ignore
+import { fetchBrokerTrades, provisionMetaApiAccount } from './_metaapi-broker.js'
 import {
   resolveKey,
   invalidateUserCache,
@@ -225,7 +227,7 @@ app.post('/broker-login-sync', async (c) => {
     }
 
     try {
-      const { provisionMetaApiAccount, fetchBrokerTrades } = await import('./_metaapi-broker.js')
+
       const metaApiAccountId = await provisionMetaApiAccount({ login, password, server, brokerType })
       const testResult = await fetchBrokerTrades({ metaApiAccountId }, null)
       const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
@@ -271,7 +273,7 @@ app.post('/broker-login-sync', async (c) => {
 
       const account = accountSnap.data()
 
-      const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
+
       const brokerTrades = await fetchBrokerTrades(
         {
           metaApiAccountId: account.metaApiAccountId,
@@ -1139,7 +1141,7 @@ const handleBrokerSyncPoller = async (c: any) => {
           }
         }
 
-        const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
+
         const brokerTrades = await fetchBrokerTrades(
           {
             metaApiAccountId: accountData.metaApiAccountId,
