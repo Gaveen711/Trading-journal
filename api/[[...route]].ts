@@ -33,6 +33,39 @@ function handleRouteError(route: string, err: any, c: any, customErrName = 'Inte
   return c.json({ error: customErrName, message: safeMsg }, 500)
 }
 
+// Helper to perform chunked, parallel db.getAll reads in blocks of 1000 refs (Firestore limit)
+async function chunkedDbGetAll(refs: any[]): Promise<any[]> {
+  if (refs.length === 0) return []
+  const CHUNK_SIZE = 1000
+  const promises = []
+  for (let i = 0; i < refs.length; i += CHUNK_SIZE) {
+    const chunk = refs.slice(i, i + CHUNK_SIZE)
+    promises.push(db.getAll(...chunk))
+  }
+  const results = await Promise.all(promises)
+  return results.flat()
+}
+
+// Bounded concurrency pool helper to limit parallel promises execution
+async function runWithConcurrencyLimit<T>(limit: number, items: T[], fn: (item: T) => Promise<any>): Promise<any[]> {
+  const executing = new Set<Promise<any>>()
+  const promises = []
+
+  for (const item of items) {
+    const p = Promise.resolve().then(() => fn(item))
+    promises.push(p)
+    executing.add(p)
+
+    const clean = () => executing.delete(p)
+    p.then(clean, clean)
+
+    if (executing.size >= limit) {
+      await Promise.race(executing)
+    }
+  }
+  return Promise.all(promises)
+}
+
 type Env = {}
 type Variables = Record<string, unknown>
 
@@ -258,7 +291,7 @@ app.post('/broker-login-sync', async (c) => {
         return tradesRef.doc(tradeDocId)
       })
 
-      const snapshots = refs.length > 0 ? await db.getAll(...refs) : []
+      const snapshots = refs.length > 0 ? await chunkedDbGetAll(refs) : []
       const existingMap = new Map()
       snapshots.forEach((snap: any) => {
         if (snap.exists) {
@@ -267,6 +300,7 @@ app.post('/broker-login-sync', async (c) => {
       })
 
       const CHUNK_SIZE = 500
+      const commitPromises = []
       for (let i = 0; i < brokerTrades.length; i += CHUNK_SIZE) {
         const chunk = brokerTrades.slice(i, i + CHUNK_SIZE)
         const batch = db.batch()
@@ -294,8 +328,11 @@ app.post('/broker-login-sync', async (c) => {
         }
 
         if (chunkWrites > 0) {
-          await batch.commit()
+          commitPromises.push(batch.commit())
         }
+      }
+      if (commitPromises.length > 0) {
+        await Promise.all(commitPromises)
       }
       await accountRef.update({
         lastSyncTime: now(),
@@ -854,11 +891,12 @@ app.post('/save-trade', async (c) => {
     }
 
     const userDoc = await db.collection('users').doc(uid).get()
-    const plan = userDoc.exists ? (userDoc.data().plan || 'free') : 'free'
+    const userData = userDoc.exists ? userDoc.data() : {}
+    const plan = userData.plan || 'free'
 
     if (plan !== 'pro') {
-      const tradesSnap = await db.collection('users').doc(uid).collection('trades').count().get()
-      if (tradesSnap.data().count >= 50) {
+      const totalTrades = userData.totalTradesLogged || 0
+      if (totalTrades >= 50) {
         return c.json({
           error: 'Free tier limit reached (50 trades). Upgrade to Pro.',
           code: 'limit-reached'
@@ -1031,131 +1069,166 @@ const handleBrokerSyncPoller = async (c: any) => {
   let failedSyncs = 0
 
   try {
-    const usersSnapshot = await db.collection('users').where('plan', 'in', ['pro', 'grace']).get()
+    // 1. Fetch all active broker accounts across the database in one collection group query
+    const accountsSnapshot = await db
+      .collectionGroup('brokerAccounts')
+      .where('isActive', '==', true)
+      .get()
 
-    for (const userDoc of usersSnapshot.docs) {
-      const uid = userDoc.id
-      const userData = userDoc.data()
+    if (accountsSnapshot.empty) {
+      console.log('[broker-sync-poller] No active broker accounts found.')
+      return c.json({
+        ok: true,
+        timestamp: new Date().toISOString(),
+        usersProcessed: 0,
+        accountsProcessed: 0,
+        successfulSyncs: 0,
+        failedSyncs: 0,
+      })
+    }
 
-      if (!isSyncAllowed(userData)) {
+    // 2. Extract unique owner user IDs (UIDs) from account document paths
+    const activeAccounts = accountsSnapshot.docs
+    const uids = Array.from(new Set(activeAccounts.map((doc: any) => doc.ref.parent.parent.id)))
+
+    // 3. Fetch all parent user documents in parallel chunked reads
+    const userRefs = uids.map(uid => db.collection('users').doc(uid))
+    const userSnaps = await chunkedDbGetAll(userRefs)
+    const usersMap = new Map()
+    userSnaps.forEach((snap: any) => {
+      if (snap.exists) {
+        usersMap.set(snap.id, snap.data())
+      }
+    })
+
+    // 4. Filter accounts that belong to users with valid sync access
+    const accountsToSync = []
+    const usersCounted = new Set()
+
+    for (const accountDoc of activeAccounts) {
+      const accountData = accountDoc.data()
+      const uid = accountDoc.ref.parent.parent.id
+      const userData = usersMap.get(uid)
+
+      if (!userData || !isSyncAllowed(userData)) {
         continue
       }
 
-      totalUsers++
+      usersCounted.add(uid)
+      totalAccounts++
 
-      const accountsSnapshot = await db
-        .collection('users').doc(uid)
-        .collection('brokerAccounts')
-        .where('isActive', '==', true)
-        .get()
+      accountsToSync.push({
+        uid,
+        accountData,
+        accountId: accountDoc.id,
+        accountRef: accountDoc.ref,
+      })
+    }
 
-      for (const accountDoc of accountsSnapshot.docs) {
-        const account = accountDoc.data()
-        const accountId = accountDoc.id
-        totalAccounts++
+    totalUsers = usersCounted.size
 
-        try {
-          if (account.lastSyncTime) {
-            const lastSync = new Date(account.lastSyncTime).getTime()
-            const timeSinceSync = Date.now() - lastSync
-            if (timeSinceSync < 30000) {
-              console.log(`[broker-sync-poller] Skipping ${accountId} - recently synced`)
-              continue
-            }
+    // 5. Sync accounts in parallel with a bounded concurrency pool (limit of 5 concurrent processes)
+    const syncAccountTask = async ({ uid, accountData, accountId, accountRef }: any) => {
+      try {
+        if (accountData.lastSyncTime) {
+          const lastSync = new Date(accountData.lastSyncTime).getTime()
+          const timeSinceSync = Date.now() - lastSync
+          if (timeSinceSync < 30000) {
+            console.log(`[broker-sync-poller] Skipping ${accountId} - recently synced`)
+            return
           }
+        }
 
-          const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
-          const brokerTrades = await fetchBrokerTrades(
-            {
-              metaApiAccountId: account.metaApiAccountId,
-              login: account.login,
-              server: account.server,
-              brokerType: account.brokerType,
-            },
-            (account.lastSyncTime ? new Date(account.lastSyncTime) : null) as any
-          )
+        const { fetchBrokerTrades } = await import('./_metaapi-broker.js')
+        const brokerTrades = await fetchBrokerTrades(
+          {
+            metaApiAccountId: accountData.metaApiAccountId,
+            login: accountData.login,
+            server: accountData.server,
+            brokerType: accountData.brokerType,
+          },
+          (accountData.lastSyncTime ? new Date(accountData.lastSyncTime) : null) as any
+        )
 
-          const tradesRef = db.collection('users').doc(uid).collection('trades')
-          const refs = brokerTrades.map((trade: any) => {
+        const tradesRef = db.collection('users').doc(uid).collection('trades')
+        const refs = brokerTrades.map((trade: any) => {
+          const tradeDocId = `broker_${accountId}_${trade.closeDealTicket}`
+          return tradesRef.doc(tradeDocId)
+        })
+
+        const snapshots = refs.length > 0 ? await chunkedDbGetAll(refs) : []
+        const existingMap = new Map()
+        snapshots.forEach((snap: any) => {
+          if (snap.exists) {
+            existingMap.set(snap.id, snap.data())
+          }
+        })
+
+        let newCount = 0
+        const CHUNK_SIZE = 500
+        const commitPromises = []
+
+        for (let i = 0; i < brokerTrades.length; i += CHUNK_SIZE) {
+          const chunk = brokerTrades.slice(i, i + CHUNK_SIZE)
+          const batch = db.batch()
+          let chunkWrites = 0
+
+          for (const trade of chunk) {
             const tradeDocId = `broker_${accountId}_${trade.closeDealTicket}`
-            return tradesRef.doc(tradeDocId)
-          })
+            const tradeRef = tradesRef.doc(tradeDocId)
+            const exists = existingMap.has(tradeDocId)
 
-          const snapshots = refs.length > 0 ? await db.getAll(...refs) : []
-          const existingMap = new Map()
-          snapshots.forEach((snap: any) => {
-            if (snap.exists) {
-              existingMap.set(snap.id, snap.data())
-            }
-          })
-
-          let newCount = 0
-          const CHUNK_SIZE = 500
-          for (let i = 0; i < brokerTrades.length; i += CHUNK_SIZE) {
-            const chunk = brokerTrades.slice(i, i + CHUNK_SIZE)
-            const batch = db.batch()
-            let chunkWrites = 0
-
-            for (const trade of chunk) {
-              const tradeDocId = `broker_${accountId}_${trade.closeDealTicket}`
-              const tradeRef = tradesRef.doc(tradeDocId)
-              const exists = existingMap.has(tradeDocId)
-
-              if (!exists) {
-                newCount++
-              }
-
-              batch.set(tradeRef, {
-                ...trade,
-                accountId,
-                syncedAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                ...(exists ? {} : { createdAt: new Date().toISOString() }),
-              }, { merge: true })
-              chunkWrites++
+            if (!exists) {
+              newCount++
             }
 
-            if (chunkWrites > 0) {
-              await batch.commit()
-            }
+            batch.set(tradeRef, {
+              ...trade,
+              accountId,
+              syncedAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              ...(exists ? {} : { createdAt: new Date().toISOString() }),
+            }, { merge: true })
+            chunkWrites++
           }
 
-          const accountRef = db
-            .collection('users').doc(uid)
-            .collection('brokerAccounts')
-            .doc(accountId)
+          if (chunkWrites > 0) {
+            commitPromises.push(batch.commit())
+          }
+        }
 
+        if (commitPromises.length > 0) {
+          await Promise.all(commitPromises)
+        }
+
+        await accountRef.update({
+          lastSyncTime: new Date().toISOString(),
+          lastSyncStatus: 'success',
+          tradeCount: brokerTrades.length,
+          updatedAt: new Date().toISOString(),
+        })
+
+        console.log(`[broker-sync-poller] ✓ Synced ${newCount} new trades for ${accountId}`)
+        successfulSyncs++
+      } catch (error: any) {
+        console.error(`[broker-sync-poller] ✗ Failed to sync ${accountId}:`, error.message)
+        
+        try {
           await accountRef.update({
-            lastSyncTime: new Date().toISOString(),
-            lastSyncStatus: 'success',
-            tradeCount: brokerTrades.length,
+            lastSyncStatus: 'failed',
+            lastSyncError: error.message,
             updatedAt: new Date().toISOString(),
           })
-
-          console.log(`[broker-sync-poller] ✓ Synced ${newCount} new trades for ${accountId}`)
-          successfulSyncs++
-        } catch (error: any) {
-          console.error(`[broker-sync-poller] ✗ Failed to sync ${accountId}:`, error.message)
-          
-          try {
-            const accountRef = db
-              .collection('users').doc(uid)
-              .collection('brokerAccounts')
-              .doc(accountId)
-
-            await accountRef.update({
-              lastSyncStatus: 'failed',
-              lastSyncError: error.message,
-              updatedAt: new Date().toISOString(),
-            })
-          } catch (updateErr: any) {
-            console.error('[broker-sync-poller] Failed to update error status:', updateErr.message)
-          }
-
-          failedSyncs++
+        } catch (updateErr: any) {
+          console.error('[broker-sync-poller] Failed to update error status:', updateErr.message)
         }
+
+        failedSyncs++
       }
     }
+
+    // Run sync tasks with a concurrency limit of 5 to avoid CPU/memory exhaustion or MetaAPI limit hitting
+    await runWithConcurrencyLimit(5, accountsToSync, syncAccountTask)
 
     const result = {
       ok: true,
@@ -1166,7 +1239,7 @@ const handleBrokerSyncPoller = async (c: any) => {
       failedSyncs,
     }
 
-    console.log('[broker-sync-poller] Completed:', result)
+    console.log('[broker-sync-poller] Completed scheduled broker sync:', result)
     return c.json(result)
   } catch (error: any) {
     return handleRouteError('broker-sync-poller', error, c, 'Cron job failed')

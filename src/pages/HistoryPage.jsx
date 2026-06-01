@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { Download, Search, XLg, PencilSquare } from 'react-bootstrap-icons';
@@ -34,21 +34,41 @@ export function HistoryPage() {
   
   const [editingTrade, setEditingTrade] = useState(null);
   const [expandedNotes, setExpandedNotes] = useState({});
+  const [visibleCount, setVisibleCount] = useState(30);
+
+  // Reset pagination count when any filter changes
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [filterSearch, filterDir, filterOutcome, filterSession, filterSetup, filterSort]);
+
+  const filteredAndSortedTrades = useMemo(() => {
+    let filtered = trades.filter(t => {
+      if (filterSearch && !t.note?.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+      if (filterDir && t.direction !== filterDir) return false;
+      if (filterOutcome && t.outcome !== filterOutcome) return false;
+      if (filterSession && t.session !== filterSession) return false;
+      if (filterSetup && t.setup !== filterSetup) return false;
+      return true;
+    });
+
+    if (filterSort === 'oldest') {
+      filtered.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    } else if (filterSort === 'best') {
+      filtered.sort((a, b) => (b.pnl || 0) - (a.pnl || 0));
+    } else if (filterSort === 'worst') {
+      filtered.sort((a, b) => (a.pnl || 0) - (b.pnl || 0));
+    } else {
+      // default 'newest': assuming descending date order
+      filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    }
+    return filtered;
+  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterSetup, filterSort]);
+
+  const displayedTrades = useMemo(() => {
+    return filteredAndSortedTrades.slice(0, visibleCount);
+  }, [filteredAndSortedTrades, visibleCount]);
 
   if (isLoadingTrades) return <HistorySkeleton />;
-
-  let filtered = [...trades].filter(t => {
-    if (filterSearch && !t.note?.toLowerCase().includes(filterSearch.toLowerCase())) return false;
-    if (filterDir && t.direction !== filterDir) return false;
-    if (filterOutcome && t.outcome !== filterOutcome) return false;
-    if (filterSession && t.session !== filterSession) return false;
-    if (filterSetup && t.setup !== filterSetup) return false;
-    return true;
-  });
-
-  if (filterSort === 'oldest') filtered.sort((a, b) => a.date.localeCompare(b.date));
-  else if (filterSort === 'best') filtered.sort((a, b) => b.pnl - a.pnl);
-  else if (filterSort === 'worst') filtered.sort((a, b) => a.pnl - b.pnl);
 
   const onExportCSV = () => {
     if (plan !== 'pro') {
@@ -183,7 +203,7 @@ export function HistoryPage() {
           />
         </div>
 
-        {filtered.length === 0 ? (
+        {filteredAndSortedTrades.length === 0 ? (
           <div className="card-premium p-12 text-center text-muted-foreground italic flex flex-col items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-2 shadow-inner">
               <Search className="w-6 h-6 text-muted-foreground/40" />
@@ -192,7 +212,7 @@ export function HistoryPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map((t, idx) => {
+            {displayedTrades.map((t, idx) => {
               const isWin = t.pnl >= 0;
               const formattedPnL = formatCurrency(t.pnl, true);
               const formattedPips = `${formatNumber(t.pips || 0, 0)} pips`;
@@ -331,8 +351,19 @@ export function HistoryPage() {
                 </div>
               );
             })}
+
+            {filteredAndSortedTrades.length > visibleCount && (
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 30)}
+                  className="px-6 py-3 rounded-xl border border-border/50 bg-card hover:bg-muted text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all text-foreground/80"
+                >
+                  Load More Trades ({filteredAndSortedTrades.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
           </div>
-          )}
+        )}
       </div>
 
       {editingTrade && (

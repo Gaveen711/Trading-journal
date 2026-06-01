@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
@@ -45,157 +45,195 @@ export function AnalyticsPage() {
     </div>
   );
 
-  const wins = trades.filter(t => t.outcome === 'WIN');
-  const losses = trades.filter(t => t.outcome === 'LOSS');
-  const avgWin = wins.length ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0;
-  const avgLoss = losses.length ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : 0;
-  const wr = trades.length ? wins.length / trades.length : 0;
-  const expectancy = (wr * avgWin) + ((1 - wr) * avgLoss);
-  const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
-  const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
-  const pf = grossLoss > 0 ? grossWin / grossLoss : null;
+  const stats = useMemo(() => {
+    const wins = trades.filter(t => t.outcome === 'WIN');
+    const losses = trades.filter(t => t.outcome === 'LOSS');
+    const avgWin = wins.length ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0;
+    const avgLoss = losses.length ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : 0;
+    const wr = trades.length ? wins.length / trades.length : 0;
+    const expectancy = (wr * avgWin) + ((1 - wr) * avgLoss);
+    const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
+    const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+    const pf = grossLoss > 0 ? grossWin / grossLoss : null;
 
-  let peak = walletBalance || 0, maxDD = 0, running = walletBalance || 0;
-  const sortedTrades = [...trades].sort((a, b) => a.date.localeCompare(b.date));
-  const drawdownCurve = [0];
-  const drawdownLabels = ['Start'];
+    let peak = walletBalance || 0, maxDD = 0, running = walletBalance || 0;
+    const sortedTrades = [...trades].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const drawdownCurve = [0];
+    const drawdownLabels = ['Start'];
 
-  sortedTrades.forEach(t => {
-    running += t.pnl;
-    if (running > peak) peak = running;
-    const dd = running - peak;
-    if (Math.abs(dd) > maxDD) maxDD = Math.abs(dd);
-    drawdownCurve.push(parseFloat(dd.toFixed(2)));
-    drawdownLabels.push(t.date);
-  });
+    sortedTrades.forEach(t => {
+      running += t.pnl;
+      if (running > peak) peak = running;
+      const dd = running - peak;
+      if (Math.abs(dd) > maxDD) maxDD = Math.abs(dd);
+      drawdownCurve.push(parseFloat(dd.toFixed(2)));
+      drawdownLabels.push(t.date);
+    });
 
-  const sessionDataMap = {};
-  const setupDataMap = {};
-  
-  trades.forEach(t => {
-    const s = t.session || 'Unknown';
-    if (!sessionDataMap[s]) sessionDataMap[s] = { pnl: 0, wins: 0, total: 0 };
-    sessionDataMap[s].pnl += t.pnl;
-    sessionDataMap[s].total++;
-    if (t.outcome === 'WIN') sessionDataMap[s].wins++;
+    const sessionDataMap = {};
+    const setupDataMap = {};
+    
+    trades.forEach(t => {
+      const s = t.session || 'Unknown';
+      if (!sessionDataMap[s]) sessionDataMap[s] = { pnl: 0, wins: 0, total: 0 };
+      sessionDataMap[s].pnl += t.pnl;
+      sessionDataMap[s].total++;
+      if (t.outcome === 'WIN') sessionDataMap[s].wins++;
 
-    const set = t.setup || 'Unknown';
-    if (!setupDataMap[set]) setupDataMap[set] = { pnl: 0, wins: 0, total: 0 };
-    setupDataMap[set].pnl += t.pnl;
-    setupDataMap[set].total++;
-    if (t.outcome === 'WIN') setupDataMap[set].wins++;
-  });
+      const set = t.setup || 'Unknown';
+      if (!setupDataMap[set]) setupDataMap[set] = { pnl: 0, wins: 0, total: 0 };
+      setupDataMap[set].pnl += t.pnl;
+      setupDataMap[set].total++;
+      if (t.outcome === 'WIN') setupDataMap[set].wins++;
+    });
 
-  // 1. Equity Curve
-  let runningBalance = walletBalance || 0;
-  const equityCurvePoints = [runningBalance];
-  const equityCurveLabels = ['Start'];
-  sortedTrades.forEach(t => {
-    runningBalance += t.pnl;
-    equityCurvePoints.push(parseFloat(runningBalance.toFixed(2)));
-    equityCurveLabels.push(t.date);
-  });
+    // 1. Equity Curve
+    let runningBalance = walletBalance || 0;
+    const equityCurvePoints = [runningBalance];
+    const equityCurveLabels = ['Start'];
+    sortedTrades.forEach(t => {
+      runningBalance += t.pnl;
+      equityCurvePoints.push(parseFloat(runningBalance.toFixed(2)));
+      equityCurveLabels.push(t.date);
+    });
 
-  const equityCurveChartData = {
-    labels: equityCurveLabels,
-    datasets: [{
-      label: 'Equity Curve',
-      data: equityCurvePoints,
-      borderColor: 'rgb(59, 130, 246)', // elegant blue line
-      backgroundColor: 'rgba(59, 130, 246, 0.05)',
-      fill: true,
-      tension: 0.3,
-      pointRadius: 0, // no visible dots on the line
-      pointHoverRadius: 6,
-      borderWidth: 2.5,
-    }]
-  };
+    const equityCurveChartData = {
+      labels: equityCurveLabels,
+      datasets: [{
+        label: 'Equity Curve',
+        data: equityCurvePoints,
+        borderColor: 'rgb(59, 130, 246)', // elegant blue line
+        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0, // no visible dots on the line
+        pointHoverRadius: 6,
+        borderWidth: 2.5,
+      }]
+    };
 
-  // 2. Monthly P/L
-  const monthlyPnlMap = {};
-  trades.forEach(t => {
-    if (!t.date) return;
-    const dateObj = new Date(t.date);
-    const monthName = dateObj.toLocaleString('en-US', { month: 'short' }); // "May", "Jun", etc.
-    monthlyPnlMap[monthName] = (monthlyPnlMap[monthName] || 0) + t.pnl;
-  });
+    // 2. Monthly P/L
+    const monthlyPnlMap = {};
+    trades.forEach(t => {
+      if (!t.date) return;
+      const dateObj = new Date(t.date);
+      const monthName = dateObj.toLocaleString('en-US', { month: 'short' }); // "May", "Jun", etc.
+      monthlyPnlMap[monthName] = (monthlyPnlMap[monthName] || 0) + t.pnl;
+    });
 
-  const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthlyPnlLabels = monthsOrder.filter(m => monthlyPnlMap[m] !== undefined || Object.keys(monthlyPnlMap).includes(m));
-  const monthlyPnlValues = monthlyPnlLabels.map(m => monthlyPnlMap[m] || 0);
+    const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyPnlLabels = monthsOrder.filter(m => monthlyPnlMap[m] !== undefined || Object.keys(monthlyPnlMap).includes(m));
+    const monthlyPnlValues = monthlyPnlLabels.map(m => monthlyPnlMap[m] || 0);
 
-  const monthlyPnlChartData = {
-    labels: monthlyPnlLabels,
-    datasets: [{
-      label: 'Monthly P/L',
-      data: monthlyPnlValues,
-      backgroundColor: monthlyPnlValues.map(v => v >= 0 ? 'rgba(163, 230, 53, 0.6)' : 'rgba(248, 113, 113, 0.6)'),
-      borderColor: monthlyPnlValues.map(v => v >= 0 ? '#84cc16' : '#ef4444'),
-      borderWidth: 1.5,
-      borderRadius: 8,
-    }]
-  };
+    const monthlyPnlChartData = {
+      labels: monthlyPnlLabels,
+      datasets: [{
+        label: 'Monthly P/L',
+        data: monthlyPnlValues,
+        backgroundColor: monthlyPnlValues.map(v => v >= 0 ? 'rgba(163, 230, 53, 0.6)' : 'rgba(248, 113, 113, 0.6)'),
+        borderColor: monthlyPnlValues.map(v => v >= 0 ? '#84cc16' : '#ef4444'),
+        borderWidth: 1.5,
+        borderRadius: 8,
+      }]
+    };
 
-  // 3. Session Performance Pie Chart
-  const sessionNames = ['London', 'New York', 'Tokyo', 'Sydney'];
-  const sessionPnlMap = { London: 0, 'New York': 0, Tokyo: 0, Sydney: 0 };
-  
-  trades.forEach(t => {
-    // Standardize casing for key matching
-    let s = t.session || '';
-    if (s.toLowerCase() === 'london') sessionPnlMap.London += t.pnl;
-    else if (s.toLowerCase() === 'new york' || s.toLowerCase() === 'new-york' || s.toLowerCase() === 'newyork') sessionPnlMap['New York'] += t.pnl;
-    else if (s.toLowerCase() === 'tokyo') sessionPnlMap.Tokyo += t.pnl;
-    else if (s.toLowerCase() === 'sydney') sessionPnlMap.Sydney += t.pnl;
-  });
+    // 3. Session Performance Pie Chart
+    const sessionNames = ['London', 'New York', 'Tokyo', 'Sydney'];
+    const sessionPnlMap = { London: 0, 'New York': 0, Tokyo: 0, Sydney: 0 };
+    
+    trades.forEach(t => {
+      // Standardize casing for key matching
+      let s = t.session || '';
+      if (s.toLowerCase() === 'london') sessionPnlMap.London += t.pnl;
+      else if (s.toLowerCase() === 'new york' || s.toLowerCase() === 'new-york' || s.toLowerCase() === 'newyork') sessionPnlMap['New York'] += t.pnl;
+      else if (s.toLowerCase() === 'tokyo') sessionPnlMap.Tokyo += t.pnl;
+      else if (s.toLowerCase() === 'sydney') sessionPnlMap.Sydney += t.pnl;
+    });
 
-  const sessionChartLabels = sessionNames.map(name => {
-    const val = sessionPnlMap[name];
-    const sign = val >= 0 ? '+' : '';
-    return `${name}: ${sign}${formatCurrency(val)}`;
-  });
+    const sessionChartLabels = sessionNames.map(name => {
+      const val = sessionPnlMap[name];
+      const sign = val >= 0 ? '+' : '';
+      return `${name}: ${sign}${formatCurrency(val)}`;
+    });
 
-  const sessionChartData = {
-    labels: sessionChartLabels,
-    datasets: [{
-      data: sessionNames.map(name => Math.max(1, Math.abs(sessionPnlMap[name]))), // segment sizing by volume weight
-      backgroundColor: [
-        'rgb(59, 130, 246)',   // London (Blue)
-        'rgb(16, 185, 129)',   // New York (Green)
-        'rgb(245, 158, 11)',   // Tokyo (Orange)
-        'rgb(239, 68, 68)'     // Sydney (Red)
-      ],
-      borderColor: 'rgba(255, 255, 255, 0.1)',
-      borderWidth: 1,
-    }]
-  };
+    const sessionChartData = {
+      labels: sessionChartLabels,
+      datasets: [{
+        data: sessionNames.map(name => Math.max(1, Math.abs(sessionPnlMap[name]))), // segment sizing by volume weight
+        backgroundColor: [
+          'rgb(59, 130, 246)',   // London (Blue)
+          'rgb(16, 185, 129)',   // New York (Green)
+          'rgb(245, 158, 11)',   // Tokyo (Orange)
+          'rgb(239, 68, 68)'     // Sydney (Red)
+        ],
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+      }]
+    };
 
-  // 4. Performance by Day
-  const dayPnlMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0 };
-  trades.forEach(t => {
-    if (!t.date) return;
-    const dateObj = new Date(t.date);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayName = days[dateObj.getDay()];
-    if (dayName && dayPnlMap[dayName] !== undefined) {
-      dayPnlMap[dayName] += t.pnl;
-    }
-  });
+    // 4. Performance by Day
+    const dayPnlMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0 };
+    trades.forEach(t => {
+      if (!t.date) return;
+      const dateObj = new Date(t.date);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayName = days[dateObj.getDay()];
+      if (dayName && dayPnlMap[dayName] !== undefined) {
+        dayPnlMap[dayName] += t.pnl;
+      }
+    });
 
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-  const dayValues = dayLabels.map(d => dayPnlMap[d]);
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const dayValues = dayLabels.map(d => dayPnlMap[d]);
 
-  const performanceByDayChartData = {
-    labels: dayLabels,
-    datasets: [{
-      label: 'Performance by Day',
-      data: dayValues,
-      backgroundColor: 'rgba(77, 124, 15, 0.85)', // darker shade of green
-      borderColor: '#4d7c0f',
-      borderWidth: 1.5,
-      borderRadius: 8,
-    }]
-  };
+    const performanceByDayChartData = {
+      labels: dayLabels,
+      datasets: [{
+        label: 'Performance by Day',
+        data: dayValues,
+        backgroundColor: 'rgba(77, 124, 15, 0.85)', // darker shade of green
+        borderColor: '#4d7c0f',
+        borderWidth: 1.5,
+        borderRadius: 8,
+      }]
+    };
+
+    const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
+    const currentWalletBalance = (walletBalance || 0) + totalPnl;
+    const winRatePercent = trades.length ? (wins.length / trades.length * 100).toFixed(0) : 0;
+
+    return {
+      wins,
+      losses,
+      avgWin,
+      avgLoss,
+      expectancy,
+      pf,
+      sortedTrades,
+      equityCurveChartData,
+      monthlyPnlChartData,
+      sessionChartData,
+      performanceByDayChartData,
+      currentWalletBalance,
+      winRatePercent
+    };
+  }, [trades, walletBalance]);
+
+  const {
+    wins,
+    losses,
+    avgWin,
+    avgLoss,
+    expectancy,
+    pf,
+    sortedTrades,
+    equityCurveChartData,
+    monthlyPnlChartData,
+    sessionChartData,
+    performanceByDayChartData,
+    currentWalletBalance,
+    winRatePercent
+  } = stats;
 
   const chartOptions = {
     responsive: true,
@@ -214,16 +252,6 @@ export function AnalyticsPage() {
       x: { grid: { display: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } }
     }
   };
-
-  const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
-  const currentWalletBalance = (walletBalance || 0) + totalPnl;
-  const winRatePercent = trades.length ? (wins.length / trades.length * 100).toFixed(0) : 0;
-
-  const monthMap = {};
-  trades.forEach(t => {
-    const key = t.date.substring(0, 7);
-    monthMap[key] = (monthMap[key] || 0) + t.pnl;
-  });
 
   const statCards = [
     { 

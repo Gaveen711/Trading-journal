@@ -53,8 +53,12 @@ export async function rateLimitMiddleware(c: Context, next: Next) {
 
   let current = 0
   try {
-    current = await kv.incr(key)
-    if (current === 1) {
+    const p = kv.pipeline()
+    p.incr(key)
+    p.ttl(key)
+    const [incrResult, ttlResult] = await p.exec() as [number, number]
+    current = incrResult
+    if (ttlResult === -1) {
       await kv.expire(key, windowSeconds)
     }
   } catch (kvErr: any) {

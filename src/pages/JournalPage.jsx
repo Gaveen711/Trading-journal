@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { todayStr } from '../lib/tradeUtils';
@@ -23,7 +23,9 @@ export function JournalPage() {
     <EmojiSunglassesFill key="5" className="text-emerald-500/80" />
   ];
   const moodLabels = ['Terrible', 'Bad', 'Neutral', 'Good', 'Excellent'];
-  const entries = Object.entries(journals).sort((a, b) => b[0].localeCompare(a[0]));
+  const entries = useMemo(() => {
+    return Object.entries(journals).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [journals]);
   const SUB_LIMITS = { freeJournals: 10 };
 
   useEffect(() => {

@@ -63,13 +63,18 @@ export function isDbReady() {
   return admin.apps.length > 0;
 }
 
+let dbInstance = null;
+
 export const db = new Proxy({}, {
   get: (target, prop) => {
     if (!isDbReady()) {
       console.error(`❌ db.${String(prop)} called but Firebase is not initialised.`);
       return undefined;
     }
-    return admin.firestore()[prop];
+    if (!dbInstance) {
+      dbInstance = admin.firestore();
+    }
+    return dbInstance[prop];
   }
 });
 

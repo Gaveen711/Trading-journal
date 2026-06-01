@@ -2,6 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@vercel/kv', () => {
   const mockKvStore = new Map();
+  const mockPipeline = {
+    incr: vi.fn((key) => {
+      mockPipeline.results.push(Promise.resolve(1));
+      return mockPipeline;
+    }),
+    expire: vi.fn((key, seconds) => {
+      mockPipeline.results.push(Promise.resolve(1));
+      return mockPipeline;
+    }),
+    ttl: vi.fn((key) => {
+      mockPipeline.results.push(Promise.resolve(60));
+      return mockPipeline;
+    }),
+    exec: vi.fn(async () => {
+      const res = await Promise.all(mockPipeline.results);
+      mockPipeline.results = [];
+      return res;
+    }),
+    results: []
+  };
+
   return {
     kv: {
       incr: vi.fn().mockResolvedValue(1),
@@ -9,7 +30,8 @@ vi.mock('@vercel/kv', () => {
       ttl: vi.fn().mockResolvedValue(60),
       get: vi.fn(async (key) => mockKvStore.get(key) || null),
       set: vi.fn(async (key, val) => { mockKvStore.set(key, val); return 'OK'; }),
-      del: vi.fn(async (key) => { mockKvStore.delete(key); return 1; })
+      del: vi.fn(async (key) => { mockKvStore.delete(key); return 1; }),
+      pipeline: vi.fn(() => mockPipeline)
     }
   };
 });
@@ -24,8 +46,9 @@ vi.mock('./_firebase.js', () => {
   const mockBatchDelete = vi.fn();
   const mockGetAll = vi.fn();
 
-  const mockDoc = vi.fn(() => {
+  const mockDoc = vi.fn((id) => {
     return {
+      id,
       get: mockDocGet,
       set: mockDocSet,
       update: mockDocUpdate,
@@ -52,6 +75,32 @@ vi.mock('./_firebase.js', () => {
 
   const dbMock = {
     collection: mockCollection,
+    collectionGroup: vi.fn(() => ({
+      where: vi.fn(() => ({
+        get: vi.fn(async () => {
+          const nowMs = Date.now();
+          const uids = ['LIFETIME_USER', 'ACTIVE_PRO_USER', 'EXPIRED_PRO_USER', 'ACTIVE_GRACE_USER', 'EXPIRED_GRACE_USER'];
+          return {
+            empty: false,
+            docs: uids.map(uid => ({
+              id: `BROKER_ACC_${uid}`,
+              ref: {
+                parent: { parent: { id: uid } },
+                update: mockDocUpdate,
+              },
+              data: () => ({
+                metaApiAccountId: `meta_${uid}`,
+                login: `login_${uid}`,
+                server: `server_${uid}`,
+                brokerType: 'mt5',
+                isActive: true,
+                lastSyncTime: new Date(nowMs - 100000).toISOString(),
+              })
+            }))
+          };
+        })
+      }))
+    })),
     batch: mockBatch,
     getAll: mockGetAll,
     __mocks: {
@@ -97,11 +146,15 @@ vi.mock('./_resend.js', () => {
 
 // Mock metaapi-broker helper module
 vi.mock('./_metaapi-broker.js', () => {
-  const fetchBrokerTrades = vi.fn();
-  return {
+  const fetchBrokerTrades = vi.fn().mockResolvedValue([]);
+  const mockModule = {
     fetchBrokerTrades,
     provisionMetaApiAccount: vi.fn(),
     fetchMetaApiDeals: vi.fn(),
+  };
+  return {
+    ...mockModule,
+    default: mockModule,
   };
 });
 
@@ -137,58 +190,27 @@ describe('Broker Sync Poller Cron Job', () => {
   it('runs successfully and filters users correctly using isSyncAllowed', async () => {
     const nowMs = Date.now();
 
-    // Mock collection('users').where().get() to return users list
-    db.__mocks.mockDocGet.mockImplementationOnce(async () => {
-      return {
-        docs: [
-          {
-            id: 'LIFETIME_USER',
-            data: () => ({ plan: 'pro' })
-          },
-          {
-            id: 'ACTIVE_PRO_USER',
-            data: () => ({ plan: 'pro', planExpiry: new Date(nowMs + 86400000).toISOString() })
-          },
-          {
-            id: 'EXPIRED_PRO_USER',
-            data: () => ({ plan: 'pro', planExpiry: new Date(nowMs - 86400000).toISOString() })
-          },
-          {
-            id: 'ACTIVE_GRACE_USER',
-            data: () => ({ plan: 'grace', graceUntil: new Date(nowMs + 86400000).toISOString() })
-          },
-          {
-            id: 'EXPIRED_GRACE_USER',
-            data: () => ({ plan: 'grace', graceUntil: new Date(nowMs - 86400000).toISOString() })
-          }
-        ]
+    // Mock db.getAll to fetch user details and verify trade existence check correctly
+    db.__mocks.mockGetAll.mockImplementation(async (...refs) => {
+      if (refs[0] && refs[0].id && refs[0].id.startsWith('broker_')) {
+        return refs.map(ref => ({ exists: false, id: ref.id }));
+      }
+      const usersData = {
+        'LIFETIME_USER': { plan: 'pro' },
+        'ACTIVE_PRO_USER': { plan: 'pro', planExpiry: new Date(nowMs + 86400000).toISOString() },
+        'EXPIRED_PRO_USER': { plan: 'pro', planExpiry: new Date(nowMs - 86400000).toISOString() },
+        'ACTIVE_GRACE_USER': { plan: 'grace', graceUntil: new Date(nowMs + 86400000).toISOString() },
+        'EXPIRED_GRACE_USER': { plan: 'grace', graceUntil: new Date(nowMs - 86400000).toISOString() }
       };
+      return refs.map(ref => {
+        const data = usersData[ref.id];
+        return {
+          exists: !!data,
+          id: ref.id,
+          data: () => data
+        };
+      });
     });
-
-    // Mock brokerAccounts collection query for each of the 3 allowed users:
-    // LIFETIME_USER, ACTIVE_PRO_USER, ACTIVE_GRACE_USER.
-    // Let's return one active broker account for each.
-    db.__mocks.mockDocGet.mockImplementation(async () => {
-      return {
-        docs: [
-          {
-            id: 'BROKER_ACC_123',
-            data: () => ({
-              metaApiAccountId: 'meta_123',
-              login: 'login_123',
-              server: 'server_123',
-              brokerType: 'mt5',
-              isActive: true,
-              lastSyncTime: new Date(nowMs - 100000).toISOString(),
-            })
-          }
-        ]
-      };
-    });
-
-    db.__mocks.mockGetAll.mockResolvedValue([
-      { exists: false }
-    ]);
 
     const res = await executePollerRequest({ 'x-cron-secret': cronSecret });
     expect(res.status).toBe(200);

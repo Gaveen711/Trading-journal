@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { pad2, formatCurrency, formatNumber } from '../lib/tradeUtils';
 import { 
@@ -27,92 +26,144 @@ export function CalendarPage() {
   const formatDate = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   const fmtDate = (dateString) => new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(dateString + 'T00:00:00'));
 
+  // ── Memoized Monthly calculations and pre-grouping ───────────────────────
+  const monthlyStats = useMemo(() => {
+    // 1. Pre-group all trades by date (O(T) total prep time)
+    const tradesByDate: Record<string, any[]> = {};
+    trades.forEach(t => {
+      if (t.date) {
+        if (!tradesByDate[t.date]) {
+          tradesByDate[t.date] = [];
+        }
+        tradesByDate[t.date].push(t);
+      }
+    });
+
+    // 2. Extract monthly trades
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const monthlyTrades = trades.filter(t => {
+      if (!t.date) return false;
+      const [y, m] = t.date.split('-').map(Number);
+      return y === calYear && (m - 1) === calMonth;
+    });
+
+    const monthlyPnl = monthlyTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+    const totalMonthlyTrades = monthlyTrades.length;
+
+    let winDays = 0;
+    let activeDays = 0;
+    
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${calYear}-${pad2(calMonth + 1)}-${pad2(d)}`;
+      const dayTrs = tradesByDate[key] || [];
+      if (dayTrs.length > 0) {
+        activeDays++;
+        const dayPnl = dayTrs.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        if (dayPnl > 0.01) winDays++;
+      }
+    }
+    const consistencyRate = activeDays > 0 ? (winDays / activeDays) * 100 : 0;
+    const totalLots = monthlyTrades.reduce((sum, t) => sum + (Number(t.lots) || 0), 0);
+    const totalPips = monthlyTrades.reduce((sum, t) => sum + (Number(t.pips) || 0), 0);
+
+    // ── Monthly Analytics (Session & Setup) ──────────────────────────────────
+    const setupStats: Record<string, { pnl: number; count: number; wins: number }> = {};
+    monthlyTrades.forEach(t => {
+      const sName = t.setup || 'Direct Execution';
+      if (!setupStats[sName]) setupStats[sName] = { pnl: 0, count: 0, wins: 0 };
+      setupStats[sName].pnl += (t.pnl || 0);
+      setupStats[sName].count++;
+      if (t.pnl > 0.01) setupStats[sName].wins++;
+    });
+    const sortedSetups = Object.entries(setupStats).map(([name, data]) => ({
+      name,
+      ...data,
+      winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
+    })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
+
+    const sessionStats: Record<string, { pnl: number; count: number }> = { 'Sydney': { pnl: 0, count: 0 }, 'Tokyo': { pnl: 0, count: 0 }, 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 } };
+    monthlyTrades.forEach(t => {
+      let s = t.session || '';
+      if (s.toLowerCase().includes('sydney')) s = 'Sydney';
+      else if (s.toLowerCase().includes('tokyo') || s.toLowerCase().includes('tokoyo') || s.toLowerCase().includes('asia')) s = 'Tokyo';
+      else if (s.toLowerCase().includes('london')) s = 'London';
+      else if (s.toLowerCase().includes('york') || s.toLowerCase().includes('new') || s.toLowerCase().includes('ny')) s = 'New York';
+      else return;
+
+      sessionStats[s].pnl += (t.pnl || 0);
+      sessionStats[s].count++;
+    });
+    
+    let bestSession = '';
+    let bestSessionPnl = -Infinity;
+    Object.entries(sessionStats).forEach(([name, data]) => {
+      if (data.count > 0 && data.pnl > bestSessionPnl) {
+        bestSessionPnl = data.pnl;
+        bestSession = name;
+      }
+    });
+
+    let bestSetup = '';
+    let bestSetupPnl = -Infinity;
+    sortedSetups.forEach(s => {
+      if (s.pnl > bestSetupPnl) {
+        bestSetupPnl = s.pnl;
+        bestSetup = s.name;
+      }
+    });
+
+    let smartTip = "Log more trades to unlock personalized consistency insights.";
+    if (bestSession && bestSessionPnl > 0) {
+      smartTip = `Your edge is strongest during the ${bestSession} session this month. Focus execution there.`;
+      if (bestSetup && bestSetupPnl > 0) {
+        smartTip = `Your highest consistency setup is '${bestSetup}' during ${bestSession}. Prioritize these setups.`;
+      }
+    } else if (bestSetup && bestSetupPnl > 0) {
+      smartTip = `The '${bestSetup}' setup is driving your growth this month. Keep practicing selective execution.`;
+    }
+
+    return {
+      tradesByDate,
+      daysInMonth,
+      monthlyTrades,
+      monthlyPnl,
+      totalMonthlyTrades,
+      consistencyRate,
+      winDays,
+      activeDays,
+      totalLots,
+      totalPips,
+      sortedSetups,
+      sessionStats,
+      bestSession,
+      bestSetup,
+      smartTip
+    };
+  }, [trades, calMonth, calYear]);
+
+  const {
+    tradesByDate,
+    daysInMonth,
+    monthlyTrades,
+    monthlyPnl,
+    totalMonthlyTrades,
+    consistencyRate,
+    winDays,
+    activeDays,
+    totalLots,
+    totalPips,
+    sortedSetups,
+    sessionStats,
+    bestSession,
+    bestSetup,
+    smartTip
+  } = monthlyStats;
+
+  // O(1) day trades retrieval using our pre-grouped date map
   const dayTrades = (y, m, d) => {
     const key = formatDate(y, m, d);
-    return trades.filter(t => t.date === key);
+    return tradesByDate[key] || [];
   };
-
-  // ── Calculate Monthly Stats ───────────────────────────────────────────────
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const monthlyTrades = trades.filter(t => {
-    if (!t.date) return false;
-    const [y, m] = t.date.split('-').map(Number);
-    return y === calYear && (m - 1) === calMonth;
-  });
-
-  const monthlyPnl = monthlyTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-  const totalMonthlyTrades = monthlyTrades.length;
-
-  let winDays = 0;
-  let activeDays = 0;
-  
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dayTrs = dayTrades(calYear, calMonth, d);
-    if (dayTrs.length > 0) {
-      activeDays++;
-      const dayPnl = dayTrs.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      if (dayPnl > 0.01) winDays++;
-    }
-  }
-  const consistencyRate = activeDays > 0 ? (winDays / activeDays) * 100 : 0;
-  const totalLots = monthlyTrades.reduce((sum, t) => sum + (Number(t.lots) || 0), 0);
-  const totalPips = monthlyTrades.reduce((sum, t) => sum + (Number(t.pips) || 0), 0);
-
-  // ── Monthly Analytics (Session & Setup) ──────────────────────────────────
-  const setupStats = {};
-  monthlyTrades.forEach(t => {
-    const sName = t.setup || 'Direct Execution';
-    if (!setupStats[sName]) setupStats[sName] = { pnl: 0, count: 0, wins: 0 };
-    setupStats[sName].pnl += (t.pnl || 0);
-    setupStats[sName].count++;
-    if (t.pnl > 0.01) setupStats[sName].wins++;
-  });
-  const sortedSetups = Object.entries(setupStats).map(([name, data]) => ({
-    name,
-    ...data,
-    winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
-  })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
-
-  const sessionStats = { 'Sydney': { pnl: 0, count: 0 }, 'Tokyo': { pnl: 0, count: 0 }, 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 } };
-  monthlyTrades.forEach(t => {
-    let s = t.session || '';
-    if (s.toLowerCase().includes('sydney')) s = 'Sydney';
-    else if (s.toLowerCase().includes('tokyo') || s.toLowerCase().includes('tokoyo') || s.toLowerCase().includes('asia')) s = 'Tokyo';
-    else if (s.toLowerCase().includes('london')) s = 'London';
-    else if (s.toLowerCase().includes('york') || s.toLowerCase().includes('new') || s.toLowerCase().includes('ny')) s = 'New York';
-    else return;
-
-    sessionStats[s].pnl += (t.pnl || 0);
-    sessionStats[s].count++;
-  });
-  
-  let bestSession = '';
-  let bestSessionPnl = -Infinity;
-  Object.entries(sessionStats).forEach(([name, data]) => {
-    if (data.count > 0 && data.pnl > bestSessionPnl) {
-      bestSessionPnl = data.pnl;
-      bestSession = name;
-    }
-  });
-
-  let bestSetup = '';
-  let bestSetupPnl = -Infinity;
-  sortedSetups.forEach(s => {
-    if (s.pnl > bestSetupPnl) {
-      bestSetupPnl = s.pnl;
-      bestSetup = s.name;
-    }
-  });
-
-  let smartTip = "Log more trades to unlock personalized consistency insights.";
-  if (bestSession && bestSessionPnl > 0) {
-    smartTip = `Your edge is strongest during the ${bestSession} session this month. Focus execution there.`;
-    if (bestSetup && bestSetupPnl > 0) {
-      smartTip = `Your highest consistency setup is '${bestSetup}' during ${bestSession}. Prioritize these setups.`;
-    }
-  } else if (bestSetup && bestSetupPnl > 0) {
-    smartTip = `The '${bestSetup}' setup is driving your growth this month. Keep practicing selective execution.`;
-  }
 
   // ── Render Calendar Cells ──────────────────────────────────────────────────
   const renderCells = () => {
