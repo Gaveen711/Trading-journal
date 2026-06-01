@@ -4,6 +4,27 @@ import crypto from 'crypto';
 const mockKvStore = new Map();
 
 vi.mock('@vercel/kv', () => {
+  const mockPipeline = {
+    incr: vi.fn((key) => {
+      mockPipeline.results.push(Promise.resolve(1));
+      return mockPipeline;
+    }),
+    expire: vi.fn((key, seconds) => {
+      mockPipeline.results.push(Promise.resolve(1));
+      return mockPipeline;
+    }),
+    ttl: vi.fn((key) => {
+      mockPipeline.results.push(Promise.resolve(60));
+      return mockPipeline;
+    }),
+    exec: vi.fn(async () => {
+      const res = await Promise.all(mockPipeline.results);
+      mockPipeline.results = [];
+      return res;
+    }),
+    results: []
+  };
+
   return {
     kv: {
       incr: vi.fn().mockResolvedValue(1),
@@ -11,7 +32,8 @@ vi.mock('@vercel/kv', () => {
       ttl: vi.fn().mockResolvedValue(60),
       get: vi.fn(async (key) => mockKvStore.get(key) || null),
       set: vi.fn(async (key, val) => { mockKvStore.set(key, val); return 'OK'; }),
-      del: vi.fn(async (key) => { mockKvStore.delete(key); return 1; })
+      del: vi.fn(async (key) => { mockKvStore.delete(key); return 1; }),
+      pipeline: vi.fn(() => mockPipeline)
     }
   };
 });

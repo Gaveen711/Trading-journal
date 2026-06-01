@@ -3,22 +3,55 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockKvStore = new Map();
 
 vi.mock('@vercel/kv', () => {
+  const mockPipeline = {
+    incr: vi.fn((key) => {
+      mockPipeline.results.push(Promise.resolve().then(() => {
+        const entry = mockKvStore.get(key) || { count: 0, expiresAt: Date.now() + 60000 };
+        entry.count++;
+        mockKvStore.set(key, entry);
+        return entry.count;
+      }));
+      return mockPipeline;
+    }),
+    expire: vi.fn((key, seconds) => {
+      mockPipeline.results.push(Promise.resolve().then(() => {
+        const entry = mockKvStore.get(key);
+        if (entry) {
+          entry.expiresAt = Date.now() + seconds * 1000;
+          mockKvStore.set(key, entry);
+        }
+        return 1;
+      }));
+      return mockPipeline;
+    }),
+    ttl: vi.fn((key) => {
+      mockPipeline.results.push(Promise.resolve().then(() => {
+        const entry = mockKvStore.get(key);
+        if (!entry) return -2;
+        const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
+        return remaining > 0 ? remaining : -1;
+      }));
+      return mockPipeline;
+    }),
+    exec: vi.fn(async () => {
+      const res = await Promise.all(mockPipeline.results);
+      mockPipeline.results = [];
+      return res;
+    }),
+    results: []
+  };
+
   return {
     kv: {
       incr: vi.fn(async (key) => {
         const entry = mockKvStore.get(key) || { count: 0, expiresAt: Date.now() + 60000 };
-        if (typeof entry === 'object' && 'count' in entry) {
-          entry.count++;
-          mockKvStore.set(key, entry);
-          return entry.count;
-        }
-        const newEntry = { count: 1, expiresAt: Date.now() + 60000 };
-        mockKvStore.set(key, newEntry);
-        return 1;
+        entry.count++;
+        mockKvStore.set(key, entry);
+        return entry.count;
       }),
       expire: vi.fn(async (key, seconds) => {
         const entry = mockKvStore.get(key);
-        if (entry && typeof entry === 'object' && 'expiresAt' in entry) {
+        if (entry) {
           entry.expiresAt = Date.now() + seconds * 1000;
           mockKvStore.set(key, entry);
         }
@@ -27,24 +60,13 @@ vi.mock('@vercel/kv', () => {
       ttl: vi.fn(async (key) => {
         const entry = mockKvStore.get(key);
         if (!entry) return -2;
-        if (typeof entry === 'object' && 'expiresAt' in entry) {
-          const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
-          return remaining > 0 ? remaining : -1;
-        }
-        return -1;
+        const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
+        return remaining > 0 ? remaining : -1;
       }),
-      get: vi.fn(async (key) => {
-        const val = mockKvStore.get(key);
-        return val !== undefined ? val : null;
-      }),
-      set: vi.fn(async (key, val) => {
-        mockKvStore.set(key, val);
-        return 'OK';
-      }),
-      del: vi.fn(async (key) => {
-        mockKvStore.delete(key);
-        return 1;
-      })
+      get: vi.fn(async (key) => mockKvStore.get(key) || null),
+      set: vi.fn(async (key, val) => { mockKvStore.set(key, val); return 'OK'; }),
+      del: vi.fn(async (key) => { mockKvStore.delete(key); return 1; }),
+      pipeline: vi.fn(() => mockPipeline)
     }
   };
 });
