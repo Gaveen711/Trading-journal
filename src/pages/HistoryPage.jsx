@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { Download, Search, XLg, PencilSquare } from 'react-bootstrap-icons';
@@ -36,10 +36,30 @@ export function HistoryPage() {
   const [expandedNotes, setExpandedNotes] = useState({});
   const [visibleCount, setVisibleCount] = useState(30);
 
-  // Reset pagination count when any filter changes
-  useEffect(() => {
+  const handleFilterSearch = (val) => {
+    setFilterSearch(val);
     setVisibleCount(30);
-  }, [filterSearch, filterDir, filterOutcome, filterSession, filterSetup, filterSort]);
+  };
+  const handleFilterDir = (val) => {
+    setFilterDir(val);
+    setVisibleCount(30);
+  };
+  const handleFilterOutcome = (val) => {
+    setFilterOutcome(val);
+    setVisibleCount(30);
+  };
+  const handleFilterSession = (val) => {
+    setFilterSession(val);
+    setVisibleCount(30);
+  };
+  const handleFilterSetup = (val) => {
+    setFilterSetup(val);
+    setVisibleCount(30);
+  };
+  const handleFilterSort = (val) => {
+    setFilterSort(val);
+    setVisibleCount(30);
+  };
 
   const filteredAndSortedTrades = useMemo(() => {
     let filtered = trades.filter(t => {
@@ -142,12 +162,12 @@ export function HistoryPage() {
             type="text" 
             placeholder="Search notes..." 
             value={filterSearch} 
-            onChange={e => setFilterSearch(e.target.value)} 
+            onChange={e => handleFilterSearch(e.target.value)} 
             className="input-premium col-span-2 md:col-span-1"
           />
           <CustomSelect 
             value={filterDir} 
-            onChange={setFilterDir}
+            onChange={handleFilterDir}
             placeholder="All directions"
             options={[
               { value: '', label: 'All directions' },
@@ -157,7 +177,7 @@ export function HistoryPage() {
           />
           <CustomSelect 
             value={filterOutcome} 
-            onChange={setFilterOutcome}
+            onChange={handleFilterOutcome}
             placeholder="All outcomes"
             options={[
               { value: '', label: 'All outcomes' },
@@ -168,7 +188,7 @@ export function HistoryPage() {
           />
           <CustomSelect 
             value={filterSession} 
-            onChange={setFilterSession}
+            onChange={handleFilterSession}
             placeholder="All sessions"
             options={[
               { value: '', label: 'All sessions' },
@@ -180,7 +200,7 @@ export function HistoryPage() {
           />
           <CustomSelect 
             value={filterSetup} 
-            onChange={setFilterSetup}
+            onChange={handleFilterSetup}
             placeholder="All setups"
             options={[
               { value: '', label: 'All setups' },
@@ -193,7 +213,7 @@ export function HistoryPage() {
           />
           <CustomSelect 
             value={filterSort} 
-            onChange={setFilterSort}
+            onChange={handleFilterSort}
             options={[
               { value: 'newest', label: 'Newest first' },
               { value: 'oldest', label: 'Oldest first' },

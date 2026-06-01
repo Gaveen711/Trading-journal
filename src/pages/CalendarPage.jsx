@@ -29,7 +29,7 @@ export function CalendarPage() {
   // ── Memoized Monthly calculations and pre-grouping ───────────────────────
   const monthlyStats = useMemo(() => {
     // 1. Pre-group all trades by date (O(T) total prep time)
-    const tradesByDate: Record<string, any[]> = {};
+    const tradesByDate = {};
     trades.forEach(t => {
       if (t.date) {
         if (!tradesByDate[t.date]) {
@@ -67,7 +67,7 @@ export function CalendarPage() {
     const totalPips = monthlyTrades.reduce((sum, t) => sum + (Number(t.pips) || 0), 0);
 
     // ── Monthly Analytics (Session & Setup) ──────────────────────────────────
-    const setupStats: Record<string, { pnl: number; count: number; wins: number }> = {};
+    const setupStats = {};
     monthlyTrades.forEach(t => {
       const sName = t.setup || 'Direct Execution';
       if (!setupStats[sName]) setupStats[sName] = { pnl: 0, count: 0, wins: 0 };
@@ -81,7 +81,7 @@ export function CalendarPage() {
       winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
     })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
 
-    const sessionStats: Record<string, { pnl: number; count: number }> = { 'Sydney': { pnl: 0, count: 0 }, 'Tokyo': { pnl: 0, count: 0 }, 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 } };
+    const sessionStats = { 'Sydney': { pnl: 0, count: 0 }, 'Tokyo': { pnl: 0, count: 0 }, 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 } };
     monthlyTrades.forEach(t => {
       let s = t.session || '';
       if (s.toLowerCase().includes('sydney')) s = 'Sydney';
@@ -144,7 +144,6 @@ export function CalendarPage() {
   const {
     tradesByDate,
     daysInMonth,
-    monthlyTrades,
     monthlyPnl,
     totalMonthlyTrades,
     consistencyRate,
@@ -154,8 +153,6 @@ export function CalendarPage() {
     totalPips,
     sortedSetups,
     sessionStats,
-    bestSession,
-    bestSetup,
     smartTip
   } = monthlyStats;
 

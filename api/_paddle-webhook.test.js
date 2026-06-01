@@ -5,15 +5,15 @@ const mockKvStore = new Map();
 
 vi.mock('@vercel/kv', () => {
   const mockPipeline = {
-    incr: vi.fn((key) => {
+    incr: vi.fn((_key) => {
       mockPipeline.results.push(Promise.resolve(1));
       return mockPipeline;
     }),
-    expire: vi.fn((key, seconds) => {
+    expire: vi.fn((_key, _seconds) => {
       mockPipeline.results.push(Promise.resolve(1));
       return mockPipeline;
     }),
-    ttl: vi.fn((key) => {
+    ttl: vi.fn((_key) => {
       mockPipeline.results.push(Promise.resolve(60));
       return mockPipeline;
     }),

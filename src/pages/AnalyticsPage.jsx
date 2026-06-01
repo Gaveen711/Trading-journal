@@ -36,28 +36,20 @@ export function AnalyticsPage() {
     setShowExact(prev => ({ ...prev, [index]: val }));
   };
   
-  if (isLoadingTrades) return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-black text-gradient">Analytics</h1>
-      </header>
-      <AnalyticsSkeleton />
-    </div>
-  );
-
   const stats = useMemo(() => {
-    const wins = trades.filter(t => t.outcome === 'WIN');
-    const losses = trades.filter(t => t.outcome === 'LOSS');
+    const tradesList = trades || [];
+    const wins = tradesList.filter(t => t.outcome === 'WIN');
+    const losses = tradesList.filter(t => t.outcome === 'LOSS');
     const avgWin = wins.length ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0;
     const avgLoss = losses.length ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : 0;
-    const wr = trades.length ? wins.length / trades.length : 0;
+    const wr = tradesList.length ? wins.length / tradesList.length : 0;
     const expectancy = (wr * avgWin) + ((1 - wr) * avgLoss);
     const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
     const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
     const pf = grossLoss > 0 ? grossWin / grossLoss : null;
 
     let peak = walletBalance || 0, maxDD = 0, running = walletBalance || 0;
-    const sortedTrades = [...trades].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const sortedTrades = [...tradesList].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     const drawdownCurve = [0];
     const drawdownLabels = ['Start'];
 
@@ -73,7 +65,7 @@ export function AnalyticsPage() {
     const sessionDataMap = {};
     const setupDataMap = {};
     
-    trades.forEach(t => {
+    tradesList.forEach(t => {
       const s = t.session || 'Unknown';
       if (!sessionDataMap[s]) sessionDataMap[s] = { pnl: 0, wins: 0, total: 0 };
       sessionDataMap[s].pnl += t.pnl;
@@ -114,7 +106,7 @@ export function AnalyticsPage() {
 
     // 2. Monthly P/L
     const monthlyPnlMap = {};
-    trades.forEach(t => {
+    tradesList.forEach(t => {
       if (!t.date) return;
       const dateObj = new Date(t.date);
       const monthName = dateObj.toLocaleString('en-US', { month: 'short' }); // "May", "Jun", etc.
@@ -141,7 +133,7 @@ export function AnalyticsPage() {
     const sessionNames = ['London', 'New York', 'Tokyo', 'Sydney'];
     const sessionPnlMap = { London: 0, 'New York': 0, Tokyo: 0, Sydney: 0 };
     
-    trades.forEach(t => {
+    tradesList.forEach(t => {
       // Standardize casing for key matching
       let s = t.session || '';
       if (s.toLowerCase() === 'london') sessionPnlMap.London += t.pnl;
@@ -173,7 +165,7 @@ export function AnalyticsPage() {
 
     // 4. Performance by Day
     const dayPnlMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0 };
-    trades.forEach(t => {
+    tradesList.forEach(t => {
       if (!t.date) return;
       const dateObj = new Date(t.date);
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -198,9 +190,9 @@ export function AnalyticsPage() {
       }]
     };
 
-    const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
+    const totalPnl = tradesList.reduce((s, t) => s + t.pnl, 0);
     const currentWalletBalance = (walletBalance || 0) + totalPnl;
-    const winRatePercent = trades.length ? (wins.length / trades.length * 100).toFixed(0) : 0;
+    const winRatePercent = tradesList.length ? (wins.length / tradesList.length * 100).toFixed(0) : 0;
 
     return {
       wins,
@@ -218,6 +210,15 @@ export function AnalyticsPage() {
       winRatePercent
     };
   }, [trades, walletBalance]);
+
+  if (isLoadingTrades) return (
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-3xl font-black text-gradient">Analytics</h1>
+      </header>
+      <AnalyticsSkeleton />
+    </div>
+  );
 
   const {
     wins,

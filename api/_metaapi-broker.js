@@ -1,6 +1,6 @@
 // MetaApi.cloud — MT4/MT5 broker login & deal history (server-side only)
 
-const MetaApi = require('metaapi.cloud-sdk');
+import MetaApi from 'metaapi.cloud-sdk/esm-node';
 
 let apiClient = null;
 
@@ -57,7 +57,7 @@ function normalizeDeal(deal, ctx) {
 /**
  * Create/deploy MetaApi cloud account and return MetaApi account id.
  */
-async function provisionMetaApiAccount({ login, password, server, brokerType }) {
+export async function provisionMetaApiAccount({ login, password, server, brokerType }) {
   const api = getApi();
   const platform = brokerType === 'mt4' ? 'mt4' : 'mt5';
   const loginStr = String(login);
@@ -92,7 +92,7 @@ async function provisionMetaApiAccount({ login, password, server, brokerType }) 
 /**
  * Fetch closed deals since optional fromDate.
  */
-async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
+export async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
   const api = getApi();
   const account = await api.metatraderAccountApi.getAccount(metaApiAccountId);
   await account.waitConnected(300);
@@ -113,7 +113,7 @@ async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
   return (Array.isArray(deals) ? deals : []).map((d) => normalizeDeal(d, ctx));
 }
 
-async function fetchBrokerTrades(credentials, fromDate = null) {
+export async function fetchBrokerTrades(credentials, fromDate = null) {
   if (credentials.metaApiAccountId) {
     return fetchMetaApiDeals(credentials.metaApiAccountId, fromDate);
   }
@@ -122,7 +122,7 @@ async function fetchBrokerTrades(credentials, fromDate = null) {
   return fetchMetaApiDeals(metaApiAccountId, fromDate);
 }
 
-async function deleteMetaApiAccount(metaApiAccountId) {
+export async function deleteMetaApiAccount(metaApiAccountId) {
   const api = getApi();
   try {
     await api.metatraderAccountApi.removeAccount(metaApiAccountId);
@@ -131,10 +131,4 @@ async function deleteMetaApiAccount(metaApiAccountId) {
   }
 }
 
-module.exports = {
-  provisionMetaApiAccount,
-  fetchMetaApiDeals,
-  fetchBrokerTrades,
-  deleteMetaApiAccount
-};
 
