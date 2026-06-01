@@ -2,10 +2,10 @@ import { PRO_MONTHLY_PRICE, PRO_YEARLY_PRICE } from './pricing';
 
 export const SITE_URL = 'https://xaujournal.com';
 export const SITE_NAME = 'xaujournal';
-export const SITE_TAGLINE = 'XAU Journal — Gold (XAUUSD) Trading Journal';
+export const SITE_TAGLINE = 'Xaujournal — Gold (XAUUSD) Trading Journal';
 
 export const DEFAULT_TITLE =
-  'XAU Journal | Best Gold Trading Journal for XAUUSD — MT4/MT5 Broker Sync';
+  'Xaujournal | Best Gold Trading Journal for XAUUSD — MT4/MT5 Broker Sync';
 
 export const DEFAULT_DESCRIPTION =
   'xaujournal is the XAU journal built for gold traders. Auto-sync MT4/MT5 trades, track XAUUSD P&L, session analytics, trade calendar, and journaling — free to start.';
