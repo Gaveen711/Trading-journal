@@ -1,17 +1,22 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
-import { secureHeaders } from 'hono/secure-headers'
 import crypto from 'crypto'
-import { kv } from '@vercel/kv'
-
-// Import shared helpers (using JS files under /api)
 // @ts-ignore
 import { admin, db as _db, initAdmin, now } from './_firebase.js'
 const db: any = _db
 // @ts-ignore
 import resend from './_resend.js'
-// @ts-ignore
-// Dynamic imports used where needed to prevent metaapi.cloud-sdk from crashing the edge/serverless runtime on load
+
+import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
+import { isSyncAllowed, getUidFromContext, verifyIdToken } from './_auth.js'
+import {
+  resolveKey,
+  invalidateUserCache,
+  invalidateApiKeyCache,
+  handleOpenTradeSync,
+  handleCloseTradeSync
+} from './_tradeService.js'
+import { getClientIp } from './_ipUtils.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
@@ -33,101 +38,10 @@ type Variables = Record<string, unknown>
 
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>().basePath('/api')
 
-// ── Secure Headers Middleware ──────────────────────────────────────────────
-app.use('*', secureHeaders())
-
-// ── CORS Middleware ─────────────────────────────────────────────────────────
-const allowedOrigins = [
-  'https://xaujournal.vercel.app',
-  'https://www.xaujournal.com',
-  'https://xaujournal.com',
-  'http://localhost:5173',
-]
-if (process.env.ALLOWED_ORIGIN) {
-  allowedOrigins.push(process.env.ALLOWED_ORIGIN)
-}
-
-app.use('*', async (c, next) => {
-  const origin = c.req.header('Origin')
-  if (origin && allowedOrigins.includes(origin)) {
-    c.header('Access-Control-Allow-Origin', origin)
-  }
-  c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Api-Key, x-api-key')
-  c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
-  if (c.req.method === 'OPTIONS') {
-    return c.body(null, 204 as any)
-  }
-  await next()
-})
-
-// ── Rate Limiting Middleware (Vercel KV) ─────────────────────────────────────
-app.use('*', async (c, next) => {
-  if (c.req.method === 'OPTIONS') {
-    return await next()
-  }
-
-  const xRealIp = c.req.header('x-real-ip')
-  let ip = '127.0.0.1'
-  if (xRealIp) {
-    ip = xRealIp
-  } else {
-    const xForwardedFor = c.req.header('x-forwarded-for')
-    if (xForwardedFor) {
-      const parts = xForwardedFor.split(',')
-      ip = parts[parts.length - 1].trim()
-    }
-  }
-
-  const key = `rl:${ip}`
-  const limit = 100
-  const windowSeconds = 60
-
-  let current = 0
-  try {
-    current = await kv.incr(key)
-    if (current === 1) {
-      await kv.expire(key, windowSeconds)
-    }
-  } catch (kvErr: any) {
-    console.error('[RateLimit] Vercel KV error:', kvErr.message)
-    // Fallback if KV is down/not configured: allow request
-    return await next()
-  }
-
-  c.header('X-RateLimit-Limit', limit.toString())
-  c.header('X-RateLimit-Remaining', Math.max(0, limit - current).toString())
-
-  if (current > limit) {
-    let ttl = windowSeconds
-    try {
-      const remainingTtl = await kv.ttl(key)
-      if (remainingTtl > 0) {
-        ttl = remainingTtl
-      }
-    } catch {
-      // ignore TTL error
-    }
-    c.header('Retry-After', ttl.toString())
-    return c.json({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' }, 429)
-  }
-
-  await next()
-})
-
-// ── Shared plan guard ────────────────────────────────────────────────────────
-function isSyncAllowed(userData: any) {
-  const { plan, planExpiry, graceUntil } = userData || {}
-  if (plan === 'pro') {
-    if (!planExpiry) return true
-    const expiry = new Date(planExpiry)
-    if (expiry.getTime() > Date.now()) return true
-    if (graceUntil) {
-      const grace = new Date(graceUntil)
-      if (grace.getTime() > Date.now()) return true
-    }
-  }
-  return false
-}
+// ── Middleware Registrations ────────────────────────────────────────────────
+app.use('*', secureHeadersMiddleware)
+app.use('*', corsMiddleware)
+app.use('*', rateLimitMiddleware)
 
 // ── 1. Authentication Utilities Route ────────────────────────────────────────
 app.post('/auth-utils', async (c) => {
@@ -149,7 +63,7 @@ app.post('/auth-utils', async (c) => {
     
     let email: string
     try {
-      const decodedToken = await admin.auth().verifyIdToken(token)
+      const decodedToken = await verifyIdToken(token)
       email = decodedToken.email
       if (!email) {
         return c.json({ error: 'Email not found in token' }, 400)
@@ -159,19 +73,7 @@ app.post('/auth-utils', async (c) => {
       return c.json({ error: 'Unauthorized: Invalid token' }, 401)
     }
 
-    // Extract client IP address securely
-    const xRealIp = c.req.header('x-real-ip')
-    let ipAddress = '127.0.0.1'
-    if (xRealIp) {
-      ipAddress = xRealIp
-    } else {
-      const xForwardedFor = c.req.header('x-forwarded-for')
-      if (xForwardedFor) {
-        const parts = xForwardedFor.split(',')
-        ipAddress = parts[parts.length - 1].trim()
-      }
-    }
-
+    const ipAddress = getClientIp(c)
     const userAgent = body.userAgent || c.req.header('user-agent') || 'Unknown'
     const time = body.time || new Date().toUTCString()
 
@@ -254,15 +156,10 @@ app.post('/auth-utils', async (c) => {
 
 // ── 2. Broker Login Sync Route ──────────────────────────────────────────────
 app.post('/broker-login-sync', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
-  } catch {
+    uid = await getUidFromContext(c)
+  } catch (err: any) {
     return c.json({ error: 'Invalid or expired token' }, 401)
   }
 
@@ -492,14 +389,9 @@ app.post('/broker-login-sync', async (c) => {
 
 // ── 3. Connect Broker Route ──────────────────────────────────────────────────
 app.post('/connect-broker', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
+    uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[connect-broker] verifyIdToken failed:', err?.message || err)
     return c.json({ error: 'Invalid or expired token' }, 401)
@@ -577,14 +469,9 @@ app.post('/connect-broker', async (c) => {
 
 // ── 4. Generate API Key Route ────────────────────────────────────────────────
 app.post('/generate-api-key', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
+    uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[generate-api-key] verifyIdToken failed:', err?.message || err)
     return c.json({ error: 'Invalid or expired token' }, 401)
@@ -627,14 +514,9 @@ app.post('/generate-api-key', async (c) => {
 
 // ── 5. Revoke API Key Route ──────────────────────────────────────────────────
 app.post('/revoke-api-key', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
+    uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[revoke-api-key] verifyIdToken failed:', err?.message || err)
     return c.json({ error: 'Invalid or expired token' }, 401)
@@ -646,11 +528,15 @@ app.post('/revoke-api-key', async (c) => {
       return c.json({ success: true, message: 'No active key to revoke' })
     }
 
+    const apiKeys = snapshot.docs.map(doc => doc.id)
     const batch = db.batch()
     snapshot.docs.forEach((doc: any) => batch.delete(doc.ref))
     await batch.commit()
 
     await db.collection('users').doc(uid).update({ mt5SyncEnabled: false })
+
+    // Invalidate caches
+    await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, uid)))
 
     console.log(`[revoke-api-key] Key(s) revoked for uid=${uid}`)
     return c.json({ success: true })
@@ -659,17 +545,11 @@ app.post('/revoke-api-key', async (c) => {
   }
 })
 
-
 // ── 5.5. Initialize User Route (Server-side Secure Trial Assignment) ─────────
 app.post('/init-user', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
+    uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[init-user] verifyIdToken failed:', err?.message || err)
     return c.json({ error: 'Invalid or expired token' }, 401)
@@ -732,26 +612,13 @@ app.post('/paddle-success', async (c) => {
     return c.json({ error: 'Missing required validation parameters.' }, 400)
   }
 
-  const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Unauthorized: Missing token.' }, 401)
-  }
-
-  const token = authHeader.split(' ')[1]
-
   try {
-    initAdmin()
-    if (!admin.apps.length) {
-      throw new Error('Firebase Admin not initialised.')
-    }
-
-    const decodedToken = await admin.auth().verifyIdToken(token)
-    if (decodedToken.uid !== userId) {
+    const uid = await getUidFromContext(c)
+    if (uid !== userId) {
       return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
     }
 
-    // VULN-03 Refactor: Instead of checking Paddle API directly and setting plan=pro
-    // based on user request (which is bypassable), the webhook is now the sole source of truth.
+    // Webhook is the sole source of truth.
     // This route only checks Firestore to see if the webhook has already updated the plan.
     const userDoc = await db.collection('users').doc(userId).get()
     const userData = userDoc.data() || {}
@@ -885,6 +752,7 @@ app.post('/paddle-webhook', async (c) => {
       }
 
       await db.collection('users').doc(userId).update(updatePayload)
+      await invalidateUserCache(userId)
       console.log(`[paddle-webhook] Activated Pro plan for user ${userId} via transaction.completed`)
       return c.json({ success: true, message: 'User upgraded/activated' })
     }
@@ -901,6 +769,7 @@ app.post('/paddle-webhook', async (c) => {
         updatePayload.plan = 'pro'
       }
       await db.collection('users').doc(userId).update(updatePayload)
+      await invalidateUserCache(userId)
       console.log(`[paddle-webhook] Updated subscription for user ${userId}`)
       return c.json({ success: true, message: 'Subscription updated' })
     }
@@ -911,6 +780,7 @@ app.post('/paddle-webhook', async (c) => {
       eventType === 'subscription.past_due'
     ) {
       const keySnap = await db.collection('apiKeys').where('uid', '==', userId).get()
+      const apiKeys = keySnap.docs.map(doc => doc.id)
       const batch = db.batch()
       keySnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
@@ -924,6 +794,11 @@ app.post('/paddle-webhook', async (c) => {
       })
 
       await batch.commit()
+      
+      // Invalidate KV caches
+      await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, userId)))
+      await invalidateUserCache(userId)
+
       console.log(`[paddle-webhook] Downgraded user ${userId} and revoked keys due to ${eventType}`)
       return c.json({ success: true, message: `User downgraded due to ${eventType}` })
     }
@@ -934,104 +809,11 @@ app.post('/paddle-webhook', async (c) => {
   return c.json({ success: true, message: 'Event ignored' })
 })
 
-interface SanitizedTrade {
-  date: string
-  direction: 'BUY' | 'SELL'
-  entry: number
-  exit: number
-  lots: number
-  swap: number
-  sl: number | null
-  tp: number | null
-  rr: number | null
-  pips: number | null
-  session: string
-  setup: string
-  market: string
-  leverage: string
-  pnl: number
-  outcome: 'WIN' | 'LOSS' | 'BE'
-  note: string
-  screenshots: string[]
-  source: 'manual'
-}
-
-function sanitizeAndValidateTrade(payload: any): SanitizedTrade | null {
-  if (!payload || typeof payload !== 'object') return null
-
-  // Required fields check
-  if (typeof payload.date !== 'string' || !payload.date) return null
-  if (payload.direction !== 'BUY' && payload.direction !== 'SELL') return null
-  
-  const entry = Number(payload.entry)
-  const exit = Number(payload.exit)
-  const lots = Number(payload.lots)
-  
-  if (isNaN(entry) || isNaN(exit) || isNaN(lots)) return null
-
-  // Optional/coerced fields
-  const swap = typeof payload.swap !== 'undefined' ? Number(payload.swap) : 0
-  const sl = (payload.sl !== null && typeof payload.sl !== 'undefined') ? Number(payload.sl) : null
-  const tp = (payload.tp !== null && typeof payload.tp !== 'undefined') ? Number(payload.tp) : null
-  const rr = (payload.rr !== null && typeof payload.rr !== 'undefined') ? Number(payload.rr) : null
-  const pips = (payload.pips !== null && typeof payload.pips !== 'undefined') ? Number(payload.pips) : null
-  
-  const session = typeof payload.session === 'string' ? payload.session.slice(0, 100) : ''
-  const setup = typeof payload.setup === 'string' ? payload.setup.slice(0, 100) : ''
-  const market = typeof payload.market === 'string' ? payload.market.slice(0, 100) : 'GOLD'
-  const leverage = typeof payload.leverage === 'string' ? payload.leverage.slice(0, 50) : ''
-  
-  const pnl = typeof payload.pnl !== 'undefined' ? Number(payload.pnl) : 0
-  
-  let outcome: 'WIN' | 'LOSS' | 'BE' = 'BE'
-  if (payload.outcome === 'WIN' || payload.outcome === 'LOSS' || payload.outcome === 'BE') {
-    outcome = payload.outcome
-  }
-
-  const note = typeof payload.note === 'string' ? payload.note.slice(0, 5000) : ''
-  
-  const screenshots: string[] = []
-  if (Array.isArray(payload.screenshots)) {
-    for (const url of payload.screenshots) {
-      if (typeof url === 'string' && url.length < 2000) {
-        screenshots.push(url)
-      }
-    }
-  }
-
-  return {
-    date: payload.date,
-    direction: payload.direction,
-    entry,
-    exit,
-    lots,
-    swap: isNaN(swap) ? 0 : swap,
-    sl: isNaN(sl as number) ? null : sl,
-    tp: isNaN(tp as number) ? null : tp,
-    rr: isNaN(rr as number) ? null : rr,
-    pips: isNaN(pips as number) ? null : pips,
-    session,
-    setup,
-    market,
-    leverage,
-    pnl: isNaN(pnl) ? 0 : pnl,
-    outcome,
-    note,
-    screenshots,
-    source: 'manual'
-  }
-}
-
 // ── 8. Save Trade Route ──────────────────────────────────────────────────────
 app.post('/save-trade', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
+    uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[save-trade] verifyIdToken failed:', err.message)
     return c.json({ error: 'Invalid or expired token', details: 'Authentication verification failed' }, 401)
@@ -1049,25 +831,21 @@ app.post('/save-trade', async (c) => {
       return c.json({ error: 'Missing trade data payload' }, 400)
     }
 
-    // Step 1: Define allowed fields
     const TRADE_FIELDS = ['symbol','direction','lots','openPrice',
       'closePrice','openTime','closeTime','pnl','commission',
       'swap','note','session','setup','riskRewardRatio',
       'emotionTag','screenshot','tags']
 
-    // Step 2: Build allowlisted object
     const safe: any = Object.fromEntries(
       TRADE_FIELDS
         .filter(k => k in tradeData)
         .map(k => [k, tradeData[k]])
     )
 
-    // Step 3: Type-coerce numeric fields
     const NUMERICS = ['lots','openPrice','closePrice','pnl',
       'commission','swap','riskRewardRatio']
     NUMERICS.forEach(k => { if (k in safe) safe[k] = Number(safe[k]) || 0 })
 
-    // Step 4: Enforce string length limits
     if (safe.note && safe.note.length > 4000) {
       return c.json({ error: 'note exceeds 4000 characters' }, 400)
     }
@@ -1110,91 +888,6 @@ app.post('/save-trade', async (c) => {
 })
 
 // ── 9. Sync Trade Route ──────────────────────────────────────────────────────
-async function resolveKey(apiKey: string) {
-  if (!apiKey) return null
-  const doc = await db.collection('apiKeys').doc(apiKey).get()
-  if (!doc.exists) return null
-  const uid = doc.data().uid
-  if (!uid) return null
-
-  const userDoc = await db.collection('users').doc(uid).get()
-  if (!isSyncAllowed(userDoc.data())) return null
-
-  return uid
-}
-
-async function handleOpenSync(tradeRef: any, payload: any) {
-  const snap = await tradeRef.get()
-  if (snap.exists) return { status: 'duplicate' }
-
-  await tradeRef.set({
-    positionId: payload.positionId,
-    openDealTicket: payload.ticket || null,
-    symbol: payload.symbol,
-    direction: payload.direction,
-    lots: Number(payload.lots) || 0,
-    openPrice: Number(payload.price) || 0,
-    openTime: payload.time,
-    status: 'open',
-    commission: Number(payload.commission) || 0,
-    swap: Number(payload.swap) || 0,
-    comment: payload.comment || '',
-    source: payload.source || 'mt5',
-    createdAt: now(),
-    updatedAt: now(),
-  })
-
-  return { status: 'created', positionId: payload.positionId }
-}
-
-async function handleCloseSync(tradeRef: any, payload: any) {
-  const snap = await tradeRef.get()
-  const brokerPnl = Number(payload.profit) || 0
-  const commission = Number(payload.commission) || 0
-  const swap = Number(payload.swap) || 0
-  const netPnl = brokerPnl + commission + swap
-
-  const PIP_SIZE = 0.1
-  let pips = null
-
-  if (snap.exists) {
-    const openPrice = snap.data().openPrice || 0
-    const direction = snap.data().direction || payload.direction
-    const closePrice = Number(payload.price) || 0
-    const diff = direction === 'buy' ? closePrice - openPrice : openPrice - closePrice
-    pips = Math.round(diff / PIP_SIZE)
-
-    await tradeRef.update({
-      closeDealTicket: payload.ticket || null,
-      closePrice: Number(payload.price) || 0,
-      closeTime: payload.time,
-      pnl: brokerPnl,
-      commission, swap, netPnl, pips,
-      status: 'closed',
-      updatedAt: now(),
-    })
-  } else {
-    await tradeRef.set({
-      positionId: payload.positionId,
-      closeDealTicket: payload.ticket || null,
-      symbol: payload.symbol,
-      direction: payload.direction,
-      lots: Number(payload.lots) || 0,
-      closePrice: Number(payload.price) || 0,
-      closeTime: payload.time,
-      pnl: brokerPnl,
-      commission, swap, netPnl,
-      status: 'closed',
-      partial: true,
-      source: payload.source || 'mt5',
-      createdAt: now(),
-      updatedAt: now(),
-    })
-  }
-
-  return { status: 'updated', positionId: payload.positionId, pnl: brokerPnl, pips }
-}
-
 app.post('/sync-trade', async (c) => {
   let body;
   try {
@@ -1223,9 +916,13 @@ app.post('/sync-trade', async (c) => {
 
   let result
   try {
-    if (event === 'open') result = await handleOpenSync(tradeRef, body)
-    else if (event === 'close') result = await handleCloseSync(tradeRef, body)
-    else return c.json({ error: `Unknown event: ${event}` }, 400)
+    if (event === 'open') {
+      result = await handleOpenTradeSync(tradeRef, body, 'mt5')
+    } else if (event === 'close') {
+      result = await handleCloseTradeSync(tradeRef, body, 'mt5')
+    } else {
+      return c.json({ error: `Unknown event: ${event}` }, 400)
+    }
   } catch (err: any) {
     return handleRouteError('sync-trade', err, c)
   }
@@ -1234,20 +931,11 @@ app.post('/sync-trade', async (c) => {
   return c.json(result)
 })
 
-// ── 10. Trades Route ─────────────────────────────────────────────────────────
-// Legacy /trades endpoint removed (HIGH-01)
-
 // ── 10b. Reset Trades Route ──────────────────────────────────────────────────
 app.post('/reset-trades', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!idToken) return c.json({ error: 'Missing Authorization header' }, 401)
-
   let uid: string
   try {
-    initAdmin()
-    const decoded = await admin.auth().verifyIdToken(idToken)
-    uid = decoded.uid
+    uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[reset-trades] verifyIdToken failed:', err.message)
     return c.json({ error: 'Invalid or expired token', details: err.message }, 401)
@@ -1282,75 +970,6 @@ app.post('/reset-trades', async (c) => {
 })
 
 // ── 11. TradingView Webhook Route ────────────────────────────────────────────
-async function handleOpenTv(tradeRef: any, payload: any) {
-  const snap = await tradeRef.get()
-  if (snap.exists) return { status: 'duplicate' }
-
-  await tradeRef.set({
-    positionId: payload.positionId,
-    symbol: payload.symbol,
-    direction: payload.direction,
-    lots: Number(payload.lots) || 0,
-    openPrice: Number(payload.price) || 0,
-    openTime: payload.time,
-    status: 'open',
-    commission: 0,
-    swap: 0,
-    comment: payload.comment || '',
-    source: 'tradingview',
-    createdAt: now(),
-    updatedAt: now(),
-  })
-
-  return { status: 'created', positionId: payload.positionId }
-}
-
-async function handleCloseTv(tradeRef: any, payload: any) {
-  const snap = await tradeRef.get()
-  const brokerPnl = Number(payload.profit) || 0
-  const commission = Number(payload.commission) || 0
-  const swap = Number(payload.swap) || 0
-  const netPnl = brokerPnl + commission + swap
-
-  const PIP_SIZE = 0.1
-  let pips = null
-
-  if (snap.exists) {
-    const openPrice = snap.data().openPrice || 0
-    const direction = snap.data().direction || payload.direction
-    const closePrice = Number(payload.price) || 0
-    const diff = direction === 'buy' ? closePrice - openPrice : openPrice - closePrice
-    pips = Math.round(diff / PIP_SIZE)
-
-    await tradeRef.update({
-      closePrice: Number(payload.price) || 0,
-      closeTime: payload.time,
-      pnl: brokerPnl,
-      commission, swap, netPnl, pips,
-      status: 'closed',
-      updatedAt: now(),
-    })
-  } else {
-    await tradeRef.set({
-      positionId: payload.positionId,
-      symbol: payload.symbol,
-      direction: payload.direction,
-      lots: Number(payload.lots) || 0,
-      closePrice: Number(payload.price) || 0,
-      closeTime: payload.time,
-      pnl: brokerPnl,
-      commission, swap, netPnl,
-      status: 'closed',
-      partial: true,
-      source: 'tradingview',
-      createdAt: now(),
-      updatedAt: now(),
-    })
-  }
-
-  return { status: 'updated', positionId: payload.positionId, pnl: brokerPnl, pips }
-}
-
 app.post('/tv-webhook', async (c) => {
   let body;
   try {
@@ -1379,9 +998,13 @@ app.post('/tv-webhook', async (c) => {
 
   let result
   try {
-    if (event === 'open') result = await handleOpenTv(tradeRef, body)
-    else if (event === 'close') result = await handleCloseTv(tradeRef, body)
-    else return c.json({ error: `Unknown event: ${event}` }, 400)
+    if (event === 'open') {
+      result = await handleOpenTradeSync(tradeRef, body, 'tradingview')
+    } else if (event === 'close') {
+      result = await handleCloseTradeSync(tradeRef, body, 'tradingview')
+    } else {
+      return c.json({ error: `Unknown event: ${event}` }, 400)
+    }
   } catch (err: any) {
     return handleRouteError('tv-webhook', err, c)
   }
@@ -1389,9 +1012,6 @@ app.post('/tv-webhook', async (c) => {
   console.log(`[tv-webhook] uid=${uid} event=${event} pos=${positionId}`, result)
   return c.json(result)
 })
-
-// ── 12. Webhook Route ────────────────────────────────────────────────────────
-// Webhook temporarily disabled while migrating to Paddle
 
 // ── 13. Cron Jobs ───────────────────────────────────────────────────────────
 const handleBrokerSyncPoller = async (c: any) => {
@@ -1411,20 +1031,13 @@ const handleBrokerSyncPoller = async (c: any) => {
   let failedSyncs = 0
 
   try {
-    const usersSnapshot = await db.collection('users').get()
+    const usersSnapshot = await db.collection('users').where('plan', 'in', ['pro', 'grace']).get()
 
     for (const userDoc of usersSnapshot.docs) {
       const uid = userDoc.id
       const userData = userDoc.data()
 
-      const nowMs = Date.now()
-      const isPro = userData.plan === 'pro' && 
-                    userData.planExpiry && 
-                    new Date(userData.planExpiry).getTime() > nowMs
-      const isGrace = userData.graceUntil && 
-                      new Date(userData.graceUntil).getTime() > nowMs
-
-      if (!isPro && !isGrace) {
+      if (!isSyncAllowed(userData)) {
         continue
       }
 
@@ -1652,6 +1265,7 @@ const handleRevokeExpired = async (c: any) => {
       const uid = userDoc.id
       try {
         const keySnap = await db.collection('apiKeys').where('uid', '==', uid).get()
+        const apiKeys = keySnap.docs.map(doc => doc.id)
         const batch = db.batch()
         keySnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
@@ -1665,6 +1279,11 @@ const handleRevokeExpired = async (c: any) => {
         })
 
         await batch.commit()
+        
+        // Invalidate KV caches
+        await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, uid)))
+        await invalidateUserCache(uid)
+
         revokedCount++
         console.log(`[revoke-expired] Revoked keys and downgraded uid=${uid}`)
       } catch (e: any) {

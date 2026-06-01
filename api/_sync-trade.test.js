@@ -7,13 +7,18 @@ vi.mock('@vercel/kv', () => {
     kv: {
       incr: vi.fn(async (key) => {
         const entry = mockKvStore.get(key) || { count: 0, expiresAt: Date.now() + 60000 };
-        entry.count++;
-        mockKvStore.set(key, entry);
-        return entry.count;
+        if (typeof entry === 'object' && 'count' in entry) {
+          entry.count++;
+          mockKvStore.set(key, entry);
+          return entry.count;
+        }
+        const newEntry = { count: 1, expiresAt: Date.now() + 60000 };
+        mockKvStore.set(key, newEntry);
+        return 1;
       }),
       expire: vi.fn(async (key, seconds) => {
         const entry = mockKvStore.get(key);
-        if (entry) {
+        if (entry && typeof entry === 'object' && 'expiresAt' in entry) {
           entry.expiresAt = Date.now() + seconds * 1000;
           mockKvStore.set(key, entry);
         }
@@ -22,8 +27,23 @@ vi.mock('@vercel/kv', () => {
       ttl: vi.fn(async (key) => {
         const entry = mockKvStore.get(key);
         if (!entry) return -2;
-        const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
-        return remaining > 0 ? remaining : -1;
+        if (typeof entry === 'object' && 'expiresAt' in entry) {
+          const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
+          return remaining > 0 ? remaining : -1;
+        }
+        return -1;
+      }),
+      get: vi.fn(async (key) => {
+        const val = mockKvStore.get(key);
+        return val !== undefined ? val : null;
+      }),
+      set: vi.fn(async (key, val) => {
+        mockKvStore.set(key, val);
+        return 'OK';
+      }),
+      del: vi.fn(async (key) => {
+        mockKvStore.delete(key);
+        return 1;
       })
     }
   };
@@ -231,6 +251,36 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
       netPnl: 496.50, // 500 - 1.5 - 2.0
       pips: 100
     }));
+  });
+
+  it('caches the API key and subscription resolution in Vercel KV', async () => {
+    const payload = {
+      event: 'open',
+      positionId: '11111',
+      symbol: 'XAUUSD',
+      direction: 'buy',
+      lots: 0.1,
+      price: 2000.0,
+      time: '2023-10-10T10:00:00Z',
+    };
+
+    // First request
+    const res1 = await executeRequest(payload);
+    expect(res1.statusCode).toBe(200);
+
+    // Record how many times DB read was called
+    const initialGetCount = db.__mocks.mockDocGet.mock.calls.length;
+
+    // Second request with different positionId (uses same API key)
+    const payload2 = { ...payload, positionId: '22222' };
+    const res2 = await executeRequest(payload2);
+    expect(res2.statusCode).toBe(200);
+
+    // Verify mockDocGet was not called for auth checks in second request
+    const finalGetCount = db.__mocks.mockDocGet.mock.calls.length;
+    // The only DB read should be checking if trade positionId '22222' exists (1 call)
+    const dbGetDiff = finalGetCount - initialGetCount;
+    expect(dbGetDiff).toBe(1);
   });
 
   it('triggers rate limiting and returns 429 after 100 requests', async () => {

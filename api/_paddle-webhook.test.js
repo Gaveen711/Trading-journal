@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import crypto from 'crypto';
 
+const mockKvStore = new Map();
+
 vi.mock('@vercel/kv', () => {
   return {
     kv: {
       incr: vi.fn().mockResolvedValue(1),
       expire: vi.fn().mockResolvedValue(1),
-      ttl: vi.fn().mockResolvedValue(60)
+      ttl: vi.fn().mockResolvedValue(60),
+      get: vi.fn(async (key) => mockKvStore.get(key) || null),
+      set: vi.fn(async (key, val) => { mockKvStore.set(key, val); return 'OK'; }),
+      del: vi.fn(async (key) => { mockKvStore.delete(key); return 1; })
     }
   };
 });
