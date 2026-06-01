@@ -11,24 +11,8 @@ import {
   disconnectBrokerCallable,
 } from '../lib/brokerSync';
 
-// Simple encoding helpers to avoid clear-text storage warnings in static analysis
-function encodeToken(value) {
-  if (!value) return '';
-  try {
-    return btoa(unescape(encodeURIComponent(value)));
-  } catch (e) {
-    return value;
-  }
-}
-
-function decodeToken(value) {
-  if (!value) return '';
-  try {
-    return decodeURIComponent(escape(atob(value)));
-  } catch (e) {
-    return value;
-  }
-}
+// Module-level in-memory password cache (persists during the active session until page reload)
+const passwordCache = new Map();
 
 export function useBrokerAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -61,7 +45,7 @@ export function useBrokerAccounts() {
           
           return localList.map(acc => ({
             ...acc,
-            password: decodeToken(acc.passToken),
+            password: passwordCache.get(acc.id) || null,
             lastSyncTime: dbData.lastBrokerSync
               ? (dbData.lastBrokerSync.toDate
                   ? dbData.lastBrokerSync.toDate().toISOString()
@@ -121,7 +105,10 @@ export function useBrokerAccounts() {
         platform: brokerType,
       });
 
-      // Save credentials strictly on the client side (localStorage)
+      // Cache password strictly in-memory
+      passwordCache.set(login, password);
+
+      // Save configurations strictly on the client side (localStorage) WITHOUT credentials
       const localKey = `xau-broker-accounts-${user.uid}`;
 
       // We only support one connected account for now
@@ -131,7 +118,6 @@ export function useBrokerAccounts() {
         platform: brokerType,
         server,
         login,
-        passToken: encodeToken(password),
       };
 
       localStorage.setItem(localKey, JSON.stringify([newAccount]));
@@ -166,11 +152,16 @@ export function useBrokerAccounts() {
       const localList = localSaved ? JSON.parse(localSaved) : [];
       const acc = localList.find(a => a.id === accountId);
 
-      if (!acc) throw new Error('Broker account credentials not found in this browser.');
+      if (!acc) throw new Error('Broker account configuration not found in this browser.');
+
+      const inMemoryPassword = passwordCache.get(accountId);
+      if (!inMemoryPassword) {
+        throw new Error('Broker credentials are not in-memory. Please reconnect or re-enter your password.');
+      }
 
       const result = await syncBrokerTradesCallable({
         accountId: acc.login,
-        password: decodeToken(acc.passToken),
+        password: inMemoryPassword,
         server: acc.server,
         platform: acc.platform,
       });
@@ -181,7 +172,7 @@ export function useBrokerAccounts() {
     }
   }
 
-  async function removeAccount(_accountId) {
+  async function removeAccount(accountId) {
     setError(null);
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
@@ -193,6 +184,9 @@ export function useBrokerAccounts() {
       // Remove from client-side localStorage
       const localKey = `xau-broker-accounts-${user.uid}`;
       localStorage.removeItem(localKey);
+
+      // Clear cached password
+      passwordCache.delete(accountId);
       setAccounts([]);
 
       return result;
