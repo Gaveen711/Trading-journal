@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import crypto from 'crypto';
+
+vi.mock('@vercel/kv', () => {
+  return {
+    kv: {
+      incr: vi.fn().mockResolvedValue(1),
+      expire: vi.fn().mockResolvedValue(1),
+      ttl: vi.fn().mockResolvedValue(60)
+    }
+  };
+});
+
 import { app } from './[[...route]].ts';
 import { db } from './_firebase.js';
 

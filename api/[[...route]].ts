@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { secureHeaders } from 'hono/secure-headers'
 import crypto from 'crypto'
+import { kv } from '@vercel/kv'
 
 // Import shared helpers (using JS files under /api)
 // @ts-ignore
@@ -14,6 +15,18 @@ import resend from './_resend.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
+
+// Helper to sanitize error messages and log full details server-side
+function handleRouteError(route: string, err: any, c: any, customErrName = 'Internal Server Error') {
+  console.error(`[${route}] Error:`, err)
+  const constructorName = err?.constructor?.name
+  const MSG_MAP: Record<string, string> = {
+    'MetaApiError': 'Broker connection failed. Check your credentials.',
+    'FirebaseError': 'Database operation failed. Try again.',
+  }
+  const safeMsg = MSG_MAP[constructorName] || 'An unexpected error occurred.'
+  return c.json({ error: customErrName, message: safeMsg }, 500)
+}
 
 type Env = {}
 type Variables = Record<string, unknown>
@@ -47,27 +60,11 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// ── Rate Limiting Middleware ─────────────────────────────────────────────────
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
-let lastCleanup = Date.now()
-
-const cleanupExpiredLimits = () => {
-  const now = Date.now()
-  if (now - lastCleanup < 5 * 60 * 1000) return // Limit cleanup to once every 5 minutes
-  lastCleanup = now
-  for (const [ip, data] of rateLimitMap.entries()) {
-    if (now > data.resetTime) {
-      rateLimitMap.delete(ip)
-    }
-  }
-}
-
+// ── Rate Limiting Middleware (Vercel KV) ─────────────────────────────────────
 app.use('*', async (c, next) => {
   if (c.req.method === 'OPTIONS') {
     return await next()
   }
-
-  cleanupExpiredLimits()
 
   const xRealIp = c.req.header('x-real-ip')
   let ip = '127.0.0.1'
@@ -80,26 +77,38 @@ app.use('*', async (c, next) => {
       ip = parts[parts.length - 1].trim()
     }
   }
-  const now = Date.now()
-  const windowMs = 60 * 1000 // 1 minute window
-  const maxRequests = 100 // Maximum 100 requests per window
 
-  const limitData = rateLimitMap.get(ip)
-  if (!limitData || now > limitData.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
-  } else {
-    limitData.count++
-    if (limitData.count > maxRequests) {
-      c.header('Retry-After', Math.ceil((limitData.resetTime - now) / 1000).toString())
-      return c.json({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' }, 429)
+  const key = `rl:${ip}`
+  const limit = 100
+  const windowSeconds = 60
+
+  let current = 0
+  try {
+    current = await kv.incr(key)
+    if (current === 1) {
+      await kv.expire(key, windowSeconds)
     }
+  } catch (kvErr: any) {
+    console.error('[RateLimit] Vercel KV error:', kvErr.message)
+    // Fallback if KV is down/not configured: allow request
+    return await next()
   }
 
-  const currentLimit = rateLimitMap.get(ip)
-  if (currentLimit) {
-    c.header('X-RateLimit-Limit', maxRequests.toString())
-    c.header('X-RateLimit-Remaining', Math.max(0, maxRequests - currentLimit.count).toString())
-    c.header('X-RateLimit-Reset', Math.ceil(currentLimit.resetTime / 1000).toString())
+  c.header('X-RateLimit-Limit', limit.toString())
+  c.header('X-RateLimit-Remaining', Math.max(0, limit - current).toString())
+
+  if (current > limit) {
+    let ttl = windowSeconds
+    try {
+      const remainingTtl = await kv.ttl(key)
+      if (remainingTtl > 0) {
+        ttl = remainingTtl
+      }
+    } catch {
+      // ignore TTL error
+    }
+    c.header('Retry-After', ttl.toString())
+    return c.json({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' }, 429)
   }
 
   await next()
@@ -317,7 +326,7 @@ app.post('/broker-login-sync', async (c) => {
       if (error.message.includes('Invalid') || error.message.includes('Authentication') || error.message.includes('password')) {
         return c.json({ error: 'Invalid broker credentials. Please check your login, password, and server.' }, 401)
       }
-      return c.json({ error: `Failed to connect to broker: ${error.message}` }, 500)
+      return handleRouteError('broker-login-sync:add', error, c, 'Failed to connect to broker')
     }
   }
 
@@ -411,19 +420,24 @@ app.post('/broker-login-sync', async (c) => {
         const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
         await accountRef.update({
           lastSyncStatus: 'failed',
-          lastSyncError: error.message,
+          lastSyncError: 'Sync failed. Internal error occurred.',
           updatedAt: now(),
         })
       } catch (updateErr: any) {
         console.error('[broker-login-sync] Failed to update error status:', updateErr.message)
       }
-      return c.json({ error: 'Sync failed', message: error.message }, 500)
+      return handleRouteError('broker-login-sync:sync', error, c, 'Sync failed')
     }
   }
 
   if (action === 'list') {
     try {
       const snapshot = await db.collection('users').doc(uid).collection('brokerAccounts').where('isActive', '==', true).get()
+      const maskLogin = (login: any) => {
+        const s = String(login)
+        if (s.length <= 4) return '****'
+        return '*'.repeat(s.length - 4) + s.slice(-4)
+      }
       const accounts = snapshot.docs.map((doc: any) => {
         const data = doc.data()
         return {
@@ -431,7 +445,7 @@ app.post('/broker-login-sync', async (c) => {
           accountName: data.accountName,
           brokerType: data.brokerType,
           server: data.server,
-          login: data.login,
+          login: maskLogin(data.login),
           isActive: data.isActive,
           lastSyncTime: data.lastSyncTime,
           lastSyncStatus: data.lastSyncStatus,
@@ -441,7 +455,7 @@ app.post('/broker-login-sync', async (c) => {
       })
       return c.json({ accounts })
     } catch (error) {
-      return c.json({ error: 'Failed to list accounts' }, 500)
+      return handleRouteError('broker-login-sync:list', error, c)
     }
   }
 
@@ -557,7 +571,7 @@ app.post('/connect-broker', async (c) => {
     if (/invalid|auth|credential|password|login/i.test(msg)) {
       return c.json({ error: 'Invalid broker credentials. Check login, password, and server name.' }, 401)
     }
-    return c.json({ error: msg }, 500)
+    return handleRouteError('connect-broker', err, c)
   }
 })
 
@@ -607,8 +621,7 @@ app.post('/generate-api-key', async (c) => {
     console.log(`[generate-api-key] New key created for uid=${uid}`)
     return c.json({ apiKey })
   } catch (err: any) {
-    console.error('[generate-api-key] Error:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('generate-api-key', err, c)
   }
 })
 
@@ -642,8 +655,7 @@ app.post('/revoke-api-key', async (c) => {
     console.log(`[revoke-api-key] Key(s) revoked for uid=${uid}`)
     return c.json({ success: true })
   } catch (err: any) {
-    console.error('[revoke-api-key] Error:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('revoke-api-key', err, c)
   }
 })
 
@@ -702,8 +714,7 @@ app.post('/init-user', async (c) => {
       planExpiry: trialExpiry.toISOString(),
     })
   } catch (err: any) {
-    console.error('[init-user] Error initializing user:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('init-user', err, c)
   }
 })
 
@@ -818,30 +829,87 @@ app.post('/paddle-webhook', async (c) => {
   const { event_type: eventType, data } = body
   console.log(`[paddle-webhook] Received event: ${eventType} for subscription: ${data?.id}`)
 
-  if (
-    eventType === 'subscription.canceled' ||
-    eventType === 'subscription.cancelled' ||
-    eventType === 'subscription.past_due'
-  ) {
-    const subscriptionId = data?.id
-    if (!subscriptionId) {
-      return c.json({ error: 'No subscription ID in payload' }, 400)
-    }
+  const HANDLED_EVENTS = [
+    'transaction.completed',
+    'subscription.updated',
+    'subscription.canceled',
+    'subscription.cancelled',
+    'subscription.past_due'
+  ]
 
+  if (!HANDLED_EVENTS.includes(eventType)) {
+    return c.json({ success: true, message: 'Event ignored' })
+  }
+
+  // Retrieve userId from custom data
+  let userId = data?.custom_data?.userId
+  const subscriptionId = data?.subscription_id || data?.id
+
+  // Fallback to query user by subscription ID if custom data doesn't have userId
+  if (!userId && subscriptionId) {
     try {
       const usersSnap = await db.collection('users')
         .where('paddleSubscriptionId', '==', subscriptionId)
         .limit(1)
         .get()
+      if (!usersSnap.empty) {
+        userId = usersSnap.docs[0].id
+      }
+    } catch (err) {
+      console.error('[paddle-webhook] Error querying user by paddleSubscriptionId:', err)
+    }
+  }
 
-      if (usersSnap.empty) {
-        console.warn(`[paddle-webhook] No matching user found for subscription: ${subscriptionId}`)
-        return c.json({ success: true, message: 'No matching user found' })
+  if (!userId) {
+    console.warn('[paddle-webhook] Event ignored: no userId found')
+    return c.json({ success: true, message: 'No matching user found' })
+  }
+
+  try {
+    if (eventType === 'transaction.completed') {
+      const subId = data?.subscription_id
+      const txnId = data?.id
+      const planExpiry = data?.billing_period?.ends_at || null
+
+      const updatePayload: any = {
+        plan: 'pro',
+        isTrial: false,
+        paddleTransactionId: txnId || null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }
+      if (subId) {
+        updatePayload.paddleSubscriptionId = subId
+      }
+      if (planExpiry) {
+        updatePayload.planExpiry = planExpiry
       }
 
-      const userDoc = usersSnap.docs[0]
-      const userId = userDoc.id
+      await db.collection('users').doc(userId).update(updatePayload)
+      console.log(`[paddle-webhook] Activated Pro plan for user ${userId} via transaction.completed`)
+      return c.json({ success: true, message: 'User upgraded/activated' })
+    }
 
+    if (eventType === 'subscription.updated') {
+      const nextBill = data?.next_billed_at
+      const updatePayload: any = {
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }
+      if (nextBill) {
+        updatePayload.planExpiry = nextBill
+      }
+      if (data?.status === 'active') {
+        updatePayload.plan = 'pro'
+      }
+      await db.collection('users').doc(userId).update(updatePayload)
+      console.log(`[paddle-webhook] Updated subscription for user ${userId}`)
+      return c.json({ success: true, message: 'Subscription updated' })
+    }
+
+    if (
+      eventType === 'subscription.canceled' ||
+      eventType === 'subscription.cancelled' ||
+      eventType === 'subscription.past_due'
+    ) {
       const keySnap = await db.collection('apiKeys').where('uid', '==', userId).get()
       const batch = db.batch()
       keySnap.docs.forEach((doc: any) => batch.delete(doc.ref))
@@ -858,10 +926,9 @@ app.post('/paddle-webhook', async (c) => {
       await batch.commit()
       console.log(`[paddle-webhook] Downgraded user ${userId} and revoked keys due to ${eventType}`)
       return c.json({ success: true, message: `User downgraded due to ${eventType}` })
-    } catch (err: any) {
-      console.error('[paddle-webhook] Firestore update failed:', err.message)
-      return c.json({ error: 'Internal Server Error', message: err.message }, 500)
     }
+  } catch (err: any) {
+    return handleRouteError('paddle-webhook', err, c)
   }
 
   return c.json({ success: true, message: 'Event ignored' })
@@ -967,7 +1034,7 @@ app.post('/save-trade', async (c) => {
     uid = decoded.uid
   } catch (err: any) {
     console.error('[save-trade] verifyIdToken failed:', err.message)
-    return c.json({ error: 'Invalid or expired token', details: err.message }, 401)
+    return c.json({ error: 'Invalid or expired token', details: 'Authentication verification failed' }, 401)
   }
 
   try {
@@ -978,13 +1045,34 @@ app.post('/save-trade', async (c) => {
       return c.json({ error: 'Missing trade data payload' }, 400)
     }
 
-    if (!tradeData) {
+    if (!tradeData || typeof tradeData !== 'object') {
       return c.json({ error: 'Missing trade data payload' }, 400)
     }
 
-    const sanitizedTrade = sanitizeAndValidateTrade(tradeData)
-    if (!sanitizedTrade) {
-      return c.json({ error: 'Invalid or missing trade fields' }, 400)
+    // Step 1: Define allowed fields
+    const TRADE_FIELDS = ['symbol','direction','lots','openPrice',
+      'closePrice','openTime','closeTime','pnl','commission',
+      'swap','note','session','setup','riskRewardRatio',
+      'emotionTag','screenshot','tags']
+
+    // Step 2: Build allowlisted object
+    const safe: any = Object.fromEntries(
+      TRADE_FIELDS
+        .filter(k => k in tradeData)
+        .map(k => [k, tradeData[k]])
+    )
+
+    // Step 3: Type-coerce numeric fields
+    const NUMERICS = ['lots','openPrice','closePrice','pnl',
+      'commission','swap','riskRewardRatio']
+    NUMERICS.forEach(k => { if (k in safe) safe[k] = Number(safe[k]) || 0 })
+
+    // Step 4: Enforce string length limits
+    if (safe.note && safe.note.length > 4000) {
+      return c.json({ error: 'note exceeds 4000 characters' }, 400)
+    }
+    if (safe.symbol && safe.symbol.length > 20) {
+      return c.json({ error: 'invalid symbol' }, 400)
     }
 
     const userDoc = await db.collection('users').doc(uid).get()
@@ -1005,7 +1093,7 @@ app.post('/save-trade', async (c) => {
 
     await Promise.all([
       newTradeDoc.set({
-        ...sanitizedTrade,
+        ...safe,
         createdAt: now(),
         updatedAt: now()
       }),
@@ -1017,8 +1105,7 @@ app.post('/save-trade', async (c) => {
     console.log(`[save-trade] New trade logged for uid=${uid}, tradeId=${newTradeDoc.id}`)
     return c.json({ id: newTradeDoc.id })
   } catch (err: any) {
-    console.error('[save-trade] Error logging trade:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('save-trade', err, c)
   }
 })
 
@@ -1140,8 +1227,7 @@ app.post('/sync-trade', async (c) => {
     else if (event === 'close') result = await handleCloseSync(tradeRef, body)
     else return c.json({ error: `Unknown event: ${event}` }, 400)
   } catch (err: any) {
-    console.error('[sync-trade] Firestore error:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('sync-trade', err, c)
   }
 
   console.log(`[sync-trade] uid=${uid} event=${event} pos=${positionId}`, result)
@@ -1191,8 +1277,7 @@ app.post('/reset-trades', async (c) => {
     console.log(`[reset-trades] Wiped trades for uid=${uid}`)
     return c.json({ success: true, message: 'All trades reset successfully.' })
   } catch (err: any) {
-    console.error('[reset-trades] Error resetting trades:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('reset-trades', err, c)
   }
 })
 
@@ -1298,8 +1383,7 @@ app.post('/tv-webhook', async (c) => {
     else if (event === 'close') result = await handleCloseTv(tradeRef, body)
     else return c.json({ error: `Unknown event: ${event}` }, 400)
   } catch (err: any) {
-    console.error('[tv-webhook] Firestore error:', err.message)
-    return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+    return handleRouteError('tv-webhook', err, c)
   }
 
   console.log(`[tv-webhook] uid=${uid} event=${event} pos=${positionId}`, result)
@@ -1472,11 +1556,7 @@ const handleBrokerSyncPoller = async (c: any) => {
     console.log('[broker-sync-poller] Completed:', result)
     return c.json(result)
   } catch (error: any) {
-    console.error('[broker-sync-poller] Fatal error:', error.message)
-    return c.json({
-      error: 'Cron job failed',
-      message: error.message,
-    }, 500)
+    return handleRouteError('broker-sync-poller', error, c, 'Cron job failed')
   }
 }
 app.get('/cron/broker-sync-poller', handleBrokerSyncPoller)
@@ -1501,29 +1581,41 @@ const handleRemindExpiry = async (c: any) => {
 
     const emailPromises: Promise<any>[] = []
 
-    snapshot.forEach((doc: any) => {
+    for (const doc of snapshot.docs) {
       const data = doc.data()
-      if (!data.planExpiry || !data.email) return
+      if (!data.planExpiry) continue
 
       const expiryDate = new Date(data.planExpiry)
 
       if (expiryDate <= threeDaysFromNow && expiryDate > new Date(threeDaysFromNow.getTime() - 86400000)) {
-        emailPromises.push(
-          resend.emails.send({
-            from: 'xaujournal <alerts@xaujournal.com>',
-            to: data.email,
-            subject: 'xaujournal: 3 Days Left of Pro',
-            html: `<p>Hi ${data.name || 'Trader'}, your Pro access expires in 3 days. Renew now to avoid losing your advanced analytics.</p>`
-          })
-        )
+        try {
+          const authUser = await admin.auth().getUser(doc.id)
+          const verifiedEmail = authUser.email
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!verifiedEmail || !emailRegex.test(verifiedEmail)) {
+            console.warn(`[remind-expiry] Skipping ${doc.id}: no verified email`)
+            continue
+          }
+
+          emailPromises.push(
+            resend.emails.send({
+              from: 'xaujournal <alerts@xaujournal.com>',
+              to: verifiedEmail,
+              subject: 'xaujournal: 3 Days Left of Pro',
+              html: `<p>Hi ${data.name || 'Trader'}, your Pro access expires in 3 days. Renew now to avoid losing your advanced analytics.</p>`
+            })
+          )
+        } catch (authErr: any) {
+          console.error(`[remind-expiry] Failed to fetch auth user or send email for ${doc.id}:`, authErr.message)
+        }
       }
-    })
+    }
 
     await Promise.all(emailPromises)
     return c.json({ success: true, sent: emailPromises.length })
   } catch (error: any) {
-    console.error("Cron Error:", error)
-    return c.json({ error: error.message }, 500)
+    return handleRouteError('remind-expiry', error, c)
   }
 }
 app.get('/cron/remind-expiry', handleRemindExpiry)
@@ -1582,8 +1674,7 @@ const handleRevokeExpired = async (c: any) => {
 
     return c.json({ success: true, revoked: revokedCount })
   } catch (error: any) {
-    console.error('[revoke-expired] Cron error:', error)
-    return c.json({ error: error.message }, 500)
+    return handleRouteError('revoke-expired', error, c)
   }
 }
 app.get('/cron/revoke-expired', handleRevokeExpired)

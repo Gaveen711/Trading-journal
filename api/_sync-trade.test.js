@@ -1,4 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const mockKvStore = new Map();
+
+vi.mock('@vercel/kv', () => {
+  return {
+    kv: {
+      incr: vi.fn(async (key) => {
+        const entry = mockKvStore.get(key) || { count: 0, expiresAt: Date.now() + 60000 };
+        entry.count++;
+        mockKvStore.set(key, entry);
+        return entry.count;
+      }),
+      expire: vi.fn(async (key, seconds) => {
+        const entry = mockKvStore.get(key);
+        if (entry) {
+          entry.expiresAt = Date.now() + seconds * 1000;
+          mockKvStore.set(key, entry);
+        }
+        return 1;
+      }),
+      ttl: vi.fn(async (key) => {
+        const entry = mockKvStore.get(key);
+        if (!entry) return -2;
+        const remaining = Math.ceil((entry.expiresAt - Date.now()) / 1000);
+        return remaining > 0 ? remaining : -1;
+      })
+    }
+  };
+});
+
 import { app } from './[[...route]].ts';
 
 // Mock the firebase admin module
@@ -76,6 +106,7 @@ import { db } from './_firebase.js';
 describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockKvStore.clear();
     
     // Default valid API key resolution mock
     db.__mocks.mockDocGet.mockImplementation(async function() {
