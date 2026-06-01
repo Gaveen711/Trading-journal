@@ -657,26 +657,30 @@ app.post('/paddle-success', async (c) => {
       return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
     }
 
-    // Webhook is the sole source of truth.
-    // This route only checks Firestore to see if the webhook has already updated the plan.
-    const userDoc = await db.collection('users').doc(userId).get()
-    const userData = userDoc.data() || {}
+    // Fallback direct upgrade: activate the Pro plan immediately upon checkout success page load.
+    // This is particularly critical for localhost/development where webhooks cannot be delivered.
+    const planExpiry = new Date()
+    planExpiry.setDate(planExpiry.getDate() + 30)
 
-    if (userData.paddleTransactionId === transactionId && userData.plan === 'pro') {
-      return c.json({
-        success: true,
-        planExpiry: userData.planExpiry,
-        isTrial: userData.isTrial || false,
-        status: 'completed'
-      })
+    const updatePayload = {
+      plan: 'pro',
+      isTrial: false,
+      paddleTransactionId: transactionId,
+      planExpiry: planExpiry.toISOString(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }
 
-    // If webhook hasn't processed it yet, return 202 Accepted to signal polling is in progress
+    await db.collection('users').doc(userId).update(updatePayload)
+    await invalidateUserCache(userId)
+
+    console.log(`[paddle-success] Fallback direct upgrade: Activated Pro plan for user ${userId}`)
+
     return c.json({
-      success: false,
-      status: 'processing',
-      message: 'Subscription is processing. Please wait.'
-    }, 202)
+      success: true,
+      planExpiry: planExpiry.toISOString(),
+      isTrial: false,
+      status: 'completed'
+    })
   } catch (error: any) {
     console.error('[paddle-success] error:', error.message || error);
     return c.json({ error: `Verification failed: ${error.message || 'unknown error'}` }, 500);

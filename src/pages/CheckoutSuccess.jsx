@@ -20,6 +20,11 @@ export function CheckoutSuccess() {
       return;
     }
 
+    let mounted = true;
+    let attempts = 0;
+    const maxAttempts = 15;
+    const delay = 2000;
+
     const verifyTransaction = async () => {
       try {
         const user = auth.currentUser;
@@ -39,14 +44,27 @@ export function CheckoutSuccess() {
           }),
         });
 
+        if (!mounted) return;
+
         const data = await resp.json();
         if (!resp.ok) {
           throw new Error(data.error || 'Payment verification failed.');
         }
 
-        setStatus('done');
-        setMessage('Thank you! Your account has been upgraded to Pro, and your 7-day free trial is now active.');
+        if (resp.status === 202 || data.status === 'processing') {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            setStatus('done');
+            setMessage('Your payment is still being processed by Paddle. Your account will be upgraded to Pro automatically within a few minutes.');
+          } else {
+            setTimeout(verifyTransaction, delay);
+          }
+        } else {
+          setStatus('done');
+          setMessage('Thank you! Your account has been upgraded to Pro, and your 7-day free trial is now active.');
+        }
       } catch (error) {
+        if (!mounted) return;
         console.error('Checkout verification failed:', error);
         setStatus('error');
         setMessage(error.message || 'An error occurred while finalizing your payment.');
@@ -54,6 +72,10 @@ export function CheckoutSuccess() {
     };
 
     verifyTransaction();
+
+    return () => {
+      mounted = false;
+    };
   }, [searchParams]);
 
   return (
