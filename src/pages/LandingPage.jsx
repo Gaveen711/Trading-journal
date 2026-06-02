@@ -101,7 +101,7 @@ const STORY_CHAPTERS = [
     headline: "You're trading blindly.",
     sub: "Every missed trade. Every blown stop. Every emotional entry. Without a journal, you repeat the same mistakes — and the market keeps the tuition.",
     accent: 'from-red-500/20 to-orange-500/10',
-    glow: 'rgba(239,68,68,0.15)',
+    glow: 'rgba(239,68,68,0.28)',
   },
   {
     chapter: '02',
@@ -109,7 +109,7 @@ const STORY_CHAPTERS = [
     headline: 'Your edge already exists.',
     sub: "It's buried in your trade history — in the sessions where you win, the setups that perform, the hours when your focus is sharp. You just can't see it yet.",
     accent: 'from-amber-500/20 to-yellow-500/10',
-    glow: 'rgba(245,158,11,0.15)',
+    glow: 'rgba(245,158,11,0.28)',
   },
   {
     chapter: '03',
@@ -117,7 +117,7 @@ const STORY_CHAPTERS = [
     headline: 'Data reveals what instinct misses.',
     sub: 'Drawdown curves. Session heatmaps. Streak analysis. When your trades become data, patterns emerge that transform how you approach every position.',
     accent: 'from-primary/20 to-violet-500/10',
-    glow: 'rgba(139,92,246,0.15)',
+    glow: 'rgba(139,92,246,0.28)',
   },
   {
     chapter: '04',
@@ -125,7 +125,7 @@ const STORY_CHAPTERS = [
     headline: 'Meet XAU Journal.',
     sub: 'The only trading journal built exclusively for XAUUSD. Auto-sync every trade from MT5. Analyze your edge. Journal your psychology. All in one precision tool.',
     accent: 'from-emerald-500/20 to-teal-500/10',
-    glow: 'rgba(16,185,129,0.15)',
+    glow: 'rgba(16,185,129,0.28)',
   },
 ];
 
@@ -276,17 +276,25 @@ function StoryChapter({ chapter, label, headline, sub, accent, glow, index }) {
       className="relative min-h-[40vh] flex flex-col justify-center py-10 md:py-12"
     >
       {/* Ambient glow behind the card */}
-      <Motion.div
-        animate={{
-          opacity: inView ? 1 : 0,
-          scale: inView ? 1 : 0.8,
-        }}
-        transition={{ duration: 1.2, ease: 'easeOut' }}
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 60% 50% at ${index % 2 === 0 ? '20%' : '80%'} 50%, ${glow}, transparent)`,
-        }}
-      />
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen transform pointer-events-none">
+        <Motion.div
+          initial={{
+            opacity: 0,
+            x: index % 2 === 0 ? '-25%' : '25%',
+            scale: 0.95
+          }}
+          animate={{
+            opacity: inView ? 1 : 0,
+            x: inView ? '0%' : (index % 2 === 0 ? '-25%' : '25%'),
+            scale: inView ? 1 : 0.95
+          }}
+          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full h-full"
+          style={{
+            background: `radial-gradient(ellipse 70% 60% at ${index % 2 === 0 ? '0%' : '100%'} 50%, ${glow}, transparent)`,
+          }}
+        />
+      </div>
 
       <div className={`relative flex flex-col ${index % 2 === 0 ? 'items-start text-left' : 'items-start text-left md:items-end md:text-right'} max-w-2xl ${index % 2 === 0 ? 'ml-0' : 'ml-0 md:ml-auto'}`}>
         <Motion.div
