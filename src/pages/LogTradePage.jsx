@@ -199,52 +199,54 @@ export function LogTradePage() {
     }
   };
 
-  const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
+  const chartData = useMemo(() => {
+    const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
 
-  let chartVisibleTrades = sortedForChart;
-  let initialBalanceForChart = walletBalance || 0;
+    let chartVisibleTrades = sortedForChart;
+    let initialBalanceForChart = walletBalance || 0;
 
-  if (equityPeriod === '30') {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 30);
-    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+    if (equityPeriod === '30') {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
 
-    chartVisibleTrades = sortedForChart.filter(t => t.date >= cutoffStr);
+      chartVisibleTrades = sortedForChart.filter(t => t.date >= cutoffStr);
 
-    // Calculate the cumulative pnl of all trades BEFORE the 30-day window
-    const olderTrades = sortedForChart.filter(t => t.date < cutoffStr);
-    initialBalanceForChart += olderTrades.reduce((s, t) => s + (t.pnl || 0), 0);
-  }
+      // Calculate the cumulative pnl of all trades BEFORE the 30-day window
+      const olderTrades = sortedForChart.filter(t => t.date < cutoffStr);
+      initialBalanceForChart += olderTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+    }
 
-  const chartLabels = ['Start', ...chartVisibleTrades.map(t => t.date)];
-  let currentBalance = initialBalanceForChart;
-  const chartDataPoints = [currentBalance, ...chartVisibleTrades.map(t => {
-    currentBalance += t.pnl;
-    return parseFloat(currentBalance.toFixed(2));
-  })];
+    const chartLabels = ['Start', ...chartVisibleTrades.map(t => t.date)];
+    let currentBalance = initialBalanceForChart;
+    const chartDataPoints = [currentBalance, ...chartVisibleTrades.map(t => {
+      currentBalance += t.pnl;
+      return parseFloat(currentBalance.toFixed(2));
+    })];
 
-  const chartData = {
-    labels: chartLabels,
-    datasets: [{
-      label: 'Equity',
-      data: chartDataPoints,
-      borderColor: '#8B5CF6',
-      backgroundColor: (context) => {
-        const ctx = context.chart.ctx;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
-        gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
-        return gradient;
-      },
-      fill: true,
-      tension: 0.4,
-      pointRadius: 0,
-      pointHoverRadius: 6,
-      borderWidth: 3,
-    }]
-  };
+    return {
+      labels: chartLabels,
+      datasets: [{
+        label: 'Equity',
+        data: chartDataPoints,
+        borderColor: '#8B5CF6',
+        backgroundColor: (context) => {
+          const ctx = context.chart.ctx;
+          const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+          gradient.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
+          gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+          return gradient;
+        },
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        borderWidth: 3,
+      }]
+    };
+  }, [trades, walletBalance, equityPeriod]);
 
-  const chartOptions = {
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -267,7 +269,7 @@ export function LogTradePage() {
         ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } }
       }
     }
-  };
+  }), [isLightMode]);
 
   const [isEditingBalance, setIsEditingBalance] = useState(false);
   const [isEditingGoal, setIsEditingGoal] = useState(false);

@@ -396,17 +396,30 @@ export function LandingPage() {
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
+    
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-    requestAnimationFrame(raf);
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    
+    let rafId;
+    function raf(time) { 
+      lenis.raf(time); 
+      rafId = requestAnimationFrame(raf); 
+    }
+    rafId = requestAnimationFrame(raf);
+    
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => {
       document.body.style.overflow = '';
     };
   }, [mobileMenuOpen]);
