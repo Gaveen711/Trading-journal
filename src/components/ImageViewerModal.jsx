@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { XLg, ExclamationTriangleFill } from 'react-bootstrap-icons';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 
 export function ImageViewerModal({ imageUrl, onClose }) {
   const [hasError, setHasError] = useState(false);
@@ -8,7 +8,7 @@ export function ImageViewerModal({ imageUrl, onClose }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -17,7 +17,7 @@ export function ImageViewerModal({ imageUrl, onClose }) {
       />
 
       {/* Image Wrapper */}
-      <motion.div
+      <Motion.div
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.92, opacity: 0 }}
@@ -51,7 +51,7 @@ export function ImageViewerModal({ imageUrl, onClose }) {
         >
           <XLg className="w-4 h-4" />
         </button>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 }

@@ -1,21 +1,21 @@
 export class TradeRepository {
-  subscribeToTrades(userId, onUpdate, onError) {
+  subscribeToTrades(_userId, _onUpdate, _onError) {
     throw new Error('subscribeToTrades not implemented');
   }
 
-  addTrade(userId, tradeData) {
+  addTrade(_userId, _tradeData) {
     throw new Error('addTrade not implemented');
   }
 
-  removeTrade(userId, tradeId) {
+  removeTrade(_userId, _tradeId) {
     throw new Error('removeTrade not implemented');
   }
 
-  editTrade(userId, tradeId, updatedData) {
+  editTrade(_userId, _tradeId, _updatedData) {
     throw new Error('editTrade not implemented');
   }
 
-  resetTrades(userId, idToken) {
+  resetTrades(_userId, _idToken) {
     throw new Error('resetTrades not implemented');
   }
 }

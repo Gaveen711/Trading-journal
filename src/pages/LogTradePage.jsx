@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useLocation } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { AnimatePresence } from 'framer-motion';
@@ -199,20 +199,27 @@ export function LogTradePage() {
     }
   };
 
-  const chartData = useMemo(() => {
+  const chartVisibleTrades = useMemo(() => {
     const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
-
-    let chartVisibleTrades = sortedForChart;
-    let initialBalanceForChart = walletBalance || 0;
 
     if (equityPeriod === '30') {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 30);
       const cutoffStr = cutoffDate.toISOString().split('T')[0];
 
-      chartVisibleTrades = sortedForChart.filter(t => t.date >= cutoffStr);
+      return sortedForChart.filter(t => t.date >= cutoffStr);
+    }
+    return sortedForChart;
+  }, [trades, equityPeriod]);
 
-      // Calculate the cumulative pnl of all trades BEFORE the 30-day window
+  const chartData = useMemo(() => {
+    const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
+    let initialBalanceForChart = walletBalance || 0;
+
+    if (equityPeriod === '30') {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
       const olderTrades = sortedForChart.filter(t => t.date < cutoffStr);
       initialBalanceForChart += olderTrades.reduce((s, t) => s + (t.pnl || 0), 0);
     }
@@ -244,7 +251,7 @@ export function LogTradePage() {
         borderWidth: 3,
       }]
     };
-  }, [trades, walletBalance, equityPeriod]);
+  }, [trades, walletBalance, equityPeriod, chartVisibleTrades]);
 
   const chartOptions = useMemo(() => ({
     responsive: true,

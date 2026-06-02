@@ -5,8 +5,18 @@ import { ResetTradesUseCase } from '../core/usecases/ResetTrades.js';
 
 export function useTrades(user) {
   const [trades, setTrades]           = useState([]);
-  const [isLoading, setIsLoading]     = useState(true);
+  const [isLoading, setIsLoading]     = useState(() => !!user);
   const [lastMT5Sync, setLastMT5Sync] = useState(null);
+
+  // Sync state during render if user changes to avoid synchronous setState inside useEffect
+  const [prevUserId, setPrevUserId] = useState(user?.uid);
+  if (user?.uid !== prevUserId) {
+    setPrevUserId(user?.uid);
+    setIsLoading(!!user);
+    if (!user) {
+      setTrades([]);
+    }
+  }
 
   // Persist references to repository and use cases to prevent recreation
   const repository = useMemo(() => new FirebaseTradeRepository(), []);
@@ -15,11 +25,8 @@ export function useTrades(user) {
 
   useEffect(() => {
     if (!user) {
-      setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
 
     const unsubscribe = repository.subscribeToTrades(
       user.uid,
