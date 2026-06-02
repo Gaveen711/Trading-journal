@@ -19,6 +19,7 @@ export const getFriendlyErrorMessage = (error) => {
   if (msg.includes('auth/too-many-requests')) return "Access temporarily locked due to many attempts. Try again later.";
   if (msg.includes('auth/unverified-email')) return "Please verify your email address. A verification link was sent to your inbox.";
   if (msg.includes('auth/disposable-email')) return "Registration is not allowed using disposable email domains.";
+  if (msg.includes('auth/missing-name')) return "First name and last name are required.";
   
   // Database / Permission Errors
   if (msg.includes('permission-denied')) return "You do not have permission for this action.";

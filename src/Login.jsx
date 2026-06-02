@@ -171,6 +171,9 @@ function Login() {
       }
 
       if (isSignUp) {
+        if (!firstName.trim() || !lastName.trim()) {
+          throw new Error('auth/missing-name');
+        }
         if (isDisposableEmail(email)) {
           throw new Error('auth/disposable-email');
         }
@@ -282,8 +285,27 @@ function Login() {
     setLoading(true);
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      const user = userCredential.user;
       localStorage.setItem('xau-auth-hint', 'true');
+
+      // Extract names from Google profile
+      const displayName = user.displayName || '';
+      const [first, ...last] = displayName.split(' ');
+      const firstName = first || '';
+      const lastName = last.join(' ') || '';
+
+      // Initialize/update their user doc in Firestore to ensure names are present
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        firstName: firstName || 'Google',
+        lastName: lastName || 'User',
+        displayName: displayName || user.email?.split('@')[0] || 'Google User',
+        totalTradesLogged: 0,
+        totalJournalsLogged: 0,
+        agreedToTerms: false,
+        createdAt: new Date().toISOString()
+      }, { merge: true });
 
       // Trigger Login Alert Email
       try {

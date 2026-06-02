@@ -1063,15 +1063,18 @@ export function DashboardRightSidebar({
   }
 
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileCard, setShowProfileCard] = useState(false);
   const [readIds, setReadIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('xau-notif-read') || '[]'); } catch { return []; }
   });
   const notifRef = useRef(null);
+  const profileRef = useRef(null);
 
   // Close on outside click
   useEffect(() => {
     const handler = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
+      if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfileCard(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -1178,19 +1181,58 @@ export function DashboardRightSidebar({
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 relative" ref={profileRef}>
           <div className="text-right">
             <p className="text-xs font-bold text-foreground capitalize">{displayName}</p>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{currentTime}</p>
           </div>
           <button
             type="button"
-            onClick={openPortal || (() => setShowPricingModal?.(true))}
+            onClick={() => setShowProfileCard(v => !v)}
             className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
-            title="Manage Subscription / Billing"
+            title="User Profile"
           >
             {initials}
           </button>
+
+          {/* Profile Dropdown Panel */}
+          {showProfileCard && (
+            <div className="absolute top-[calc(100%+12px)] right-0 z-50 w-64 bg-card border border-border/40 rounded-2xl shadow-2xl p-4 flex flex-col gap-3.5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="space-y-1">
+                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Logged in as</span>
+                <p className="text-xs font-bold text-foreground capitalize leading-snug">{displayName}</p>
+                <p className="text-[10px] font-medium text-muted-foreground break-all">{auth.currentUser?.email}</p>
+              </div>
+              <div className="h-px bg-border/20" />
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileCard(false);
+                    if (openPortal) {
+                      openPortal();
+                    } else {
+                      setShowPricingModal?.(true);
+                    }
+                  }}
+                  className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                >
+                  Manage Subscription
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileCard(false);
+                    localStorage.removeItem('xau-auth-hint');
+                    auth.signOut();
+                  }}
+                  className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
