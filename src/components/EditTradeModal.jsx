@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { XLg, Check2Circle, CloudArrowUp, Trash, LockFill } from 'react-bootstrap-icons';
+import { AnimatePresence } from 'framer-motion';
 import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
 import { calcPnl, formatCurrency } from '../lib/tradeUtils';
 import { auth, storage } from '../firebase';
 import { useToast } from './ToastContext';
+import { ImageViewerModal } from './ImageViewerModal';
 
 export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClose }) {
   const [formData, setFormData] = useState({ ...trade });
@@ -16,6 +18,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeImageUrl, setActiveImageUrl] = useState(null);
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -296,7 +299,12 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
                   <div className="flex flex-wrap gap-2.5 pt-1">
                     {formData.screenshots.map((url, i) => (
                       <div key={i} className="relative w-16 h-16 rounded-xl border border-border/50 overflow-hidden bg-muted group/thumb shadow-sm">
-                        <img src={url} alt="screenshot preview" className="w-full h-full object-cover" />
+                        <img 
+                          src={url} 
+                          alt="screenshot preview" 
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity" 
+                          onClick={() => setActiveImageUrl(url)}
+                        />
                         <button
                           type="button"
                           onClick={() => removeScreenshot(i)}
@@ -328,6 +336,13 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
           </button>
         </form>
       </div>
+
+      {/* Lightbox for zooming screenshots */}
+      <AnimatePresence>
+        {activeImageUrl && (
+          <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

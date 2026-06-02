@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { Download, Search, XLg, PencilSquare } from 'react-bootstrap-icons';
+import { AnimatePresence } from 'framer-motion';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { EditTradeModal } from '../components/EditTradeModal';
+import { ImageViewerModal } from '../components/ImageViewerModal';
 import { formatCurrency, formatPrice, formatNumber } from '../lib/tradeUtils';
 
 const HistorySkeleton = () => (
@@ -35,6 +37,7 @@ export function HistoryPage() {
   const [editingTrade, setEditingTrade] = useState(null);
   const [expandedNotes, setExpandedNotes] = useState({});
   const [visibleCount, setVisibleCount] = useState(30);
+  const [activeImageUrl, setActiveImageUrl] = useState(null);
 
   const handleFilterSearch = (val) => {
     setFilterSearch(val);
@@ -361,7 +364,12 @@ export function HistoryPage() {
                         <div className="mt-4 flex flex-wrap gap-3">
                           {t.screenshots.map((s, i) => (
                             <div key={i} className="rounded-xl border border-border/50 overflow-hidden bg-muted/50 shadow-inner group/img">
-                              <img src={s} alt="screenshot" className="max-w-[180px] sm:max-w-[240px] hover:scale-110 transition-transform duration-700 cursor-zoom-in" />
+                              <img 
+                                src={s} 
+                                alt="screenshot" 
+                                className="max-w-[180px] sm:max-w-[240px] hover:scale-110 transition-transform duration-700 cursor-zoom-in" 
+                                onClick={(e) => { e.stopPropagation(); setActiveImageUrl(s); }}
+                              />
                             </div>
                           ))}
                         </div>
@@ -395,6 +403,13 @@ export function HistoryPage() {
           onClose={() => setEditingTrade(null)} 
         />
       )}
+
+      {/* Lightbox for zooming screenshots */}
+      <AnimatePresence>
+        {activeImageUrl && (
+          <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill, CloudArrowUp, Trash } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { auth, storage } from '../firebase';
+import { ImageViewerModal } from '../components/ImageViewerModal';
 import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { CurrencyExchange } from 'react-bootstrap-icons';
@@ -63,6 +64,7 @@ export function LogTradePage() {
   const [screenshots, setScreenshots] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeImageUrl, setActiveImageUrl] = useState(null);
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -724,7 +726,12 @@ export function LogTradePage() {
                       <div className="flex flex-wrap gap-2.5 pt-1">
                         {screenshots.map((url, i) => (
                           <div key={i} className="relative w-16 h-16 rounded-xl border border-border/50 overflow-hidden bg-muted group/thumb shadow-sm">
-                            <img src={url} alt="upload preview" className="w-full h-full object-cover" />
+                            <img 
+                              src={url} 
+                              alt="upload preview" 
+                              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity" 
+                              onClick={() => setActiveImageUrl(url)}
+                            />
                             <button
                               type="button"
                               onClick={() => removeScreenshot(i)}
@@ -977,6 +984,13 @@ export function LogTradePage() {
           </button>
         </div>
       )}
+
+      {/* Lightbox for zooming screenshots */}
+      <AnimatePresence>
+        {activeImageUrl && (
+          <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

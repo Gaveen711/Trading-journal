@@ -977,10 +977,10 @@ function ScaleTimeline() {
         <div className="relative">
 
           {/* Center vertical line track (background) */}
-          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-border/30" />
+          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] bg-border/30" />
 
           {/* Animated line that draws downward on scroll */}
-          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px overflow-hidden">
+          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] overflow-hidden">
             <Motion.div
               className="w-full bg-gradient-to-b from-primary via-primary/70 to-primary/20 origin-top"
               style={{ height: lineHeight }}
@@ -992,7 +992,7 @@ function ScaleTimeline() {
             {TIMELINE_ITEMS.map((item) => {
               const isLeft = item.side === 'left';
               return (
-                <div key={item.label} className="relative flex items-center md:grid md:grid-cols-2 md:gap-8">
+                <div key={item.label} className="relative flex items-center md:grid md:grid-cols-[1fr_40px_1fr] md:gap-4">
 
                   {/* Left slot */}
                   <div className={`hidden md:flex md:justify-end ${isLeft ? '' : 'md:invisible'}`}>
@@ -1000,8 +1000,8 @@ function ScaleTimeline() {
                       <Motion.div
                         initial={{ opacity: 0, x: -80 }}
                         whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: false, margin: '-30px' }}
-                        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        viewport={{ once: true, amount: 0.25 }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
                       >
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
@@ -1018,13 +1018,15 @@ function ScaleTimeline() {
                   </div>
 
                   {/* Center dot on the line */}
-                  <Motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    viewport={{ once: false, margin: '-30px' }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="hidden md:flex absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary shadow-[0_0_12px_rgba(139,92,246,0.8)] z-10"
-                  />
+                  <div className="hidden md:flex justify-center items-center relative z-10 w-[40px]">
+                    <Motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileInView={{ scale: [0, 1.2, 1], opacity: 1 }}
+                      viewport={{ once: true, amount: 0.25 }}
+                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-3.5 h-3.5 rounded-full bg-primary shadow-[0_0_15px_rgba(139,92,246,0.9)] border-2 border-background"
+                    />
+                  </div>
 
                   {/* Right slot */}
                   <div className={`hidden md:flex md:justify-start ${!isLeft ? '' : 'md:invisible'}`}>
@@ -1032,8 +1034,8 @@ function ScaleTimeline() {
                       <Motion.div
                         initial={{ opacity: 0, x: 80 }}
                         whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: false, margin: '-30px' }}
-                        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        viewport={{ once: true, amount: 0.25 }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
                       >
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
@@ -1053,7 +1055,7 @@ function ScaleTimeline() {
                   <Motion.div
                     initial={{ opacity: 0, x: isLeft ? -100 : 100 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: false, margin: '-40px' }}
+                    viewport={{ once: true, amount: 0.25 }}
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="md:hidden w-full flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 transition-all duration-500 group"
                   >
