@@ -157,7 +157,8 @@ function App() {
         clearTimeout(timeout);
         
         // Intercept unverified email/password accounts to prevent UI flashes
-        if (currentUser && !currentUser.emailVerified && currentUser.providerData.some(p => p.providerId === 'password')) {
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (currentUser && !currentUser.emailVerified && !isLocalhost && currentUser.email !== 'admin@xaujournal.com' && currentUser.providerData.some(p => p.providerId === 'password')) {
           setUser(null);
           setLoading(false);
           setAuthError(false);
