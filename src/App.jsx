@@ -155,6 +155,15 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth,
       (currentUser) => {
         clearTimeout(timeout);
+        
+        // Intercept unverified email/password accounts to prevent UI flashes
+        if (currentUser && !currentUser.emailVerified && currentUser.providerData.some(p => p.providerId === 'password')) {
+          setUser(null);
+          setLoading(false);
+          setAuthError(false);
+          return;
+        }
+
         setUser(currentUser);
         setLoading(false);
         setAuthError(false);

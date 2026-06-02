@@ -6,12 +6,38 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   updateProfile,
+  sendEmailVerification,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, auth, googleProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 import { getFriendlyErrorMessage } from './lib/errorUtils';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from './hooks/useAppTheme';
+
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com',
+  'tempmail.com',
+  'yopmail.com',
+  '10minutemail.com',
+  'guerrillamail.com',
+  'sharklasers.com',
+  'dispostable.com',
+  'getairmail.com',
+  'maildrop.cc',
+  'trashmail.com',
+  'burnermail.io',
+  'temp-mail.org',
+  'tempmailo.com',
+  'disposable.com',
+  'fake.com',
+  'fakeemail.com'
+]);
+
+function isDisposableEmail(email) {
+  if (!email || !email.includes('@')) return false;
+  const domain = email.split('@').pop().toLowerCase().trim();
+  return DISPOSABLE_DOMAINS.has(domain);
+}
 
 function Login() {
   const location = useLocation();
@@ -144,6 +170,10 @@ function Login() {
       }
 
       if (isSignUp) {
+        if (isDisposableEmail(email)) {
+          throw new Error('auth/disposable-email');
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
@@ -173,8 +203,23 @@ function Login() {
         if (!initResponse.ok) {
           throw new Error('Failed to initialize user subscription.');
         }
+
+        // Send email verification and sign out immediately
+        await sendEmailVerification(user);
+        await auth.signOut();
+
+        setIsSignUp(false);
+        setMessage('Account created! A verification link has been sent to your email. Please verify your email before logging in.');
+        setLoading(false);
+        return;
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        if (!user.emailVerified) {
+          await auth.signOut();
+          throw new Error('auth/unverified-email');
+        }
       }
       localStorage.setItem('xau-auth-hint', 'true');
 
