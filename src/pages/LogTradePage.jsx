@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext, useLocation } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
+import { AnimatePresence } from 'framer-motion';
 import { calcPnl, todayStr, formatCurrency } from '../lib/tradeUtils';
 import { useToast } from '../components/ToastContext';
 import { ArrowUpRight, ArrowDownRight, BarChartLine, ExclamationTriangleFill, LockFill, CloudArrowUp, Trash } from 'react-bootstrap-icons';
