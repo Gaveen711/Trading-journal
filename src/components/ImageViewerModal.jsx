@@ -1,7 +1,10 @@
-import { XLg } from 'react-bootstrap-icons';
+import { useState } from 'react';
+import { XLg, ExclamationTriangleFill } from 'react-bootstrap-icons';
 import { motion } from 'framer-motion';
 
 export function ImageViewerModal({ imageUrl, onClose }) {
+  const [hasError, setHasError] = useState(false);
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -21,11 +24,24 @@ export function ImageViewerModal({ imageUrl, onClose }) {
         transition={{ type: 'spring', damping: 26, stiffness: 280 }}
         className="relative max-w-5xl max-h-[85vh] flex items-center justify-center z-10 pointer-events-none"
       >
-        <img
-          src={imageUrl}
-          alt="Full screen preview"
-          className="max-w-[90vw] max-h-[80vh] object-contain rounded-2xl border border-white/10 shadow-2xl pointer-events-auto"
-        />
+        {hasError ? (
+          <div className="flex flex-col items-center justify-center gap-4 bg-card/90 border border-border/40 w-[320px] p-8 rounded-2xl text-center pointer-events-auto shadow-2xl backdrop-blur-xl animate-in zoom-in-95 duration-300">
+            <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-1">
+              <ExclamationTriangleFill className="w-6 h-6 text-destructive" />
+            </div>
+            <span className="text-xs font-black uppercase text-foreground tracking-wider">Failed to Load Image</span>
+            <p className="text-[10px] text-muted-foreground leading-relaxed font-bold uppercase tracking-wider">
+              Verify your connection or Firebase storage permissions.
+            </p>
+          </div>
+        ) : (
+          <img
+            src={imageUrl}
+            alt="Full screen preview"
+            className="max-w-[90vw] max-h-[80vh] object-contain rounded-2xl border border-white/10 shadow-2xl pointer-events-auto"
+            onError={() => setHasError(true)}
+          />
+        )}
 
         {/* Close Button */}
         <button
