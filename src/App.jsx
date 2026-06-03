@@ -31,7 +31,7 @@ const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage.jsx').then(
 const PricingPage = lazy(() => import('./pages/PricingPage.jsx').then(m => ({ default: m.PricingPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage.jsx').then(m => ({ default: m.ContactPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
-const TheStoryPage = lazy(() => import('./pages/TheStory.jsx'));
+const TheStoryPage = lazy(() => import('./pages/TheStoryPage.jsx'));
 const Login = lazy(() => import('./Login.jsx'));
 
 const PageLoader = ({ text = "Syncing Terminal" }) => (

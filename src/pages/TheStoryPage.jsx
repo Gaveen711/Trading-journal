@@ -699,7 +699,7 @@ export default function TheStoryPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
-  
+
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -758,7 +758,7 @@ export default function TheStoryPage() {
       gsap.ticker.lagSmoothing(0);
 
       ctx = gsap.context(() => {
-        
+
         /* ── HERO WORD-BASED CHAR SPLIT ANIMATION ── */
         const hl = document.getElementById('xj-hero-headline');
         if (hl) {
@@ -772,7 +772,7 @@ export default function TheStoryPage() {
                 const wordSpan = document.createElement('span');
                 wordSpan.style.display = 'inline-block';
                 wordSpan.style.whiteSpace = 'nowrap';
-                
+
                 word.split('').forEach(ch => {
                   const s = document.createElement('span');
                   s.className = 'char';
@@ -782,7 +782,7 @@ export default function TheStoryPage() {
                   wordSpan.appendChild(s);
                 });
                 hl.appendChild(wordSpan);
-                
+
                 if (wordIdx < words.length - 1) {
                   const spaceSpan = document.createElement('span');
                   spaceSpan.style.display = 'inline-block';
@@ -794,13 +794,13 @@ export default function TheStoryPage() {
               const emNode = node;
               const emText = emNode.textContent;
               emNode.innerHTML = '';
-              
+
               const words = emText.split(' ');
               words.forEach((word, wordIdx) => {
                 const wordSpan = document.createElement('span');
                 wordSpan.style.display = 'inline-block';
                 wordSpan.style.whiteSpace = 'nowrap';
-                
+
                 word.split('').forEach(ch => {
                   const s = document.createElement('span');
                   s.className = 'char';
@@ -810,7 +810,7 @@ export default function TheStoryPage() {
                   wordSpan.appendChild(s);
                 });
                 emNode.appendChild(wordSpan);
-                
+
                 if (wordIdx < words.length - 1) {
                   const spaceSpan = document.createElement('span');
                   spaceSpan.style.display = 'inline-block';
@@ -875,7 +875,7 @@ export default function TheStoryPage() {
           gsap.fromTo({ val: 0 }, { val: target }, {
             duration: 1.6,
             ease: 'power2.out',
-            onUpdate: function() { el.textContent = Math.round(this.targets()[0].val); },
+            onUpdate: function () { el.textContent = Math.round(this.targets()[0].val); },
             scrollTrigger: {
               trigger: el,
               start: 'top 85%',
@@ -1252,7 +1252,7 @@ export default function TheStoryPage() {
           </h2>
           <p className="xj-body-copy reveal-up font-medium">I remember the exact session that broke me. A choppy London open on XAUUSD, eight trades, and an afternoon of trying to make sense of it all. The journal I was using didn't know gold's pip value. It calculated my drawdown wrong. The P&L figures were completely off.</p>
           <p className="xj-body-copy reveal-up font-medium">And the worst part — I had to enter every single trade manually. After spending four hours watching the chart, I had to spend another hour doing data entry. That's not analysis. That's administration.</p>
-          
+
           <div className="xj-pull-quote reveal-up">
             <p>I was spending more time logging trades than actually learning from them. Something was fundamentally broken.</p>
           </div>
