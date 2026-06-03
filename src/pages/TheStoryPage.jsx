@@ -667,8 +667,11 @@ const STYLES = `
   /* ── MOBILE MEDIA QUERIES ── */
   @media (max-width: 768px) {
     .xj-hero {
-      padding: 80px 24px 60px;
-      min-height: auto;
+      padding: 140px 24px 100px;
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .xj-hero-badge {
       margin-bottom: 24px;
