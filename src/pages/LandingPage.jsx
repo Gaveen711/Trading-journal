@@ -1164,9 +1164,17 @@ function ScaleTimeline() {
       const pathProgress = document.querySelector("#scale-path-progress");
       if (pathBg) pathBg.setAttribute("d", d);
       if (pathProgress) pathProgress.setAttribute("d", d);
-
       ctx = gsap.context(() => {
-        gsap.set(cards, { opacity: 0.3, scale: 0.95, y: 30 });
+        cards.forEach((card, index) => {
+          const item = TIMELINE_ITEMS[index];
+          const isLeft = item ? item.side === 'left' : true;
+          gsap.set(card, { 
+            opacity: 0.1, 
+            scale: 0.9, 
+            y: 15,
+            x: isLeft ? -100 : 100 
+          });
+        });
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -1221,7 +1229,8 @@ function ScaleTimeline() {
             opacity: 1,
             scale: 1,
             y: 0,
-            duration: 0.02, // Quick reaction
+            x: 0,
+            duration: 0.05, // Smooth slide duration
             ease: "power2.out",
             onStart: () => card.classList.add('rgb-active'),
             onReverseComplete: () => card.classList.remove('rgb-active')
