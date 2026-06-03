@@ -23,30 +23,6 @@ const STYLES = `
     overflow: hidden;
   }
 
-  /* ── CUSTOM CURSOR ── */
-  #xj-cursor {
-    position: fixed;
-    width: 10px; height: 10px;
-    background: var(--violet);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%,-50%);
-    transition: transform 0.08s linear, width 0.3s ease, height 0.3s ease, background 0.3s ease;
-    mix-blend-mode: difference;
-    opacity: 0;
-  }
-  #xj-cursor-ring {
-    position: fixed;
-    width: 36px; height: 36px;
-    border: 1.5px solid var(--violet-light);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9998;
-    transform: translate(-50%,-50%);
-    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), width 0.4s ease, height 0.4s ease, opacity 0.3s ease;
-    opacity: 0;
-  }
 
   /* ── NOISE GRAIN OVERLAY ── */
   .xj-story-container::before {
@@ -142,6 +118,7 @@ const STYLES = `
     color: var(--ink);
     margin-bottom: 32px;
     overflow: hidden;
+    opacity: 0;
   }
   .xj-hero-headline em {
     font-style: italic;
@@ -246,6 +223,7 @@ const STYLES = `
     display: flex;
     align-items: center;
     gap: 12px;
+    opacity: 0;
   }
   .xj-section-label::before {
     content: '';
@@ -275,6 +253,10 @@ const STYLES = `
     line-height: 1.85;
     margin-bottom: 24px;
     font-weight: 300;
+  }
+
+  .reveal-up {
+    opacity: 0;
   }
 
   /* ── PULL QUOTE ── */
@@ -351,6 +333,24 @@ const STYLES = `
     position: relative;
     z-index: 1;
   }
+  .xj-hscroll-outer::before,
+  .xj-hscroll-outer::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 150px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .xj-hscroll-outer::before {
+    top: 0;
+    background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+  }
+  .xj-hscroll-outer::after {
+    bottom: 0;
+    background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+  }
   .xj-hscroll-pin {
     overflow: hidden;
     position: relative;
@@ -367,21 +367,30 @@ const STYLES = `
     justify-content: center;
     padding: 80px;
     flex-shrink: 0;
+    background-color: #0b1120;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), 
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    background-position: center;
   }
-  .xj-hscroll-panel:nth-child(1) { background: var(--hscroll-bg1); }
-  .xj-hscroll-panel:nth-child(2) { background: var(--hscroll-bg2); }
-  .xj-hscroll-panel:nth-child(3) { background: var(--hscroll-bg3); }
-  .xj-hscroll-panel:nth-child(4) { background: var(--hscroll-bg4); }
 
   .xj-panel-inner {
-    max-width: 520px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 60px 50px;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    text-align: center;
+    max-width: 640px;
+    position: relative;
   }
   .xj-panel-number {
     font-family: 'Poppins', sans-serif;
-    font-size: 120px;
+    font-size: 140px;
     line-height: 1;
     margin-bottom: 24px;
-    opacity: 0.12;
     letter-spacing: -0.04em;
     font-weight: 900;
   }
@@ -389,22 +398,22 @@ const STYLES = `
     font-family: 'Poppins', sans-serif;
     font-size: 38px;
     line-height: 1.15;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     letter-spacing: -0.015em;
-    color: var(--ink);
+    color: #ffffff;
     font-weight: 800;
   }
   .xj-panel-inner p {
     font-size: 16px;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.7);
     line-height: 1.8;
-    font-weight: 300;
+    font-weight: 400;
   }
 
-  .xj-hscroll-panel:nth-child(1) .xj-panel-number { color: var(--violet); }
-  .xj-hscroll-panel:nth-child(2) .xj-panel-number { color: var(--gold); }
-  .xj-hscroll-panel:nth-child(3) .xj-panel-number { color: #2563eb; }
-  .xj-hscroll-panel:nth-child(4) .xj-panel-number { color: #16a34a; }
+  .xj-hscroll-panel:nth-child(1) .xj-panel-number { color: #c4b5fd; text-shadow: 0 0 50px rgba(139,92,246,0.5); }
+  .xj-hscroll-panel:nth-child(2) .xj-panel-number { color: #fde68a; text-shadow: 0 0 50px rgba(245,158,11,0.5); }
+  .xj-hscroll-panel:nth-child(3) .xj-panel-number { color: #93c5fd; text-shadow: 0 0 50px rgba(59,130,246,0.5); }
+  .xj-hscroll-panel:nth-child(4) .xj-panel-number { color: #86efac; text-shadow: 0 0 50px rgba(34,197,94,0.5); }
 
   /* progress pills for hscroll */
   .xj-hscroll-nav {
@@ -652,8 +661,52 @@ const STYLES = `
   .xj-chapter-strip::before, .xj-chapter-strip::after {
     content: '';
     flex: 1;
-    height: 1px;
     background: linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent);
+  }
+
+  /* ── MOBILE MEDIA QUERIES ── */
+  @media (max-width: 768px) {
+    .xj-hero {
+      padding: 80px 24px 60px;
+      min-height: auto;
+    }
+    .xj-hero-badge {
+      margin-bottom: 24px;
+    }
+    .xj-hero-headline {
+      font-size: 46px;
+      margin-bottom: 24px;
+    }
+    .xj-content-section {
+      padding: 60px 24px;
+    }
+    .xj-stats-row {
+      flex-direction: column;
+      margin: 40px 0;
+    }
+    .xj-stat-item {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 24px 20px;
+    }
+    .xj-stat-item:last-child {
+      border-bottom: none;
+    }
+    .xj-hscroll-panel {
+      padding: 40px 20px;
+    }
+    .xj-panel-inner {
+      padding: 40px 24px;
+    }
+    .xj-panel-number {
+      font-size: 80px;
+    }
+    .xj-ptext-line span {
+      font-size: 40px;
+    }
+    .xj-parallax-text-section {
+      padding: 40px 0;
+    }
   }
 `;
 
@@ -665,16 +718,16 @@ const MARQUEE_ITEMS = [
 
 const FEATURES = [
   { icon: "⚡", tag: "Live Sync", title: "MT5 MetaApi Bridge", body: "Secure server-side connection via MetaApi. Your broker credentials never touch the client. Firebase Cloud Functions handle the sync pipeline end-to-end." },
-  { icon: "📊", tag: "Analytics", title: "Drawdown & Equity Curve", body: "Visual equity progression and max drawdown tracking built to gold's specs. Know exactly where your edge starts to break down — before it costs you." },
-  { icon: "🗓", tag: "Patterns", title: "Day & Session Heatmap", body: "A full calendar view of daily P&L with session overlays. Spot the time windows where your strategy works — and where it doesn't." },
+  { icon: "📊", tag: "Analytics", title: "Drawdown & Equity Curve", body: "Visual equity progression and max drawdown tracking built to gold's specs. Know exactly where your edge starts to break down before it costs you." },
+  { icon: "🗓", tag: "Patterns", title: "Day & Session Heatmap", body: "A full calendar view of daily P&L with session overlays. Spot the time windows where your strategy works and where it doesn't." },
   { icon: "🧠", tag: "Psychology", title: "Pre-Trade Mindset Log", body: "Rate your focus, confidence, and emotional state before entering positions. Correlate mindset scores with trade outcomes over time. Pattern recognition for your head, not just your chart." },
 ];
 
 const PANELS = [
   { num: "01", title: "Zero-Friction Trade Capture", body: "A custom MT5 Expert Advisor watches your positions in real time. The moment a XAUUSD trade closes, it's in your journal. No copy-paste. No manual entry. No data lag." },
-  { num: "02", title: "Gold-Native Calculations", body: "P&L, pip value, and drawdown calculated using gold's actual contract size of 100 oz — not a retrofitted forex formula. Every number in XAU Journal means exactly what it should." },
+  { num: "02", title: "Gold-Native Calculations", body: "P&L, pip value, and drawdown calculated using gold's actual contract size of 100 oz, not a retrofitted forex formula. Every number in XAU Journal means exactly what it should." },
   { num: "03", title: "Calendar Heatmap & Session Stats", body: "See your performance across London, New York, and Asian sessions. Identify the days you overtrade. Spot your highest-probability setup windows at a glance." },
-  { num: "04", title: "Mindset & Risk Journal", body: "Log your psychological state alongside technical entries. Because in gold — where $10 a pip swings are routine — your mindset is part of your edge, not separate from it." },
+  { num: "04", title: "Mindset & Risk Journal", body: "Log your psychological state alongside technical entries. Because in gold, where $10 a pip swings are routine, your mindset is part of your edge, not separate from it." },
 ];
 
 const MANIFESTO = [
@@ -693,15 +746,6 @@ export default function TheStoryPage() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // Inject styles
-    const id = "xj-story-new-styles";
-    if (!document.getElementById(id)) {
-      const tag = document.createElement("style");
-      tag.id = id;
-      tag.textContent = STYLES;
-      document.head.appendChild(tag);
-    }
-
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -713,12 +757,6 @@ export default function TheStoryPage() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-    let rafId;
-    function raf(time) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
 
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -807,6 +845,7 @@ export default function TheStoryPage() {
           }
         });
 
+        hl.style.opacity = 1;
         gsap.to(hl.querySelectorAll('.char'), {
           y: 0,
           duration: 0.7,
@@ -961,7 +1000,6 @@ export default function TheStoryPage() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
-      cancelAnimationFrame(rafId);
       document.body.style.overflow = '';
       if (ctx) ctx.revert();
       if (updateLenis) {
@@ -1061,7 +1099,7 @@ export default function TheStoryPage() {
   };
 
   const navLinks = [
-    { to: '/#features', label: 'How it works' },
+    { to: '/', label: 'How it works' },
     { to: '/the-story', label: 'The Story' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' }
@@ -1069,6 +1107,7 @@ export default function TheStoryPage() {
 
   return (
     <div className="xj-story-container" style={themeVariables} ref={containerRef}>
+      <style>{STYLES}</style>
       {/* Progress Bar */}
       <div id="xj-progress-bar" />
 
@@ -1203,7 +1242,7 @@ export default function TheStoryPage() {
         <h1 className="xj-hero-headline" id="xj-hero-headline">
           Not just another<br />startup.<br /><em>A necessary tool.</em>
         </h1>
-        <p className="xj-hero-sub font-medium">XAU Journal didn't come from a product roadmap. It came from years of watching gold traders — including myself — manage their edge inside spreadsheets that had no idea what XAUUSD actually was.</p>
+        <p className="xj-hero-sub font-medium">XAU Journal didn't come from a product roadmap. It came from years of watching gold traders, including myself, manage their edge inside spreadsheets that had no idea what XAUUSD actually was.</p>
 
         <div className="xj-hero-scroll-hint" id="xj-scroll-hint">
           <span>Scroll</span>
@@ -1232,7 +1271,7 @@ export default function TheStoryPage() {
             <span className="line"><span className="inner"><em>afterthought.</em></span></span>
           </h2>
           <p className="xj-body-copy reveal-up font-medium">I remember the exact session that broke me. A choppy London open on XAUUSD, eight trades, and an afternoon of trying to make sense of it all. The journal I was using didn't know gold's pip value. It calculated my drawdown wrong. The P&L figures were completely off.</p>
-          <p className="xj-body-copy reveal-up font-medium">And the worst part — I had to enter every single trade manually. After spending four hours watching the chart, I had to spend another hour doing data entry. That's not analysis. That's administration.</p>
+          <p className="xj-body-copy reveal-up font-medium">And the worst part I had to enter every single trade manually. After spending four hours watching the chart, I had to spend another hour doing data entry. That's not analysis. That's administration.</p>
 
           <div className="xj-pull-quote reveal-up">
             <p>I was spending more time logging trades than actually learning from them. Something was fundamentally broken.</p>
@@ -1319,7 +1358,7 @@ export default function TheStoryPage() {
             <span className="line"><span className="inner">everyone. That's precisely</span></span>
             <span className="line"><span className="inner"><em>why they fail specialists.</em></span></span>
           </h2>
-          <p className="xj-body-copy reveal-up font-medium">Forex journals calculate pip value assuming a standard contract. Gold doesn't work that way. At 100 oz per lot, a 1-pip move on XAUUSD is worth $1 — but the pip itself is a $0.01 price move, not a $0.0001 move like EUR/USD. Get that wrong and every drawdown curve, every expectancy calculation, every risk-reward ratio in your journal is lying to you.</p>
+          <p className="xj-body-copy reveal-up font-medium">Forex journals calculate pip value assuming a standard contract. Gold doesn't work that way. At 100 oz per lot, a 1-pip move on XAUUSD is worth $1,but the pip itself is a $0.01 price move, not a $0.0001 move like EUR/USD. Get that wrong and every drawdown curve, every expectancy calculation, every risk-reward ratio in your journal is lying to you.</p>
           <p className="xj-body-copy reveal-up font-medium">XAU Journal is calibrated specifically for this. It doesn't support EUR/USD because it doesn't need to. One instrument, done properly, is worth more than thirty instruments done badly.</p>
 
           <div className="xj-features-grid">

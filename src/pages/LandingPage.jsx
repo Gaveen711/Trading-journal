@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from 'framer-motion';
 import Lenis from 'lenis';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 
@@ -372,6 +372,31 @@ function ScrollProgress() {
   );
 }
 
+/* ─── Animated Text for Hero ─── */
+function AnimatedText({ text, className = '' }) {
+  const letterVariants = {
+    hidden: { y: "110%" },
+    visible: { y: "0%", transition: { ease: [0.16, 1, 0.3, 1], duration: 0.8 } }
+  };
+  return (
+    <span className={`inline-flex flex-wrap justify-center pb-2 ${className}`}>
+      {text.split(' ').map((word, i, arr) => (
+        <span key={i} className={`inline-block whitespace-nowrap overflow-hidden ${i < arr.length - 1 ? 'mr-[0.25em]' : ''}`}>
+          {word.split('').map((char, j) => (
+            <Motion.span
+              key={j}
+              variants={letterVariants}
+              className="inline-block"
+            >
+              {char}
+            </Motion.span>
+          ))}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /* ─── Main landing ─── */
 export function LandingPage() {
   const navigate = useNavigate();
@@ -464,7 +489,7 @@ export function LandingPage() {
   };
 
   const navLinks = [
-    { to: '/#features', label: 'How it works' },
+    { to: '/', label: 'How it works' },
     { to: '/the-story', label: 'The Story' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' },
@@ -505,7 +530,12 @@ export function LandingPage() {
                 <NavLink
                   to={to}
                   onClick={(e) => {
-                    if (to.startsWith('/#')) {
+                    if (to === '/') {
+                      if (window.location.pathname === '/') {
+                        e.preventDefault();
+                        lenisRef.current?.scrollTo(0, { duration: 1.2 });
+                      }
+                    } else if (to.startsWith('/#')) {
                       const hash = to.split('#')[1];
                       if (window.location.pathname === '/') {
                         e.preventDefault();
@@ -553,7 +583,21 @@ export function LandingPage() {
               </button>
               <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
                 {navLinks.map(({ to, label }) => (
-                  <NavLink key={to} to={to} onClick={(e) => { setMobileMenuOpen(false); if (to.startsWith('/#')) { const hash = to.split('#')[1]; if (window.location.pathname === '/') { e.preventDefault(); lenisRef.current?.scrollTo('#' + hash, { duration: 1.2 }); } } }} className="text-3xl font-bold tracking-tight hover:text-primary transition-colors">
+                  <NavLink key={to} to={to} onClick={(e) => { 
+                    setMobileMenuOpen(false); 
+                    if (to === '/') {
+                      if (window.location.pathname === '/') {
+                        e.preventDefault();
+                        lenisRef.current?.scrollTo(0, { duration: 1.2 });
+                      }
+                    } else if (to.startsWith('/#')) { 
+                      const hash = to.split('#')[1]; 
+                      if (window.location.pathname === '/') { 
+                        e.preventDefault(); 
+                        lenisRef.current?.scrollTo('#' + hash, { duration: 1.2 }); 
+                      } 
+                    } 
+                  }} className="text-3xl font-bold tracking-tight hover:text-primary transition-colors">
                     {label}
                   </NavLink>
                 ))}
@@ -582,10 +626,23 @@ export function LandingPage() {
                 Exclusively for Gold Traders
               </Motion.div>
 
-              <Motion.div variants={itemVariants}>
-                <h1 className="!text-[clamp(2.5rem,8.5vw,6.25rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
-                  Every trade <br />you make <br />
-                  <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic">tells a story.</span>
+              <Motion.div variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: {
+                  opacity: 1, 
+                  y: 0, 
+                  transition: { 
+                    type: 'spring', 
+                    stiffness: 300, 
+                    damping: 24,
+                    staggerChildren: 0.02
+                  }
+                }
+              }}>
+                <h1 className="!text-[clamp(2.5rem,8.5vw,6.25rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground flex flex-col items-center">
+                  <AnimatedText text="Every trade" />
+                  <AnimatedText text="you make" />
+                  <AnimatedText text="tells a story." className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic" />
                 </h1>
               </Motion.div>
 
@@ -1046,30 +1103,40 @@ function ScaleTimeline() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const checkDesktop = () => window.innerWidth >= 768;
     let ctx;
 
     function initScaleGSAP() {
       if (ctx) ctx.revert();
-      if (!checkDesktop()) return;
 
       const container = document.querySelector("#scale-timeline-container");
-      const markers = document.querySelectorAll("#scale-timeline-container .marker");
+      const startNode = document.querySelector("#timeline-start-node");
       const cards = document.querySelectorAll("#scale-timeline-container .timeline-card");
       const box = document.querySelector(".scale-box");
 
-      if (!container || markers.length === 0 || !box) return;
+      if (!container || cards.length === 0 || !box || !startNode) return;
 
       const containerRect = container.getBoundingClientRect();
+      const startR = startNode.getBoundingClientRect();
+      
+      const p0 = {
+        x: startR.left + startR.width / 2 - containerRect.left,
+        y: startR.top + startR.height / 2 - containerRect.top
+      };
 
-      // Calculate center coordinates of markers relative to container
-      const points = Array.from(markers).map((marker) => {
-        const r = marker.getBoundingClientRect();
+      // Calculate connection points of cards relative to container (using centers)
+      const cardPoints = Array.from(cards).map((card) => {
+        const r = card.getBoundingClientRect();
         return {
           x: r.left + r.width / 2 - containerRect.left,
           y: r.top + r.height / 2 - containerRect.top
         };
       });
+
+      // Add a final point extending straight down from the last card
+      const lastPoint = cardPoints[cardPoints.length - 1];
+      const pFinal = { x: lastPoint.x, y: lastPoint.y + 150 };
+
+      const points = [p0, ...cardPoints, pFinal];
 
       // Build SVG path data (smooth S-curve snaking through all waypoints)
       let d = "";
@@ -1079,10 +1146,16 @@ function ScaleTimeline() {
           const pStart = points[i];
           const pEnd = points[i + 1];
           const dy = pEnd.y - pStart.y;
-          const cp1x = pStart.x;
-          const cp1y = pStart.y + dy / 2;
-          const cp2x = pEnd.x;
-          const cp2y = pEnd.y - dy / 2;
+          
+          // True snake weave: Alternate sweeping left and right
+          const isLeftSweep = (i % 2 === 0);
+          const sweep = containerRect.width * 0.35; // 35% of container width for a wide, dramatic swoop
+          
+          const cp1x = isLeftSweep ? pStart.x - sweep : pStart.x + sweep;
+          const cp1y = pStart.y + dy * 0.5;
+          const cp2x = isLeftSweep ? pEnd.x - sweep : pEnd.x + sweep;
+          const cp2y = pEnd.y - dy * 0.5;
+          
           d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${pEnd.x} ${pEnd.y}`;
         }
       }
@@ -1093,31 +1166,21 @@ function ScaleTimeline() {
       if (pathProgress) pathProgress.setAttribute("d", d);
 
       ctx = gsap.context(() => {
-        // Set initial states for cards and markers on desktop before scroll triggers run
-        gsap.set(cards, { opacity: 0.25, scale: 0.95, y: 30 });
-        gsap.set(markers, { scale: 0.9, rotation: 0, backgroundColor: "#09090b", borderColor: "rgba(139, 92, 246, 0.35)", boxShadow: "none" });
+        gsap.set(cards, { opacity: 0.3, scale: 0.95, y: 30 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: "#scale-timeline-container",
             start: "top 35%",
-            end: "bottom 65%",
-            scrub: 1,
+            end: "bottom 95%",
+            scrub: 4,
           }
         });
 
         // 1. Fade in and scale up the box at the start
-        tl.fromTo(".scale-box", {
-          opacity: 0,
-          scale: 0.3
-        }, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.1,
-          ease: "power1.out"
-        });
+        tl.fromTo(".scale-box", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.1, ease: "power1.out" });
 
-        // 2. Animate box along motion path with auto-rotation
+        // 2. Animate box along motion path
         tl.to(".scale-box", {
           duration: 0.8,
           ease: "none",
@@ -1132,11 +1195,11 @@ function ScaleTimeline() {
         // 2.1 Animate RGB color cycling and glow on the scale-box
         tl.to(".scale-box", {
           keyframes: [
-            { backgroundColor: "#8b5cf6", boxShadow: "0 0 20px rgba(139, 92, 246, 0.95)", duration: 0.16 }, // Purple
-            { backgroundColor: "#ec4899", boxShadow: "0 0 20px rgba(236, 72, 153, 0.95)", duration: 0.16 }, // Pink
-            { backgroundColor: "#ef4444", boxShadow: "0 0 20px rgba(239, 68, 68, 0.95)", duration: 0.16 },  // Red
-            { backgroundColor: "#f59e0b", boxShadow: "0 0 20px rgba(245, 158, 11, 0.95)", duration: 0.16 },  // Gold
-            { backgroundColor: "#10b981", boxShadow: "0 0 20px rgba(16, 185, 129, 0.95)", duration: 0.16 }  // Emerald
+            { backgroundColor: "#8b5cf6", boxShadow: "0 0 20px rgba(139, 92, 246, 0.95)", duration: 0.16 },
+            { backgroundColor: "#ec4899", boxShadow: "0 0 20px rgba(236, 72, 153, 0.95)", duration: 0.16 },
+            { backgroundColor: "#ef4444", boxShadow: "0 0 20px rgba(239, 68, 68, 0.95)", duration: 0.16 },
+            { backgroundColor: "#f59e0b", boxShadow: "0 0 20px rgba(245, 158, 11, 0.95)", duration: 0.16 },
+            { backgroundColor: "#10b981", boxShadow: "0 0 20px rgba(16, 185, 129, 0.95)", duration: 0.16 }
           ],
           ease: "none",
           duration: 0.8
@@ -1145,59 +1208,28 @@ function ScaleTimeline() {
         // 3. Animate progress path draw-in
         if (pathProgress) {
           const length = pathProgress.getTotalLength();
-          gsap.set(pathProgress, {
-            strokeDasharray: length,
-            strokeDashoffset: length,
-            opacity: 1
-          });
-
-          tl.to(pathProgress, {
-            strokeDashoffset: 0,
-            duration: 0.8,
-            ease: "none"
-          }, 0);
+          gsap.set(pathProgress, { strokeDasharray: length, strokeDashoffset: length, opacity: 1 });
+          tl.to(pathProgress, { strokeDashoffset: 0, duration: 0.8, ease: "none" }, 0);
         }
 
-        // 4. Animate each card and marker activation as the box passes
-        markers.forEach((marker, index) => {
-          const card = cards[index];
-          const t = (index / (markers.length - 1)) * 0.8;
+        // 4. Animate cards as the box passes
+        cards.forEach((card, index) => {
+          // Accurate calculation: segments = cards.length + 1
+          const t = ((index + 1) / (cards.length + 1)) * 0.8;
 
-          // Define specific glowing colors for each waypoint matching the orb's color at that position!
-          const activeColors = ["#8b5cf6", "#ec4899", "#ef4444", "#f59e0b", "#10b981", "#06b6d4"];
-          const glowColor = activeColors[index];
-
-          tl.to(marker, {
-            scale: 1.15,
-            rotation: 90,
-            backgroundColor: `${glowColor}15`,
-            borderColor: glowColor,
-            boxShadow: `0 0 15px ${glowColor}80`,
-            duration: 0.1,
-            ease: "power1.out"
-          }, t);
-
-          if (card) {
-            tl.to(card, {
-              opacity: 1,
-              scale: 1,
-              y: 0,
-              borderColor: `${glowColor}80`,
-              backgroundColor: `${glowColor}10`,
-              boxShadow: `0 10px 30px ${glowColor}25`,
-              duration: 0.15,
-              ease: "power1.out"
-            }, t);
-          }
+          tl.to(card, {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.02, // Quick reaction
+            ease: "power2.out",
+            onStart: () => card.classList.add('rgb-active'),
+            onReverseComplete: () => card.classList.remove('rgb-active')
+          }, Math.max(0, t - 0.02)); // Trigger right as it reaches the edge
         });
 
         // 5. Fade out and scale down the box at the end
-        tl.to(".scale-box", {
-          opacity: 0,
-          scale: 0.3,
-          duration: 0.1,
-          ease: "power1.in"
-        });
+        tl.to(".scale-box", { opacity: 0, scale: 0.3, duration: 0.1, ease: "power1.in" });
       });
     }
 
@@ -1213,15 +1245,26 @@ function ScaleTimeline() {
 
   return (
     <section ref={containerRef} className="relative z-10 py-20 md:py-28 px-6 overflow-hidden">
+      <style>{`
+        @keyframes rgbBorderGlow {
+          0% { border-color: rgba(139, 92, 246, 0.8); box-shadow: 0 10px 30px rgba(139, 92, 246, 0.25); background-color: rgba(139, 92, 246, 0.1); }
+          20% { border-color: rgba(236, 72, 153, 0.8); box-shadow: 0 10px 30px rgba(236, 72, 153, 0.25); background-color: rgba(236, 72, 153, 0.1); }
+          40% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.25); background-color: rgba(239, 68, 68, 0.1); }
+          60% { border-color: rgba(245, 158, 11, 0.8); box-shadow: 0 10px 30px rgba(245, 158, 11, 0.25); background-color: rgba(245, 158, 11, 0.1); }
+          80% { border-color: rgba(16, 185, 129, 0.8); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.25); background-color: rgba(16, 185, 129, 0.1); }
+          100% { border-color: rgba(139, 92, 246, 0.8); box-shadow: 0 10px 30px rgba(139, 92, 246, 0.25); background-color: rgba(139, 92, 246, 0.1); }
+        }
+        .rgb-active {
+          animation: rgbBorderGlow 4s linear infinite;
+        }
+      `}</style>
       <div className="max-w-4xl mx-auto">
-
-        {/* Heading */}
         <Motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, margin: '-60px' }}
           transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-16 md:mb-20"
+          className="text-center mb-16 md:mb-20 relative z-20"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest mb-5">
             <Stars className="w-3 h-3" /> Architecture
@@ -1230,31 +1273,14 @@ function ScaleTimeline() {
           <p className="text-base md:text-lg text-muted-foreground font-medium max-w-xl mx-auto leading-relaxed">
             An institutional-grade pipeline ensures your data is always synced, secured, and ready for analysis.
           </p>
+          <div id="timeline-start-node" className="absolute left-1/2 -bottom-2 w-1 h-1 bg-transparent" />
         </Motion.div>
 
-        {/* Timeline */}
         <div id="scale-timeline-container" className="relative">
-
-          {/* Curvy background and active path track (SVG) */}
-          <div className="hidden md:block absolute inset-0 pointer-events-none z-0">
+          <div className="absolute inset-0 pointer-events-none z-0">
             <svg className="w-full h-full">
-              {/* Background Dashed Path */}
-              <path
-                id="scale-path"
-                fill="none"
-                stroke="rgba(139, 92, 246, 0.12)"
-                strokeWidth="2.5"
-                strokeDasharray="6 6"
-              />
-              {/* Progress Solid Glowing Path */}
-              <path
-                id="scale-path-progress"
-                fill="none"
-                stroke="url(#scale-glow-gradient)"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                className="opacity-0"
-              />
+              <path id="scale-path" fill="none" stroke="rgba(139, 92, 246, 0.12)" strokeWidth="2.5" strokeDasharray="6 6" />
+              <path id="scale-path-progress" fill="none" stroke="url(#scale-glow-gradient)" strokeWidth="3.5" strokeLinecap="round" className="opacity-0" />
               <defs>
                 <linearGradient id="scale-glow-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#8b5cf6" />
@@ -1266,7 +1292,6 @@ function ScaleTimeline() {
             </svg>
           </div>
 
-          {/* Traveling Gold Orb (Square Diamond shape matching GSAP demo) */}
           <div
             className="scale-box absolute w-5 h-5 rounded-md bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 shadow-[0_0_15px_rgba(245,158,11,0.85),_0_0_30px_rgba(245,158,11,0.5)] border border-white flex items-center justify-center z-20 pointer-events-none opacity-0"
             style={{ left: 0, top: 0 }}
@@ -1274,91 +1299,23 @@ function ScaleTimeline() {
             <div className="w-1.5 h-1.5 rounded-sm bg-white shadow-[0_0_3px_#fff]" />
           </div>
 
-          {/* Cards */}
-          <div className="flex flex-col gap-20 md:gap-28">
+          <div className="flex flex-col gap-[15vh] md:gap-[30vh] relative z-10 py-[10vh] md:py-[20vh]">
             {TIMELINE_ITEMS.map((item) => {
               const isLeft = item.side === 'left';
               return (
-                <div key={item.label} className="relative flex items-center md:grid md:grid-cols-[1fr_40px_1fr] md:gap-8 py-8 md:py-16">
-
-                  {/* Left slot */}
-                  <div className={`hidden md:flex md:justify-end ${isLeft ? '' : 'md:invisible'}`}>
-                    {isLeft && (
-                      <Motion.div
-                        initial={{ opacity: 0, x: -80 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true, amount: 0.25 }}
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="timeline-card w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
-                      >
-                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                          {item.icon}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
-                        </div>
-                      </Motion.div>
-                    )}
-                  </div>
-
-                  {/* Center dot on the line (Dashed Square matching GSAP demo) */}
-                  <div className="hidden md:flex justify-center items-center relative z-10 w-[40px]">
+                 <div key={item.label} className={`flex w-full ${isLeft ? 'justify-start' : 'justify-end'}`}>
                     <Motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      whileInView={{ scale: [0, 1.2, 1], opacity: 1 }}
-                      viewport={{ once: true, amount: 0.25 }}
-                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      className={`marker w-7 h-7 rounded-lg border-2 border-dashed border-primary/30 bg-background/40 flex items-center justify-center relative z-10 transition-colors duration-500
-                        ${isLeft ? '-translate-x-[180px]' : 'translate-x-[180px]'}`}
-                    />
-                  </div>
-
-                  {/* Right slot */}
-                  <div className={`hidden md:flex md:justify-start ${!isLeft ? '' : 'md:invisible'}`}>
-                    {!isLeft && (
-                      <Motion.div
-                        initial={{ opacity: 0, x: 80 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true, amount: 0.25 }}
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="timeline-card w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
-                      >
-                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                          {item.icon}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
-                        </div>
-                      </Motion.div>
-                    )}
-                  </div>
-
-                  {/* Mobile: full-width stacked layout with left/right scroll animation */}
-                  <Motion.div
-                    initial={{ opacity: 0, x: isLeft ? -100 : 100 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, amount: 0.25 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="md:hidden w-full flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 transition-all duration-500 group"
-                  >
-                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
+                      className="timeline-card w-[85%] sm:w-[70%] md:w-[45%] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl shadow-lg transition-all duration-500 cursor-default group"
+                    >
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+                        {item.icon}
                       </div>
-                      <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
-                    </div>
-                  </Motion.div>
-
-                </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
+                        <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
+                      </div>
+                    </Motion.div>
+                 </div>
               );
             })}
           </div>

@@ -2217,7 +2217,7 @@ button.learn-more:active {
 .cyber-step-card-bg {
   position: absolute;
   inset: 0;
-  background-color: #000000;
+  background-color: #050505;
   border-radius: 32px;
   z-index: 0;
   transition: all 0.5s ease;
@@ -2229,7 +2229,11 @@ button.learn-more:active {
   inset: -1.5px;
   margin: auto;
   border-radius: 34px;
-  background: linear-gradient(-45deg, #e81cff 0%, #40c9ff 100%);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
   z-index: -10;
   pointer-events: none;
   transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
