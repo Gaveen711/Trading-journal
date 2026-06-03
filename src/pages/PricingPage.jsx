@@ -106,6 +106,7 @@ export function PricingPage() {
 
   const navLinks = [
     { to: '/#features', label: 'How it works' },
+    { to: '/the-story', label: 'The Story' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' }
   ];
@@ -120,11 +121,10 @@ export function PricingPage() {
       <header>
         <nav
           style={{ transform: 'translateX(-50%)' }}
-          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl z-[100] h-16 flex items-center justify-between px-6 md:px-10 rounded-2xl md:rounded-full border transition-all duration-300 ease-in-out ${
-            isScrolled
+          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl z-[100] h-16 flex items-center justify-between px-6 md:px-10 rounded-2xl md:rounded-full border transition-all duration-300 ease-in-out ${isScrolled
               ? 'bg-card/90 backdrop-blur-xl border-border/40 shadow-2xl'
               : 'bg-card/75 backdrop-blur-md border-border/20 shadow-lg'
-          }`}
+            }`}
         >
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
             <Logo iconSize="w-7 h-7" />
@@ -338,6 +338,7 @@ export function PricingPage() {
             <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-start">
               <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
               <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+              <NavLink to="/the-story" className="hover:text-primary transition-colors">The Story</NavLink>
               <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
             </div>
           </div>
@@ -353,7 +354,7 @@ export function PricingPage() {
                 <li className="icon-content"><a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer"><div className="filled" /><Discord /></a></li>
               </ul>
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
-                made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
               </p>
             </div>
           </div>

@@ -82,6 +82,7 @@ export function ContactPage() {
 
     const navLinks = [
         { to: '/#features', label: 'How it works' },
+        { to: '/the-story', label: 'The Story' },
         { to: '/pricing', label: 'Pricing' },
         { to: '/contact', label: 'Contact' }
     ];
@@ -314,6 +315,7 @@ export function ContactPage() {
                         <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-start">
                             <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
                             <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+                            <NavLink to="/the-story" className="hover:text-primary transition-colors">The Story</NavLink>
                             <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
                         </div>
                     </div>

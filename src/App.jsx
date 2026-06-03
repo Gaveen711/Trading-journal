@@ -14,6 +14,7 @@ import { ProFeatureUpsellModal } from './components/ProFeatureUpsellModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
+import CustomCursor from './components/CustomCursor';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -30,6 +31,7 @@ const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage.jsx').then(
 const PricingPage = lazy(() => import('./pages/PricingPage.jsx').then(m => ({ default: m.PricingPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage.jsx').then(m => ({ default: m.ContactPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
+const TheStoryPage = lazy(() => import('./pages/TheStory.jsx'));
 const Login = lazy(() => import('./Login.jsx'));
 
 const PageLoader = ({ text = "Syncing Terminal" }) => (
@@ -105,26 +107,26 @@ function AuthenticatedApp({ user }) {
   };
 
   const location = useLocation();
-  const isPublicPage = ['/privacy', '/pricing', '/contact', '/terms-and-conditions', '/refund-policy'].includes(location.pathname);
+  const isPublicPage = ['/privacy', '/pricing', '/contact', '/terms-and-conditions', '/refund-policy', '/the-story'].includes(location.pathname);
 
   return (
     <>
-    <ErrorBoundary>
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
-          <Route index element={<LogTradePage />} />
-          <Route path="history" element={<HistoryPage />} />
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="journal" element={<JournalPage />} />
-          <Route path="sync" element={<EASetup />} />
-          <Route path="checkout-success" element={<CheckoutSuccess />} />
-          <Route path="checkout-cancel" element={<CheckoutCancel />} />
-        </Route>
-      </Routes>
-    </Suspense>
-    </ErrorBoundary>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
+              <Route index element={<LogTradePage />} />
+              <Route path="history" element={<HistoryPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="journal" element={<JournalPage />} />
+              <Route path="sync" element={<EASetup />} />
+              <Route path="checkout-success" element={<CheckoutSuccess />} />
+              <Route path="checkout-cancel" element={<CheckoutCancel />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
 
       {showPricingModal && <PricingModal plan={plan} expiry={expiry} isTrial={isTrial} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
       {showBrokerSyncUpsell && (
@@ -155,7 +157,7 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth,
       (currentUser) => {
         clearTimeout(timeout);
-        
+
         // Intercept unverified email/password accounts to prevent UI flashes
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         if (currentUser && !currentUser.emailVerified && !isLocalhost && currentUser.email !== 'admin@xaujournal.com' && currentUser.providerData.some(p => p.providerId === 'password')) {
@@ -190,6 +192,7 @@ function App() {
   return (
     <ErrorBoundary>
       <PageSEO />
+      <CustomCursor />
       <Suspense fallback={<PageLoader />}>
         {authError ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
@@ -224,6 +227,7 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-and-conditions" element={<TermsOfServicePage />} />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
+            <Route path="/the-story" element={<TheStoryPage />} />
             <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login?mode=signin" />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

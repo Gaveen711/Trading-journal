@@ -368,6 +368,7 @@ export function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const lenisRef = useRef(null);
 
   const heroRef = useRef(null);
   const { scrollYProgress: heroProgress } = useScroll({
@@ -380,18 +381,8 @@ export function LandingPage() {
 
   useEffect(() => {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    window.scrollTo(0, 0);
     return () => { if ('scrollRestoration' in history) history.scrollRestoration = 'auto'; };
   }, []);
-
-  useEffect(() => {
-    if (location.hash === '#features') {
-      const timer = setTimeout(() => {
-        document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [location.hash]);
 
   useEffect(() => {
     injectJsonLd('ld-org', buildOrganizationSchema());
@@ -404,26 +395,42 @@ export function LandingPage() {
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-    
+    lenisRef.current = lenis;
+
     let rafId;
-    function raf(time) { 
-      lenis.raf(time); 
-      rafId = requestAnimationFrame(raf); 
+    function raf(time) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
     }
     rafId = requestAnimationFrame(raf);
-    
+
+    if (location.hash) {
+      setTimeout(() => {
+        lenis.scrollTo(location.hash, { duration: 1.2, immediate: false });
+      }, 350);
+    } else {
+      window.scrollTo(0, 0);
+    }
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
       cancelAnimationFrame(rafId);
+      lenisRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (location.hash && lenisRef.current) {
+      lenisRef.current.scrollTo(location.hash, { duration: 1.2 });
+    }
+  }, [location.hash]);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
@@ -443,6 +450,7 @@ export function LandingPage() {
 
   const navLinks = [
     { to: '/#features', label: 'How it works' },
+    { to: '/the-story', label: 'The Story' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' },
   ];
@@ -453,11 +461,11 @@ export function LandingPage() {
       <Particles isLightMode={isLightMode} />
 
       {/* Ambient background glow matching the theme */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0 overflow-hidden" 
+      <div
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
         style={{
-          background: isLightMode 
-            ? 'radial-gradient(circle at top, rgba(139, 92, 246, 0.04) 0%, transparent 60%)' 
+          background: isLightMode
+            ? 'radial-gradient(circle at top, rgba(139, 92, 246, 0.04) 0%, transparent 60%)'
             : 'radial-gradient(circle at top, rgba(139, 92, 246, 0.1) 0%, transparent 60%)'
         }}
         aria-hidden="true"
@@ -465,7 +473,7 @@ export function LandingPage() {
 
       {/* ─── NAV ─── */}
       <header>
-        <nav 
+        <nav
           style={{ transform: 'translateX(-50%)' }}
           className="fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl z-[100] h-16 md:h-18 flex items-center justify-between px-6 md:px-10 bg-card/85 backdrop-blur-xl border border-border/30 rounded-2xl md:rounded-full shadow-2xl transition-all duration-300"
         >
@@ -486,7 +494,7 @@ export function LandingPage() {
                       const hash = to.split('#')[1];
                       if (window.location.pathname === '/') {
                         e.preventDefault();
-                        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
+                        lenisRef.current?.scrollTo('#' + hash, { duration: 1.2 });
                       }
                     }
                   }}
@@ -530,7 +538,7 @@ export function LandingPage() {
               </button>
               <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
                 {navLinks.map(({ to, label }) => (
-                  <NavLink key={to} to={to} onClick={(e) => { setMobileMenuOpen(false); if (to.startsWith('/#')) { const hash = to.split('#')[1]; if (window.location.pathname === '/') { e.preventDefault(); document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' }); } } }} className="text-3xl font-bold tracking-tight hover:text-primary transition-colors">
+                  <NavLink key={to} to={to} onClick={(e) => { setMobileMenuOpen(false); if (to.startsWith('/#')) { const hash = to.split('#')[1]; if (window.location.pathname === '/') { e.preventDefault(); lenisRef.current?.scrollTo('#' + hash, { duration: 1.2 }); } } }} className="text-3xl font-bold tracking-tight hover:text-primary transition-colors">
                     {label}
                   </NavLink>
                 ))}
@@ -556,17 +564,17 @@ export function LandingPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_infinite] pointer-events-none" />
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
-               Exclusively for Gold Traders
+                Exclusively for Gold Traders
               </Motion.div>
 
               <Motion.div variants={itemVariants}>
-                <h1 className="!text-[clamp(3rem,10vw,8.5rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
+                <h1 className="!text-[clamp(2.5rem,8.5vw,6.25rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground">
                   Every trade <br />you make <br />
                   <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic">tells a story.</span>
                 </h1>
               </Motion.div>
 
-              <Motion.p variants={itemVariants} className="text-sm md:text-xl text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
+              <Motion.p variants={itemVariants} className="text-sm md:text-lg text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
                 XAU Journal is the precision trading journal built for gold traders — track, analyse, and master your edge in XAUUSD.
               </Motion.p>
 
@@ -798,6 +806,7 @@ export function LandingPage() {
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Platform</h4>
               <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center lg:text-left">
                 <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
+                <li><Link to="/the-story" className="hover:text-primary transition-colors">The Story</Link></li>
                 <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
                 <li><Link to="/login?mode=signin" className="hover:text-primary transition-colors">Login</Link></li>
               </ul>
