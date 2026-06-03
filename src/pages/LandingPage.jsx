@@ -78,7 +78,7 @@ const STEPS = [
     id: '01',
     icon: <CloudArrowDownFill className="w-6 h-6" />,
     title: 'Connect Your Broker',
-    body: 'Authorize your account via our secure portal. No plugins or Expert Advisors required — just a direct, encrypted connection to your MT5 platform.'
+    body: 'Authorize your account via our secure portal. No plugins or Expert Advisors required just a direct, encrypted connection to your MT5 platform.'
   },
   {
     id: '02',
@@ -106,7 +106,7 @@ const STORY_CHAPTERS = [
     chapter: '01',
     label: 'The Problem',
     headline: "You're trading blindly.",
-    sub: "Every missed trade. Every blown stop. Every emotional entry. Without a journal, you repeat the same mistakes — and the market keeps the tuition.",
+    sub: "Every missed trade. Every blown stop. Every emotional entry. Without a journal, you repeat the same mistakes and the market keeps the tuition.",
     accent: 'from-red-500/20 to-orange-500/10',
     glow: 'rgba(239,68,68,0.28)',
   },
@@ -114,7 +114,7 @@ const STORY_CHAPTERS = [
     chapter: '02',
     label: 'The Pattern',
     headline: 'Your edge already exists.',
-    sub: "It's buried in your trade history — in the sessions where you win, the setups that perform, the hours when your focus is sharp. You just can't see it yet.",
+    sub: "It's buried in your trade history in the sessions where you win, the setups that perform, the hours when your focus is sharp. You just can't see it yet.",
     accent: 'from-amber-500/20 to-yellow-500/10',
     glow: 'rgba(245,158,11,0.28)',
   },
@@ -647,7 +647,7 @@ export function LandingPage() {
               </Motion.div>
 
               <Motion.p variants={itemVariants} className="text-sm md:text-lg text-muted-foreground leading-relaxed max-w-2xl mb-14 font-medium">
-                XAU Journal is the precision trading journal built for gold traders — track, analyse, and master your edge in XAUUSD.
+                XAU Journal is the precision trading journal built for gold traders track, analyse, and master your edge in XAUUSD.
               </Motion.p>
 
               <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">

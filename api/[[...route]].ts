@@ -116,7 +116,7 @@ app.post('/auth-utils', async (c) => {
       await resend.emails.send({
         from: 'XauJournal Security <security@xaujournal.com>',
         to: email,
-        subject: '[XauJournal] New Login Detected',
+        subject: 'XauJournal New Login Detected',
         html: `
           <div style="font-family: sans-serif; padding: 20px; color: #f1f5f9; background: #0f172a; border-radius: 8px;">
             <h2 style="color: #38bdf8; margin-bottom: 20px;">New Login Alert</h2>
