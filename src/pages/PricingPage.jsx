@@ -343,10 +343,7 @@ export function PricingPage() {
             </div>
           </div>
           <div className="mt-16 pt-8 border-t border-border/20 flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left">
-              © Copyright 2026 Xau Journal.<br />All Rights Reserved.
-            </p>
-            <div className="flex flex-col items-center md:items-end gap-4">
+            <div className="flex flex-col items-center md:items-end gap-4 order-1 md:order-2">
               <ul className="example-2">
                 <li className="icon-content"><a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><div className="filled" /><Facebook /></a></li>
                 <li className="icon-content"><a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><div className="filled" /><Instagram /></a></li>
@@ -357,6 +354,9 @@ export function PricingPage() {
                 made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
               </p>
             </div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left order-2 md:order-1">
+              © Copyright 2026 Xau Journal.<br />All Rights Reserved.
+            </p>
           </div>
         </div>
       </footer>
