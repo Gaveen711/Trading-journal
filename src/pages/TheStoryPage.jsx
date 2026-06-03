@@ -5,20 +5,10 @@ import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill, Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-/* ─── dynamic GSAP loader ─── */
-function loadGsap(cb) {
-  if (window.gsap && window.ScrollTrigger) { cb(); return; }
-  const s1 = document.createElement("script");
-  s1.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js";
-  s1.onload = () => {
-    const s2 = document.createElement("script");
-    s2.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js";
-    s2.onload = cb;
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s1);
-}
+gsap.registerPlugin(ScrollTrigger);
 
 const STYLES = `
   .xj-story-container {
@@ -742,237 +732,231 @@ export default function TheStoryPage() {
     let ctx;
     let updateLenis;
 
-    loadGsap(() => {
-      const gsap = window.gsap;
-      const ScrollTrigger = window.ScrollTrigger;
-      gsap.registerPlugin(ScrollTrigger);
+    // Sync ScrollTrigger with Lenis
+    lenis.on('scroll', ScrollTrigger.update);
 
-      // Sync ScrollTrigger with Lenis
-      lenis.on('scroll', ScrollTrigger.update);
+    // Drive GSAP ticker with Lenis scroll RAF
+    updateLenis = (time) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(updateLenis);
+    gsap.ticker.lagSmoothing(0);
 
-      // Drive GSAP ticker with Lenis scroll RAF
-      updateLenis = (time) => {
-        lenis.raf(time * 1000);
-      };
-      gsap.ticker.add(updateLenis);
-      gsap.ticker.lagSmoothing(0);
+    ctx = gsap.context(() => {
 
-      ctx = gsap.context(() => {
+      /* ── HERO WORD-BASED CHAR SPLIT ANIMATION ── */
+      const hl = document.getElementById('xj-hero-headline');
+      if (hl) {
+        hl.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        const nodes = Array.from(hl.childNodes);
+        hl.innerHTML = '';
+        nodes.forEach(node => {
+          if (node.nodeType === 3) {
+            const words = node.textContent.split(' ');
+            words.forEach((word, wordIdx) => {
+              const wordSpan = document.createElement('span');
+              wordSpan.style.display = 'inline-block';
+              wordSpan.style.whiteSpace = 'nowrap';
 
-        /* ── HERO WORD-BASED CHAR SPLIT ANIMATION ── */
-        const hl = document.getElementById('xj-hero-headline');
-        if (hl) {
-          hl.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-          const nodes = Array.from(hl.childNodes);
-          hl.innerHTML = '';
-          nodes.forEach(node => {
-            if (node.nodeType === 3) {
-              const words = node.textContent.split(' ');
-              words.forEach((word, wordIdx) => {
-                const wordSpan = document.createElement('span');
-                wordSpan.style.display = 'inline-block';
-                wordSpan.style.whiteSpace = 'nowrap';
-
-                word.split('').forEach(ch => {
-                  const s = document.createElement('span');
-                  s.className = 'char';
-                  s.style.display = 'inline-block';
-                  s.style.transform = 'translateY(110%)';
-                  s.textContent = ch;
-                  wordSpan.appendChild(s);
-                });
-                hl.appendChild(wordSpan);
-
-                if (wordIdx < words.length - 1) {
-                  const spaceSpan = document.createElement('span');
-                  spaceSpan.style.display = 'inline-block';
-                  spaceSpan.innerHTML = '&nbsp;';
-                  hl.appendChild(spaceSpan);
-                }
+              word.split('').forEach(ch => {
+                const s = document.createElement('span');
+                s.className = 'char';
+                s.style.display = 'inline-block';
+                s.style.transform = 'translateY(110%)';
+                s.textContent = ch;
+                wordSpan.appendChild(s);
               });
-            } else if (node.nodeType === 1) {
-              const emNode = node;
-              const emText = emNode.textContent;
-              emNode.innerHTML = '';
+              hl.appendChild(wordSpan);
 
-              const words = emText.split(' ');
-              words.forEach((word, wordIdx) => {
-                const wordSpan = document.createElement('span');
-                wordSpan.style.display = 'inline-block';
-                wordSpan.style.whiteSpace = 'nowrap';
-
-                word.split('').forEach(ch => {
-                  const s = document.createElement('span');
-                  s.className = 'char';
-                  s.style.display = 'inline-block';
-                  s.style.transform = 'translateY(110%)';
-                  s.textContent = ch;
-                  wordSpan.appendChild(s);
-                });
-                emNode.appendChild(wordSpan);
-
-                if (wordIdx < words.length - 1) {
-                  const spaceSpan = document.createElement('span');
-                  spaceSpan.style.display = 'inline-block';
-                  spaceSpan.innerHTML = '&nbsp;';
-                  emNode.appendChild(spaceSpan);
-                }
-              });
-              hl.appendChild(emNode);
-            }
-          });
-
-          gsap.to(hl.querySelectorAll('.char'), {
-            y: 0,
-            duration: 0.7,
-            ease: 'expo.out',
-            stagger: 0.018,
-            delay: 0.3
-          });
-        }
-
-        /* ── HERO BADGE & SUB ── */
-        gsap.to('.xj-hero-badge', { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: 'expo.out' });
-        gsap.to('.xj-hero-sub', { opacity: 1, y: 0, duration: 0.9, delay: 0.9, ease: 'expo.out' });
-        gsap.to('#xj-scroll-hint', { opacity: 1, duration: 1, delay: 1.6 });
-
-        /* ── H2 LINE REVEALS ── */
-        document.querySelectorAll('.xj-split-h2').forEach(h2 => {
-          const inners = h2.querySelectorAll('.inner');
-          if (!inners.length) return;
-          gsap.fromTo(inners, { y: '100%' }, {
-            y: '0%',
-            duration: 0.85,
-            ease: 'expo.out',
-            stagger: 0.1,
-            scrollTrigger: {
-              trigger: h2,
-              start: 'top 85%',
-              toggleActions: 'play none none none'
-            }
-          });
-        });
-
-        /* ── REVEAL-UP ── */
-        document.querySelectorAll('.reveal-up').forEach(el => {
-          gsap.fromTo(el, { opacity: 0, y: 50 }, {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: 'expo.out',
-            scrollTrigger: {
-              trigger: el,
-              start: 'top 90%',
-              toggleActions: 'play none none none'
-            }
-          });
-        });
-
-        /* ── STATS COUNTER ANIMATION ── */
-        document.querySelectorAll('.xj-stat-num[data-target]').forEach(el => {
-          const target = parseInt(el.dataset.target);
-          if (isNaN(target)) return;
-          gsap.fromTo({ val: 0 }, { val: target }, {
-            duration: 1.6,
-            ease: 'power2.out',
-            onUpdate: function () { el.textContent = Math.round(this.targets()[0].val); },
-            scrollTrigger: {
-              trigger: el,
-              start: 'top 85%',
-              toggleActions: 'play none none none'
-            }
-          });
-        });
-
-        /* ── PARALLAX TEXT LINES ── */
-        const p1 = document.getElementById('xj-pline1');
-        const p2 = document.getElementById('xj-pline2');
-        if (p1 && p2) {
-          gsap.to(p1, {
-            x: '-15%',
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.xj-parallax-text-section',
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 1.5
-            }
-          });
-          gsap.to(p2, {
-            x: '5%',
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.xj-parallax-text-section',
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 1.5
-            }
-          });
-        }
-
-        /* ── HORIZONTAL SCROLL ── */
-        const hpin = document.getElementById('xj-hpin');
-        const htrack = document.getElementById('xj-htrack');
-        const pills = document.querySelectorAll('.xj-hpill');
-
-        if (hpin && htrack) {
-          const panels = htrack.querySelectorAll('.xj-hscroll-panel');
-          const scrollDist = (panels.length - 1) * window.innerWidth;
-
-          hpin.style.height = '100vh';
-
-          gsap.to(htrack, {
-            x: -scrollDist,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: hpin,
-              pin: true,
-              scrub: 1,
-              end: () => '+=' + scrollDist,
-              onUpdate: (self) => {
-                const activeIdx = Math.round(self.progress * (panels.length - 1));
-                pills.forEach((p, i) => p.classList.toggle('active', i === activeIdx));
+              if (wordIdx < words.length - 1) {
+                const spaceSpan = document.createElement('span');
+                spaceSpan.style.display = 'inline-block';
+                spaceSpan.innerHTML = '&nbsp;';
+                hl.appendChild(spaceSpan);
               }
-            }
-          });
-        }
+            });
+          } else if (node.nodeType === 1) {
+            const emNode = node;
+            const emText = emNode.textContent;
+            emNode.innerHTML = '';
 
-        /* ── SECTION LABEL LINES ── */
-        gsap.utils.toArray('.xj-section-label').forEach(el => {
-          gsap.from(el, {
-            opacity: 0,
-            x: -20,
-            duration: 0.6,
-            ease: 'expo.out',
-            scrollTrigger: { trigger: el, start: 'top 88%' }
-          });
+            const words = emText.split(' ');
+            words.forEach((word, wordIdx) => {
+              const wordSpan = document.createElement('span');
+              wordSpan.style.display = 'inline-block';
+              wordSpan.style.whiteSpace = 'nowrap';
+
+              word.split('').forEach(ch => {
+                const s = document.createElement('span');
+                s.className = 'char';
+                s.style.display = 'inline-block';
+                s.style.transform = 'translateY(110%)';
+                s.textContent = ch;
+                wordSpan.appendChild(s);
+              });
+              emNode.appendChild(wordSpan);
+
+              if (wordIdx < words.length - 1) {
+                const spaceSpan = document.createElement('span');
+                spaceSpan.style.display = 'inline-block';
+                spaceSpan.innerHTML = '&nbsp;';
+                emNode.appendChild(spaceSpan);
+              }
+            });
+            hl.appendChild(emNode);
+          }
         });
 
-        /* ── DARK SECTION MANIFESTO STAGGER ── */
-        const manifesto = document.querySelectorAll('.xj-manifesto-list li');
-        manifesto.forEach((li, i) => {
-          gsap.fromTo(li, { opacity: 0, x: -30 }, {
-            opacity: 1,
-            x: 0,
-            duration: 0.7,
-            delay: i * 0.12,
-            ease: 'expo.out',
-            scrollTrigger: {
-              trigger: li,
-              start: 'top 90%',
-              toggleActions: 'play none none none'
-            }
-          });
+        gsap.to(hl.querySelectorAll('.char'), {
+          y: 0,
+          duration: 0.7,
+          ease: 'expo.out',
+          stagger: 0.018,
+          delay: 0.3
         });
+      }
 
-      }, containerRef);
+      /* ── HERO BADGE & SUB ── */
+      gsap.to('.xj-hero-badge', { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: 'expo.out' });
+      gsap.to('.xj-hero-sub', { opacity: 1, y: 0, duration: 0.9, delay: 0.9, ease: 'expo.out' });
+      gsap.to('#xj-scroll-hint', { opacity: 1, duration: 1, delay: 1.6 });
 
-      setTimeout(() => {
-        if (window.ScrollTrigger) {
-          window.ScrollTrigger.refresh();
-        }
-      }, 150);
-    });
+      /* ── H2 LINE REVEALS ── */
+      document.querySelectorAll('.xj-split-h2').forEach(h2 => {
+        const inners = h2.querySelectorAll('.inner');
+        if (!inners.length) return;
+        gsap.fromTo(inners, { y: '100%' }, {
+          y: '0%',
+          duration: 0.85,
+          ease: 'expo.out',
+          stagger: 0.1,
+          scrollTrigger: {
+            trigger: h2,
+            start: 'top 85%',
+            toggleActions: 'play none none none'
+          }
+        });
+      });
+
+      /* ── REVEAL-UP ── */
+      document.querySelectorAll('.reveal-up').forEach(el => {
+        gsap.fromTo(el, { opacity: 0, y: 50 }, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: 'expo.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 90%',
+            toggleActions: 'play none none none'
+          }
+        });
+      });
+
+      /* ── STATS COUNTER ANIMATION ── */
+      document.querySelectorAll('.xj-stat-num[data-target]').forEach(el => {
+        const target = parseInt(el.dataset.target);
+        if (isNaN(target)) return;
+        gsap.fromTo({ val: 0 }, { val: target }, {
+          duration: 1.6,
+          ease: 'power2.out',
+          onUpdate: function () { el.textContent = Math.round(this.targets()[0].val); },
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            toggleActions: 'play none none none'
+          }
+        });
+      });
+
+      /* ── PARALLAX TEXT LINES ── */
+      const p1 = document.getElementById('xj-pline1');
+      const p2 = document.getElementById('xj-pline2');
+      if (p1 && p2) {
+        gsap.to(p1, {
+          x: '-15%',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.xj-parallax-text-section',
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1.5
+          }
+        });
+        gsap.to(p2, {
+          x: '5%',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.xj-parallax-text-section',
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1.5
+          }
+        });
+      }
+
+      /* ── HORIZONTAL SCROLL ── */
+      const hpin = document.getElementById('xj-hpin');
+      const htrack = document.getElementById('xj-htrack');
+      const pills = document.querySelectorAll('.xj-hpill');
+
+      if (hpin && htrack) {
+        const panels = htrack.querySelectorAll('.xj-hscroll-panel');
+        const scrollDist = (panels.length - 1) * window.innerWidth;
+
+        hpin.style.height = '100vh';
+
+        gsap.to(htrack, {
+          x: -scrollDist,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hpin,
+            pin: true,
+            scrub: 1,
+            end: () => '+=' + scrollDist,
+            onUpdate: (self) => {
+              const activeIdx = Math.round(self.progress * (panels.length - 1));
+              pills.forEach((p, i) => p.classList.toggle('active', i === activeIdx));
+            }
+          }
+        });
+      }
+
+      /* ── SECTION LABEL LINES ── */
+      gsap.utils.toArray('.xj-section-label').forEach(el => {
+        gsap.from(el, {
+          opacity: 0,
+          x: -20,
+          duration: 0.6,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: el, start: 'top 88%' }
+        });
+      });
+
+      /* ── DARK SECTION MANIFESTO STAGGER ── */
+      const manifesto = document.querySelectorAll('.xj-manifesto-list li');
+      manifesto.forEach((li, i) => {
+        gsap.fromTo(li, { opacity: 0, x: -30 }, {
+          opacity: 1,
+          x: 0,
+          duration: 0.7,
+          delay: i * 0.12,
+          ease: 'expo.out',
+          scrollTrigger: {
+            trigger: li,
+            start: 'top 90%',
+            toggleActions: 'play none none none'
+          }
+        });
+      });
+
+    }, containerRef);
+
+    setTimeout(() => {
+      if (window.ScrollTrigger) {
+        window.ScrollTrigger.refresh();
+      }
+    }, 150);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -980,13 +964,10 @@ export default function TheStoryPage() {
       cancelAnimationFrame(rafId);
       document.body.style.overflow = '';
       if (ctx) ctx.revert();
-      const gsap = window.gsap;
-      if (gsap && updateLenis) {
+      if (updateLenis) {
         gsap.ticker.remove(updateLenis);
       }
-      if (window.ScrollTrigger) {
-        window.ScrollTrigger.getAll().forEach(t => t.kill());
-      }
+      ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, [mobileMenuOpen]);
 

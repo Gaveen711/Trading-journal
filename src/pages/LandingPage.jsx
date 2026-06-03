@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion as Motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { AnimatePresence, motion as Motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from 'framer-motion';
 import Lenis from 'lenis';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+}
 import Logo from '../components/Logo';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
@@ -273,7 +280,7 @@ function StoryChapter({ chapter, label, headline, sub, accent, glow, index }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: inView ? 1 : 0 }}
       transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-      className="relative min-h-[40vh] flex flex-col justify-center py-10 md:py-12"
+      className="story-chapter-card relative min-h-[40vh] flex flex-col justify-center py-10 md:py-12"
     >
       {/* Ambient glow behind the card */}
       <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen transform pointer-events-none">
@@ -303,6 +310,11 @@ function StoryChapter({ chapter, label, headline, sub, accent, glow, index }) {
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="flex items-center gap-3 mb-6"
         >
+          {/* GSAP MotionPath Waypoint Marker */}
+          <div className="marker relative w-5 h-5 flex items-center justify-center shrink-0">
+            <div className="w-3 h-3 rounded-full border-2 border-primary/45 bg-background shadow-sm" />
+          </div>
+
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">
             Chapter {chapter}
           </div>
@@ -426,6 +438,8 @@ export function LandingPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // GSAP scroll timeline removed from Story section as it was moved to ScaleTimeline
 
   useEffect(() => {
     if (location.hash && lenisRef.current) {
@@ -853,9 +867,62 @@ export function LandingPage() {
 }
 
 /* ─── Animated vertical story line ─── */
+/* ─── Waypoint Node component ─── */
+function WaypointNode({ active, color }) {
+  const [isActive, setIsActive] = useState(false);
+
+  useMotionValueEvent(active, "change", (val) => {
+    setIsActive(val);
+  });
+
+  return (
+    <div className="relative flex items-center justify-center w-8 h-8">
+      {/* Dynamic pulsing glow waves */}
+      {isActive && (
+        <>
+          <Motion.div
+            initial={{ scale: 0.8, opacity: 0.7 }}
+            animate={{ scale: [1, 2.8, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
+            className="absolute w-full h-full rounded-full pointer-events-none"
+            style={{ border: `1.5px solid ${color}` }}
+          />
+          <Motion.div
+            initial={{ scale: 0.8, opacity: 0.5 }}
+            animate={{ scale: [1, 2, 1], opacity: [0.3, 0, 0.3] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut", delay: 0.4 }}
+            className="absolute w-full h-full rounded-full pointer-events-none"
+            style={{ border: `1px dashed ${color}` }}
+          />
+        </>
+      )}
+
+      {/* Outer border ring */}
+      <div
+        className="w-4 h-4 rounded-full bg-background border flex items-center justify-center transition-all duration-500 shadow-lg"
+        style={{
+          borderColor: isActive ? color : "rgba(139, 92, 246, 0.2)",
+          boxShadow: isActive ? `0 0 12px ${color}` : "none"
+        }}
+      >
+        {/* Core dot */}
+        <div
+          className="w-1.5 h-1.5 rounded-full transition-all duration-500"
+          style={{
+            backgroundColor: isActive ? color : "rgba(139, 92, 246, 0.15)"
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Animated vertical story line ─── */
 function StoryLine() {
   return null;
 }
+
+
 
 /* ─── Feature card ─── */
 function FeatureCard({ icon, title, body, index }) {
@@ -976,15 +1043,176 @@ const TIMELINE_ITEMS = [
 ];
 
 function ScaleTimeline() {
-  const sectionRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start 80%', 'end 20%'],
-  });
-  const lineHeight = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const checkDesktop = () => window.innerWidth >= 768;
+    let ctx;
+
+    function initScaleGSAP() {
+      if (ctx) ctx.revert();
+      if (!checkDesktop()) return;
+
+      const container = document.querySelector("#scale-timeline-container");
+      const markers = document.querySelectorAll("#scale-timeline-container .marker");
+      const cards = document.querySelectorAll("#scale-timeline-container .timeline-card");
+      const box = document.querySelector(".scale-box");
+
+      if (!container || markers.length === 0 || !box) return;
+
+      const containerRect = container.getBoundingClientRect();
+
+      // Calculate center coordinates of markers relative to container
+      const points = Array.from(markers).map((marker) => {
+        const r = marker.getBoundingClientRect();
+        return {
+          x: r.left + r.width / 2 - containerRect.left,
+          y: r.top + r.height / 2 - containerRect.top
+        };
+      });
+
+      // Build SVG path data (smooth S-curve snaking through all waypoints)
+      let d = "";
+      if (points.length > 0) {
+        d = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+          const pStart = points[i];
+          const pEnd = points[i + 1];
+          const dy = pEnd.y - pStart.y;
+          const cp1x = pStart.x;
+          const cp1y = pStart.y + dy / 2;
+          const cp2x = pEnd.x;
+          const cp2y = pEnd.y - dy / 2;
+          d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${pEnd.x} ${pEnd.y}`;
+        }
+      }
+
+      const pathBg = document.querySelector("#scale-path");
+      const pathProgress = document.querySelector("#scale-path-progress");
+      if (pathBg) pathBg.setAttribute("d", d);
+      if (pathProgress) pathProgress.setAttribute("d", d);
+
+      ctx = gsap.context(() => {
+        // Set initial states for cards and markers on desktop before scroll triggers run
+        gsap.set(cards, { opacity: 0.25, scale: 0.95, y: 30 });
+        gsap.set(markers, { scale: 0.9, rotation: 0, backgroundColor: "#09090b", borderColor: "rgba(139, 92, 246, 0.35)", boxShadow: "none" });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: "#scale-timeline-container",
+            start: "top 35%",
+            end: "bottom 65%",
+            scrub: 1,
+          }
+        });
+
+        // 1. Fade in and scale up the box at the start
+        tl.fromTo(".scale-box", {
+          opacity: 0,
+          scale: 0.3
+        }, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.1,
+          ease: "power1.out"
+        });
+
+        // 2. Animate box along motion path with auto-rotation
+        tl.to(".scale-box", {
+          duration: 0.8,
+          ease: "none",
+          motionPath: {
+            path: "#scale-path",
+            align: "#scale-path",
+            alignOrigin: [0.5, 0.5],
+            autoRotate: true
+          }
+        }, 0);
+
+        // 2.1 Animate RGB color cycling and glow on the scale-box
+        tl.to(".scale-box", {
+          keyframes: [
+            { backgroundColor: "#8b5cf6", boxShadow: "0 0 20px rgba(139, 92, 246, 0.95)", duration: 0.16 }, // Purple
+            { backgroundColor: "#ec4899", boxShadow: "0 0 20px rgba(236, 72, 153, 0.95)", duration: 0.16 }, // Pink
+            { backgroundColor: "#ef4444", boxShadow: "0 0 20px rgba(239, 68, 68, 0.95)", duration: 0.16 },  // Red
+            { backgroundColor: "#f59e0b", boxShadow: "0 0 20px rgba(245, 158, 11, 0.95)", duration: 0.16 },  // Gold
+            { backgroundColor: "#10b981", boxShadow: "0 0 20px rgba(16, 185, 129, 0.95)", duration: 0.16 }  // Emerald
+          ],
+          ease: "none",
+          duration: 0.8
+        }, 0);
+
+        // 3. Animate progress path draw-in
+        if (pathProgress) {
+          const length = pathProgress.getTotalLength();
+          gsap.set(pathProgress, {
+            strokeDasharray: length,
+            strokeDashoffset: length,
+            opacity: 1
+          });
+
+          tl.to(pathProgress, {
+            strokeDashoffset: 0,
+            duration: 0.8,
+            ease: "none"
+          }, 0);
+        }
+
+        // 4. Animate each card and marker activation as the box passes
+        markers.forEach((marker, index) => {
+          const card = cards[index];
+          const t = (index / (markers.length - 1)) * 0.8;
+
+          // Define specific glowing colors for each waypoint matching the orb's color at that position!
+          const activeColors = ["#8b5cf6", "#ec4899", "#ef4444", "#f59e0b", "#10b981", "#06b6d4"];
+          const glowColor = activeColors[index];
+
+          tl.to(marker, {
+            scale: 1.15,
+            rotation: 90,
+            backgroundColor: `${glowColor}15`,
+            borderColor: glowColor,
+            boxShadow: `0 0 15px ${glowColor}80`,
+            duration: 0.1,
+            ease: "power1.out"
+          }, t);
+
+          if (card) {
+            tl.to(card, {
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              borderColor: `${glowColor}80`,
+              backgroundColor: `${glowColor}10`,
+              boxShadow: `0 10px 30px ${glowColor}25`,
+              duration: 0.15,
+              ease: "power1.out"
+            }, t);
+          }
+        });
+
+        // 5. Fade out and scale down the box at the end
+        tl.to(".scale-box", {
+          opacity: 0,
+          scale: 0.3,
+          duration: 0.1,
+          ease: "power1.in"
+        });
+      });
+    }
+
+    const timer = setTimeout(initScaleGSAP, 600);
+    window.addEventListener("resize", initScaleGSAP);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", initScaleGSAP);
+      if (ctx) ctx.revert();
+    };
+  }, []);
 
   return (
-    <section ref={sectionRef} className="relative z-10 py-20 md:py-28 px-6 overflow-hidden">
+    <section ref={containerRef} className="relative z-10 py-20 md:py-28 px-6 overflow-hidden">
       <div className="max-w-4xl mx-auto">
 
         {/* Heading */}
@@ -1005,25 +1233,53 @@ function ScaleTimeline() {
         </Motion.div>
 
         {/* Timeline */}
-        <div className="relative">
+        <div id="scale-timeline-container" className="relative">
 
-          {/* Center vertical line track (background) */}
-          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] bg-border/30" />
+          {/* Curvy background and active path track (SVG) */}
+          <div className="hidden md:block absolute inset-0 pointer-events-none z-0">
+            <svg className="w-full h-full">
+              {/* Background Dashed Path */}
+              <path
+                id="scale-path"
+                fill="none"
+                stroke="rgba(139, 92, 246, 0.12)"
+                strokeWidth="2.5"
+                strokeDasharray="6 6"
+              />
+              {/* Progress Solid Glowing Path */}
+              <path
+                id="scale-path-progress"
+                fill="none"
+                stroke="url(#scale-glow-gradient)"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                className="opacity-0"
+              />
+              <defs>
+                <linearGradient id="scale-glow-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#8b5cf6" />
+                  <stop offset="30%" stopColor="#ec4899" />
+                  <stop offset="70%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#10b981" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
 
-          {/* Animated line that draws downward on scroll */}
-          <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] overflow-hidden">
-            <Motion.div
-              className="w-full bg-gradient-to-b from-primary via-primary/70 to-primary/20 origin-top"
-              style={{ height: lineHeight }}
-            />
+          {/* Traveling Gold Orb (Square Diamond shape matching GSAP demo) */}
+          <div
+            className="scale-box absolute w-5 h-5 rounded-md bg-gradient-to-br from-amber-400 via-orange-500 to-pink-500 shadow-[0_0_15px_rgba(245,158,11,0.85),_0_0_30px_rgba(245,158,11,0.5)] border border-white flex items-center justify-center z-20 pointer-events-none opacity-0"
+            style={{ left: 0, top: 0 }}
+          >
+            <div className="w-1.5 h-1.5 rounded-sm bg-white shadow-[0_0_3px_#fff]" />
           </div>
 
           {/* Cards */}
-          <div className="flex flex-col gap-8 md:gap-10">
+          <div className="flex flex-col gap-20 md:gap-28">
             {TIMELINE_ITEMS.map((item) => {
               const isLeft = item.side === 'left';
               return (
-                <div key={item.label} className="relative flex items-center md:grid md:grid-cols-[1fr_40px_1fr] md:gap-4">
+                <div key={item.label} className="relative flex items-center md:grid md:grid-cols-[1fr_40px_1fr] md:gap-8 py-8 md:py-16">
 
                   {/* Left slot */}
                   <div className={`hidden md:flex md:justify-end ${isLeft ? '' : 'md:invisible'}`}>
@@ -1033,7 +1289,7 @@ function ScaleTimeline() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true, amount: 0.25 }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
+                        className="timeline-card w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
                       >
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                           {item.icon}
@@ -1048,14 +1304,15 @@ function ScaleTimeline() {
                     )}
                   </div>
 
-                  {/* Center dot on the line */}
+                  {/* Center dot on the line (Dashed Square matching GSAP demo) */}
                   <div className="hidden md:flex justify-center items-center relative z-10 w-[40px]">
                     <Motion.div
                       initial={{ scale: 0, opacity: 0 }}
                       whileInView={{ scale: [0, 1.2, 1], opacity: 1 }}
                       viewport={{ once: true, amount: 0.25 }}
                       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      className="w-3.5 h-3.5 rounded-full bg-primary shadow-[0_0_15px_rgba(139,92,246,0.9)] border-2 border-background"
+                      className={`marker w-7 h-7 rounded-lg border-2 border-dashed border-primary/30 bg-background/40 flex items-center justify-center relative z-10 transition-colors duration-500
+                        ${isLeft ? '-translate-x-[180px]' : 'translate-x-[180px]'}`}
                     />
                   </div>
 
@@ -1067,7 +1324,7 @@ function ScaleTimeline() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true, amount: 0.25 }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
+                        className="timeline-card w-full md:max-w-[320px] flex items-center gap-4 bg-card/40 backdrop-blur-md border border-border/40 p-5 rounded-2xl hover:bg-card/70 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.25)] transition-all duration-500 group cursor-default"
                       >
                         <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                           {item.icon}
