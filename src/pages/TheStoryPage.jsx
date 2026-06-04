@@ -333,8 +333,8 @@ const STYLES = `
     position: relative;
     z-index: 1;
   }
-  .xj-hscroll-outer::before,
-  .xj-hscroll-outer::after {
+  .xj-hscroll-pin::before,
+  .xj-hscroll-pin::after {
     content: '';
     position: absolute;
     left: 0;
@@ -343,11 +343,11 @@ const STYLES = `
     z-index: 10;
     pointer-events: none;
   }
-  .xj-hscroll-outer::before {
+  .xj-hscroll-pin::before {
     top: 0;
     background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
   }
-  .xj-hscroll-outer::after {
+  .xj-hscroll-pin::after {
     bottom: 0;
     background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
   }
@@ -367,21 +367,24 @@ const STYLES = `
     justify-content: center;
     padding: 80px;
     flex-shrink: 0;
-    background-color: #0b1120;
     background-image: 
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), 
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      linear-gradient(var(--hscroll-grid) 1px, transparent 1px), 
+      linear-gradient(90deg, var(--hscroll-grid) 1px, transparent 1px);
     background-size: 60px 60px;
     background-position: center;
   }
+  .xj-hscroll-panel:nth-child(1) { background-color: var(--hscroll-bg1); }
+  .xj-hscroll-panel:nth-child(2) { background-color: var(--hscroll-bg2); }
+  .xj-hscroll-panel:nth-child(3) { background-color: var(--hscroll-bg3); }
+  .xj-hscroll-panel:nth-child(4) { background-color: var(--hscroll-bg4); }
 
   .xj-panel-inner {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--hscroll-card-bg);
+    border: 1px solid var(--hscroll-card-border);
     border-radius: 20px;
     padding: 60px 50px;
     backdrop-filter: blur(24px);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: var(--hscroll-card-shadow);
     text-align: center;
     max-width: 640px;
     position: relative;
@@ -400,12 +403,12 @@ const STYLES = `
     line-height: 1.15;
     margin-bottom: 24px;
     letter-spacing: -0.015em;
-    color: #ffffff;
+    color: var(--hscroll-text-title);
     font-weight: 800;
   }
   .xj-panel-inner p {
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--hscroll-text-body);
     line-height: 1.8;
     font-weight: 400;
   }
@@ -573,17 +576,21 @@ const STYLES = `
     font-family: 'Poppins', sans-serif;
     font-size: clamp(60px, 8vw, 100px);
     color: transparent;
-    -webkit-text-stroke: 1.5px rgba(124,58,237,0.25);
+    -webkit-text-stroke: 1.5px var(--violet);
     letter-spacing: -0.02em;
     white-space: nowrap;
     line-height: 1;
     padding-right: 40px;
     display: inline-block;
     font-weight: 900;
+    text-shadow: 0 0 15px rgba(124, 58, 237, 0.4), 0 0 30px rgba(124, 58, 237, 0.2);
+    filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.25));
   }
   .xj-ptext-line.filled span {
     -webkit-text-stroke: 0;
-    color: rgba(124,58,237,0.07);
+    color: var(--violet);
+    opacity: 0.16;
+    text-shadow: 0 0 20px rgba(124, 58, 237, 0.8), 0 0 40px rgba(124, 58, 237, 0.4);
   }
 
   /* ── CTA ── */
@@ -713,7 +720,7 @@ const STYLES = `
 const MARQUEE_ITEMS = [
   "MT5 Auto-Sync", "Gold-Native Pip Math", "Drawdown Curve",
   "Calendar Heatmap", "Session Analytics", "Mindset Journal",
-  "Stripe Pro Plan", "Firebase Realtime",
+  "PayPal Payment", "Realtime Sync",
 ];
 
 const FEATURES = [
@@ -724,9 +731,9 @@ const FEATURES = [
 ];
 
 const PANELS = [
-  { num: "01", title: "Zero-Friction Trade Capture", body: "A custom MT5 Expert Advisor watches your positions in real time. The moment a XAUUSD trade closes, it's in your journal. No copy-paste. No manual entry. No data lag." },
+  { num: "01", title: "Automated Trade Sync", body: "XAU Journal captures your completed XAUUSD trades automatically and syncs them to your journal in real time. Every entry is recorded instantly with precision eliminating manual logging, spreadsheets, and missed data." },
   { num: "02", title: "Gold-Native Calculations", body: "P&L, pip value, and drawdown calculated using gold's actual contract size of 100 oz, not a retrofitted forex formula. Every number in XAU Journal means exactly what it should." },
-  { num: "03", title: "Calendar Heatmap & Session Stats", body: "See your performance across London, New York, and Asian sessions. Identify the days you overtrade. Spot your highest-probability setup windows at a glance." },
+  { num: "03", title: "Calendar Heatmap & Session Stats", body: "See your performance across London, New York, and Asian sessions. Identify the days you overtrade. Spot your highest probability setup windows at a glance." },
   { num: "04", title: "Mindset & Risk Journal", body: "Log your psychological state alongside technical entries. Because in gold, where $10 a pip swings are routine, your mindset is part of your edge, not separate from it." },
 ];
 
@@ -1096,6 +1103,12 @@ export default function TheStoryPage() {
     '--hscroll-bg2': isLightMode ? '#fff8eb' : '#221a0f',
     '--hscroll-bg3': isLightMode ? '#ebf5ff' : '#101726',
     '--hscroll-bg4': isLightMode ? '#f0ffeb' : '#112211',
+    '--hscroll-grid': isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.02)',
+    '--hscroll-card-bg': isLightMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.02)',
+    '--hscroll-card-border': isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
+    '--hscroll-text-title': isLightMode ? '#0f172a' : '#ffffff',
+    '--hscroll-text-body': isLightMode ? '#475569' : 'rgba(255, 255, 255, 0.7)',
+    '--hscroll-card-shadow': isLightMode ? '0 20px 40px rgba(0,0,0,0.06)' : '0 30px 60px rgba(0,0,0,0.5)',
   };
 
   const navLinks = [
@@ -1240,7 +1253,7 @@ export default function TheStoryPage() {
           Built by a trader · For gold traders
         </div>
         <h1 className="xj-hero-headline" id="xj-hero-headline">
-          Not just another<br />startup.<br /><em>A necessary tool.</em>
+          Not just another<br /> startup.<br /><em> A necessary tool.</em>
         </h1>
         <p className="xj-hero-sub font-medium">XAU Journal didn't come from a product roadmap. It came from years of watching gold traders, including myself, manage their edge inside spreadsheets that had no idea what XAUUSD actually was.</p>
 
@@ -1320,7 +1333,7 @@ export default function TheStoryPage() {
             <span className="line"><span className="inner"><em>my weekends back.</em></span></span>
           </h2>
           <p className="xj-body-copy reveal-up font-medium">XAU Journal started as a local HTML file running on my own machine. I wrote a custom MT5 Expert Advisor that fired on every position close and pushed the trade data to a simple backend. No UI. No branding. Just raw, correct data.</p>
-          <p className="xj-body-copy reveal-up font-medium">Over months, it grew. I added a React frontend, Firebase for real-time sync, a Firestore-backed analytics engine, and a calendar heatmap. Eventually other traders saw it and wanted in. That's when I realised this wasn't a personal tool anymore — it was a product.</p>
+          <p className="xj-body-copy reveal-up font-medium">Over months, it grew. I added a React frontend, real-time synchronization, advanced analytics, and visual performance tracking tools. Eventually other traders saw it and wanted in. That's when I realised this wasn't a personal tool anymore it was a product.</p>
           <p className="xj-body-copy reveal-up font-medium">No investors. No VC pitch deck. No agency. Just one developer who also happens to trade gold, building on evenings and weekends until it was good enough to ship.</p>
         </div>
       </section>

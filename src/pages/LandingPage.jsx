@@ -1138,6 +1138,24 @@ function ScaleTimeline() {
 
       const points = [p0, ...cardPoints, pFinal];
 
+      // Compute cumulative distance between points to find exact t values
+      const segmentLengths = [];
+      let totalLength = 0;
+      for (let i = 0; i < points.length - 1; i++) {
+        const dx = points[i+1].x - points[i].x;
+        const dy = points[i+1].y - points[i].y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        segmentLengths.push(len);
+        totalLength += len;
+      }
+      
+      const cardProgresses = [];
+      let currentLen = 0;
+      for (let i = 0; i < cardPoints.length; i++) {
+        currentLen += segmentLengths[i];
+        cardProgresses.push(currentLen / totalLength);
+      }
+
       // Build SVG path data (smooth S-curve snaking through all waypoints)
       let d = "";
       if (points.length > 0) {
@@ -1147,13 +1165,12 @@ function ScaleTimeline() {
           const pEnd = points[i + 1];
           const dy = pEnd.y - pStart.y;
           
-          // True snake weave: Alternate sweeping left and right
-          const isLeftSweep = (i % 2 === 0);
-          const sweep = containerRect.width * 0.35; // 35% of container width for a wide, dramatic swoop
-          
-          const cp1x = isLeftSweep ? pStart.x - sweep : pStart.x + sweep;
+          // Vertical tangents at the start and end of each bezier segment.
+          // This creates a mathematically smooth S-curve snaking between left and right cards
+          // without any crookedness or unsymmetrical bulging.
+          const cp1x = pStart.x;
           const cp1y = pStart.y + dy * 0.5;
-          const cp2x = isLeftSweep ? pEnd.x - sweep : pEnd.x + sweep;
+          const cp2x = pEnd.x;
           const cp2y = pEnd.y - dy * 0.5;
           
           d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${pEnd.x} ${pEnd.y}`;
@@ -1169,10 +1186,10 @@ function ScaleTimeline() {
           const item = TIMELINE_ITEMS[index];
           const isLeft = item ? item.side === 'left' : true;
           gsap.set(card, { 
-            opacity: 0.1, 
-            scale: 0.9, 
-            y: 15,
-            x: isLeft ? -100 : 100 
+            opacity: 0, 
+            scale: 0.95, 
+            y: 10,
+            x: isLeft ? -30 : 30 
           });
         });
 
@@ -1181,7 +1198,7 @@ function ScaleTimeline() {
             trigger: "#scale-timeline-container",
             start: "top 35%",
             end: "bottom 95%",
-            scrub: 4,
+            scrub: 1,
           }
         });
 
@@ -1222,19 +1239,20 @@ function ScaleTimeline() {
 
         // 4. Animate cards as the box passes
         cards.forEach((card, index) => {
-          // Accurate calculation: segments = cards.length + 1
-          const t = ((index + 1) / (cards.length + 1)) * 0.8;
+          // Accurate calculation: exact progress based on cumulative path length
+          const progress = cardProgresses[index] || 0.5;
+          const t = progress * 0.8; // Map to the 0.8 motionPath duration
 
           tl.to(card, {
             opacity: 1,
             scale: 1,
             y: 0,
             x: 0,
-            duration: 0.05, // Smooth slide duration
-            ease: "power2.out",
+            duration: 0.04, // Snappy entry duration
+            ease: "power3.out", // Punchy entry easing
             onStart: () => card.classList.add('rgb-active'),
             onReverseComplete: () => card.classList.remove('rgb-active')
-          }, Math.max(0, t - 0.02)); // Trigger right as it reaches the edge
+          }, Math.max(0, t - 0.02)); // Trigger slightly before the orb passes the card center
         });
 
         // 5. Fade out and scale down the box at the end
