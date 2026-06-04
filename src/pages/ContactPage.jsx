@@ -54,8 +54,18 @@ export function ContactPage() {
         e.preventDefault();
         if (!form.name || !form.email || !form.message) return;
         setStatus('sending');
-        // Simulate send
-        await new Promise(r => setTimeout(r, 1400));
+        
+        const toEmail = 'info@xaujournal.com';
+        const subject = form.subject ? form.subject : `Message from ${form.name}`;
+        const body = `Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`;
+        
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        const newWindow = window.open(gmailUrl, '_blank');
+
+        if (!newWindow) {
+            window.location.href = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+        
         setStatus('sent');
     };
 
