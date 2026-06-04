@@ -221,6 +221,7 @@ function App() {
         ) : (
           <Routes>
             <Route path="/" element={user ? <Navigate to="/app" /> : <LandingPage />} />
+            <Route path="/home" element={user ? <Navigate to="/app" /> : <LandingPage />} />
             <Route path="/login" element={user ? <Navigate to="/app" /> : <Login />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/contact" element={<ContactPage />} />
