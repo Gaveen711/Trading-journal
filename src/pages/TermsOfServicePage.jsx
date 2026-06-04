@@ -183,7 +183,7 @@ export function TermsOfServicePage() {
   };
 
   const navLinks = [
-    { to: '/#features', label: 'How it works' },
+    { to: '/', label: 'How it works' },
     { to: '/the-story', label: 'The Story' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/contact', label: 'Contact' },
