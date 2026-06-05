@@ -82,6 +82,7 @@ export async function provisionMetaApiAccount({ login, password, server, brokerT
     platform,
     magic: 0,
     application: 'MetaApi',
+    reliability: 'regular',
   });
 
   await account.deploy();

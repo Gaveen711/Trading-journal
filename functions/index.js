@@ -197,6 +197,7 @@ async function transientSyncTrades(uid, server, accountId, password, platform) {
       platform: platform === 'mt4' ? 'mt4' : 'mt5',
       application: 'MetaApi',
       magic: 0,
+      reliability: 'regular',
     });
 
     // 2. Deploy it
