@@ -17,8 +17,6 @@ export const getFriendlyErrorMessage = (error) => {
   if (msg.includes('auth/popup-blocked')) return "Popup was blocked by your browser. Please allow popups for this site and try again.";
   if (msg.includes('auth/unauthorized-domain')) return "This domain is not authorized for sign-in. Please contact support.";
   if (msg.includes('auth/too-many-requests')) return "Access temporarily locked due to many attempts. Try again later.";
-  if (msg.includes('auth/unverified-email')) return "Please verify your email address. A verification link was sent to your inbox.";
-  if (msg.includes('auth/disposable-email')) return "Registration is not allowed using disposable email domains.";
   if (msg.includes('auth/missing-name')) return "First name and last name are required.";
   
   // Database / Permission Errors
