@@ -8,9 +8,13 @@ export function ThemeProvider({ children }) {
     return saved === 'light';
   });
 
+  const [currentTemplate, setTemplateState] = useState(() => {
+    return localStorage.getItem('xau-template') || 'neo-purple';
+  });
+
   const isInitialMount = useRef(true);
 
-  // ── Apply theme to the DOM ──────────────────────────────────────────────
+  // ── Apply theme & template to the DOM ──────────────────────────────────
   useEffect(() => {
     const root = window.document.documentElement;
 
@@ -41,7 +45,16 @@ export function ThemeProvider({ children }) {
       root.classList.add('dark');
     }
 
+    // Update template classes on the HTML element
+    root.classList.forEach(className => {
+      if (className.startsWith('theme-') && className !== 'theme-toggling') {
+        root.classList.remove(className);
+      }
+    });
+    root.classList.add(`theme-${currentTemplate}`);
+
     localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
+    localStorage.setItem('xau-template', currentTemplate);
 
     if (isInitialMount.current) {
       window.getComputedStyle(root).opacity;
@@ -53,15 +66,16 @@ export function ThemeProvider({ children }) {
         root.classList.remove('theme-toggling');
       });
     }
-  }, [isLightMode]);
+  }, [isLightMode, currentTemplate]);
 
   // ── Cross-tab sync via storage event ───────────────────────────────────
-  // The `storage` event fires in every tab EXCEPT the one that made the change.
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key !== 'xau-theme') return;
-      const newIsLight = e.newValue === 'light';
-      setIsLightMode(newIsLight);
+      if (e.key === 'xau-theme') {
+        setIsLightMode(e.newValue === 'light');
+      } else if (e.key === 'xau-template') {
+        setTemplateState(e.newValue || 'neo-purple');
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -72,9 +86,13 @@ export function ThemeProvider({ children }) {
     setIsLightMode(prev => !prev);
   };
 
+  const setTemplate = (templateName) => {
+    setTemplateState(templateName);
+  };
+
   return createElement(
     ThemeContext.Provider,
-    { value: { isLightMode, toggleTheme } },
+    { value: { isLightMode, toggleTheme, currentTemplate, setTemplate } },
     children
   );
 }

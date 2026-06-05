@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: env.VITE_API_TARGET || 'http://localhost:3000',
+          target: env.VITE_API_TARGET || 'https://xaujournal.vercel.app',
           changeOrigin: true,
         }
       }

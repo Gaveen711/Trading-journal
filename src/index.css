@@ -67,9 +67,84 @@
     --ring: 277 91% 65%;
 
     --win: 142.1 70.6% 45.3%;
-    --loss: 0 84.2% 60.2%;
   }
 }
+
+  /* ── Theme Accent Templates ── */
+  .theme-neo-purple,
+  :root.theme-neo-purple {
+    --primary: 277 91% 29%;
+    --primary-to: 263 71% 19%;
+    --accent: 277 91% 29%;
+    --ring: 277 91% 29%;
+  }
+  .dark .theme-neo-purple,
+  .dark.theme-neo-purple {
+    --primary: 277 91% 65%;
+    --primary-to: 263 71% 75%;
+    --accent: 277 91% 65%;
+    --ring: 277 91% 65%;
+  }
+
+  .theme-emerald-green,
+  :root.theme-emerald-green {
+    --primary: 142 76% 24%;
+    --primary-to: 152 76% 15%;
+    --accent: 142 76% 24%;
+    --ring: 142 76% 24%;
+  }
+  .dark .theme-emerald-green,
+  .dark.theme-emerald-green {
+    --primary: 142 71% 45%;
+    --primary-to: 152 71% 55%;
+    --accent: 142 71% 45%;
+    --ring: 142 71% 45%;
+  }
+
+  .theme-royal-blue,
+  :root.theme-royal-blue {
+    --primary: 221 83% 43%;
+    --primary-to: 224 80% 30%;
+    --accent: 221 83% 43%;
+    --ring: 221 83% 43%;
+  }
+  .dark .theme-royal-blue,
+  .dark.theme-royal-blue {
+    --primary: 217 91% 60%;
+    --primary-to: 224 91% 70%;
+    --accent: 217 91% 60%;
+    --ring: 217 91% 60%;
+  }
+
+  .theme-amber-gold,
+  :root.theme-amber-gold {
+    --primary: 38 92% 33%;
+    --primary-to: 35 92% 20%;
+    --accent: 38 92% 33%;
+    --ring: 38 92% 33%;
+  }
+  .dark .theme-amber-gold,
+  .dark.theme-amber-gold {
+    --primary: 38 92% 50%;
+    --primary-to: 45 92% 60%;
+    --accent: 38 92% 50%;
+    --ring: 38 92% 50%;
+  }
+
+  .theme-rose-pink,
+  :root.theme-rose-pink {
+    --primary: 330 81% 40%;
+    --primary-to: 325 81% 25%;
+    --accent: 330 81% 40%;
+    --ring: 330 81% 40%;
+  }
+  .dark .theme-rose-pink,
+  .dark.theme-rose-pink {
+    --primary: 330 81% 60%;
+    --primary-to: 325 81% 70%;
+    --accent: 330 81% 60%;
+    --ring: 330 81% 60%;
+  }
 
 @layer base {
   * {
@@ -655,133 +730,149 @@ a[href*="neat.firecms.co"] {
 }
 
 /* Buy Now tooltip + icon-slide button */
-.btn-buy-now {
-  --width: 140px;
-  --height: 40px;
-  --tooltip-height: 32px;
-  --tooltip-width: 110px;
-  --gap-between-tooltip-to-button: 14px;
-  --button-color: #4f46e5;
-  --tooltip-color: #fff;
-  width: var(--width) !important;
-  min-width: var(--width) !important;
-  max-width: var(--width) !important;
-  flex-shrink: 0;
-  align-self: center;
-  height: var(--height);
-  background: var(--button-color);
+/* Premium Pay Button Customizer */
+.pay-btn {
   position: relative;
-  text-align: center;
-  border-radius: 0.5em;
-  font-family: inherit;
-  transition: background 0.3s;
-  cursor: pointer;
-  border: none;
-  overflow: visible;
-}
-
-.btn-buy-now::before {
-  position: absolute;
-  content: attr(data-tooltip);
-  width: var(--tooltip-width);
-  height: var(--tooltip-height);
-  background-color: #312e81;
-  font-size: 0.7rem;
+  padding: 12px 24px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #fff;
-  border-radius: 0.35em;
-  line-height: var(--tooltip-height);
-  bottom: calc(var(--height) + var(--gap-between-tooltip-to-button) + 10px);
-  left: calc(50% - var(--tooltip-width) / 2);
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.5s;
+  letter-spacing: 0.15em;
+  background: #111116;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  width: 140px;
+  height: 40px;
+  margin: 0 auto;
 }
 
-.btn-buy-now::after {
+.pay-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px hsl(var(--primary) / 0.35);
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+.icon-container {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pay-btn .icon {
   position: absolute;
-  content: '';
-  width: 0;
-  height: 0;
-  border: 8px solid transparent;
-  border-top-color: #312e81;
-  left: calc(50% - 8px);
-  bottom: calc(100% + var(--gap-between-tooltip-to-button) - 10px);
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  color: hsl(var(--primary));
   opacity: 0;
   visibility: hidden;
-  transition: all 0.5s;
 }
 
-.btn-buy-now:hover::before,
-.btn-buy-now:hover::after {
+.pay-btn .default-icon {
   opacity: 1;
   visibility: visible;
 }
 
-.btn-buy-now:hover::after {
-  bottom: calc(var(--height) + var(--gap-between-tooltip-to-button) - 16px);
+/* Hover animations */
+.pay-btn:hover .icon {
+  animation: none;
 }
 
-.btn-buy-now:hover::before {
-  bottom: calc(var(--height) + var(--gap-between-tooltip-to-button));
+.pay-btn:hover .wallet-icon {
+  opacity: 0;
+  visibility: hidden;
 }
 
-/* Wrapper = the clipping container, anchored to fill the button */
-.btn-buy-now .btn-buy-now-wrapper {
-  overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
+.pay-btn:hover .card-icon {
+  animation: iconRotate 2.5s infinite;
+  animation-delay: 0s;
 }
 
-/* Text and icon are positioned relative to the wrapper */
-.btn-buy-now .btn-buy-now-text,
-.btn-buy-now .btn-buy-now-icon {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+.pay-btn:hover .payment-icon {
+  animation: iconRotate 2.5s infinite;
+  animation-delay: 0.5s;
 }
 
-.btn-buy-now .btn-buy-now-text {
-  top: 0;
-  font-size: 0.65rem;
+.pay-btn:hover .dollar-icon {
+  animation: iconRotate 2.5s infinite;
+  animation-delay: 1s;
+}
+
+.pay-btn:hover .check-icon {
+  animation: iconRotate 2.5s infinite;
+  animation-delay: 1.5s;
+}
+
+/* Active state - show only checkmark */
+.pay-btn:active .icon {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.pay-btn:active .check-icon {
+  animation: checkmarkAppear 0.6s ease forwards;
+  visibility: visible;
+}
+
+.btn-text {
   font-weight: 800;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  transition: top 0.5s;
+  font-family: inherit;
 }
 
-.btn-buy-now .btn-buy-now-icon {
-  top: 100%;
-  transition: top 0.5s;
+@keyframes iconRotate {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px) scale(0.5);
+  }
+  5% {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+  15% {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+  20% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.5);
+  }
 }
 
-
-
-.btn-buy-now:hover {
-  background: #4338ca;
-}
-
-.btn-buy-now:hover .btn-buy-now-text {
-  top: -100%;
-}
-
-.btn-buy-now:hover .btn-buy-now-icon {
-  top: 0;
-}
-
-.btn-buy-now:active {
-  scale: 0.95;
+@keyframes checkmarkAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-45deg);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 /* Secondary Glass buttons */

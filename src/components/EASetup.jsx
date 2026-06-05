@@ -682,12 +682,12 @@ export default function EASetup() {
                     <button
                       type="submit"
                       disabled={connecting}
-                      className="w-full h-12 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2.5 transition-all duration-300 disabled:opacity-50 active:scale-[0.98]"
+                      className="w-full h-12 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2.5 transition-all duration-300 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
                       style={{
                         background: connecting
-                          ? 'linear-gradient(135deg, #5b21b6, #7c3aed)'
-                          : 'linear-gradient(135deg, #7c3aed, #6d28d9, #4f46e5)',
-                        boxShadow: connecting ? 'none' : '0 0 24px rgba(124, 58, 237, 0.45), 0 4px 12px rgba(0,0,0,0.3)',
+                          ? 'linear-gradient(135deg, hsl(var(--primary) / 0.7), hsl(var(--primary-to) / 0.7))'
+                          : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-to)))',
+                        boxShadow: connecting ? 'none' : '0 0 24px hsl(var(--primary) / 0.35), 0 4px 12px rgba(0,0,0,0.25)',
                         color: 'white',
                       }}
                     >

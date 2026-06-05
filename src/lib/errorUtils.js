@@ -18,6 +18,9 @@ export const getFriendlyErrorMessage = (error) => {
   if (msg.includes('auth/unauthorized-domain')) return "This domain is not authorized for sign-in. Please contact support.";
   if (msg.includes('auth/too-many-requests')) return "Access temporarily locked due to many attempts. Try again later.";
   if (msg.includes('auth/missing-name')) return "First name and last name are required.";
+  if (msg.toLowerCase().includes('api-key') || msg.toLowerCase().includes('api_key')) {
+    return "Authentication service configuration error. Please contact support.";
+  }
   
   // Database / Permission Errors
   if (msg.includes('permission-denied')) return "You do not have permission for this action.";
@@ -26,10 +29,10 @@ export const getFriendlyErrorMessage = (error) => {
   // Generic cleanup — expose the Firebase error code for easier debugging
   let cleanMsg = msg.replace('Firebase: ', '').trim();
   // Extract just the error code if present (e.g. auth/some-error)
-  const codeMatch = msg.match(/\((auth\/[\w-]+)\)/);
+  const codeMatch = msg.match(/\((auth\/[\w-]+)\)/i);
   if (codeMatch) return `Sign-in error: ${codeMatch[1]}`;
 
-  if (cleanMsg.length > 80) {
+  if (cleanMsg.length > 50 || cleanMsg.includes('(') || cleanMsg.includes('/') || cleanMsg.includes('http')) {
     return "An unexpected error occurred. Please try again.";
   }
 

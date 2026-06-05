@@ -189,6 +189,57 @@ app.post('/auth-utils', async (c) => {
   return c.json({ error: 'Unknown action' }, 400)
 })
 
+app.post('/contact', async (c) => {
+  let body: any
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400)
+  }
+
+  const { name, email, subject, message } = body
+  if (!name || !email || !message) {
+    return c.json({ error: 'Missing required fields: name, email, and message' }, 400)
+  }
+
+  try {
+    // 1. Save to Firestore
+    await db.collection('contactMessages').add({
+      name,
+      email,
+      subject: subject || 'No Subject',
+      message,
+      createdAt: now(),
+    })
+
+    // 2. Send email via Resend
+    try {
+      await resend.emails.send({
+        from: 'XauJournal Contact Form<contact@xaujournal.com>',
+        to: 'info@xaujournal.com',
+        subject: `[Contact Form] ${subject || 'New Message'}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
+            <h2>New Contact Form Message</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
+            <p><strong>Message:</strong></p>
+            <p style="white-space: pre-wrap; background: #f1f5f9; padding: 15px; border-radius: 6px;">${message}</p>
+          </div>
+        `
+      })
+    } catch (emailErr: any) {
+      console.error('[contact] Resend email failed:', emailErr.message)
+    }
+
+    return c.json({ success: true, message: 'Message sent successfully.' })
+  } catch (err: any) {
+    return handleRouteError('contact', err, c)
+  }
+})
+
+
 // ── 2. Broker Login Sync Route ──────────────────────────────────────────────
 app.post('/broker-login-sync', async (c) => {
   let uid: string

@@ -55,28 +55,29 @@ export function ContactPage() {
         if (!form.name || !form.email || !form.message) return;
         setStatus('sending');
         
-        const toEmail = 'info@xaujournal.com';
-        const subject = form.subject ? form.subject : `Message from ${form.name}`;
-        const body = `Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`;
-        
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        const newWindow = window.open(gmailUrl, '_blank');
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    subject: form.subject,
+                    message: form.message
+                })
+            });
 
-        if (!newWindow) {
-            window.location.href = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        }
-        
-        setStatus('sent');
-    };
+            if (!response.ok) {
+                throw new Error('Failed to send message.');
+            }
 
-    const handleEmailClick = (event) => {
-        event.preventDefault();
-        const email = 'info@xaujournal.com';
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}`;
-        const newWindow = window.open(gmailUrl, '_blank');
-
-        if (!newWindow) {
-            window.location.href = `mailto:${email}`;
+            setStatus('sent');
+            setForm({ name: '', email: '', subject: '', message: '' });
+        } catch (err) {
+            console.error('Error submitting contact form:', err);
+            setStatus('error');
         }
     };
 
@@ -156,10 +157,10 @@ export function ContactPage() {
                         </div>
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="lg:hidden p-2 text-foreground"
+                            className="lg:hidden p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
                             aria-label="Toggle menu"
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
                             </svg>
                         </button>
@@ -229,7 +230,6 @@ export function ContactPage() {
                             <p className="text-primary text-xs font-bold tracking-[0.2em] uppercase mb-4">Direct contact</p>
                             <a
                                 href="mailto:info@xaujournal.com"
-                                onClick={handleEmailClick}
                                 className="text-2xl md:text-3xl font-bold hover:text-primary transition-colors duration-300"
                             >
                                 info@xaujournal.com
@@ -296,6 +296,11 @@ export function ContactPage() {
                                     <label className="block text-[0.7rem] font-black tracking-[0.2em] uppercase text-muted-foreground/80 ml-1">Message</label>
                                     <textarea value={form.message} onChange={set('message')} required rows={5} placeholder="Your message here..." className="w-full bg-background/50 border border-border/40 rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none" />
                                 </div>
+                                {status === 'error' && (
+                                    <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl text-red-500 text-xs font-bold uppercase tracking-tight text-center">
+                                        Failed to send message. Please try again.
+                                    </div>
+                                )}
                                 <button type="submit" disabled={status === 'sending'} className="btn-contact-send disabled:opacity-70 disabled:cursor-wait">
                                     {status === 'sending' ? (
                                         <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />

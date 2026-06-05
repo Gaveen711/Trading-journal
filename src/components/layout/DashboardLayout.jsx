@@ -15,7 +15,8 @@ import {
   PersonCircle,
   Lightning,
   LightningFill,
-  LockFill
+  LockFill,
+  Palette
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -29,12 +30,13 @@ import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 
 export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
-  const { isLightMode, toggleTheme } = useAppTheme();
+  const { isLightMode, toggleTheme, currentTemplate, setTemplate } = useAppTheme();
   const { accounts, syncAccount } = useBrokerAccounts();
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
 
   // Background sync on dashboard load / mount
   useEffect(() => {
@@ -134,22 +136,33 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
             );
           })}
         </nav>
-
         {/* SIDEBAR ACTIONS (Logout / Theme) */}
         <div className="mt-auto pt-6 border-t border-border/20 flex flex-col gap-4">
           <div className="flex items-center justify-between mt-2">
-            {/* Custom 3D rotate theme switch */}
-            <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
-              <div className="check">
-                <input
-                  id="check-desktop"
-                  type="checkbox"
-                  checked={!isLightMode}
-                  onChange={toggleTheme}
-                />
-                <label htmlFor="check-desktop" />
+            <div className="flex items-center gap-2">
+              {/* Custom 3D rotate theme switch */}
+              <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+                <div className="check">
+                  <input
+                    id="check-desktop"
+                    type="checkbox"
+                    checked={!isLightMode}
+                    onChange={toggleTheme}
+                  />
+                  <label htmlFor="check-desktop" />
+                </div>
               </div>
+
+              {/* Theme Template Palette Selector */}
+              <button
+                onClick={() => setShowThemeSelector(true)}
+                className="w-8 h-8 rounded-xl bg-muted hover:bg-muted/80 border border-border/40 flex items-center justify-center transition-colors cursor-pointer"
+                title="Change Accent Template"
+              >
+                <Palette className="w-4 h-4 text-foreground/70" />
+              </button>
             </div>
+
             <button 
               onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
               className="Btn"
@@ -176,6 +189,15 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Theme Template Palette Selector */}
+              <button
+                onClick={() => setShowThemeSelector(true)}
+                className="w-8 h-8 rounded-xl bg-muted hover:bg-muted/80 border border-border/40 flex items-center justify-center transition-colors cursor-pointer"
+                title="Change Accent Template"
+              >
+                <Palette className="w-4 h-4 text-foreground/70" />
+              </button>
+
               {/* Custom 3D rotate theme switch */}
               <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
                 <div className="check">
@@ -188,6 +210,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                   <label htmlFor="check-mobile" />
                 </div>
               </div>
+
               <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="w-8 h-8 rounded-xl bg-muted border border-border/40 flex items-center justify-center hover:shadow-none"
@@ -321,6 +344,77 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           })}
         </div>
       </nav>
+      {/* THEME TEMPLATE CUSTOMIZER MODAL */}
+      <AnimatePresence>
+        {showThemeSelector && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <Motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowThemeSelector(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            {/* Modal Box */}
+            <Motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', duration: 0.5 }}
+              className="w-full max-w-[420px] bg-white/90 dark:bg-card/95 border border-slate-200/30 dark:border-white/5 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative z-10 select-none overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-black uppercase tracking-wider text-foreground m-0">Choose Color</h3>
+                </div>
+                <button
+                  onClick={() => setShowThemeSelector(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors border-0 outline-none text-foreground/50 hover:text-foreground"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { id: 'neo-purple', name: 'Neo-Purple', desc: 'Vibrant neon violet & indigo' },
+                  { id: 'emerald-green', name: 'Emerald Forest', desc: 'Bullish green & forest teal' },
+                  { id: 'royal-blue', name: 'Royal Blue', desc: 'Classic professional royal blue' },
+                  { id: 'amber-gold', name: 'Amber Cyber', desc: 'Cyberpunk neon gold & bronze' },
+                  { id: 'rose-pink', name: 'Rose Sunset', desc: 'Sleek premium rose & crimson' }
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      setTemplate(t.id);
+                      toast(`Accent changed to ${t.name}`, 'success');
+                    }}
+                    className={`theme-${t.id} w-full flex items-center gap-4 p-3.5 rounded-2xl border transition-all duration-300 ${
+                      currentTemplate === t.id
+                        ? 'bg-primary/5 border-primary/40'
+                        : 'bg-slate-50/50 hover:bg-slate-100/80 dark:bg-white/5 dark:hover:bg-white/10 border-transparent'
+                    }`}
+                  >
+                    <div
+                      className="w-5 h-5 rounded-full flex-shrink-0 shadow-lg bg-gradient-to-br from-primary to-primary-to"
+                      style={{ boxShadow: '0 0 12px hsl(var(--primary) / 0.4)' }}
+                    />
+                    <div className="flex-1 text-left">
+                      <p className="text-[11px] font-black uppercase tracking-wider text-foreground m-0">{t.name}</p>
+                      <p className="text-[9px] font-medium text-muted-foreground/60 m-0 uppercase tracking-widest">{t.desc}</p>
+                    </div>
+                    {currentTemplate === t.id && (
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </Motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
