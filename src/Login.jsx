@@ -276,8 +276,20 @@ function Login() {
             console.error("Failed to trigger login alert:", e);
           }
         });
+
+        // Initialize user subscription (7-day trial) securely on the server
+        const initResponse = await fetch('/api/init-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!initResponse.ok) {
+          throw new Error('Failed to initialize user subscription.');
+        }
       } catch (e) {
-        console.error("Failed to trigger login alert:", e);
+        console.error("Failed to trigger post-login actions:", e);
       }
     } catch (err) {
       setError(getFriendlyErrorMessage(err));
