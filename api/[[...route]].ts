@@ -157,7 +157,7 @@ app.post('/auth-utils', async (c) => {
     if (!token) return c.json({ valid: false, score: 0, blocked: true, error: 'Missing token' })
 
     try {
-      const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429'
+      const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal29'
       const response = await fetch(
         `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${process.env.RECAPTCHA_API_KEY}`,
         {

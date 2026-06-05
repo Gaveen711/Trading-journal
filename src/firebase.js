@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider, FacebookAuthProvider, setPersistence, brow
 import { getStorage } from "firebase/storage";
 
 /** Production project — override via VITE_* in .env (see .env.example) */
-const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429';
+const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal29';
 
 const firebase = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,

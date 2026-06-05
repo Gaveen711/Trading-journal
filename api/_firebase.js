@@ -31,7 +31,7 @@ function initAdmin() {
     } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
       // Fallback to individual vars if the main JSON is missing
       serviceAccount = {
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429',
+        projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal29',
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: process.env.FIREBASE_PRIVATE_KEY
       };
@@ -41,7 +41,7 @@ function initAdmin() {
       if (serviceAccount.privateKey) serviceAccount.privateKey = serviceAccount.privateKey.replace(/\\n/g, '\n');
       if (serviceAccount.private_key) serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 
-      const projectId = serviceAccount.projectId || process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal-0429';
+      const projectId = serviceAccount.projectId || process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal29';
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         databaseURL: `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`,
