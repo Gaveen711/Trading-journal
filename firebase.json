@@ -1,9 +1,16 @@
 {
   "functions": [
     {
-      "source": "functions",
       "codebase": "default",
-      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log"]
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "source": "functions",
+      "predeploy": []
     }
   ],
   "firestore": {
@@ -48,5 +55,14 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "xaujournal",
+        "supportEmail": "info@xaujournal.com"
+      }
+    }
   }
 }
