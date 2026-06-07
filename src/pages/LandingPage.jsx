@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
 }
 import Logo from '../components/Logo';
+import { MagicTextReveal } from '../components/MagicTextReveal';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
   LANDING_FAQ,
@@ -405,6 +406,8 @@ export function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [isHoveredButton, setIsHoveredButton] = useState(false);
+  const [isMobileLanding, setIsMobileLanding] = useState(false);
   const lenisRef = useRef(null);
 
   const heroRef = useRef(null);
@@ -420,6 +423,21 @@ export function LandingPage() {
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     return () => { if ('scrollRestoration' in history) history.scrollRestoration = 'auto'; };
   }, []);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobileLanding(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileLanding) return;
+    const interval = setInterval(() => {
+      setIsHoveredButton(prev => !prev);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [isMobileLanding]);
 
   useEffect(() => {
     injectJsonLd('ld-org', buildOrganizationSchema());
@@ -650,13 +668,38 @@ export function LandingPage() {
                 XAU Journal is the precision trading journal built for gold traders track, analyse, and master your edge in XAUUSD.
               </Motion.p>
 
-              <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center gap-3.5 w-full sm:w-auto">
-                <MagneticButton onClick={() => navigate('/login')} className="btn-menu-underline">
-                  Try 7-Day Free Trial
-                </MagneticButton>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mt-1">
-                  7-day free trial · Cancel anytime · No card required
-                </span>
+              <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center w-full sm:w-auto mt-6">
+                <div 
+                  onClick={() => navigate('/login')}
+                  onMouseEnter={() => setIsHoveredButton(true)}
+                  onMouseLeave={() => setIsHoveredButton(false)}
+                  onTouchStart={() => setIsHoveredButton(true)}
+                  onTouchEnd={() => setIsHoveredButton(false)}
+                  onTouchCancel={() => setIsHoveredButton(false)}
+                  className="group flex flex-col items-center justify-center rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden relative"
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    minWidth: '320px',
+                    padding: '16px 24px',
+                  }}
+                >
+                  <MagicTextReveal
+                    text="Try 7-Day Free Trial"
+                    text2="CANCEL ANYTIME · NO CARD REQUIRED"
+                    fontSize={22}
+                    fontWeight={600}
+                    color={isLightMode ? "rgba(0, 0, 0, 1)" : "rgba(255, 255, 255, 1)"}
+                    color2={isLightMode ? "rgba(0, 0, 0, 0.6)" : "rgba(161, 161, 170, 0.8)"}
+                    forceHover={isHoveredButton}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      minHeight: '40px',
+                      backdropFilter: 'none',
+                    }}
+                  />
+                </div>
               </Motion.div>
 
               <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-10 md:gap-20 mt-16 md:mt-24 w-full max-w-4xl px-4">
