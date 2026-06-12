@@ -23,12 +23,11 @@ export const MagicTextReveal = ({
   const wrapperRef = useRef(null);
   const particlesRef = useRef([]);
   const animationFrameRef = useRef(null);
-  const lastTimeRef = useRef(performance.now());
+  const lastTimeRef = useRef(0);
   const [internalHovered, setInternalHovered] = useState(false);
   const [showText, setShowText] = useState(false);
   const [hasBeenShown, setHasBeenShown] = useState(false);
   const [wrapperSize, setWrapperSize] = useState({ width: 0, height: 0 });
-  const [textDimensions, setTextDimensions] = useState({ width: 0, height: 0 });
 
   const isHovered = forceHover !== undefined ? forceHover : internalHovered;
 
@@ -66,11 +65,7 @@ export const MagicTextReveal = ({
     };
   }, []);
 
-  // Update text dimensions when text or font properties change
-  useEffect(() => {
-    const dimensions = measureText(text, fontSize, fontWeight, fontFamily, text2, fontSize2, fontWeight2);
-    setTextDimensions(dimensions);
-  }, [text, fontSize, fontWeight, fontFamily, text2, fontSize2, fontWeight2, measureText]);
+
 
   // Create particles from text
   const createParticles = useCallback((
@@ -364,6 +359,7 @@ export const MagicTextReveal = ({
 
   // Animation loop
   useEffect(() => {
+    lastTimeRef.current = performance.now();
     const animate = (currentTime) => {
       const deltaTime = (currentTime - lastTimeRef.current) / 1000;
       lastTimeRef.current = currentTime;
@@ -405,36 +401,37 @@ export const MagicTextReveal = ({
   // Handle resize
   useEffect(() => {
     const handleResize = () => {
-      if (wrapperRef.current && textDimensions.width && textDimensions.height) {
-        // Responsive padding based on screen size and font size
-        const isMobile = window.innerWidth < 768;
-        const basePadding = isMobile ? Math.max(fontSize * 0.3, 20) : Math.max(fontSize * 0.5, 40);
-        
-        const minWidth = Math.max(textDimensions.width + basePadding * 2, isMobile ? 120 : 200);
-        const minHeight = Math.max(textDimensions.height + basePadding * 2, isMobile ? 60 : 100);
-        
-        // Get container constraints with responsive maxWidth
-        const parentRect = wrapperRef.current.parentElement?.getBoundingClientRect();
-        const viewportMargin = isMobile ? 0.95 : 0.9;
-        const maxWidth = parentRect ? parentRect.width * viewportMargin : window.innerWidth * viewportMargin;
-        const maxHeight = parentRect ? parentRect.height * viewportMargin : window.innerHeight * viewportMargin;
-        
-        const finalWidth = Math.min(minWidth, maxWidth);
-        const finalHeight = Math.min(minHeight, maxHeight);
-        
-        setWrapperSize({ width: finalWidth, height: finalHeight });
+      if (wrapperRef.current) {
+        const dimensions = measureText(text, fontSize, fontWeight, fontFamily, text2, fontSize2, fontWeight2);
+        if (dimensions.width && dimensions.height) {
+          // Responsive padding based on screen size and font size
+          const isMobile = window.innerWidth < 768;
+          const basePadding = isMobile ? Math.max(fontSize * 0.3, 20) : Math.max(fontSize * 0.5, 40);
+          
+          const minWidth = Math.max(dimensions.width + basePadding * 2, isMobile ? 120 : 200);
+          const minHeight = Math.max(dimensions.height + basePadding * 2, isMobile ? 60 : 100);
+          
+          // Get container constraints with responsive maxWidth
+          const parentRect = wrapperRef.current.parentElement?.getBoundingClientRect();
+          const viewportMargin = isMobile ? 0.95 : 0.9;
+          const maxWidth = parentRect ? parentRect.width * viewportMargin : window.innerWidth * viewportMargin;
+          const maxHeight = parentRect ? parentRect.height * viewportMargin : window.innerHeight * viewportMargin;
+          
+          const finalWidth = Math.min(minWidth, maxWidth);
+          const finalHeight = Math.min(minHeight, maxHeight);
+          
+          setWrapperSize({ width: finalWidth, height: finalHeight });
+        }
       }
     };
 
     // Initial resize
-    if (textDimensions.width && textDimensions.height) {
-      handleResize();
-    }
+    handleResize();
     
     window.addEventListener('resize', handleResize);
     
     return () => window.removeEventListener('resize', handleResize);
-  }, [textDimensions, fontSize]);
+  }, [text, fontSize, fontWeight, fontFamily, text2, fontSize2, fontWeight2, measureText]);
 
   // Render canvas when size changes
   useEffect(() => {
