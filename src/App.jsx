@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import { useToast } from './components/ToastContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -225,6 +226,7 @@ function App() {
           </Routes>
         )}
       </Suspense>
+      <SpeedInsights />
     </ErrorBoundary>
   );
 }
