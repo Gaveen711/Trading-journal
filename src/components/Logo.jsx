@@ -17,11 +17,9 @@ export default function Logo({ className = '', iconSize = 'w-6 h-6', onlyIcon = 
 
   return (
     <div className={`flex items-center ${className}`}>
-      <img 
-        src="/logo-horizontal.png" 
-        className="h-8 md:h-9 object-contain dark:invert" 
-        alt="xaujournal" 
-      />
+      <span className="text-2xl md:text-[20px] font-bold tracking-tight text-foreground inline-block transition-transform duration-300 hover:scale-105 hover:-translate-y-0.5 cursor-pointer">
+        Xau Journal<span className="text-primary">.</span>
+      </span>
     </div>
   );
 }
