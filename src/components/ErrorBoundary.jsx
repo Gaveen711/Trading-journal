@@ -99,7 +99,7 @@ export class ErrorBoundary extends React.Component {
                 fontWeight: 500,
               }}
             >
-              The app hit an unexpected error. Your data is safe — try refreshing to get back on track.
+              The app hit an unexpected error. Your data is saf, try refreshing to get back on track.
             </p>
 
             {/* Error detail pill */}

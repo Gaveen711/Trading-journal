@@ -12,6 +12,7 @@ import { DatePicker } from '../components/ui/DatePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { CurrencyExchange } from 'react-bootstrap-icons';
 import { CurrencyConverter } from '../components/CurrencyConverter';
+import { RiskCalculator } from '../components/RiskCalculator';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
@@ -40,11 +41,25 @@ export function LogTradePage() {
 
 
 
-  const TRADE_LIMIT = 50;
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const thisMonthTradesCount = trades.filter(t => t.date >= monthStart).length;
-  const isLimitReached = plan === 'free' && thisMonthTradesCount >= TRADE_LIMIT;
+  const TRADE_LIMIT = 25;
+  
+  const recentTrades = useMemo(() => {
+    const now = new Date().getTime();
+    const fiveHoursAgo = now - 5 * 60 * 60 * 1000;
+    
+    return trades.filter(t => {
+      if (!t.timestamp) return false;
+      const ts = t.timestamp.seconds ? t.timestamp.seconds * 1000 : new Date(t.timestamp).getTime();
+      return ts > fiveHoursAgo;
+    }).sort((a, b) => {
+      const aTs = a.timestamp.seconds ? a.timestamp.seconds * 1000 : new Date(a.timestamp).getTime();
+      const bTs = b.timestamp.seconds ? b.timestamp.seconds * 1000 : new Date(b.timestamp).getTime();
+      return bTs - aTs;
+    });
+  }, [trades]);
+
+  const currentTradeCount = recentTrades.length;
+  const isLimitReached = plan === 'free' && currentTradeCount >= TRADE_LIMIT;
 
   const [direction, setDirection] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -61,6 +76,8 @@ export function LogTradePage() {
   const [leverage, setLeverage] = useState('');
   const [session, setSession] = useState('');
   const [setup, setSetup] = useState('');
+  const [strategies, setStrategies] = useState([]);
+  const [strategyInput, setStrategyInput] = useState('');
 
   const [screenshots, setScreenshots] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -181,7 +198,7 @@ export function LogTradePage() {
     const outcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
 
     const tradeData = {
-      date, direction, entry: entryVal, exit: exitVal, lots: lotsVal, swap: swapVal, sl: slVal, tp: tpVal, rr, pips, session, setup, market: 'GOLD', leverage: leverageVal,
+      date, direction, entry: entryVal, exit: exitVal, lots: lotsVal, swap: swapVal, sl: slVal, tp: tpVal, rr, pips, session, setup, strategies, market: 'GOLD', leverage: leverageVal,
       pnl: parseFloat(pnl.toFixed(2)), outcome, note: noteVal, screenshots, timestamp: new Date()
     };
 
@@ -190,7 +207,7 @@ export function LogTradePage() {
       e.target.reset();
       setDirection(null);
       setDate(todayStr());
-      setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup(''); setScreenshots([]);
+      setEntry(''); setExit(''); setLots('0.10'); setSwap(''); setSl(''); setTp(''); setNote(''); setLeverage(''); setSession(''); setSetup(''); setStrategies([]); setStrategyInput(''); setScreenshots([]);
       toast(`Trade recorded: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : outcome === 'LOSS' ? 'error' : 'warn');
     } catch (err) {
       toast(err?.message || 'Failed to record trade. Please try again.', 'error');
@@ -328,102 +345,46 @@ export function LogTradePage() {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
+    if (!isLimitReached) return;
+
+    const oldestTradeInLimit = recentTrades[TRADE_LIMIT - 1]; 
+    if (!oldestTradeInLimit) return;
+
+    const oldestTs = oldestTradeInLimit.timestamp.seconds ? oldestTradeInLimit.timestamp.seconds * 1000 : new Date(oldestTradeInLimit.timestamp).getTime();
+    const unlockTime = oldestTs + 5 * 60 * 60 * 1000;
+
     const calculateTimeLeft = () => {
-      const now = new Date();
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const difference = nextMonth - now;
+      const difference = unlockTime - new Date().getTime();
 
       if (difference <= 0) {
-        setTimeLeft('00d : 00h : 00m : 00s');
+        setTimeLeft('00h : 00m : 00s');
         return;
       }
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((difference / 1000 / 60) % 60);
       const seconds = Math.floor((difference / 1000) % 60);
 
       const pad = (num) => String(num).padStart(2, '0');
-      setTimeLeft(`${pad(days)}d : ${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
+      setTimeLeft(`${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
     };
 
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [isLimitReached, recentTrades]);
 
-  if (isLimitReached) {
-    return (
-      <div className="min-h-[65vh] flex flex-col items-center justify-center text-center p-6 space-y-8 animate-in fade-in zoom-in-95 duration-700">
-        <div className="relative">
-          <div className="absolute inset-0 bg-red-500/20 blur-3xl animate-pulse rounded-full" />
-          <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border border-white/10 group">
-            <LockFill className="w-10 h-10 text-white group-hover:rotate-12 transition-transform duration-500" />
-          </div>
-        </div>
 
-        <div className="max-w-md space-y-3">
-          <h2 className="text-3xl font-black text-gradient-red uppercase tracking-tighter">Terminal Locked</h2>
-          <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest leading-relaxed">
-            Free monthly limit reached ({TRADE_LIMIT}/{TRADE_LIMIT}). <br />
-            <span className="text-destructive font-black">Upgrade to Pro</span> to unlock unlimited operations and cognitive brief logs.
-          </p>
-        </div>
-
-        <div className="flex flex-col items-center space-y-3 py-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">Time until limit resets:</span>
-          <div className="flex items-center gap-2">
-            {timeLeft.split(' : ').map((part, index) => {
-              const value = part.slice(0, -1);
-              const label = part.slice(-1);
-              const labelName = label === 'd' ? 'Days' : label === 'h' ? 'Hours' : label === 'm' ? 'Mins' : 'Secs';
-              return (
-                <div key={index} className="flex items-center">
-                  <div className="flex flex-col items-center bg-muted/40 border border-border/50 rounded-2xl px-4 py-2.5 min-w-[64px] shadow-sm">
-                    <span className="text-xl font-black tracking-tight text-foreground">{value}</span>
-                    <span className="text-[8px] font-black uppercase tracking-wider text-muted-foreground/60">{labelName}</span>
-                  </div>
-                  {index < 3 && (
-                    <span className="text-sm font-black text-muted-foreground/30 mx-1.5 animate-pulse">:</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-          <button
-            onClick={() => setShowPricingModal(true)}
-            className="flex-1 h-14 btn-apple-primary text-xs"
-          >
-            Go Pro Now
-          </button>
-          <button
-            onClick={() => auth.signOut()}
-            className="flex-1 h-14 btn-apple-secondary text-[10px]"
-          >
-            Logout
-          </button>
-        </div>
-
-        <style>{`
-          .text-gradient-red {
-            background: linear-gradient(to bottom right, #ef4444, #991b1b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
-        `}</style>
-      </div>
-    );
-  }
 
   const currentWalletBalance = (walletBalance || 0) + trades.reduce((s, t) => s + (t.pnl || 0), 0);
   const winRate = chartVisibleTrades.length ? (chartVisibleTrades.filter(t => t.outcome === 'WIN').length / chartVisibleTrades.length * 100).toFixed(0) : 0;
 
-  const thisMonthTrades = trades.filter(t => t.date >= monthStart);
-  const thisMonthPnl = thisMonthTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+  const thisMonthPnl = trades.filter(t => {
+    const d = new Date();
+    const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    return t.date >= monthStart;
+  }).reduce((s, t) => s + (t.pnl || 0), 0);
   const goalProgress = Math.min(100, Math.max(0, (thisMonthPnl / (monthlyGoal || 1)) * 100));
 
   const wins = chartVisibleTrades.filter(t => (t.pnl || 0) > 0);
@@ -446,7 +407,7 @@ export function LogTradePage() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-200">
       
       {/* HEADER SECTION */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-6 rounded-3xl border border-border/30 shadow-flat relative group overflow-hidden">
@@ -487,7 +448,7 @@ export function LogTradePage() {
             </div>
             <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
               <div 
-                className="bg-primary h-full rounded-full transition-all duration-1000" 
+                className="bg-primary h-full rounded-full transition-all duration-300" 
                 style={{ width: `${goalProgress}%` }}
               />
             </div>
@@ -521,6 +482,12 @@ export function LogTradePage() {
           >
             Recent Logs
           </button>
+          <button
+            onClick={() => setActiveTab('calculator')}
+            className={`glass-tab-button ${activeTab === 'calculator' ? 'glass-tab-button-active' : ''}`}
+          >
+            Risk Calculator
+          </button>
         </div>
 
         {/* TIMESCALE SELECTORS */}
@@ -541,7 +508,11 @@ export function LogTradePage() {
       </div>
 
       {/* ACTIVE VIEW TAB CONTENT */}
-      <div className="transition-all duration-300">
+      <div className="transition-all duration-200">
+        {activeTab === 'calculator' && (
+          <RiskCalculator />
+        )}
+
         {activeTab === 'chart' && (
           <div className="card-premium p-6 h-[320px] sm:h-[450px] flex flex-col relative overflow-hidden">
             <div className="flex-1 w-full min-h-0 relative z-10">
@@ -565,6 +536,63 @@ export function LogTradePage() {
         )}
 
         {activeTab === 'log' && (
+          isLimitReached ? (
+            <div className="min-h-[50vh] flex flex-col items-center justify-center text-center p-6 space-y-8 animate-in fade-in zoom-in-95 duration-200">
+              <div className="relative">
+                <div className="absolute inset-0 bg-red-500/20 blur-3xl animate-pulse rounded-full" />
+                <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border border-white/10 group">
+                  <LockFill className="w-10 h-10 text-white group-hover:rotate-12 transition-transform duration-200" />
+                </div>
+              </div>
+
+              <div className="max-w-md space-y-3">
+                <h2 className="text-3xl font-black text-gradient-red uppercase tracking-tighter">Terminal Locked</h2>
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest leading-relaxed">
+                  5-Hour Limit Reached ({currentTradeCount}/{TRADE_LIMIT}). <br />
+                  <span className="text-destructive font-black">Upgrade to Pro</span> to unlock unlimited operations and cognitive brief logs.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center space-y-3 py-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">Cooldown Timer:</span>
+                <div className="flex items-center gap-2">
+                  {timeLeft.split(' : ').map((part, index) => {
+                    const value = part.slice(0, -1);
+                    const label = part.slice(-1);
+                    const labelName = label === 'h' ? 'Hours' : label === 'm' ? 'Mins' : 'Secs';
+                    return (
+                      <div key={index} className="flex items-center">
+                        <div className="flex flex-col items-center bg-muted/40 border border-border/50 rounded-2xl px-4 py-2.5 min-w-[64px] shadow-sm">
+                          <span className="text-xl font-black tracking-tight text-foreground">{value}</span>
+                          <span className="text-[8px] font-black uppercase tracking-wider text-muted-foreground/60">{labelName}</span>
+                        </div>
+                        {index < 2 && (
+                          <span className="text-sm font-black text-muted-foreground/30 mx-1.5 animate-pulse">:</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm pt-4">
+                <button
+                  onClick={() => setShowPricingModal(true)}
+                  className="flex-1 h-14 btn-apple-primary text-xs"
+                >
+                  Go Pro Now
+                </button>
+              </div>
+
+              <style>{`
+                .text-gradient-red {
+                  background: linear-gradient(to bottom right, #ef4444, #991b1b);
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                }
+              `}</style>
+            </div>
+          ) : (
           <div className="card-premium p-6 sm:p-8 space-y-6">
             <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Record New Gold Trade</h3>
             <form onSubmit={saveTradeForm} className="space-y-4">
@@ -613,19 +641,39 @@ export function LogTradePage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Setup</label>
-                  <CustomSelect
-                    name="setup"
-                    value={setup}
-                    onChange={setSetup}
-                    options={[
-                      { value: 'A+ Setup', label: 'A+ Setup' },
-                      { value: 'Breakout', label: 'Breakout' },
-                      { value: 'Reversal', label: 'Reversal' },
-                      { value: 'News', label: 'News' },
-                      { value: 'Trend', label: 'Trend' }
-                    ]}
-                  />
+                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Strategies</label>
+                  <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-[44px] px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('strategy-input').focus()}>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {strategies.map((tag, i) => (
+                        <span key={i} className="flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">
+                          {tag}
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setStrategies(s => s.filter((_, idx) => idx !== i)); }} className="hover:text-foreground opacity-70 hover:opacity-100">
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                      <input
+                        id="strategy-input"
+                        type="text"
+                        value={strategyInput}
+                        onChange={e => setStrategyInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            const val = strategyInput.trim().replace(/^,+|,+$/g, '');
+                            if (val && !strategies.includes(val)) {
+                              setStrategies([...strategies, val]);
+                            }
+                            setStrategyInput('');
+                          } else if (e.key === 'Backspace' && !strategyInput && strategies.length > 0) {
+                            setStrategies(strategies.slice(0, -1));
+                          }
+                        }}
+                        placeholder={strategies.length ? "Add tag..." : "e.g. Breakout, Trend"}
+                        className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-foreground placeholder:text-muted-foreground/50 min-w-[80px]"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">Leverage</label>
@@ -707,7 +755,7 @@ export function LogTradePage() {
 
                 {plan === 'pro' ? (
                   <div className="space-y-3">
-                    <div className="relative border border-dashed border-border/60 hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-300 bg-muted/10 group hover:bg-muted/20">
+                    <div className="relative border border-dashed border-border/60 hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 bg-muted/10 group hover:bg-muted/20">
                       <input
                         type="file"
                         multiple
@@ -716,7 +764,7 @@ export function LogTradePage() {
                         disabled={uploading}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
-                      <CloudArrowUp className="w-7 h-7 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                      <CloudArrowUp className="w-7 h-7 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-200" />
                       <span className="text-[11px] font-black text-foreground/80 uppercase tracking-widest">
                         {uploading ? `Uploading (${uploadProgress}%)...` : 'Drag & Drop or Click to Upload'}
                       </span>
@@ -726,7 +774,7 @@ export function LogTradePage() {
                     {uploading && (
                       <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
                         <div 
-                          className="bg-primary h-full rounded-full transition-all duration-300" 
+                          className="bg-primary h-full rounded-full transition-all duration-200" 
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
@@ -770,13 +818,13 @@ export function LogTradePage() {
               {plan === 'free' && (
                 <div className="space-y-2 pt-1">
                   <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    <span>Trade Limit</span>
-                    <span>{thisMonthTradesCount} / {TRADE_LIMIT} Logs</span>
+                    <span>5h Capacity</span>
+                    <span>{currentTradeCount} / {TRADE_LIMIT} Logs</span>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border/20 shadow-inner">
                     <div
-                      className={`h-full transition-all duration-1000 ease-[var(--apple-ease)] ${isLimitReached ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-primary'}`}
-                      style={{ width: `${(thisMonthTradesCount / TRADE_LIMIT) * 100}%` }}
+                      className={`h-full transition-all duration-300 ease-[var(--apple-ease)] ${isLimitReached ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-primary'}`}
+                      style={{ width: `${(currentTradeCount / TRADE_LIMIT) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -791,6 +839,7 @@ export function LogTradePage() {
               </button>
             </form>
           </div>
+          )
         )}
 
         {activeTab === 'logs' && (
@@ -838,28 +887,28 @@ export function LogTradePage() {
       {/* 4 PASTEL CARDS STATS GRID */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Card 1: Win Rate */}
-        <div className="card-pastel-green-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="card-pastel-green-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Win Rate</span>
           <p className="text-2xl font-black tracking-tight">{winRate}%</p>
           <p className="text-[9px] font-bold opacity-70">Percentage of winning logs</p>
         </div>
 
         {/* Card 2: Avg Profit */}
-        <div className="card-pastel-blue-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="card-pastel-blue-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Avg Win</span>
           <p className="text-2xl font-black tracking-tight">{formatCurrency(avgProfit)}</p>
           <p className="text-[9px] font-bold opacity-70">Average gain per win</p>
         </div>
 
         {/* Card 3: Avg Drawdown */}
-        <div className="card-pastel-pink-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="card-pastel-pink-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
           <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Avg Loss</span>
           <p className="text-2xl font-black tracking-tight">{formatCurrency(avgLoss)}</p>
           <p className="text-[9px] font-bold opacity-70">Average loss per drawdown</p>
         </div>
 
         {/* Card 4: Wallet Balance */}
-        <div className="card-pastel-yellow-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-300 hover:-translate-y-0.5 relative overflow-hidden group hover:shadow-md">
+        <div className="card-pastel-yellow-glass p-5 rounded-3xl flex flex-col gap-1.5 text-left transition-transform duration-200 hover:-translate-y-0.5 relative overflow-hidden group hover:shadow-md">
           <div className="flex justify-between items-start">
             <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Balance</span>
             {!isEditingBalance && plan === 'pro' && (
@@ -909,7 +958,7 @@ export function LogTradePage() {
         {/* FEED CONTENT */}
         <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
           {Object.entries(journals).slice(0, 5).map(([jDate, jData]) => (
-            <div key={jDate} className="bg-pastel-cream p-4 rounded-2xl border border-yellow-100 flex gap-3 text-left animate-in fade-in duration-300">
+            <div key={jDate} className="bg-pastel-cream p-4 rounded-2xl border border-yellow-100 flex gap-3 text-left animate-in fade-in duration-200">
               <div className="w-7 h-7 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 text-yellow-600 font-bold text-xs uppercase border border-yellow-200">
                 {jDate.slice(-2)}
               </div>
@@ -951,9 +1000,9 @@ export function LogTradePage() {
 
       {/* PRO RESET OPTION */}
       {(plan === 'pro' || import.meta.env.DEV) && (
-        <div className="pt-8 pb-4 hidden md:flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
+        <div className="pt-8 pb-4 hidden md:flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-500">
           {isWiping && (
-            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 max-w-sm flex gap-3 text-left animate-in slide-in-from-bottom-2 duration-300">
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 max-w-sm flex gap-3 text-left animate-in slide-in-from-bottom-2 duration-200">
               <ExclamationTriangleFill className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-destructive mb-1">Danger Zone</p>

@@ -1265,6 +1265,13 @@ const handleBrokerSyncPoller = async (c: any) => {
           updatedAt: new Date().toISOString(),
         })
 
+        await db.collection('users').doc(uid).set({
+          lastBrokerSync: new Date(),
+          lastBrokerSyncStatus: 'success',
+          lastBrokerSyncCount: brokerTrades.length,
+          lastBrokerSyncError: null
+        }, { merge: true })
+
         console.log(`[broker-sync-poller] ✓ Synced ${newCount} new trades for ${accountId}`)
         successfulSyncs++
       } catch (error: any) {
@@ -1276,6 +1283,11 @@ const handleBrokerSyncPoller = async (c: any) => {
             lastSyncError: error.message,
             updatedAt: new Date().toISOString(),
           })
+
+          await db.collection('users').doc(uid).set({
+            lastBrokerSyncStatus: 'failed',
+            lastBrokerSyncError: error.message
+          }, { merge: true })
         } catch (updateErr: any) {
           console.error('[broker-sync-poller] Failed to update error status:', updateErr.message)
         }

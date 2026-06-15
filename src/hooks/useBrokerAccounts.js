@@ -52,6 +52,7 @@ export function useBrokerAccounts() {
                   : new Date(dbData.lastBrokerSync).toISOString())
               : null,
             lastSyncStatus: dbData.lastBrokerSyncStatus || 'success',
+            lastSyncError: dbData.lastBrokerSyncError || null,
             tradeCount: dbData.lastBrokerSyncCount || 0,
             isActive: true,
           }));
