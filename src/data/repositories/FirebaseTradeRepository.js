@@ -1,4 +1,4 @@
-import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, increment, writeBatch } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { TradeRepository } from '../../core/domain/repositories/TradeRepository.js';
 
@@ -30,15 +30,21 @@ export class FirebaseTradeRepository extends TradeRepository {
   }
 
   async addTrade(userId, tradeData) {
-    const collRef = collection(db, 'users', userId, 'trades');
-    const docRef = await addDoc(collRef, tradeData);
-    await updateDoc(docRef, { id: docRef.id });
+    const batch = writeBatch(db);
+    const tradeRef = doc(collection(db, 'users', userId, 'trades'));
     
-    await updateDoc(doc(db, 'users', userId), {
-      totalTradesLogged: increment(1)
+    batch.set(tradeRef, {
+      ...tradeData,
+      id: tradeRef.id
     });
     
-    return docRef;
+    batch.update(doc(db, 'users', userId), {
+      totalTradesLogged: increment(1),
+      lastTradeTime: serverTimestamp()
+    });
+    
+    await batch.commit();
+    return tradeRef;
   }
 
   async removeTrade(userId, tradeId) {

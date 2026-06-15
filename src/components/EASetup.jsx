@@ -199,6 +199,47 @@ export default function EASetup() {
   const isGrace = plan === 'grace';
   const isSyncAllowed = isActivePro || isGrace;
 
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getSyncStatusInfo = (account) => {
+    if (!account) return { status: 'disconnected', label: 'Disconnected', color: 'text-muted-foreground', dotBg: 'bg-muted' };
+    
+    if (account.lastSyncStatus === 'failed') {
+      return {
+        status: 'failed',
+        label: 'Broker Disconnected',
+        color: 'text-rose-500',
+        dotBg: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]',
+        badgeBg: 'bg-rose-500/15 border-rose-500/20'
+      };
+    }
+    
+    if (account.lastSyncTime) {
+      const elapsedMinutes = (currentTime - new Date(account.lastSyncTime).getTime()) / 60000;
+      if (elapsedMinutes > 5) {
+        return {
+          status: 'delayed',
+          label: 'Sync Delayed',
+          color: 'text-amber-500',
+          dotBg: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]',
+          badgeBg: 'bg-amber-500/15 border-amber-500/20'
+        };
+      }
+    }
+    
+    return {
+      status: 'active',
+      label: 'Connected',
+      color: 'text-emerald-500',
+      dotBg: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]',
+      badgeBg: 'bg-emerald-500/15 border-emerald-500/20'
+    };
+  };
+
   const selectedServer = serverName.trim();
 
   async function handleConnect(e) {
@@ -472,17 +513,21 @@ export default function EASetup() {
 
                 {/* Status indicator */}
                 <div className="shrink-0">
-                  {accounts.some(a => a.platform === selectedPlatform) ? (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/20 text-emerald-500 text-xs font-bold">
-                      <CheckCircleFill className="w-3.5 h-3.5 animate-pulse" />
-                      Connected
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border/30 text-muted-foreground text-xs font-bold">
-                      <ExclamationCircleFill className="w-3.5 h-3.5" />
-                      Disconnected
-                    </div>
-                  )}
+                  {(() => {
+                    const acc = accounts.find(a => a.platform === selectedPlatform);
+                    const syncInfo = getSyncStatusInfo(acc);
+                    return acc ? (
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${syncInfo.badgeBg} ${syncInfo.color} text-xs font-bold`}>
+                        <div className={`w-2 h-2 rounded-full ${syncInfo.dotBg} animate-pulse`} />
+                        {syncInfo.label}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border/30 text-muted-foreground text-xs font-bold">
+                        <ExclamationCircleFill className="w-3.5 h-3.5" />
+                        Disconnected
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -503,13 +548,39 @@ export default function EASetup() {
                   </div>
                   <div className="space-y-1">
                     <div className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Status</div>
-                    <div className="text-sm font-bold text-emerald-500 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Active
+                    <div className={`text-sm font-bold ${getSyncStatusInfo(acc).color} flex items-center gap-1.5`}>
+                      <span className={`w-2 h-2 rounded-full ${getSyncStatusInfo(acc).dotBg} animate-pulse`} />
+                      {getSyncStatusInfo(acc).status === 'active' ? 'Active' : getSyncStatusInfo(acc).label}
                     </div>
                   </div>
                 </div>
               ))}
+
+              {accounts.filter(a => a.platform === selectedPlatform).map((acc) => {
+                const syncInfo = getSyncStatusInfo(acc);
+                return (
+                  <div key={`alert-${acc.id}`}>
+                    {syncInfo.status === 'failed' && (
+                      <div className="mb-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-start gap-3">
+                        <ExclamationCircleFill className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold uppercase tracking-wider">Broker Disconnected</p>
+                          <p className="text-[11px] font-medium leading-relaxed opacity-90">{acc.lastSyncError || 'The broker API or connection failed. Please check your credentials or click Re-sync Now.'}</p>
+                        </div>
+                      </div>
+                    )}
+                    {syncInfo.status === 'delayed' && (
+                      <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-start gap-3">
+                        <ExclamationCircleFill className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold uppercase tracking-wider">Sync Delayed</p>
+                          <p className="text-[11px] font-medium leading-relaxed opacity-90">Last successful synchronization was over 5 minutes ago. Background worker might be delayed.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Credentials / Setup Form */}
               <div className="space-y-4">

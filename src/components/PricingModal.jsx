@@ -5,7 +5,7 @@ import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY } from '../lib/pricing';
 
 export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClose, recordProAcceptance }) {
   const [showTerms, setShowTerms] = useState(false);
-  const SUB_LIMITS = { freeTrades: 50, freeJournals: 10 };
+  const SUB_LIMITS = { freeTrades: 25, freeJournals: 10 };
 
   const handleProClick = () => {
     setShowTerms(true);

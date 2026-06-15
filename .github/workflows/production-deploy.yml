@@ -2,9 +2,11 @@ name: Production CI/CD Pipeline
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
+  release:
+    types: [published]
   pull_request:
-    branches: [main, staging]
+    branches: [main]
 
 jobs:
   validate:
@@ -36,7 +38,7 @@ jobs:
     name: Deploy to Staging
     needs: validate
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/staging' || (github.event_name == 'pull_request' && github.base_ref == 'staging')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -82,7 +84,7 @@ jobs:
     name: Deploy to Production
     needs: validate
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'release'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -119,4 +121,4 @@ jobs:
 
       - name: Deploy Firebase Cloud Functions & Rules (Production)
         run: |
-          npx firebase-tools deploy --only functions,firestore:rules,storage --token="${{ secrets.FIREBASE_TOKEN }}"
+          npx firebase-tools deploy --only functions,firestore:rules,storage --project=production --token="${{ secrets.FIREBASE_TOKEN }}"

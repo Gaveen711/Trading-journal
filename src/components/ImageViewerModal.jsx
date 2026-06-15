@@ -31,7 +31,7 @@ export function ImageViewerModal({ imageUrl, onClose }) {
             </div>
             <span className="text-xs font-black uppercase text-foreground tracking-wider">Failed to Load Image</span>
             <p className="text-[10px] text-muted-foreground leading-relaxed font-bold uppercase tracking-wider">
-              Verify your connection or Firebase storage permissions.
+              Verify your connection or storage permissions.
             </p>
           </div>
         ) : (

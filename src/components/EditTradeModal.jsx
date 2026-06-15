@@ -13,6 +13,8 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
   const [direction, setDirection] = useState(trade.direction);
   const [session, setSession] = useState(trade.session || '');
   const [setup, setSetup] = useState(trade.setup || '');
+  const [strategies, setStrategies] = useState(trade.strategies || []);
+  const [strategyInput, setStrategyInput] = useState('');
   const [date, setDate] = useState(trade.date);
   
   const toast = useToast();
@@ -131,6 +133,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
       direction,
       session,
       setup,
+      strategies,
       date,
       pnl: derivedMetrics.pnl,
       pips: derivedMetrics.pips,
@@ -173,18 +176,39 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Setup</label>
-              <CustomSelect 
-                value={setup} 
-                onChange={setSetup}
-                options={[
-                  { value: 'A+ Setup', label: 'A+ Setup' },
-                  { value: 'Breakout', label: 'Breakout' },
-                  { value: 'Reversal', label: 'Reversal' },
-                  { value: 'News', label: 'News' },
-                  { value: 'Trend', label: 'Trend' }
-                ]}
-              />
+              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Strategies</label>
+              <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-[44px] px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('modal-strategy-input')?.focus()}>
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {strategies.map((tag, i) => (
+                    <span key={i} className="flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">
+                      {tag}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setStrategies(s => s.filter((_, idx) => idx !== i)); }} className="hover:text-foreground opacity-70 hover:opacity-100">
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    id="modal-strategy-input"
+                    type="text"
+                    value={strategyInput}
+                    onChange={e => setStrategyInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const val = strategyInput.trim().replace(/^,+|,+$/g, '');
+                        if (val && !strategies.includes(val)) {
+                          setStrategies([...strategies, val]);
+                        }
+                        setStrategyInput('');
+                      } else if (e.key === 'Backspace' && !strategyInput && strategies.length > 0) {
+                        setStrategies(strategies.slice(0, -1));
+                      }
+                    }}
+                    placeholder={strategies.length ? "Add tag..." : "e.g. Breakout, Trend"}
+                    className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-foreground placeholder:text-muted-foreground/50 min-w-[80px]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

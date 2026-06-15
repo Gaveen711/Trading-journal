@@ -37,6 +37,12 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const toast = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Background sync on dashboard load / mount
   useEffect(() => {
@@ -98,10 +104,16 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20">
+    <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative overflow-hidden">
+
+      {/* GLASSMORPHIC BACKGROUND MESH */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
+      </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 bg-card border-r border-border/30 z-30 p-6">
+      <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 apple-glass-panel border-r-0 z-30 p-6">
         {/* LOGO */}
         <div className="flex items-center gap-2.5 mb-8 cursor-pointer" onClick={() => navigate('/app')}>
           <Logo iconSize="w-8 h-8" />
@@ -128,7 +140,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 className={`flex items-center gap-3 h-11 px-4 rounded-xl transition-all duration-300 ${isActive
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/15'
                   : 'text-foreground/75 hover:bg-muted hover:text-foreground'
-                }`}
+                  }`}
               >
                 <Icon className="w-[1.2rem] h-[1.2rem] shrink-0" />
                 <span className="text-[11px] font-black uppercase tracking-widest">{item.name}</span>
@@ -136,6 +148,49 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
             );
           })}
         </nav>
+
+        {/* BROKER SYNC STATUS PANEL */}
+        {accounts.length > 0 && (
+          <div className="mt-4 mb-2 p-4 rounded-xl border border-border/20 bg-background/30 backdrop-blur-md shadow-sm">
+            {(() => {
+              const acc = accounts[0];
+              let statusObj = { label: 'Active', color: 'text-emerald-500', dot: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]', desc: 'Syncing automatically' };
+              
+              if (acc.lastSyncStatus === 'failed') {
+                statusObj = { label: 'Disconnected', color: 'text-rose-500', dot: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]', desc: 'Connection failed' };
+              } else if (acc.lastSyncTime) {
+                const elapsedMinutes = (currentTime - new Date(acc.lastSyncTime).getTime()) / 60000;
+                if (elapsedMinutes > 5) {
+                  statusObj = { label: 'Sync Delayed', color: 'text-amber-500', dot: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]', desc: `Last sync: ${Math.round(elapsedMinutes)}m ago` };
+                }
+              }
+
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/60">Broker Terminal</p>
+                    <div className="flex items-center gap-1.5" title={statusObj.desc}>
+                      <span className={`w-2 h-2 rounded-full ${statusObj.dot} animate-pulse`} />
+                      <span className={`text-[9px] font-black uppercase tracking-wider ${statusObj.color}`}>{statusObj.label}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="truncate">
+                      <p className="text-xs font-bold truncate">{acc.accountName || acc.server}</p>
+                      <p className="text-[10px] font-medium text-muted-foreground truncate">{statusObj.desc}</p>
+                    </div>
+                    {statusObj.label !== 'Active' && (
+                      <button onClick={() => navigate('/app/sync')} className="shrink-0 w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors" title="Manage Sync">
+                        <LightningFill className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {/* SIDEBAR ACTIONS (Logout / Theme) */}
         <div className="mt-auto pt-6 border-t border-border/20 flex flex-col gap-4">
           <div className="flex items-center justify-between mt-2">
@@ -163,7 +218,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               </button>
             </div>
 
-            <button 
+            <button
               onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
               className="Btn"
               title="Log out"
@@ -182,7 +237,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       {/* MAIN CONTAINER */}
       <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         {/* MOBILE HEADER (only visible on mobile/tablet) */}
-        <header className={`md:hidden fixed top-3 left-3 right-3 z-40 bg-card/95 backdrop-blur-xl border border-border/30 rounded-2xl shadow-xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
+        <header className={`md:hidden fixed top-3 left-3 right-3 z-40 apple-glass-panel rounded-2xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
           <div className="h-14 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/app')}>
               <Logo iconSize="w-7 h-7" />
@@ -211,7 +266,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="w-8 h-8 rounded-xl bg-muted border border-border/40 flex items-center justify-center hover:shadow-none"
               >
@@ -227,7 +282,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 <p className="text-[9px] font-black uppercase text-muted-foreground">My Profile</p>
                 <p className="text-xs font-bold truncate">{auth.currentUser?.email}</p>
               </div>
-              <button 
+              <button
                 onClick={() => { setShowProfileMenu(false); auth.signOut(); }}
                 className="Btn"
                 title="Log out"
@@ -245,7 +300,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
         <div className="flex-1 flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto pt-20 px-4 pb-4 md:p-8 gap-8 md:pb-8">
-          
+
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0">
             {isTrialExpired && (
@@ -309,7 +364,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
       {/* MOBILE NAV */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe pt-2 transition-[transform,opacity] duration-300 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
-        <div className="bg-background/90 backdrop-blur-xl border border-border/40 rounded-[2rem] h-16 flex items-center justify-between px-2 shadow-2xl safe-bottom mb-4">
+        <div className="apple-glass-panel rounded-[2rem] h-16 flex items-center justify-between px-2 safe-bottom mb-4">
           {navigation.map((item) => {
             const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
             const Icon = isActive ? item.iconSolid : item.icon;
@@ -319,8 +374,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 key={item.name}
                 to={`/app/${item.id}`}
                 className={`group relative flex items-center justify-center h-12 rounded-2xl transition-all duration-500 ease-[var(--apple-ease)] ${isActive
-                    ? 'bg-primary text-primary-foreground px-3 sm:px-4 flex-grow mx-0.5 sm:mx-1 shadow-lg shadow-primary/25'
-                    : 'text-foreground/60 w-10 sm:w-12 hover:bg-muted mx-0.5'
+                  ? 'bg-primary text-primary-foreground px-3 sm:px-4 flex-grow mx-0.5 sm:mx-1 shadow-lg shadow-primary/25'
+                  : 'text-foreground/60 w-10 sm:w-12 hover:bg-muted mx-0.5'
                   }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
@@ -391,11 +446,10 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                       setTemplate(t.id);
                       toast(`Accent changed to ${t.name}`, 'success');
                     }}
-                    className={`theme-${t.id} w-full flex items-center gap-4 p-3.5 rounded-2xl border transition-all duration-300 ${
-                      currentTemplate === t.id
-                        ? 'bg-primary/5 border-primary/40'
-                        : 'bg-slate-50/50 hover:bg-slate-100/80 dark:bg-white/5 dark:hover:bg-white/10 border-transparent'
-                    }`}
+                    className={`theme-${t.id} w-full flex items-center gap-4 p-3.5 rounded-2xl border transition-all duration-300 ${currentTemplate === t.id
+                      ? 'bg-primary/5 border-primary/40'
+                      : 'bg-slate-50/50 hover:bg-slate-100/80 dark:bg-white/5 dark:hover:bg-white/10 border-transparent'
+                      }`}
                   >
                     <div
                       className="w-5 h-5 rounded-full flex-shrink-0 shadow-lg bg-gradient-to-br from-primary to-primary-to"

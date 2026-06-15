@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
-import { BarChartLine, ClockFill, LightningFill, ShieldExclamation } from 'react-bootstrap-icons';
+import { BarChartLine, ClockFill, LightningFill, ShieldExclamation, Share } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { ShareTradeModal } from '../components/ShareTradeModal';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
@@ -31,6 +32,7 @@ export function AnalyticsPage() {
   const { isLightMode } = useAppTheme();
   
   const [showExact, setShowExact] = useState({});
+  const [sharingTrade, setSharingTrade] = useState(null);
 
   const setExact = (index, val) => {
     setShowExact(prev => ({ ...prev, [index]: val }));
@@ -63,7 +65,7 @@ export function AnalyticsPage() {
     });
 
     const sessionDataMap = {};
-    const setupDataMap = {};
+    const strategyDataMap = {};
     
     tradesList.forEach(t => {
       const s = t.session || 'Unknown';
@@ -72,11 +74,21 @@ export function AnalyticsPage() {
       sessionDataMap[s].total++;
       if (t.outcome === 'WIN') sessionDataMap[s].wins++;
 
-      const set = t.setup || 'Unknown';
-      if (!setupDataMap[set]) setupDataMap[set] = { pnl: 0, wins: 0, total: 0 };
-      setupDataMap[set].pnl += t.pnl;
-      setupDataMap[set].total++;
-      if (t.outcome === 'WIN') setupDataMap[set].wins++;
+      let tags = [];
+      if (t.strategies && t.strategies.length > 0) {
+        tags = t.strategies;
+      } else if (t.setup) {
+        tags = [t.setup];
+      } else {
+        tags = ['Untagged'];
+      }
+
+      tags.forEach(tag => {
+        if (!strategyDataMap[tag]) strategyDataMap[tag] = { pnl: 0, wins: 0, total: 0 };
+        strategyDataMap[tag].pnl += t.pnl;
+        strategyDataMap[tag].total++;
+        if (t.outcome === 'WIN') strategyDataMap[tag].wins++;
+      });
     });
 
     // 1. Equity Curve
@@ -190,6 +202,22 @@ export function AnalyticsPage() {
       }]
     };
 
+    // 5. Performance by Strategy
+    const strategyLabels = Object.keys(strategyDataMap).sort((a, b) => strategyDataMap[b].pnl - strategyDataMap[a].pnl);
+    const strategyValues = strategyLabels.map(l => strategyDataMap[l].pnl);
+    
+    const performanceByStrategyChartData = {
+      labels: strategyLabels,
+      datasets: [{
+        label: 'Strategy Performance',
+        data: strategyValues,
+        backgroundColor: strategyValues.map(v => v >= 0 ? 'rgba(139, 92, 246, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
+        borderColor: strategyValues.map(v => v >= 0 ? '#8b5cf6' : '#ef4444'),
+        borderWidth: 1.5,
+        borderRadius: 8,
+      }]
+    };
+
     const totalPnl = tradesList.reduce((s, t) => s + t.pnl, 0);
     const currentWalletBalance = (walletBalance || 0) + totalPnl;
     const winRatePercent = tradesList.length ? (wins.length / tradesList.length * 100).toFixed(0) : 0;
@@ -206,6 +234,7 @@ export function AnalyticsPage() {
       monthlyPnlChartData,
       sessionChartData,
       performanceByDayChartData,
+      performanceByStrategyChartData,
       currentWalletBalance,
       winRatePercent
     };
@@ -232,6 +261,7 @@ export function AnalyticsPage() {
     monthlyPnlChartData,
     sessionChartData,
     performanceByDayChartData,
+    performanceByStrategyChartData,
     currentWalletBalance,
     winRatePercent
   } = stats;
@@ -312,13 +342,13 @@ export function AnalyticsPage() {
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest">Deep insights into your edge, consistency, and risk management.</p>
       </header>
       
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {statCards.map((stat, i) => (
           <div 
             key={i} 
             onMouseEnter={() => stat.isInteractive && setExact(stat.index, true)}
             onMouseLeave={() => stat.isInteractive && setExact(stat.index, false)}
-            className={`card-premium p-3 sm:p-5 flex flex-col justify-between h-28 sm:h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both ${
+            className={`card-premium p-3 sm:p-5 flex flex-col justify-between h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both ${
               stat.isInteractive ? 'cursor-default select-none hover:border-primary/30' : ''
             }`}
             style={{ animationDelay: `${i * 75}ms` }}
@@ -384,7 +414,7 @@ export function AnalyticsPage() {
                 maintainAspectRatio: false,
                 plugins: {
                   legend: {
-                    position: 'right',
+                    position: 'bottom',
                     labels: {
                       color: isLightMode ? '#1e293b' : '#e2e8f0',
                       font: { size: 12, weight: 'bold' },
@@ -406,6 +436,24 @@ export function AnalyticsPage() {
           <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Historical trading day edge and net efficiency performance.</p>
           <div className="h-64">
             <Bar data={performanceByDayChartData} options={{
+              ...chartOptions,
+              scales: {
+                ...chartOptions.scales,
+                x: { ...chartOptions.scales.x, display: true }
+              }
+            }} />
+          </div>
+        </div>
+
+        {/* Chart 5: Performance by Strategy */}
+        <div className="card-premium p-4 sm:p-8 lg:col-span-2 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
+            <BarChartLine className="w-4 h-4 text-primary" />
+            Performance by Strategy / Playbook
+          </h3>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distributed across your custom strategies.</p>
+          <div className="h-64">
+            <Bar data={performanceByStrategyChartData} options={{
               ...chartOptions,
               scales: {
                 ...chartOptions.scales,
@@ -441,8 +489,13 @@ export function AnalyticsPage() {
                   <span className="text-[9px] text-foreground/70 font-bold uppercase tracking-widest">{t.session} · {t.setup}</span>
                 </div>
               </div>
-              <div className={`text-sm font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {formatCurrency(t.pnl, true)}
+              <div className="flex items-center gap-3">
+                <div className={`text-sm font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {formatCurrency(t.pnl, true)}
+                </div>
+                <button onClick={() => setSharingTrade(t)} className="w-7 h-7 rounded-lg bg-muted/50 hover:bg-primary/20 hover:text-primary text-muted-foreground flex items-center justify-center transition-colors">
+                  <Share className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           ))}
@@ -453,6 +506,10 @@ export function AnalyticsPage() {
           )}
         </div>
       </div>
+
+      {sharingTrade && (
+        <ShareTradeModal trade={sharingTrade} onClose={() => setSharingTrade(null)} />
+      )}
     </div>
   );
 }
