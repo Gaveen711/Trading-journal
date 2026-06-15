@@ -959,6 +959,33 @@ export function DashboardRightSidebar({
   const [currentTime, setCurrentTime] = useState('');
   const [isWiping, setIsWiping] = useState(false);
   const [isWipingDb, setIsWipingDb] = useState(false);
+  const [trialTimeLeft, setTrialTimeLeft] = useState('');
+
+  useEffect(() => {
+    if (!isTrial || !expiry) return;
+
+    const updateTimer = () => {
+      const now = new Date();
+      const end = new Date(expiry);
+      const diff = end - now;
+
+      if (diff <= 0) {
+        setTrialTimeLeft('Trial ended');
+        return;
+      }
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+      const m = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+      const s = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+      setTrialTimeLeft(`${d}d ${h}h ${m}m ${s}s remaining`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [isTrial, expiry]);
 
   const handleWipeTerminal = async () => {
     setIsWipingDb(true);
@@ -1376,12 +1403,7 @@ export function DashboardRightSidebar({
           <p className="text-[10px] text-white/50 leading-relaxed font-bold">
             {plan === 'pro' 
               ? (isTrial 
-                  ? `You are upgraded to Pro tier! Your 7-day free trial is currently active. ${(() => {
-                      if (!expiry) return '7';
-                      const diffTime = new Date(expiry) - new Date();
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      return Math.max(0, diffDays);
-                    })()} days remaining.`
+                  ? `You are upgraded to Pro tier! Your 7-day free trial is currently active. ${trialTimeLeft || 'Loading...'}`
                   : 'Enjoy unlimited sync logs, automated MT5 metrics, and priority analytics.') 
               : 'Ver 1.0.4 · Connect MT5/MT4, enjoy unlimited logs, and premium reports.'}
           </p>

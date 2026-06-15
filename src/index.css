@@ -232,7 +232,7 @@
   }
 
   .btn-primary:hover {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
   }
 
   .btn-secondary {
@@ -240,7 +240,7 @@
   }
 
   .btn-secondary:hover {
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.15);
   }
 
   .input-premium {
@@ -252,7 +252,7 @@
   }
 
   .input-premium:hover {
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.15);
   }
 
   .select-premium {
@@ -564,32 +564,32 @@ a[href*="neat.firecms.co"] {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top-color: rgba(255, 255, 255, 0.2);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%) !important;
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.85) 0%, hsl(var(--primary-to) / 0.9) 100%) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: #ffffff !important;
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     0 1px 2px rgba(0, 0, 0, 0.05),
-    0 8px 24px rgba(99, 102, 241, 0.2);
+    0 8px 24px hsl(var(--primary) / 0.2);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .btn-apple-primary:hover {
   transform: translateY(-1.5px) scale(1.02);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.95) 0%, rgba(79, 70, 229, 0.98) 100%) !important;
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.95) 0%, hsl(var(--primary-to) / 0.98) 100%) !important;
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.3),
     0 1px 2px rgba(0, 0, 0, 0.05),
-    0 12px 30px rgba(99, 102, 241, 0.35);
+    0 12px 30px hsl(var(--primary) / 0.35);
 }
 
 .btn-apple-primary:active {
   transform: translateY(0.5px) scale(0.97);
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.1),
-    0 4px 12px rgba(99, 102, 241, 0.15);
+    0 4px 12px hsl(var(--primary) / 0.15);
 }
 
 /* Animated Convert Button */
@@ -606,8 +606,8 @@ a[href*="neat.firecms.co"] {
   text-transform: uppercase;
   background-color: transparent;
   border-radius: 100px;
-  color: #a5b4fc;
-  box-shadow: 0 0 0 1.5px #6366f1;
+  color: hsl(var(--primary));
+  box-shadow: 0 0 0 1.5px hsl(var(--primary));
   cursor: pointer;
   overflow: hidden;
   transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
@@ -618,7 +618,7 @@ a[href*="neat.firecms.co"] {
 .btn-convert-animated svg {
   position: absolute;
   width: 16px;
-  fill: #a5b4fc;
+  fill: hsl(var(--primary));
   z-index: 9;
   transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -638,7 +638,7 @@ a[href*="neat.firecms.co"] {
   transform: translate(-50%, -50%);
   width: 20px;
   height: 20px;
-  background-color: #4f46e5;
+  background-color: hsl(var(--primary));
   border-radius: 50%;
   opacity: 0;
   transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
@@ -1809,14 +1809,14 @@ button.learn-more .button-text {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 0.75rem 0;
   margin: 0 0 0 1.85rem;
   color: hsl(var(--foreground));
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.1em;
-  line-height: 1.6;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-transform: uppercase;
 }
 
@@ -2402,7 +2402,7 @@ button.learn-more:active {
   transform: translateY(-50%);
   display: block;
   border-radius: 999px;
-  background: #dfceff;
+  background: hsl(var(--primary) / 0.15);
   width: 38px;
   height: 38px;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2410,7 +2410,7 @@ button.learn-more:active {
 }
 
 .dark .cta:before {
-  background: rgba(139, 92, 246, 0.25);
+  background: hsl(var(--primary) / 0.25);
 }
 
 .cta span {
@@ -2420,14 +2420,14 @@ button.learn-more:active {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #5b21b6;
+  color: hsl(var(--primary));
   z-index: 2;
   transition: color 0.3s ease;
   margin-left: 2px;
 }
 
 .dark .cta span {
-  color: #c084fc;
+  color: hsl(var(--primary));
 }
 
 .cta svg {
@@ -2437,7 +2437,7 @@ button.learn-more:active {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke: #5b21b6;
+  stroke: hsl(var(--primary));
   stroke-width: 2.5;
   transform: translateX(-3px);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2445,21 +2445,21 @@ button.learn-more:active {
 }
 
 .dark .cta svg {
-  stroke: #c084fc;
+  stroke: hsl(var(--primary));
 }
 
 /* Hover States */
 .cta:hover:before {
   width: calc(100% - 12px);
-  background: #dfceff;
+  background: hsl(var(--primary) / 0.25);
 }
 
 .dark .cta:hover:before {
-  background: rgba(139, 92, 246, 0.35);
+  background: hsl(var(--primary) / 0.35);
 }
 
 .cta:hover span {
-  color: #4c1d95;
+  color: hsl(var(--primary-to));
 }
 
 .dark .cta:hover span {
@@ -2468,7 +2468,7 @@ button.learn-more:active {
 
 .cta:hover svg {
   transform: translateX(2px);
-  stroke: #4c1d95;
+  stroke: hsl(var(--primary-to));
 }
 
 .dark .cta:hover svg {

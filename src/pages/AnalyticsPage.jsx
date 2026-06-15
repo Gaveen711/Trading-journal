@@ -423,7 +423,7 @@ export function AnalyticsPage() {
             Recent Signals
           </h3>
           <button 
-            onClick={() => navigate('/history')} 
+            onClick={() => navigate('/app/history')} 
             className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
           >
             View All History →

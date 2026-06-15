@@ -12,6 +12,7 @@ import App from './App.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/ToastContext'
 import { ThemeProvider } from './hooks/useAppTheme'
+import { SpeedInsights } from '@vercel/speed-insights/react'
  
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')).render(
         <ToastProvider>
           <BrowserRouter>
             <App />
+            <SpeedInsights />
           </BrowserRouter>
         </ToastProvider>
       </ThemeProvider>
