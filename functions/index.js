@@ -173,7 +173,8 @@ async function syncTrades(uid, account) {
     {
       lastBrokerSync: FieldValue.serverTimestamp(),
       lastBrokerSyncCount: newCount,
-      lastBrokerSyncStatus: 'success'
+      lastBrokerSyncStatus: 'success',
+      lastBrokerSyncError: null
     },
     { merge: true }
   );
@@ -242,7 +243,10 @@ exports.connectBroker = onCall(
       console.error('[connectBroker]', err);
       try {
         await db.collection('users').doc(uid).set(
-          { lastBrokerSyncStatus: 'failed' },
+          { 
+            lastBrokerSyncStatus: 'failed',
+            lastBrokerSyncError: err.message || 'Failed to connect broker'
+          },
           { merge: true }
         );
       } catch (dbErr) {
@@ -275,7 +279,10 @@ exports.syncBrokerTrades = onCall(
       console.error('[syncBrokerTrades]', err);
       try {
         await db.collection('users').doc(uid).set(
-          { lastBrokerSyncStatus: 'failed' },
+          { 
+            lastBrokerSyncStatus: 'failed',
+            lastBrokerSyncError: err.message || 'Sync failed'
+          },
           { merge: true }
         );
       } catch (dbErr) {
@@ -301,6 +308,7 @@ exports.disconnectBroker = onCall(
       lastBrokerSyncStatus: FieldValue.delete(),
       lastBrokerSync: FieldValue.delete(),
       lastBrokerSyncCount: FieldValue.delete(),
+      lastBrokerSyncError: FieldValue.delete(),
     });
 
     return { message: 'Broker account disconnected successfully.' };

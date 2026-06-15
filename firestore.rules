@@ -21,9 +21,50 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == userId;
         // Write: owner can write any valid trade doc
         // MT5 API writes happen via Firebase Admin SDK (bypasses these rules)
-        allow create, update: if request.auth != null && request.auth.uid == userId
-          && (request.resource.data.get('note', '') is string
-              && request.resource.data.get('note', '').size() < 4000);
+        // VULN-09 FIX: Strict schema validation to prevent payload injection and stat manipulation
+        function isValidTrade() {
+          let data = request.resource.data;
+          let entry = data.get('entry', 0.0);
+          let exit = data.get('exit', 0.0);
+          let lots = data.get('lots', 0.0);
+          let swap = data.get('swap', 0.0);
+          let direction = data.get('direction', 'BUY');
+          let pnl = data.get('pnl', 0.0);
+          
+          let diff = direction == 'BUY' ? (exit - entry) : (entry - exit);
+          let expectedPnl = (diff * lots * 100.0) + (swap == null ? 0.0 : swap);
+          let pnlDiff = pnl - expectedPnl;
+          let absPnlDiff = pnlDiff < 0.0 ? -pnlDiff : pnlDiff;
+
+          return data.keys().hasOnly(['id', 'date', 'direction', 'entry', 'exit', 'lots', 'swap', 'sl', 'tp', 'rr', 'pips', 'session', 'setup', 'strategies', 'market', 'leverage', 'pnl', 'outcome', 'note', 'screenshots', 'timestamp', 'source', 'confidence'])
+            && pnl is number
+            && pnl >= -10000000 // Prevent malicious extreme negative PNL
+            && pnl <= 10000000  // Prevent malicious extreme positive PNL
+            && lots is number
+            && lots >= 0.01     // Minimum 1 micro lot
+            && lots <= 1000     // Max 1000 lots
+            && entry is number
+            && exit is number
+            && (data.get('swap', 0) == null || data.get('swap', 0) is number)
+            && (data.get('sl', 0) == null || data.get('sl', 0) is number)
+            && (data.get('tp', 0) == null || data.get('tp', 0) is number)
+            && direction in ['BUY', 'SELL']
+            && data.get('outcome', 'WIN') in ['WIN', 'LOSS', 'BE']
+            && data.get('note', '') is string
+            && data.get('note', '').size() <= 4000
+            && (data.get('strategies', []) is list)
+            && absPnlDiff < 0.1;
+        }
+
+        allow update: if request.auth != null && request.auth.uid == userId && isValidTrade();
+        
+        allow create: if request.auth != null && request.auth.uid == userId && isValidTrade()
+          // VULN-10 FIX: Rate Limiting to prevent 10,000 trades/minute billing attacks (5-second cooldown)
+          && getAfter(/databases/$(database)/documents/users/$(userId)).data.lastTradeTime == request.time
+          && (
+             get(/databases/$(database)/documents/users/$(userId)).data.get('lastTradeTime', null) == null ||
+             request.time > get(/databases/$(database)/documents/users/$(userId)).data.lastTradeTime + duration.value(5, 's')
+          );
         allow delete: if request.auth != null && request.auth.uid == userId;
       }
 

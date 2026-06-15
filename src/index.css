@@ -21,7 +21,7 @@
     --secondary: 54 27% 88%;
     --secondary-foreground: 24 33% 3%;
     --muted: 54 27% 88%;
-    --muted-foreground: 24 15% 40%;
+    --muted-foreground: 24 15% 30%;
     --accent: 277 91% 29%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 84.2% 60.2%;
@@ -56,7 +56,7 @@
     --secondary: 24 10% 14%;
     --secondary-foreground: 54 27% 98%;
     --muted: 24 10% 14%;
-    --muted-foreground: 24 8% 65%;
+    --muted-foreground: 24 8% 75%;
     --accent: 277 91% 65%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 84.2% 60.2%;
@@ -219,12 +219,30 @@
     backdrop-filter: blur(12px);
   }
 
+  .apple-glass-panel {
+    @apply border shadow-xl;
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(255, 255, 255, 0.4);
+    -webkit-backdrop-filter: blur(48px) saturate(180%);
+    backdrop-filter: blur(48px) saturate(180%);
+  }
+
+  .dark .apple-glass-panel {
+    @apply shadow-2xl;
+    background: rgba(15, 15, 18, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top-color: rgba(255, 255, 255, 0.12);
+    border-left-color: rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(48px) saturate(180%);
+    backdrop-filter: blur(48px) saturate(180%);
+  }
+
   .card-premium {
-    @apply rounded-[var(--radius)] border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/50;
+    @apply rounded-[var(--radius)] border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/50;
   }
 
   .btn-premium {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-primary {
@@ -244,7 +262,7 @@
   }
 
   .input-premium {
-    @apply flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 hover:border-primary;
+    @apply flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 hover:border-primary;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     transform: translateZ(0);
@@ -330,7 +348,7 @@ h6 {
 
 /* Auth Transitions - Sleeker neutral deep dark / light */
 .auth-container {
-  @apply min-h-screen flex items-center justify-center p-6 bg-background transition-colors duration-500 ease-[var(--apple-ease)];
+  @apply min-h-screen flex items-center justify-center p-6 bg-background transition-colors duration-200 ease-[var(--apple-ease)];
   background-image: radial-gradient(ellipse at top, hsl(var(--primary) / 0.1), transparent 50%);
 }
 
@@ -426,9 +444,29 @@ a[href*="neat.firecms.co"] {
   font-size: 14px !important;
 }
 
-/* Mobile Readability Enhancements */
-@media (max-width: 768px) {
+/* Global Readability Enhancements for WCAG AA Contrast */
+.text-muted-foreground\/60 {
+  color: hsl(var(--muted-foreground) / 0.85) !important;
+}
 
+.text-muted-foreground\/40 {
+  color: hsl(var(--muted-foreground) / 0.75) !important;
+}
+
+.text-foreground\/60 {
+  color: hsl(var(--foreground) / 0.85) !important;
+}
+
+.text-foreground\/50 {
+  color: hsl(var(--foreground) / 0.80) !important;
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground) / 1) !important;
+}
+
+/* Mobile Layout & Text Scaling Enhancements */
+@media (max-width: 768px) {
   /* Prevent automatic iOS input zoom and make inputs highly readable */
   input,
   select,
@@ -461,27 +499,6 @@ a[href*="neat.firecms.co"] {
 
   .text-sm {
     font-size: 14px !important;
-  }
-
-  /* Boost opacity of muted / light text on mobile for better contrast */
-  .text-muted-foreground\/60 {
-    color: hsl(var(--muted-foreground) / 0.85) !important;
-  }
-
-  .text-muted-foreground\/40 {
-    color: hsl(var(--muted-foreground) / 0.75) !important;
-  }
-
-  .text-foreground\/60 {
-    color: hsl(var(--foreground) / 0.8) !important;
-  }
-
-  .text-foreground\/50 {
-    color: hsl(var(--foreground) / 0.75) !important;
-  }
-
-  .text-muted-foreground {
-    color: hsl(var(--muted-foreground) / 0.95) !important;
   }
 }
 
@@ -572,7 +589,7 @@ a[href*="neat.firecms.co"] {
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     0 1px 2px rgba(0, 0, 0, 0.05),
     0 8px 24px hsl(var(--primary) / 0.2);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
@@ -610,7 +627,7 @@ a[href*="neat.firecms.co"] {
   box-shadow: 0 0 0 1.5px hsl(var(--primary));
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
   width: 100%;
   justify-content: center;
 }
@@ -620,7 +637,7 @@ a[href*="neat.firecms.co"] {
   width: 16px;
   fill: hsl(var(--primary));
   z-index: 9;
-  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .btn-convert-animated .arr-1 {
@@ -641,14 +658,14 @@ a[href*="neat.firecms.co"] {
   background-color: hsl(var(--primary));
   border-radius: 50%;
   opacity: 0;
-  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .btn-convert-animated .text {
   position: relative;
   z-index: 1;
   transform: translateX(-10px);
-  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .btn-convert-animated:hover {
@@ -747,7 +764,7 @@ a[href*="neat.firecms.co"] {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   width: 140px;
   height: 40px;
   margin: 0 auto;
@@ -819,11 +836,11 @@ a[href*="neat.firecms.co"] {
   animation: none;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .pay-btn:active .check-icon {
-  animation: checkmarkAppear 0.6s ease forwards;
+  animation: checkmarkAppear 0.2s ease forwards;
   visibility: visible;
 }
 
@@ -896,7 +913,7 @@ a[href*="neat.firecms.co"] {
     inset 0 1px 1px rgba(255, 255, 255, 0.08),
     0 1px 2px rgba(0, 0, 0, 0.05),
     0 4px 12px rgba(0, 0, 0, 0.02);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
@@ -1187,7 +1204,7 @@ a[href*="neat.firecms.co"] {
   text-transform: uppercase;
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: transform 0.2s cubic-bezier(0.19, 1, 0.22, 1);
   background-color: #000000;
   border: 1px solid transparent;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -1301,7 +1318,7 @@ a[href*="neat.firecms.co"] {
   display: block;
   color: #ffffff;
   white-space: nowrap;
-  transition: transform 1.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s linear;
+  transition: transform 1.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.2s linear;
 }
 
 .dark .button-animated .button-inner-static {
@@ -1325,7 +1342,7 @@ a[href*="neat.firecms.co"] {
   transform: translateY(-70%);
   transition:
     transform 1.4s cubic-bezier(0.19, 1, 0.22, 1),
-    opacity 0.3s linear;
+    opacity 0.2s linear;
 }
 
 .button-animated:hover .button-inner-hover {
@@ -1576,7 +1593,7 @@ a[href*="neat.firecms.co"] {
   color: hsl(var(--foreground));
   background-color: hsl(var(--muted) / 0.3);
   border: 1px solid hsl(var(--border) / 0.1);
-  transition: all 0.3s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .example-2 .icon-content a:hover {
@@ -1588,7 +1605,7 @@ a[href*="neat.firecms.co"] {
   z-index: 2;
   width: 20px;
   height: 20px;
-  transition: color 0.3s ease-in-out;
+  transition: color 0.2s ease-in-out;
 }
 
 .example-2 .icon-content a:hover {
@@ -1602,7 +1619,7 @@ a[href*="neat.firecms.co"] {
   left: 0;
   width: 100%;
   height: 0;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.2s ease-in-out;
   z-index: 1;
 }
 
@@ -1989,7 +2006,7 @@ button.learn-more:active {
   border: 2px solid hsl(var(--primary));
   border-radius: 9999px;
   background-color: transparent;
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
   overflow: hidden;
   z-index: 10;
 }
@@ -2005,7 +2022,7 @@ button.learn-more:active {
   transform: scale(0);
   z-index: -1;
   background: #000000;
-  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .dark .btn-pricing-custom::before {
@@ -2056,7 +2073,7 @@ button.learn-more:active {
 .btn-contact-send span {
   display: block;
   margin-left: 0.5em;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn-contact-send .svg-wrapper-1 {
@@ -2066,17 +2083,17 @@ button.learn-more:active {
 }
 
 .btn-contact-send .svg-wrapper {
-  transition: all 0.3s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn-contact-send svg {
   display: block;
   transform-origin: center center;
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 .btn-contact-send:hover .svg-wrapper {
-  animation: fly-1 0.6s ease-in-out infinite alternate;
+  animation: fly-1 0.2s ease-in-out infinite alternate;
 }
 
 .btn-contact-send:hover svg {
@@ -2116,7 +2133,7 @@ button.learn-more:active {
   justify-content: center;
   box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.164);
   cursor: pointer;
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
   overflow: hidden;
   position: relative;
   gap: 1px;
@@ -2124,7 +2141,7 @@ button.learn-more:active {
 
 .reset-trash-btn .svgIcon {
   width: 12px;
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
 }
 
 .reset-trash-btn .svgIcon path {
@@ -2134,7 +2151,7 @@ button.learn-more:active {
 .reset-trash-btn:hover {
   width: 140px;
   border-radius: 50px;
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
   background-color: rgb(255, 69, 69);
   align-items: center;
   gap: 0;
@@ -2142,7 +2159,7 @@ button.learn-more:active {
 
 .reset-trash-btn:hover .bin-bottom {
   width: 50px;
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
   transform: translateY(60%);
 }
 
@@ -2152,7 +2169,7 @@ button.learn-more:active {
 
 .reset-trash-btn:hover .bin-top {
   width: 50px;
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
   transform: translateY(60%) rotate(160deg);
 }
 
@@ -2160,7 +2177,7 @@ button.learn-more:active {
   position: absolute;
   top: -20px;
   color: white;
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
   font-size: 2px;
   font-weight: 800;
   text-transform: uppercase;
@@ -2172,7 +2189,7 @@ button.learn-more:active {
   font-size: 10px;
   opacity: 1;
   transform: translateY(35px);
-  transition-duration: 0.3s;
+  transition-duration: 0.2s;
 }
 
 /* Custom CTA Button Style */
@@ -2203,7 +2220,7 @@ button.learn-more:active {
 
 .btn-cta-underline svg {
   transform: translateX(-4px);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   fill: currentColor;
   color: hsl(var(--foreground));
   flex-shrink: 0;
@@ -2327,7 +2344,7 @@ button.learn-more:active {
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
   z-index: -10;
   pointer-events: none;
-  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .cyber-step-card::after {
@@ -2339,7 +2356,7 @@ button.learn-more:active {
   background: linear-gradient(-45deg, #fc00ff 0%, #00dbde 100%);
   transform: translate3d(0, 0, 0) scale(0.95);
   filter: blur(20px);
-  transition: filter 0.6s ease;
+  transition: filter 0.2s ease;
 }
 
 /* Hover & Active/Touch Effects */
@@ -2355,17 +2372,17 @@ button.learn-more:active {
 
 .cyber-step-card h3 {
   color: #ffffff !important;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 .cyber-step-card p {
   color: rgba(255, 255, 255, 0.7) !important;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 .cyber-step-card .step-number {
   color: rgba(255, 255, 255, 0.03) !important;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 .cyber-step-card:hover h3,
@@ -2422,7 +2439,7 @@ button.learn-more:active {
   letter-spacing: 0.08em;
   color: hsl(var(--primary));
   z-index: 2;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
   margin-left: 2px;
 }
 
@@ -2440,7 +2457,7 @@ button.learn-more:active {
   stroke: hsl(var(--primary));
   stroke-width: 2.5;
   transform: translateX(-3px);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 2;
 }
 

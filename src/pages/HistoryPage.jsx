@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
-import { Download, Search, XLg, PencilSquare } from 'react-bootstrap-icons';
+import { Download, Search, XLg, PencilSquare, Share } from 'react-bootstrap-icons';
 import { AnimatePresence } from 'framer-motion';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { EditTradeModal } from '../components/EditTradeModal';
 import { ImageViewerModal } from '../components/ImageViewerModal';
+import { ShareTradeModal } from '../components/ShareTradeModal';
 import { formatCurrency, formatPrice, formatNumber } from '../lib/tradeUtils';
 
 const HistorySkeleton = () => (
@@ -31,13 +32,15 @@ export function HistoryPage() {
   const [filterDir, setFilterDir] = useState('');
   const [filterOutcome, setFilterOutcome] = useState('');
   const [filterSession, setFilterSession] = useState('');
-  const [filterSetup, setFilterSetup] = useState('');
+  const [filterStrategy, setFilterStrategy] = useState('');
   const [filterSort, setFilterSort] = useState('newest');
+  const [isCompactMode, setIsCompactMode] = useState(false);
   
   const [editingTrade, setEditingTrade] = useState(null);
   const [expandedNotes, setExpandedNotes] = useState({});
   const [visibleCount, setVisibleCount] = useState(30);
   const [activeImageUrl, setActiveImageUrl] = useState(null);
+  const [sharingTrade, setSharingTrade] = useState(null);
 
   const handleFilterSearch = (val) => {
     setFilterSearch(val);
@@ -55,8 +58,8 @@ export function HistoryPage() {
     setFilterSession(val);
     setVisibleCount(30);
   };
-  const handleFilterSetup = (val) => {
-    setFilterSetup(val);
+  const handleFilterStrategy = (val) => {
+    setFilterStrategy(val);
     setVisibleCount(30);
   };
   const handleFilterSort = (val) => {
@@ -70,7 +73,11 @@ export function HistoryPage() {
       if (filterDir && t.direction !== filterDir) return false;
       if (filterOutcome && t.outcome !== filterOutcome) return false;
       if (filterSession && t.session !== filterSession) return false;
-      if (filterSetup && t.setup !== filterSetup) return false;
+      if (filterStrategy) {
+        const hasStrat = t.strategies?.includes(filterStrategy);
+        const hasLegacySetup = t.setup === filterStrategy;
+        if (!hasStrat && !hasLegacySetup) return false;
+      }
       return true;
     });
 
@@ -85,7 +92,24 @@ export function HistoryPage() {
       filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     }
     return filtered;
-  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterSetup, filterSort]);
+  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterStrategy, filterSort]);
+
+  const uniqueStrategies = useMemo(() => {
+    const strats = new Set();
+    trades.forEach(t => {
+      if (t.strategies && t.strategies.length > 0) {
+        t.strategies.forEach(s => strats.add(s));
+      } else if (t.setup) {
+        strats.add(t.setup);
+      }
+    });
+    return Array.from(strats).sort();
+  }, [trades]);
+
+  const strategyOptions = [
+    { value: '', label: 'All strategies' },
+    ...uniqueStrategies.map(s => ({ value: s, label: s }))
+  ];
 
   const displayedTrades = useMemo(() => {
     return filteredAndSortedTrades.slice(0, visibleCount);
@@ -151,22 +175,38 @@ export function HistoryPage() {
           <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Trade History</h1>
           <p className="text-muted-foreground text-sm font-medium">A comprehensive log of your past performance.</p>
         </div>
-        <button onClick={onExportCSV} className="learn-more">
-          <span className="circle" aria-hidden="true">
-            <span className="icon arrow" />
-          </span>
-          <span className="button-text">Export Data</span>
-        </button>
+        <div className="flex flex-row-reverse sm:flex-row items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center bg-muted/30 rounded-xl p-1 border border-border/40 shrink-0">
+            <button 
+              onClick={() => setIsCompactMode(false)}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!isCompactMode ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Cards
+            </button>
+            <button 
+              onClick={() => setIsCompactMode(true)}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isCompactMode ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Compact
+            </button>
+          </div>
+          <button onClick={onExportCSV} className="learn-more shrink-0 scale-90 sm:scale-100 origin-right">
+            <span className="circle" aria-hidden="true">
+              <span className="icon arrow" />
+            </span>
+            <span className="button-text">Export</span>
+          </button>
+        </div>
       </header>
       
       <div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <input 
             type="text" 
             placeholder="Search notes..." 
             value={filterSearch} 
             onChange={e => handleFilterSearch(e.target.value)} 
-            className="input-premium col-span-2 md:col-span-1"
+            className="input-premium col-span-1 sm:col-span-2 lg:col-span-1"
           />
           <CustomSelect 
             value={filterDir} 
@@ -202,17 +242,10 @@ export function HistoryPage() {
             ]}
           />
           <CustomSelect 
-            value={filterSetup} 
-            onChange={handleFilterSetup}
-            placeholder="All setups"
-            options={[
-              { value: '', label: 'All setups' },
-              { value: 'A+ Setup', label: 'A+ Setup' },
-              { value: 'Breakout', label: 'Breakout' },
-              { value: 'Reversal', label: 'Reversal' },
-              { value: 'News', label: 'News' },
-              { value: 'Trend', label: 'Trend' }
-            ]}
+            value={filterStrategy} 
+            onChange={handleFilterStrategy}
+            placeholder="All strategies"
+            options={strategyOptions}
           />
           <CustomSelect 
             value={filterSort} 
@@ -234,13 +267,63 @@ export function HistoryPage() {
             <span className="text-xs font-black uppercase tracking-widest opacity-40">No trades match the current filter</span>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className={isCompactMode ? "card-premium overflow-hidden divide-y divide-border/10" : "space-y-4"}>
             {displayedTrades.map((t, idx) => {
               const isWin = t.pnl >= 0;
               const formattedPnL = formatCurrency(t.pnl, true);
               const formattedPips = `${formatNumber(t.pips || 0, 0)} pips`;
               
-              return (
+              return isCompactMode ? (
+                <div 
+                  key={t.id}
+                  className="flex flex-col p-3 sm:p-4 hover:bg-muted/10 cursor-pointer group transition-colors animate-in fade-in"
+                  onClick={() => setExpandedNotes(prev => ({ ...prev, [t.id]: !prev[t.id] }))}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs">
+                    <div className="flex items-center gap-3 w-full sm:w-2/5">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${isWin ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'}`} />
+                      <div className="font-bold whitespace-nowrap text-foreground">{t.date}</div>
+                      <div className="text-muted-foreground hidden sm:block whitespace-nowrap">{t.market || 'XAU/USD'}</div>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${isWin ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                        {t.direction}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 w-full sm:w-3/5 justify-between sm:justify-end mt-2 sm:mt-0">
+                      <div className="flex items-center gap-2 md:gap-4 text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                        {((t.strategies?.length > 0) ? t.strategies : (t.setup ? [t.setup] : [])).map((strat, i) => (
+                          <span key={i} className="hidden md:inline-block border border-border/20 px-1.5 rounded">{strat}</span>
+                        ))}
+                        {t.rr && <span className="text-blue-500/70">RR: {t.rr}</span>}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end">
+                          <span className={`font-black tracking-tight text-sm ${isWin ? 'text-green-500' : 'text-red-500'}`}>
+                            {formattedPnL}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground">{formattedPips}</span>
+                        </div>
+                        <div className="flex gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={e => { e.stopPropagation(); setSharingTrade(t); }} className="w-6 h-6 rounded bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-blue-500"><Share size={12} /></button>
+                          <button onClick={e => { e.stopPropagation(); setEditingTrade(t); }} className="w-6 h-6 rounded bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-primary"><PencilSquare size={12} /></button>
+                          <button onClick={e => { e.stopPropagation(); onDeleteTrade(t.id); }} className="w-6 h-6 rounded bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive"><XLg size={12} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {expandedNotes[t.id] && (
+                    <div className="w-full mt-3 pt-3 border-t border-border/10 text-[11px] text-muted-foreground">
+                      <div className="whitespace-pre-wrap">{t.note || 'No notes.'}</div>
+                      {t.screenshots && t.screenshots.length > 0 && (
+                        <div className="mt-3 flex gap-2">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1">Screenshots attached</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <div 
                   key={t.id} 
                   className="card-premium p-5 cursor-pointer group hover:bg-muted/10 animate-in slide-in-from-bottom-2 duration-500 ease-[var(--apple-ease)] space-y-4 text-left" 
@@ -248,7 +331,7 @@ export function HistoryPage() {
                   onClick={() => setExpandedNotes(prev => ({ ...prev, [t.id]: !prev[t.id] }))}
                 >
                   {/* Top Header Row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     {/* Left: Icon + Symbol + Date */}
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isWin ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
@@ -276,16 +359,22 @@ export function HistoryPage() {
                     </div>
 
                     {/* Right: P&L + Pips + Action buttons */}
-                    <div className="flex items-center justify-between sm:justify-end gap-6">
-                      <div className="flex flex-col items-end">
+                    <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-border/5 w-full sm:w-auto">
+                      <div className="flex flex-col items-start sm:items-end">
                         <span className={`text-lg font-black tracking-tight ${isWin ? 'text-green-500' : 'text-red-500'}`}>
                           {formattedPnL}
                         </span>
                         <span className="text-[10px] text-muted-foreground font-bold mt-0.5">{formattedPips}</span>
                       </div>
 
-                      {/* Edit & Delete Action Buttons */}
+                      {/* Share, Edit & Delete Action Buttons */}
                       <div className="flex items-center gap-2">
+                        <button 
+                          className="w-8 h-8 rounded-lg border border-border/40 bg-card hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-blue-500 transition-all active:scale-90"
+                          onClick={e => { e.stopPropagation(); setSharingTrade(t); }}
+                        >
+                          <Share className="w-4 h-4" />
+                        </button>
                         <button 
                           className="w-8 h-8 rounded-lg border border-border/40 bg-card hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-primary transition-all active:scale-90"
                           onClick={e => { e.stopPropagation(); setEditingTrade(t); }}
@@ -303,7 +392,7 @@ export function HistoryPage() {
                   </div>
 
                   {/* Metrics Row */}
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 pt-2 text-left">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-3 sm:pt-2 text-left">
                     <div className="space-y-1">
                       <div className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Entry</div>
                       <div className="text-xs font-bold text-foreground">{formatPrice(t.entry)}</div>
@@ -332,11 +421,11 @@ export function HistoryPage() {
 
                   {/* Tags and Meta Row */}
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/10">
-                    {t.setup && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                        {t.setup}
+                    {((t.strategies?.length > 0) ? t.strategies : (t.setup ? [t.setup] : [])).map((strat, i) => (
+                      <span key={i} className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                        {strat}
                       </span>
-                    )}
+                    ))}
                     {t.session && (
                       <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-muted text-muted-foreground border border-border/30">
                         {t.session}
@@ -410,6 +499,10 @@ export function HistoryPage() {
           <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
         )}
       </AnimatePresence>
+
+      {sharingTrade && (
+        <ShareTradeModal trade={sharingTrade} onClose={() => setSharingTrade(null)} />
+      )}
     </div>
   );
 }

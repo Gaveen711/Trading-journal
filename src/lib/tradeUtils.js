@@ -72,9 +72,9 @@ export const formatCurrencyCompact = (val) => {
   return `$${formatted}`;
 };
 
-// XAUUSD only: 1 pip = $1.00 per 0.01 lot (contract size 100, pip size 0.1)
+// XAUUSD only: 1 pip = $1.00 per 1.00 lot (contract size 100, pip size 0.01)
 const XAUUSD_CONTRACT_SIZE = 100;
-const XAUUSD_PIP_SIZE      = 0.1;
+const XAUUSD_PIP_SIZE      = 0.01;
 
 export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
