@@ -74,14 +74,11 @@ export function AnalyticsPage() {
       sessionDataMap[s].total++;
       if (t.outcome === 'WIN') sessionDataMap[s].wins++;
 
-      let tags = [];
-      if (t.strategies && t.strategies.length > 0) {
-        tags = t.strategies;
-      } else if (t.setup) {
-        tags = [t.setup];
-      } else {
-        tags = ['Untagged'];
-      }
+      const tags = (t.strategies && t.strategies.length > 0)
+        ? t.strategies
+        : t.setup
+          ? [t.setup]
+          : ['Untagged'];
 
       tags.forEach(tag => {
         if (!strategyDataMap[tag]) strategyDataMap[tag] = { pnl: 0, wins: 0, total: 0 };

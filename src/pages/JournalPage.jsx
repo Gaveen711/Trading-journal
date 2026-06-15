@@ -30,7 +30,6 @@ export function JournalPage() {
 
   useEffect(() => {
     const entry = journals[journalDate] || {};
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setJournalText(entry.text || '');
     setSelectedMood(entry.mood || null);
   }, [journalDate, journals]);
