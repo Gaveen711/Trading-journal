@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Calculator, ShieldCheck, ArrowRight } from 'react-bootstrap-icons';
-import { formatCurrency } from '../lib/tradeUtils';
+import { Calculator, ShieldCheck } from 'react-bootstrap-icons';
 
 export function RiskCalculator() {
   const { walletBalance, trades } = useOutletContext();
@@ -9,11 +8,8 @@ export function RiskCalculator() {
 
   const [balance, setBalance] = useState(currentWalletBalance.toString());
   const [riskPercent, setRiskPercent] = useState('1.0');
-  const [riskAmount, setRiskAmount] = useState('');
   const [entry, setEntry] = useState('');
   const [sl, setSl] = useState('');
-  const [lotSize, setLotSize] = useState('0.00');
-  const [pipsRisk, setPipsRisk] = useState('0');
 
   const handleNumericChange = (setter) => (e) => {
     const val = e.target.value;
@@ -22,37 +18,28 @@ export function RiskCalculator() {
     }
   };
 
-  // Sync risk % and risk amount
-  useEffect(() => {
-    const bal = parseFloat(balance) || 0;
-    const pct = parseFloat(riskPercent) || 0;
-    if (bal > 0 && pct > 0) {
-      setRiskAmount((bal * (pct / 100)).toFixed(2));
-    } else {
-      setRiskAmount('');
-    }
-  }, [balance, riskPercent]);
+  // Derive riskAmount
+  const bal = parseFloat(balance) || 0;
+  const pct = parseFloat(riskPercent) || 0;
+  const riskAmount = bal > 0 && pct > 0 ? (bal * (pct / 100)).toFixed(2) : '';
 
-  // Calculate lot size
-  useEffect(() => {
-    const rAmt = parseFloat(riskAmount) || 0;
-    const ent = parseFloat(entry) || 0;
-    const stop = parseFloat(sl) || 0;
+  // Derive lotSize and pipsRisk
+  const rAmt = parseFloat(riskAmount) || 0;
+  const ent = parseFloat(entry) || 0;
+  const stop = parseFloat(sl) || 0;
 
-    if (rAmt > 0 && ent > 0 && stop > 0 && ent !== stop) {
-      const diff = Math.abs(ent - stop);
-      // XAUUSD: 1 standard lot = 100 units. $ risk = diff * lots * 100
-      let lots = rAmt / (diff * 100);
-      lots = Math.max(0.01, lots); // Minimum lot size
-      setLotSize(lots.toFixed(2));
-      
-      const pips = (diff / 0.01).toFixed(0);
-      setPipsRisk(pips);
-    } else {
-      setLotSize('0.00');
-      setPipsRisk('0');
-    }
-  }, [riskAmount, entry, sl]);
+  let lotSize = '0.00';
+  let pipsRisk = '0';
+
+  if (rAmt > 0 && ent > 0 && stop > 0 && ent !== stop) {
+    const diff = Math.abs(ent - stop);
+    // XAUUSD: 1 standard lot = 100 units. $ risk = diff * lots * 100
+    let lots = rAmt / (diff * 100);
+    lots = Math.max(0.01, lots); // Minimum lot size
+    lotSize = lots.toFixed(2);
+    
+    pipsRisk = (diff / 0.01).toFixed(0);
+  }
 
   return (
     <div className="card-premium p-6 sm:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">

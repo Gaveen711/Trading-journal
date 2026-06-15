@@ -12,7 +12,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
   const [formData, setFormData] = useState({ ...trade });
   const [direction, setDirection] = useState(trade.direction);
   const [session, setSession] = useState(trade.session || '');
-  const [setup, setSetup] = useState(trade.setup || '');
+  const setup = trade.setup || '';
   const [strategies, setStrategies] = useState(trade.strategies || []);
   const [strategyInput, setStrategyInput] = useState('');
   const [date, setDate] = useState(trade.date);

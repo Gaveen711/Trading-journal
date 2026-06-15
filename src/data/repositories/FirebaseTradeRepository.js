@@ -1,4 +1,4 @@
-import { collection, onSnapshot, updateDoc, addDoc, doc, query, orderBy, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, doc, query, orderBy, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { TradeRepository } from '../../core/domain/repositories/TradeRepository.js';
 
