@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   :root {
@@ -70,81 +69,86 @@
   }
 }
 
-  /* ── Theme Accent Templates ── */
-  .theme-neo-purple,
-  :root.theme-neo-purple {
-    --primary: 277 91% 29%;
-    --primary-to: 263 71% 19%;
-    --accent: 277 91% 29%;
-    --ring: 277 91% 29%;
-  }
-  .dark .theme-neo-purple,
-  .dark.theme-neo-purple {
-    --primary: 277 91% 65%;
-    --primary-to: 263 71% 75%;
-    --accent: 277 91% 65%;
-    --ring: 277 91% 65%;
-  }
+/* ── Theme Accent Templates ── */
+.theme-neo-purple,
+:root.theme-neo-purple {
+  --primary: 277 91% 29%;
+  --primary-to: 263 71% 19%;
+  --accent: 277 91% 29%;
+  --ring: 277 91% 29%;
+}
 
-  .theme-emerald-green,
-  :root.theme-emerald-green {
-    --primary: 142 76% 24%;
-    --primary-to: 152 76% 15%;
-    --accent: 142 76% 24%;
-    --ring: 142 76% 24%;
-  }
-  .dark .theme-emerald-green,
-  .dark.theme-emerald-green {
-    --primary: 142 71% 45%;
-    --primary-to: 152 71% 55%;
-    --accent: 142 71% 45%;
-    --ring: 142 71% 45%;
-  }
+.dark .theme-neo-purple,
+.dark.theme-neo-purple {
+  --primary: 277 91% 65%;
+  --primary-to: 263 71% 75%;
+  --accent: 277 91% 65%;
+  --ring: 277 91% 65%;
+}
 
-  .theme-royal-blue,
-  :root.theme-royal-blue {
-    --primary: 221 83% 43%;
-    --primary-to: 224 80% 30%;
-    --accent: 221 83% 43%;
-    --ring: 221 83% 43%;
-  }
-  .dark .theme-royal-blue,
-  .dark.theme-royal-blue {
-    --primary: 217 91% 60%;
-    --primary-to: 224 91% 70%;
-    --accent: 217 91% 60%;
-    --ring: 217 91% 60%;
-  }
+.theme-emerald-green,
+:root.theme-emerald-green {
+  --primary: 142 76% 24%;
+  --primary-to: 152 76% 15%;
+  --accent: 142 76% 24%;
+  --ring: 142 76% 24%;
+}
 
-  .theme-amber-gold,
-  :root.theme-amber-gold {
-    --primary: 38 92% 33%;
-    --primary-to: 35 92% 20%;
-    --accent: 38 92% 33%;
-    --ring: 38 92% 33%;
-  }
-  .dark .theme-amber-gold,
-  .dark.theme-amber-gold {
-    --primary: 38 92% 50%;
-    --primary-to: 45 92% 60%;
-    --accent: 38 92% 50%;
-    --ring: 38 92% 50%;
-  }
+.dark .theme-emerald-green,
+.dark.theme-emerald-green {
+  --primary: 142 71% 45%;
+  --primary-to: 152 71% 55%;
+  --accent: 142 71% 45%;
+  --ring: 142 71% 45%;
+}
 
-  .theme-rose-pink,
-  :root.theme-rose-pink {
-    --primary: 330 81% 40%;
-    --primary-to: 325 81% 25%;
-    --accent: 330 81% 40%;
-    --ring: 330 81% 40%;
-  }
-  .dark .theme-rose-pink,
-  .dark.theme-rose-pink {
-    --primary: 330 81% 60%;
-    --primary-to: 325 81% 70%;
-    --accent: 330 81% 60%;
-    --ring: 330 81% 60%;
-  }
+.theme-royal-blue,
+:root.theme-royal-blue {
+  --primary: 221 83% 43%;
+  --primary-to: 224 80% 30%;
+  --accent: 221 83% 43%;
+  --ring: 221 83% 43%;
+}
+
+.dark .theme-royal-blue,
+.dark.theme-royal-blue {
+  --primary: 217 91% 60%;
+  --primary-to: 224 91% 70%;
+  --accent: 217 91% 60%;
+  --ring: 217 91% 60%;
+}
+
+.theme-amber-gold,
+:root.theme-amber-gold {
+  --primary: 38 92% 33%;
+  --primary-to: 35 92% 20%;
+  --accent: 38 92% 33%;
+  --ring: 38 92% 33%;
+}
+
+.dark .theme-amber-gold,
+.dark.theme-amber-gold {
+  --primary: 38 92% 50%;
+  --primary-to: 45 92% 60%;
+  --accent: 38 92% 50%;
+  --ring: 38 92% 50%;
+}
+
+.theme-rose-pink,
+:root.theme-rose-pink {
+  --primary: 330 81% 40%;
+  --primary-to: 325 81% 25%;
+  --accent: 330 81% 40%;
+  --ring: 330 81% 40%;
+}
+
+.dark .theme-rose-pink,
+.dark.theme-rose-pink {
+  --primary: 330 81% 60%;
+  --primary-to: 325 81% 70%;
+  --accent: 330 81% 60%;
+  --ring: 330 81% 60%;
+}
 
 @layer base {
   * {
@@ -204,6 +208,21 @@
   }
 }
 
+@utility btn-premium {
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+@utility input-premium {
+  @apply flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 hover:border-primary;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transform: translateZ(0);
+}
+
+.input-premium:hover {
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.15);
+}
+
 @layer components {
   .glass {
     @apply bg-white/70 border border-black/5 shadow-sm;
@@ -241,10 +260,6 @@
     @apply rounded-[var(--radius)] border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/50;
   }
 
-  .btn-premium {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
-  }
-
   .btn-primary {
     @apply btn-premium bg-primary text-primary-foreground shadow shadow-primary/20 hover:bg-primary/90 hover:-translate-y-0.5;
   }
@@ -259,18 +274,6 @@
 
   .btn-secondary:hover {
     box-shadow: 0 0 15px hsl(var(--primary) / 0.15);
-  }
-
-  .input-premium {
-    @apply flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 hover:border-primary;
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    transform: translateZ(0);
-    /* Hardware acceleration for Safari */
-  }
-
-  .input-premium:hover {
-    box-shadow: 0 0 12px hsl(var(--primary) / 0.15);
   }
 
   .select-premium {
@@ -467,6 +470,7 @@ a[href*="neat.firecms.co"] {
 
 /* Mobile Layout & Text Scaling Enhancements */
 @media (max-width: 768px) {
+
   /* Prevent automatic iOS input zoom and make inputs highly readable */
   input,
   select,
@@ -855,21 +859,25 @@ a[href*="neat.firecms.co"] {
     visibility: hidden;
     transform: translateY(6px) scale(0.5);
   }
+
   5% {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
   }
+
   15% {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
   }
+
   20% {
     opacity: 0;
     visibility: hidden;
     transform: translateY(-6px) scale(0.5);
   }
+
   100% {
     opacity: 0;
     visibility: hidden;
@@ -882,10 +890,12 @@ a[href*="neat.firecms.co"] {
     opacity: 0;
     transform: scale(0.5) rotate(-45deg);
   }
+
   50% {
     opacity: 0.5;
     transform: scale(1.2) rotate(0deg);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) rotate(0deg);
@@ -1453,12 +1463,12 @@ a[href*="neat.firecms.co"] {
 /* Instant theme switch — no transition delay */
 .theme-toggling,
 .theme-toggling * {
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              color 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              fill 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important,
-              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    fill 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* Screen Loader Styles */
@@ -2344,7 +2354,7 @@ button.learn-more:active {
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
   z-index: -10;
   pointer-events: none;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .cyber-step-card::after {
@@ -2356,18 +2366,18 @@ button.learn-more:active {
   background: linear-gradient(-45deg, #fc00ff 0%, #00dbde 100%);
   transform: translate3d(0, 0, 0) scale(0.95);
   filter: blur(20px);
-  transition: filter 0.2s ease;
+  transition: filter 0.5s ease;
 }
 
 /* Hover & Active/Touch Effects */
 .cyber-step-card:hover::after,
 .cyber-step-card:active::after {
-  filter: blur(30px);
+  filter: blur(24px);
 }
 
 .cyber-step-card:hover::before,
 .cyber-step-card:active::before {
-  transform: rotate(-90deg) scaleX(1.15) scaleY(0.92);
+  transform: rotate(-3deg) scaleX(1.03) scaleY(1.02);
 }
 
 .cyber-step-card h3 {
