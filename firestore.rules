@@ -36,7 +36,19 @@ service cloud.firestore {
           let pnlDiff = pnl - expectedPnl;
           let absPnlDiff = pnlDiff < 0.0 ? -pnlDiff : pnlDiff;
 
-          return data.keys().hasOnly(['id', 'date', 'direction', 'entry', 'exit', 'lots', 'swap', 'sl', 'tp', 'rr', 'pips', 'session', 'setup', 'strategies', 'market', 'leverage', 'pnl', 'outcome', 'note', 'screenshots', 'timestamp', 'source', 'confidence'])
+          return data.keys().hasOnly([
+              // ── Core trade fields ──────────────────────────────────────
+              'id', 'date', 'direction', 'entry', 'exit', 'lots', 'swap',
+              'sl', 'tp', 'rr', 'pips', 'session', 'setup', 'strategy',
+              'strategies', 'market', 'leverage', 'pnl', 'outcome', 'note',
+              'screenshots', 'timestamp', 'source', 'confidence',
+              // ── Risk tab fields ────────────────────────────────────────
+              'riskPercent', 'maxDailyLoss', 'autoRR',
+              // ── Mood / Psychology tab fields ───────────────────────────
+              'preTradeMood', 'conviction', 'postReflect',
+              // ── Advanced / Setup tab fields ────────────────────────────
+              'timeframe', 'setupGrade', 'marketStructure', 'confluenceFactors'
+            ])
             && pnl is number
             && pnl >= -10000000 // Prevent malicious extreme negative PNL
             && pnl <= 10000000  // Prevent malicious extreme positive PNL
@@ -53,7 +65,7 @@ service cloud.firestore {
             && data.get('note', '') is string
             && data.get('note', '').size() <= 4000
             && (data.get('strategies', []) is list)
-            && absPnlDiff < 0.1;
+            && absPnlDiff < 1.0; // Widened tolerance: floating-point safety + broker swap rounding
         }
 
         allow update: if request.auth != null && request.auth.uid == userId && isValidTrade();

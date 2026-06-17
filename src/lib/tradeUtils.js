@@ -72,23 +72,49 @@ export const formatCurrencyCompact = (val) => {
   return `$${formatted}`;
 };
 
-// XAUUSD only: 1 pip = $1.00 per 1.00 lot (contract size 100, pip size 0.1)
-const XAUUSD_CONTRACT_SIZE = 100;
-const XAUUSD_PIP_SIZE      = 0.1;
+// ─── XAUUSD (Gold) Trading Math ─────────────────────────────────────────────
+//
+//  Gold is traded in OUNCES via lots:
+//    1.0  lot  = 100 oz   ·  $1 price move = $100 profit/loss
+//    0.10 lot  =  10 oz   ·  $1 price move = $10  profit/loss
+//    0.01 lot  =   1 oz   ·  $1 price move = $1   profit/loss
+//
+//  Formula:  PnL = price_move ($) × ounces_traded
+//                = price_move × (lots × 100)
+//
+//  Points / Pips display:
+//    Brokers quote Gold to 2 decimal places (e.g. 2600.00).
+//    1 point = $0.01 price move  →  points = price_move / 0.01
+//    Example: $5.00 move  = 500 points
+//             $25.00 move = 2500 points
+//
+//  Verification (from screenshot — 0.01 lot, $25 move):
+//    ounces = 0.01 × 100 = 1 oz
+//    PnL    = $25 × 1 oz = $25  ✓
+//    points = $25 / $0.01 = 2500 pts  ✓
+
+const XAUUSD_OZ_PER_LOT  = 100;   // ounces per 1.0 standard lot
+const XAUUSD_POINT_SIZE  = 0.01;  // 1 point = $0.01 price move
 
 export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
 
   const swapNum = Number(swap) || 0;
   const diff    = dir === 'BUY' ? exit - entry : entry - exit;
-  const pips    = parseFloat((diff / XAUUSD_PIP_SIZE).toFixed(1));
+
+  // Points (displayed as "pips" in the UI): price move / point size
+  // e.g. $25.00 move → 25 / 0.01 = 2500 pts
+  const pips = parseFloat((diff / XAUUSD_POINT_SIZE).toFixed(1));
 
   // If actual broker P&L is provided, trust it directly
   let pnl;
   if (actualPnl !== null && actualPnl !== undefined && !isNaN(actualPnl) && actualPnl !== 0) {
     pnl = parseFloat(actualPnl) + swapNum;
   } else if (lots && !isNaN(lots) && lots > 0) {
-    pnl = (diff * lots * XAUUSD_CONTRACT_SIZE) + swapNum;
+    // PnL = price_move × ounces_traded
+    // ounces = lots × 100  →  PnL = diff × lots × 100
+    const ounces = lots * XAUUSD_OZ_PER_LOT;
+    pnl = (diff * ounces) + swapNum;
   } else {
     return { pnl: null, rr: null, pips };
   }
