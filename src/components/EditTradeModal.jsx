@@ -7,6 +7,7 @@ import { calcPnl, formatCurrency } from '../lib/tradeUtils';
 import { auth, storage } from '../firebase';
 import { useToast } from './ToastContext';
 import { ImageViewerModal } from './ImageViewerModal';
+import { requireProFeature } from '../services/featureGate';
 
 export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClose }) {
   const [formData, setFormData] = useState({ ...trade });
@@ -25,11 +26,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    if (plan !== 'pro') {
-      setShowPricingModal?.(true);
-      toast?.('Upgrade to Pro to attach analysis screenshots.', 'warn');
-      return;
-    }
+    if (!requireProFeature(plan, setShowPricingModal, toast, 'attach analysis screenshots')) return;
 
     setUploading(true);
     setUploadProgress(0);
@@ -344,7 +341,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
               </div>
             ) : (
               <div 
-                onClick={() => { setShowPricingModal?.(true); toast?.('Upgrade to Pro to attach analysis screenshots.', 'warn'); }}
+                onClick={() => { requireProFeature(plan, setShowPricingModal, toast, 'attach analysis screenshots'); }}
                 className="border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/5 opacity-60 hover:opacity-100 transition-opacity"
               >
                 <LockFill className="w-6 h-6 text-muted-foreground/40" />

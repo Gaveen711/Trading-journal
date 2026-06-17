@@ -1,25 +1,24 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, X, Settings, ChevronDown, Palette } from 'lucide-react';
 import { auth } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
+import { submitTrade, getRemainingFreeTrades } from '../../services/tradeService';
 import { CurrencyConverter } from '../CurrencyConverter';
 import { CustomSelect } from '../ui/CustomSelect';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 
+import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
+
 export function DashboardRightSidebar({
   plan,
   isTrial,
-  expiry,
-  isTrialExpired,
   isTrialActive,
   renewCountdown,
   trialTimeLeft,
   trades,
-  walletBalance,
   setShowPricingModal,
   toast,
-  openPortal,
   addTrade,
   isLoadingTrades,
   setShowThemeSelector
@@ -83,6 +82,9 @@ export function DashboardRightSidebar({
     direction === 'LONG' ? 'BUY' : 'SELL', 0
   );
 
+  // Calculate remaining free trades via centralized service helper
+  const remainingFreeTrades = getRemainingFreeTrades(trades);
+
   const handleLogTrade = async () => {
     if (!entry || !exit || !lots) {
       toast('Please fill in Entry, Exit, and Amount.', 'error');
@@ -121,15 +123,10 @@ export function DashboardRightSidebar({
     };
 
     try {
-      if(addTrade) {
-        await addTrade(tradeData);
-        // Set the 1-hour locked timer target ONLY if they are on a free plan AND have reached or exceeded 25 trades!
-        const totalTradesCount = trades ? trades.length : 0;
-        const isProUser = plan === 'pro' || plan === 'grace';
-        if (!isProUser && totalTradesCount >= 25) {
-          const oneHourFromNow = Date.now() + 1 * 60 * 60 * 1000;
-          localStorage.setItem('xau-renew-target-v2', String(oneHourFromNow));
-        }
+
+        if (addTrade) {
+        // delegate submission + lock behavior to trade service
+        await submitTrade({ addTrade, tradeData, plan, trades });
 
         setEntry(''); setExit(''); setLots('0.10'); setSl(''); setTp(''); setNote(''); setSession(''); setStrategy('');
         toast(`Trade logged: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : 'error');
@@ -300,7 +297,7 @@ export function DashboardRightSidebar({
       </div>
 
       {/* ORDER FORM (ACTION CENTER) - Made more compact for a balanced right column spacing */}
-      <div className="apple-glass-panel flex flex-col p-3 rounded-[2rem] relative z-30">
+      <div className="apple-glass-panel flex flex-col p-6 rounded-3xl relative z-30">
         
         {/* Buy/Long | Sell/Short Segmented Control */}
         <div className="flex bg-muted p-0.5 rounded-xl mb-2 shrink-0">
@@ -394,7 +391,8 @@ export function DashboardRightSidebar({
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
-              You are on the Free plan. Upgrade to Pro to unlock auto MT4/MT5 syncing and advanced AI analytics.
+                You are on the Free plan. You can log up to {FREE_TRADE_LIMIT} trades. <strong>{remainingFreeTrades}</strong> remaining.
+                Upgrade to Pro to unlock auto MT4/MT5 syncing and advanced AI analytics and remove this limit.
             </p>
             <button
               onClick={() => setShowPricingModal(true)}
@@ -411,8 +409,8 @@ export function DashboardRightSidebar({
           <div className="flex flex-col gap-2">
           
           {/* Amount / Lots */}
-          <div className="space-y-0.5">
-            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
             <div className="relative">
               <input 
                 type="text" 
@@ -420,15 +418,15 @@ export function DashboardRightSidebar({
                 onChange={handleNumericChange(setLots)} 
                 placeholder="0.10"
                 disabled={showLockTimer}
-                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-muted-foreground">LOTS</span>
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-muted-foreground">LOTS</span>
             </div>
           </div>
 
           {/* Entry Price */}
-          <div className="space-y-0.5">
-            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
             <div className="relative">
               <input 
                 type="text" 
@@ -436,15 +434,15 @@ export function DashboardRightSidebar({
                 onChange={handleNumericChange(setEntry)} 
                 placeholder="2345.50"
                 disabled={showLockTimer}
-                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-primary">USD</span>
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary">USD</span>
             </div>
           </div>
 
           {/* Exit Price */}
-          <div className="space-y-0.5">
-            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
             <div className="relative">
               <input 
                 type="text" 
@@ -452,34 +450,34 @@ export function DashboardRightSidebar({
                 onChange={handleNumericChange(setExit)} 
                 placeholder="2350.00"
                 disabled={showLockTimer}
-                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-primary">USD</span>
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary">USD</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-0.5">
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
-              <input 
-                type="text" 
-                value={tp} 
-                onChange={handleNumericChange(setTp)} 
-                placeholder="Optional"
-                disabled={showLockTimer}
-                className="w-full bg-muted/30 border border-border/20 rounded-xl px-2.5 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              />
+              <label className="text-[11px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
+                <input 
+                  type="text" 
+                  value={tp} 
+                  onChange={handleNumericChange(setTp)} 
+                  placeholder="Optional"
+                  disabled={showLockTimer}
+                  className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                />
             </div>
             <div className="space-y-0.5">
-              <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
-              <input 
-                type="text" 
-                value={sl} 
-                onChange={handleNumericChange(setSl)} 
-                placeholder="Optional"
-                disabled={showLockTimer}
-                className="w-full bg-muted/30 border border-border/20 rounded-xl px-2.5 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              />
+              <label className="text-[11px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
+                <input 
+                  type="text" 
+                  value={sl} 
+                  onChange={handleNumericChange(setSl)} 
+                  placeholder="Optional"
+                  disabled={showLockTimer}
+                  className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                />
             </div>
           </div>
 
@@ -491,7 +489,7 @@ export function DashboardRightSidebar({
                 onChange={setSession}
                 placeholder="Select Session"
                 disabled={showLockTimer}
-                className="h-9 px-3"
+                className="h-10 px-3"
                 options={[
                   { value: 'London', label: 'London' },
                   { value: 'New York', label: 'New York' },
@@ -508,7 +506,7 @@ export function DashboardRightSidebar({
                 onChange={setStrategy}
                 placeholder="Select Strategy"
                 disabled={showLockTimer}
-                className="h-9 px-3"
+                className="h-10 px-3"
                 options={[
                   { value: 'Breakout', label: 'Breakout' },
                   { value: 'SMC', label: 'SMC' },
@@ -528,9 +526,9 @@ export function DashboardRightSidebar({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Why did you take this trade?"
-              rows={1.5}
+              rows={2}
               disabled={showLockTimer}
-              className="w-full bg-muted/30 border border-border/20 rounded-xl px-2.5 py-1 text-xs text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -554,7 +552,7 @@ export function DashboardRightSidebar({
           <button 
             onClick={handleLogTrade}
             disabled={saving || isLoadingTrades || showLockTimer}
-            className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-lg active:scale-[0.98] ${
+            className={`w-full py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.15em] transition-all shadow-lg active:scale-[0.98] ${
               showLockTimer
                 ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50 shadow-none'
                 : direction === 'LONG' 

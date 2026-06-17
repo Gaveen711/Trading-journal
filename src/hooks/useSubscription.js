@@ -104,7 +104,7 @@ export function useSubscription(user) {
     return () => unsub();
   }, [user, repository, toast]);
 
-  const startCheckout = async (planType = 'pro_monthly') => {
+  const startCheckout = async (_planType = 'pro_monthly') => {
     toast("Checkout is currently transitioning to PayPal. Please check back later!", "info");
   };
 
