@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils'; // Assuming this exists for tailwind-merge
 
-export function CustomSelect({ options, value, onChange, placeholder = 'Select...', className, name, disabled }) {
+export function CustomSelect({ options, value, onChange, placeholder = 'Select...', className, name, disabled, align = 'bottom' }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -45,8 +45,14 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-[100] p-1.5 rounded-2xl border border-border/50 bg-card/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 origin-top">
-          <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+        <div
+          style={align === 'top' ? { bottom: 'calc(100% + 8px)' } : { top: 'calc(100% + 8px)' }}
+          className={cn(
+            "absolute left-0 right-0 z-[100] p-1.5 rounded-2xl border border-border/50 bg-card/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200",
+            align === 'top' ? "origin-bottom" : "origin-top"
+          )}
+        >
+          <div className="space-y-1 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
             {options.map((option) => (
               <button
                 key={option.value}

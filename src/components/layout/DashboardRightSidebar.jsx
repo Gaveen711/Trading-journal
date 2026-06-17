@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Bell, X, Settings, ChevronDown, Palette } from 'lucide-react';
+import { Bell, X, Settings, ChevronDown, Palette, ClipboardList, Shield, Brain, Cpu, Lightbulb } from 'lucide-react';
 import { auth } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
 import { submitTrade, getRemainingFreeTrades } from '../../services/tradeService';
@@ -19,10 +19,10 @@ import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
 
 // ─── Tab IDs ────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'basic',    label: 'Log',      emoji: '📋' },
-  { id: 'risk',     label: 'Risk',     emoji: '🛡️' },
-  { id: 'mood',     label: 'Mood',     emoji: '🧠' },
-  { id: 'advanced', label: 'Advanced', emoji: '🔬' },
+  { id: 'basic',    label: 'Log',      icon: ClipboardList, color: '#34d399' }, // Emerald-400
+  { id: 'risk',     label: 'Risk',     icon: Shield,        color: '#f43f5e' }, // Rose-500
+  { id: 'mood',     label: 'Mood',     icon: Brain,         color: '#c084fc' }, // Purple-400
+  { id: 'advanced', label: 'Advanced', icon: Cpu,           color: '#fbbf24' }, // Amber-400
 ];
 
 // ─── Mood options (matching JournalPage icons) ───────────────────────────────
@@ -375,15 +375,15 @@ export function DashboardRightSidebar({
       <div className="apple-glass-panel flex flex-col rounded-3xl relative z-30 overflow-hidden">
 
         {/* ── Panel Header ────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/10 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center px-5 pt-4 pb-3 border-b border-border/10 shrink-0 relative">
+          <div className="flex items-center gap-2 mx-auto">
             <span className="w-2 h-2 rounded-full bg-[#E5B80B] shadow-[0_0_6px_rgba(229,184,11,0.6)]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Record Gold Trade</span>
             <span className="text-[8px] font-black uppercase bg-[#E5B80B]/15 text-[#E5B80B] px-1.5 py-0.5 rounded tracking-widest">XAU/USD</span>
           </div>
           {/* PnL live preview badge */}
           {(parseFloat(entry) > 0 && parseFloat(exit) > 0) && (
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
+            <span className={`absolute right-5 text-[10px] font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
               {(pnlData?.pnl || 0) >= 0 ? '+' : ''}{formatCurrency(pnlData?.pnl || 0)}
             </span>
           )}
@@ -433,17 +433,21 @@ export function DashboardRightSidebar({
         <div className="flex gap-0 border-b border-border/10 px-4 mt-1 shrink-0">
           {TABS.map((tab) => {
             const badge = tab.id === 'risk' ? riskFilled : tab.id === 'mood' ? moodFilled : tab.id === 'advanced' ? advancedFilled : 0;
+            const IconComponent = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1 px-2.5 py-2 text-[9px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] ${
+                className={`relative flex items-center gap-1.5 px-2.5 py-2 text-[9px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group ${
                   activeTab === tab.id
                     ? 'text-foreground border-primary'
                     : 'text-muted-foreground hover:text-foreground/70 border-transparent'
                 }`}
               >
-                <span className="text-[10px]">{tab.emoji}</span>
+                <IconComponent 
+                  className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110"
+                  style={activeTab === tab.id ? { color: tab.color, filter: `drop-shadow(0 0 3px ${tab.color})` } : {}}
+                />
                 {tab.label}
                 {badge > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground text-[7px] font-black flex items-center justify-center">
@@ -604,19 +608,18 @@ export function DashboardRightSidebar({
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
                   <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
-                  <CustomSelect value={session} onChange={setSession} placeholder="Session" disabled={showLockTimer} className="h-9 px-3"
+                  <CustomSelect value={session} onChange={setSession} placeholder="Session" disabled={showLockTimer} className="h-9 px-3" align="top"
                     options={[
                       { value: 'London',   label: 'London'       },
-                      { value: 'New York', label: 'New York'     },
+                      { value: 'NewYork',  label: 'New York'     },
                       { value: 'Tokyo',    label: 'Tokyo'        },
                       { value: 'Sydney',   label: 'Sydney'       },
-                      { value: 'Asian',    label: 'Asian Range'  },
                     ]}
                   />
                 </div>
                 <div className="space-y-0.5">
                   <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
-                  <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" disabled={showLockTimer} className="h-9 px-3"
+                  <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" disabled={showLockTimer} className="h-9 px-3" align="top"
                     options={[
                       { value: 'Breakout', label: 'Breakout'    },
                       { value: 'SMC',      label: 'SMC'         },
@@ -949,21 +952,19 @@ export function DashboardRightSidebar({
           <button
             onClick={handleLogTrade}
             disabled={saving || isLoadingTrades || showLockTimer}
-            className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-lg active:scale-[0.98] ${
-              showLockTimer
-                ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50 shadow-none'
-                : direction === 'LONG'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20'
-                  : 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/20'
-            }`}
+            className={`w-full btn-save-glow ${direction === 'LONG' ? 'btn-save-glow-buy' : 'btn-save-glow-sell'}`}
           >
             {saving ? 'Processing...' : showLockTimer ? `Locked (${renewCountdown})` : `${direction === 'LONG' ? '↑ Buy/Long' : '↓ Sell/Short'} — Save Trade`}
           </button>
 
           {/* Tab completion hints */}
           {(riskFilled === 0 || moodFilled === 0) && !showLockTimer && (
-            <p className="text-[8px] text-muted-foreground/40 text-center">
-              💡 Fill <span className="text-primary/60">Risk</span> & <span className="text-primary/60">Mood</span> tabs for deeper insights
+            <p className="text-[8px] text-muted-foreground/40 text-center flex items-center justify-center gap-1">
+              <Lightbulb 
+                className="w-2.5 h-2.5 text-amber-400 shrink-0" 
+                style={{ filter: 'drop-shadow(0 0 2px #fbbf24)' }}
+              />
+              Fill <span className="text-primary/60">Risk</span> & <span className="text-primary/60">Mood</span> tabs for deeper insights
             </p>
           )}
         </div>

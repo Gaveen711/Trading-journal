@@ -2503,3 +2503,225 @@ button.learn-more:active {
 .cta:active {
   transform: scale(0.96);
 }
+
+/* ─── SURPRISE PREMIUM INTERACTIVE FEEDBACK (BORDERS, GLOWS, AND TRANSITIONS) ─── */
+.card-premium,
+.apple-glass-panel {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Hover feedback */
+.card-premium:hover,
+.apple-glass-panel:hover {
+  border-color: hsl(var(--primary) / 0.45) !important;
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.3), 
+              0 0 15px hsl(var(--primary) / 0.08) !important;
+  transform: translateY(-2px) translateZ(0);
+}
+
+.dark .card-premium:hover,
+.dark .apple-glass-panel:hover {
+  border-color: hsl(var(--primary) / 0.45) !important;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 
+              0 0 20px hsl(var(--primary) / 0.12) !important;
+  transform: translateY(-2px) translateZ(0);
+}
+
+/* Touch & Click Feedback */
+.card-premium:active,
+.apple-glass-panel:active {
+  border-color: hsl(var(--primary) / 0.7) !important;
+  box-shadow: 0 4px 12px -5px rgba(0, 0, 0, 0.2), 
+              0 0 8px hsl(var(--primary) / 0.2) !important;
+  transform: scale(0.99) translateZ(0);
+  transition-duration: 0.1s !important;
+}
+
+/* Tab button / Segmented control hover & click surprise borders */
+button, 
+a.flex,
+.theme-switch-toggle {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Apply sleek border glows to CustomSelect elements and inputs on hover and focus */
+.input-premium:hover,
+.select-premium:hover,
+.CustomSelect-trigger:hover {
+  border-color: hsl(var(--primary) / 0.5) !important;
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.12) !important;
+}
+
+.input-premium:focus,
+.input-premium:focus-visible,
+.CustomSelect-trigger:focus-within {
+  border-color: hsl(var(--primary) / 0.8) !important;
+  box-shadow: 0 0 16px hsl(var(--primary) / 0.2) !important;
+}
+
+/* Nice border indicator on active navigation tabs & segmented control buttons */
+nav a.bg-primary {
+  border: 1px solid hsl(var(--primary-to)) !important;
+  box-shadow: 0 8px 20px -6px hsl(var(--primary) / 0.4) !important;
+}
+
+/* Segmented tab active status */
+button.bg-primary,
+button.bg-rose-500 {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.25) !important;
+}
+
+/* Premium Save Trade Glowing Button */
+.btn-save-glow {
+  border: 0.18em solid var(--glow-color) !important;
+  padding: 0.75em 1.5em !important;
+  color: var(--btn-text-color) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  background-color: var(--btn-color) !important;
+  border-radius: 12px !important;
+  outline: none;
+  box-shadow: 0 0 0.8em 0.15em var(--glow-color),
+              0 0 2.5em 0.6em var(--glow-spread-color),
+              inset 0 0 0.5em 0.15em var(--glow-color) !important;
+  text-shadow: 0 0 0.25em var(--glow-color);
+  position: relative;
+  transition: all 0.3s !important;
+  cursor: pointer;
+}
+
+.btn-save-glow::after {
+  pointer-events: none;
+  content: "";
+  position: absolute;
+  top: 110%;
+  left: 0;
+  height: 80%;
+  width: 100%;
+  background-color: var(--glow-spread-color);
+  filter: blur(1.5em);
+  opacity: 0.6;
+  transform: perspective(1.5em) rotateX(35deg) scale(1, 0.6);
+  transition: all 0.3s;
+}
+
+.btn-save-glow:hover {
+  color: var(--btn-color) !important;
+  background-color: var(--glow-color) !important;
+  box-shadow: 0 0 0.8em 0.15em var(--glow-color),
+              0 0 3em 1.2em var(--glow-spread-color),
+              inset 0 0 0.5em 0.15em var(--glow-color) !important;
+}
+
+.btn-save-glow:active {
+  transform: scale(0.98);
+  box-shadow: 0 0 0.5em 0.15em var(--glow-color),
+              0 0 1.8em 1.2em var(--glow-spread-color),
+              inset 0 0 0.4em 0.15em var(--glow-color) !important;
+}
+
+/* Buy Mode variables (Emerald Green) */
+.btn-save-glow-buy {
+  --glow-color: rgb(52, 211, 153);
+  --glow-spread-color: rgba(16, 185, 129, 0.65);
+  --btn-color: rgb(6, 78, 59);
+  --btn-text-color: rgb(167, 243, 208);
+}
+
+/* Sell Mode variables (Rose Red) */
+.btn-save-glow-sell {
+  --glow-color: rgb(251, 113, 133);
+  --glow-spread-color: rgba(244, 63, 94, 0.65);
+  --btn-color: rgb(136, 19, 55);
+  --btn-text-color: rgb(254, 205, 211);
+}
+
+/* Disabled/Locked state */
+.btn-save-glow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgb(30, 30, 35) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+.btn-save-glow:disabled::after {
+  display: none;
+}
+
+/* Premium Sliding Reveal Button (Convert style) */
+.btn-slide-reveal {
+  outline: none;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0.85rem 2rem !important;
+  margin: 0;
+  font-family: inherit;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  position: relative;
+  display: block;
+  width: 100%;
+  letter-spacing: 0.15em !important;
+  border-radius: 500px !important;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03) !important; /* Muted glass resting background */
+  color: rgba(255, 255, 255, 0.75) !important; /* Soft white text */
+  transition: all 0.4s;
+  text-align: center;
+  z-index: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.btn-slide-reveal span {
+  position: relative;
+  z-index: 10;
+  transition: color 0.4s;
+}
+
+.btn-slide-reveal:hover {
+  border-color: rgba(34, 197, 94, 0.3) !important; /* Subtle theme-green border glow on hover */
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.15);
+}
+
+.btn-slide-reveal:hover span {
+  color: black !important;
+}
+
+.btn-slide-reveal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -15%;
+  width: 130%;
+  height: 100%;
+  z-index: 1;
+  background: #22c55e !important; /* App primary neon green */
+  transform: skew(30deg) translate3d(-105%, 0, 0); /* Muted offset out of view */
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.btn-slide-reveal:hover::before {
+  transform: skew(30deg) translate3d(0, 0, 0); /* Slides in to cover the background */
+}
+
+/* Active State */
+.btn-slide-reveal:active {
+  transform: scale(0.98);
+}
+
+/* Disabled State */
+.btn-slide-reveal:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-slide-reveal:disabled::before {
+  display: none;
+}

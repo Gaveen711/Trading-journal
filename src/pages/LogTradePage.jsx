@@ -128,7 +128,7 @@ export function LogTradePage() {
   const goalProgress = Math.min(100, Math.max(0, (thisMonthPnl / (monthlyGoal || 1)) * 100));
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-200 pb-6 pr-2">
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-200 pb-6">
       
       {/* TOP TIER: METRICS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">

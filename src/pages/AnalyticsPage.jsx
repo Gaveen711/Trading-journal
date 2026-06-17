@@ -147,7 +147,7 @@ export function AnalyticsPage() {
       let s = t.session || '';
       if (s.toLowerCase() === 'london') sessionPnlMap.London += t.pnl;
       else if (s.toLowerCase() === 'new york' || s.toLowerCase() === 'new-york' || s.toLowerCase() === 'newyork') sessionPnlMap['New York'] += t.pnl;
-      else if (s.toLowerCase() === 'tokyo') sessionPnlMap.Tokyo += t.pnl;
+      else if (s.toLowerCase() === 'tokyo' || s.toLowerCase().includes('asia')) sessionPnlMap.Tokyo += t.pnl;
       else if (s.toLowerCase() === 'sydney') sessionPnlMap.Sydney += t.pnl;
     });
 

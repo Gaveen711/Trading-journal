@@ -57,7 +57,7 @@ export async function submitTrade({ addTrade, tradeData, plan, trades }) {
   // After successful submission, if user is free and has now reached the limit,
   // set a 30-day reset timestamp so they must wait before logging more trades.
   const totalTradesCount = trades ? trades.length : 0;
-  if (!isProPlan(plan) && totalTradesCount >= FREE_TRADE_LIMIT) {
+  if (!isProPlan(plan) && (totalTradesCount + 1) >= FREE_TRADE_LIMIT) {
     const thirtyDaysFromNow = Date.now() + TRADE_LOCK_DURATION_MS;
     try {
       localStorage.setItem(TRADE_LOCK_LOCALSTORAGE_KEY, String(thirtyDaysFromNow));

@@ -33,14 +33,51 @@ export function HistoryPage() {
   const [filterOutcome, setFilterOutcome] = useState('');
   const [filterSession, setFilterSession] = useState('');
   const [filterStrategy, setFilterStrategy] = useState('');
+  const [filterMood, setFilterMood] = useState('');
+  const [filterGrade, setFilterGrade] = useState('');
+  const [filterTimeframe, setFilterTimeframe] = useState('');
   const [filterSort, setFilterSort] = useState('newest');
   const [isCompactMode, setIsCompactMode] = useState(false);
   
   const [editingTrade, setEditingTrade] = useState(null);
-  const [expandedNotes, setExpandedNotes] = useState({});
+  const [expandedTradeId, setExpandedTradeId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(30);
   const [activeImageUrl, setActiveImageUrl] = useState(null);
   const [sharingTrade, setSharingTrade] = useState(null);
+
+  const formatTradeTime = (timestamp) => {
+    if (!timestamp) return '';
+    let dateObj = null;
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      dateObj = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      dateObj = timestamp;
+    } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+      dateObj = new Date(timestamp);
+    } else if (timestamp.seconds !== undefined) {
+      dateObj = new Date(timestamp.seconds * 1000);
+    }
+    if (!dateObj || isNaN(dateObj.getTime())) return '';
+    
+    return dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  };
+
+  const getTimestampMs = (t) => {
+    if (!t.timestamp) return 0;
+    if (t.timestamp.toDate && typeof t.timestamp.toDate === 'function') {
+      return t.timestamp.toDate().getTime();
+    }
+    if (t.timestamp instanceof Date) {
+      return t.timestamp.getTime();
+    }
+    if (typeof t.timestamp === 'string' || typeof t.timestamp === 'number') {
+      return new Date(t.timestamp).getTime();
+    }
+    if (t.timestamp.seconds !== undefined) {
+      return t.timestamp.seconds * 1000;
+    }
+    return 0;
+  };
 
   const handleFilterSearch = (val) => {
     setFilterSearch(val);
@@ -62,6 +99,18 @@ export function HistoryPage() {
     setFilterStrategy(val);
     setVisibleCount(30);
   };
+  const handleFilterMood = (val) => {
+    setFilterMood(val);
+    setVisibleCount(30);
+  };
+  const handleFilterGrade = (val) => {
+    setFilterGrade(val);
+    setVisibleCount(30);
+  };
+  const handleFilterTimeframe = (val) => {
+    setFilterTimeframe(val);
+    setVisibleCount(30);
+  };
   const handleFilterSort = (val) => {
     setFilterSort(val);
     setVisibleCount(30);
@@ -78,21 +127,34 @@ export function HistoryPage() {
         const hasLegacySetup = t.setup === filterStrategy;
         if (!hasStrat && !hasLegacySetup) return false;
       }
+      if (filterMood && t.preTradeMood !== filterMood) return false;
+      if (filterGrade && t.setupGrade !== filterGrade) return false;
+      if (filterTimeframe && t.timeframe !== filterTimeframe) return false;
       return true;
     });
 
     if (filterSort === 'oldest') {
-      filtered.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      filtered.sort((a, b) => {
+        const timeA = getTimestampMs(a);
+        const timeB = getTimestampMs(b);
+        if (timeA && timeB && timeA !== timeB) return timeA - timeB;
+        return (a.date || '').localeCompare(b.date || '');
+      });
     } else if (filterSort === 'best') {
       filtered.sort((a, b) => (b.pnl || 0) - (a.pnl || 0));
     } else if (filterSort === 'worst') {
       filtered.sort((a, b) => (a.pnl || 0) - (b.pnl || 0));
     } else {
-      // default 'newest': assuming descending date order
-      filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      // default 'newest': assuming descending date and time order
+      filtered.sort((a, b) => {
+        const timeA = getTimestampMs(a);
+        const timeB = getTimestampMs(b);
+        if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+        return (b.date || '').localeCompare(a.date || '');
+      });
     }
     return filtered;
-  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterStrategy, filterSort]);
+  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterStrategy, filterMood, filterGrade, filterTimeframe, filterSort]);
 
   const uniqueStrategies = useMemo(() => {
     const strats = new Set();
@@ -200,13 +262,13 @@ export function HistoryPage() {
       </header>
       
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           <input 
             type="text" 
             placeholder="Search notes..." 
             value={filterSearch} 
             onChange={e => handleFilterSearch(e.target.value)} 
-            className="input-premium col-span-1 sm:col-span-2 lg:col-span-1"
+            className="input-premium col-span-2 md:col-span-1"
           />
           <CustomSelect 
             value={filterDir} 
@@ -248,6 +310,48 @@ export function HistoryPage() {
             options={strategyOptions}
           />
           <CustomSelect 
+            value={filterMood} 
+            onChange={handleFilterMood}
+            placeholder="All moods"
+            options={[
+              { value: '', label: 'All moods' },
+              { value: 'Terrible', label: 'Terrible 😡' },
+              { value: 'Bad', label: 'Bad 🙁' },
+              { value: 'Neutral', label: 'Neutral 😐' },
+              { value: 'Good', label: 'Good 🙂' },
+              { value: 'Excellent', label: 'Excellent 😎' }
+            ]}
+          />
+          <CustomSelect 
+            value={filterGrade} 
+            onChange={handleFilterGrade}
+            placeholder="All grades"
+            options={[
+              { value: '', label: 'All grades' },
+              { value: 'A+', label: 'A+' },
+              { value: 'A', label: 'A' },
+              { value: 'B', label: 'B' },
+              { value: 'C', label: 'C' },
+              { value: 'D', label: 'D' }
+            ]}
+          />
+          <CustomSelect 
+            value={filterTimeframe} 
+            onChange={handleFilterTimeframe}
+            placeholder="All timeframes"
+            options={[
+              { value: '', label: 'All timeframes' },
+              { value: 'M1', label: 'M1' },
+              { value: 'M5', label: 'M5' },
+              { value: 'M15', label: 'M15' },
+              { value: 'M30', label: 'M30' },
+              { value: 'H1', label: 'H1' },
+              { value: 'H4', label: 'H4' },
+              { value: 'D1', label: 'D1' },
+              { value: 'W1', label: 'W1' }
+            ]}
+          />
+          <CustomSelect 
             value={filterSort} 
             onChange={handleFilterSort}
             options={[
@@ -277,12 +381,14 @@ export function HistoryPage() {
                 <div 
                   key={t.id}
                   className="flex flex-col p-3 sm:p-4 hover:bg-muted/10 cursor-pointer group transition-colors animate-in fade-in"
-                  onClick={() => setExpandedNotes(prev => ({ ...prev, [t.id]: !prev[t.id] }))}
+                  onClick={() => setExpandedTradeId(prev => prev === t.id ? null : t.id)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs">
                     <div className="flex items-center gap-3 w-full sm:w-2/5">
                       <div className={`w-2 h-2 rounded-full shrink-0 ${isWin ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'}`} />
-                      <div className="font-bold whitespace-nowrap text-foreground">{t.date}</div>
+                      <div className="font-bold whitespace-nowrap text-foreground">
+                        {t.date} {t.timestamp ? `· ${formatTradeTime(t.timestamp)}` : ''}
+                      </div>
                       <div className="text-muted-foreground hidden sm:block whitespace-nowrap">{t.market || 'XAU/USD'}</div>
                       <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${isWin ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                         {t.direction}
@@ -312,9 +418,48 @@ export function HistoryPage() {
                     </div>
                   </div>
                   
-                  {expandedNotes[t.id] && (
-                    <div className="w-full mt-3 pt-3 border-t border-border/10 text-[11px] text-muted-foreground">
-                      <div className="whitespace-pre-wrap">{t.note || 'No notes.'}</div>
+                  {expandedTradeId === t.id && (
+                    <div className="w-full mt-3 pt-3 border-t border-border/10 text-[11px] text-muted-foreground space-y-3">
+                      {/* Extended Fields Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-muted/20 border border-border/10 p-3 rounded-xl text-left">
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block">Risk %</span>
+                          <span className="text-xs font-bold text-foreground">{t.riskPercent ? `${t.riskPercent}%` : '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block">Max Loss</span>
+                          <span className="text-xs font-bold text-foreground">{t.maxDailyLoss ? `$${t.maxDailyLoss}` : '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block">Mood</span>
+                          <span className="text-xs font-bold text-foreground">{t.preTradeMood || '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block">Conviction</span>
+                          <span className={`text-xs font-black uppercase tracking-wider ${t.conviction === 'High' ? 'text-green-500' : t.conviction === 'Medium' ? 'text-amber-500' : t.conviction === 'Low' ? 'text-rose-500' : 'text-muted-foreground/45'}`}>{t.conviction || '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block">Timeframe</span>
+                          <span className="text-xs font-bold text-foreground">{t.timeframe || '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block">Setup Quality</span>
+                          <span className="text-xs font-bold text-foreground">{t.setupGrade || '—'}</span>
+                        </div>
+                      </div>
+
+                      {/* Notes & Reflections side-by-side or stacked */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+                        <div className="bg-black/10 p-3 rounded-lg border border-white/5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block mb-1">Notes:</span>
+                          <div className="text-xs font-semibold text-foreground/80 leading-relaxed whitespace-pre-wrap">{t.note || 'No notes.'}</div>
+                        </div>
+                        <div className="bg-black/10 p-3 rounded-lg border border-white/5">
+                          <span className="text-[8px] font-black uppercase text-muted-foreground tracking-wider block mb-1">Reflection:</span>
+                          <div className="text-xs font-semibold text-foreground/80 leading-relaxed whitespace-pre-wrap">{t.postReflect || 'No reflection.'}</div>
+                        </div>
+                      </div>
+
                       {t.screenshots && t.screenshots.length > 0 && (
                         <div className="mt-3 flex gap-2">
                           <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1">Screenshots attached</span>
@@ -328,7 +473,7 @@ export function HistoryPage() {
                   key={t.id} 
                   className="card-premium p-5 cursor-pointer group hover:bg-muted/10 animate-in slide-in-from-bottom-2 duration-500 ease-[var(--apple-ease)] space-y-4 text-left" 
                   style={{ animationDelay: `${idx * 50}ms`, animationFillMode: 'both' }}
-                  onClick={() => setExpandedNotes(prev => ({ ...prev, [t.id]: !prev[t.id] }))}
+                  onClick={() => setExpandedTradeId(prev => prev === t.id ? null : t.id)}
                 >
                   {/* Top Header Row */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
@@ -354,7 +499,9 @@ export function HistoryPage() {
                             <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20">MT5</span>
                           )}
                         </div>
-                        <div className="text-[10px] text-muted-foreground font-bold mt-0.5">{t.date}</div>
+                        <div className="text-[10px] text-muted-foreground font-bold mt-0.5">
+                          {t.date} {t.timestamp ? `· ${formatTradeTime(t.timestamp)}` : ''}
+                        </div>
                       </div>
                     </div>
 
@@ -440,12 +587,81 @@ export function HistoryPage() {
                   </div>
 
                   {/* Notes Area (Collapsible) */}
-                  {expandedNotes[t.id] && (
-                    <div className="mt-3 pt-3 border-t border-border/20 animate-in slide-in-from-top-2 duration-500 ease-[var(--apple-ease)]">
-                      <div className="bg-black/25 border border-white/5 rounded-xl p-4 text-left space-y-2">
-                        <div className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Notes:</div>
-                        <div className="text-xs font-semibold text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                          {t.note || <span className="text-muted-foreground italic font-normal">No notes provided for this trade.</span>}
+                  {expandedTradeId === t.id && (
+                    <div className="mt-3 pt-3 border-t border-border/20 animate-in slide-in-from-top-2 duration-500 ease-[var(--apple-ease)] space-y-4">
+                      
+                      {/* Extended Fields Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 bg-muted/20 border border-border/20 p-4 rounded-2xl text-left">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Risk Percent</span>
+                          <span className="text-xs font-bold text-foreground">{t.riskPercent ? `${t.riskPercent}%` : '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Max Daily Loss</span>
+                          <span className="text-xs font-bold text-foreground">{t.maxDailyLoss ? `$${t.maxDailyLoss}` : '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Pre-Trade Mood</span>
+                          <span className="text-xs font-bold text-foreground">{t.preTradeMood ? t.preTradeMood : '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Conviction</span>
+                          <span className={`text-xs font-black uppercase tracking-wider ${t.conviction === 'High' ? 'text-green-500' : t.conviction === 'Medium' ? 'text-amber-500' : t.conviction === 'Low' ? 'text-rose-500' : 'text-muted-foreground/45'}`}>{t.conviction || '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Auto R:R</span>
+                          <span className="text-xs font-bold text-foreground">{t.autoRR ? `1 : ${t.autoRR}` : '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Timeframe</span>
+                          <span className="text-xs font-bold text-foreground">{t.timeframe || '—'}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Setup Quality</span>
+                          <span className="text-xs font-bold text-foreground">{t.setupGrade || '—'}</span>
+                        </div>
+                      </div>
+
+                      {/* Tags Lists */}
+                      {( (t.marketStructure && t.marketStructure.length > 0) || (t.confluenceFactors && t.confluenceFactors.length > 0) ) && (
+                        <div className="flex flex-col gap-2 bg-muted/20 border border-border/20 p-4 rounded-2xl text-left">
+                          {t.marketStructure && t.marketStructure.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Market Structure</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {t.marketStructure.map((s, idx) => (
+                                  <span key={idx} className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">{s}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {t.confluenceFactors && t.confluenceFactors.length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[9px] font-black uppercase text-muted-foreground tracking-wider block">Confluences</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {t.confluenceFactors.map((c, idx) => (
+                                  <span key={idx} className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">{c}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Text Reflections */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <div className="bg-black/25 border border-white/5 rounded-xl p-4 text-left space-y-2">
+                          <div className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Notes:</div>
+                          <div className="text-xs font-semibold text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                            {t.note || <span className="text-muted-foreground italic font-normal">No notes provided for this trade.</span>}
+                          </div>
+                        </div>
+
+                        <div className="bg-black/25 border border-white/5 rounded-xl p-4 text-left space-y-2">
+                          <div className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Post-Trade Reflection:</div>
+                          <div className="text-xs font-semibold text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                            {t.postReflect || <span className="text-muted-foreground italic font-normal">No post-trade reflections provided.</span>}
+                          </div>
                         </div>
                       </div>
                       

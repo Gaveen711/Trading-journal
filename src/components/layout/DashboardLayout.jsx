@@ -175,7 +175,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   ].filter(Boolean);
 
   return (
-    <div className="h-screen md:h-screen min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative overflow-hidden">
+    <div className="h-screen md:h-screen min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative overflow-y-auto md:overflow-hidden">
 
       {/* GLASSMORPHIC BACKGROUND MESH */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -184,17 +184,17 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className={`hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
+      <aside className={`hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-5.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-60' : 'w-22 items-center'}`}>
         {/* LOGO & TOGGLE */}
-        <div className={`flex items-center w-full mb-8 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
+        <div className={`flex items-center w-full mb-7 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
           <div 
             className={`flex items-center cursor-pointer transition-all duration-500 ${isSidebarExpanded ? 'gap-2.5' : 'gap-0'}`} 
             onClick={() => navigate('/app')}
           >
-            <Logo onlyIcon={!isSidebarExpanded} iconSize="w-8 h-8" />
+            <Logo onlyIcon={!isSidebarExpanded} iconSize="w-7.5 h-7.5" />
             <div className={`flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isSidebarExpanded 
-                ? 'opacity-100 max-w-[120px] translate-x-0' 
+                ? 'opacity-100 max-w-[110px] translate-x-0' 
                 : 'opacity-0 max-w-0 overflow-hidden pointer-events-none -translate-x-2'
             }`}>
               <span className="text-[9px] font-black uppercase text-primary tracking-widest whitespace-nowrap">
@@ -221,7 +221,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </div>
 
         {/* NAVIGATION LINKS */}
-        <nav className="w-full flex-1 flex flex-col gap-3.5">
+        <nav className="w-full flex-1 flex flex-col gap-3">
           {navigation.map((item) => {
             const isActive = item.id === ''
               ? (location.pathname === '/app' || location.pathname === '/app/') && !location.search.includes('tab=log')
@@ -235,7 +235,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 to={`/app/${item.id}`}
                 className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSidebarExpanded 
-                    ? 'px-4 w-full h-11 gap-3 rounded-xl' 
+                    ? 'px-3.5 w-full h-11 gap-2.5 rounded-xl' 
                     : 'px-0 w-11 h-11 justify-center gap-0 rounded-full'
                 } ${isActive
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/15'
@@ -243,10 +243,10 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 }`}
                 title={!isSidebarExpanded ? item.name : undefined}
               >
-                <Icon className="w-[1.2rem] h-[1.2rem] shrink-0" />
-                <span className={`text-[11px] font-black uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                <Icon className="w-[1.15rem] h-[1.15rem] shrink-0" />
+                <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSidebarExpanded 
-                    ? 'opacity-100 max-w-[150px] ml-0' 
+                    ? 'opacity-100 max-w-[130px] ml-0' 
                     : 'opacity-0 max-w-0 ml-0 overflow-hidden pointer-events-none'
                 }`}>
                   {item.name}
@@ -371,7 +371,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </aside>
 
       {/* MAIN CONTAINER */}
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:h-screen md:overflow-y-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] h-auto md:h-screen overflow-y-auto custom-scrollbar">
         {/* MOBILE HEADER (only visible on mobile/tablet) */}
         <header className={`md:hidden fixed top-3 left-3 right-3 z-40 apple-glass-panel rounded-2xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
           <div className="h-14 px-4 flex items-center justify-between">
@@ -504,7 +504,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </header>
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
-        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1600px] w-full mx-auto pt-20 px-4 pb-4 md:py-6 md:px-4 lg:px-6 gap-6 md:pb-8">
+        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1550px] w-full mx-auto pt-20 px-6 pb-6 md:py-6 md:px-6 lg:px-8 gap-6 md:pb-8">
 
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0 relative">

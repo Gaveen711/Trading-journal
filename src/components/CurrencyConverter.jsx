@@ -1052,9 +1052,9 @@ export function CurrencyConverter() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 disabled:opacity-50 mt-2"
+          className="w-full btn-slide-reveal mt-2"
         >
-          {loading ? 'Converting...' : 'Convert'}
+          <span>{loading ? 'Converting...' : 'Convert'}</span>
         </button>
       </form>
     </div>
