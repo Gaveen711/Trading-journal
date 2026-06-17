@@ -688,220 +688,10 @@ app.post('/init-user', async (c) => {
   }
 })
 
-// ── 6. Paddle Checkout Verification Route ────────────────────────────────────
-app.post('/paddle-success', async (c) => {
-  let body;
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
+// ── 6. Payment Transition ────────────────────────────────────────────────────
+// (Paddle removed, preparing for PayPal transition)
 
-  const { transactionId, userId } = body
-  if (!transactionId || !userId) {
-    return c.json({ error: 'Missing required validation parameters.' }, 400)
-  }
 
-  try {
-    const uid = await getUidFromContext(c)
-    if (uid !== userId) {
-      return c.json({ error: 'Forbidden: User ID mismatch.' }, 403)
-    }
-
-    // Fallback direct upgrade: activate the Pro plan immediately upon checkout success page load.
-    // This is particularly critical for localhost/development where webhooks cannot be delivered.
-    const planExpiry = new Date()
-    planExpiry.setDate(planExpiry.getDate() + 30)
-
-    const updatePayload = {
-      plan: 'pro',
-      isTrial: false,
-      paddleTransactionId: transactionId,
-      planExpiry: planExpiry.toISOString(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }
-
-    await db.collection('users').doc(userId).update(updatePayload)
-    await invalidateUserCache(userId)
-
-    console.log(`[paddle-success] Fallback direct upgrade: Activated Pro plan for user ${userId}`)
-
-    return c.json({
-      success: true,
-      planExpiry: planExpiry.toISOString(),
-      isTrial: false,
-      status: 'completed'
-    })
-  } catch (error: any) {
-    console.error('[paddle-success] error:', error.message || error);
-    return c.json({ error: `Verification failed: ${error.message || 'unknown error'}` }, 500);
-  }
-})
-
-// Helper to verify Paddle signature manually using crypto HMAC-SHA256
-function verifyPaddleSignature(rawBody: string, signatureHeader: string, secret: string): boolean {
-  if (!signatureHeader || !secret) return false
-
-  const parts = signatureHeader.split(';')
-  let ts = ''
-  let h1 = ''
-
-  for (const part of parts) {
-    const [key, val] = part.split('=')
-    if (key === 'ts') ts = val
-    if (key === 'h1') h1 = val
-  }
-
-  if (!ts || !h1) return false
-
-  const payload = `${ts}:${rawBody}`
-  const computedHash = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest()
-
-  try {
-    const headerBuffer = Buffer.from(h1, 'hex')
-    if (computedHash.length !== headerBuffer.length) return false
-    return crypto.timingSafeEqual(computedHash, headerBuffer)
-  } catch {
-    return false
-  }
-}
-
-// ── 7. Paddle Webhook Route ──────────────────────────────────────────────────
-app.post('/paddle-webhook', async (c) => {
-  const rawBody = await c.req.text()
-  const signatureHeader = c.req.header('Paddle-Signature') || ''
-  const secret = process.env.PADDLE_WEBHOOK_SECRET || ''
-
-  if (!verifyPaddleSignature(rawBody, signatureHeader, secret)) {
-    console.error('[paddle-webhook] Signature verification failed')
-    return c.json({ error: 'Unauthorized: Invalid signature' }, 401)
-  }
-
-  let body: any
-  try {
-    body = JSON.parse(rawBody)
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-
-  const { event_type: eventType, data } = body
-  console.log(`[paddle-webhook] Received event: ${eventType} for subscription: ${data?.id}`)
-
-  const HANDLED_EVENTS = [
-    'transaction.completed',
-    'subscription.updated',
-    'subscription.canceled',
-    'subscription.cancelled',
-    'subscription.past_due'
-  ]
-
-  if (!HANDLED_EVENTS.includes(eventType)) {
-    return c.json({ success: true, message: 'Event ignored' })
-  }
-
-  // Retrieve userId from custom data
-  let userId = data?.custom_data?.userId
-  const subscriptionId = data?.subscription_id || data?.id
-
-  // Fallback to query user by subscription ID if custom data doesn't have userId
-  if (!userId && subscriptionId) {
-    try {
-      const usersSnap = await db.collection('users')
-        .where('paddleSubscriptionId', '==', subscriptionId)
-        .limit(1)
-        .get()
-      if (!usersSnap.empty) {
-        userId = usersSnap.docs[0].id
-      }
-    } catch (err) {
-      console.error('[paddle-webhook] Error querying user by paddleSubscriptionId:', err)
-    }
-  }
-
-  if (!userId) {
-    console.warn('[paddle-webhook] Event ignored: no userId found')
-    return c.json({ success: true, message: 'No matching user found' })
-  }
-
-  try {
-    if (eventType === 'transaction.completed') {
-      const subId = data?.subscription_id
-      const txnId = data?.id
-      const planExpiry = data?.billing_period?.ends_at || null
-
-      const updatePayload: any = {
-        plan: 'pro',
-        isTrial: false,
-        paddleTransactionId: txnId || null,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }
-      if (subId) {
-        updatePayload.paddleSubscriptionId = subId
-      }
-      if (planExpiry) {
-        updatePayload.planExpiry = planExpiry
-      }
-
-      await db.collection('users').doc(userId).update(updatePayload)
-      await invalidateUserCache(userId)
-      console.log(`[paddle-webhook] Activated Pro plan for user ${userId} via transaction.completed`)
-      return c.json({ success: true, message: 'User upgraded/activated' })
-    }
-
-    if (eventType === 'subscription.updated') {
-      const nextBill = data?.next_billed_at
-      const updatePayload: any = {
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }
-      if (nextBill) {
-        updatePayload.planExpiry = nextBill
-      }
-      if (data?.status === 'active') {
-        updatePayload.plan = 'pro'
-      }
-      await db.collection('users').doc(userId).update(updatePayload)
-      await invalidateUserCache(userId)
-      console.log(`[paddle-webhook] Updated subscription for user ${userId}`)
-      return c.json({ success: true, message: 'Subscription updated' })
-    }
-
-    if (
-      eventType === 'subscription.canceled' ||
-      eventType === 'subscription.cancelled' ||
-      eventType === 'subscription.past_due'
-    ) {
-      const keySnap = await db.collection('apiKeys').where('uid', '==', userId).get()
-      const apiKeys = keySnap.docs.map(doc => doc.id)
-      const batch = db.batch()
-      keySnap.docs.forEach((doc: any) => batch.delete(doc.ref))
-
-      batch.update(db.collection('users').doc(userId), {
-        plan: 'free',
-        planExpiry: null,
-        graceUntil: null,
-        graceReason: null,
-        mt5SyncEnabled: false,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      })
-
-      await batch.commit()
-      
-      // Invalidate KV caches
-      await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, userId)))
-      await invalidateUserCache(userId)
-
-      console.log(`[paddle-webhook] Downgraded user ${userId} and revoked keys due to ${eventType}`)
-      return c.json({ success: true, message: `User downgraded due to ${eventType}` })
-    }
-  } catch (err: any) {
-    return handleRouteError('paddle-webhook', err, c)
-  }
-
-  return c.json({ success: true, message: 'Event ignored' })
-})
 
 // ── 8. Save Trade Route ──────────────────────────────────────────────────────
 app.post('/save-trade', async (c) => {
@@ -1048,9 +838,14 @@ app.post('/reset-trades', async (c) => {
     const snapshot = await tradesColRef.get()
 
     if (!snapshot.empty) {
-      const batch = db.batch()
-      snapshot.docs.forEach((doc: any) => batch.delete(doc.ref))
-      await batch.commit()
+      const docs = snapshot.docs
+      const CHUNK_SIZE = 400
+      for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+        const chunk = docs.slice(i, i + CHUNK_SIZE)
+        const batch = db.batch()
+        chunk.forEach((doc: any) => batch.delete(doc.ref))
+        await batch.commit()
+      }
     }
 
     await db.collection('users').doc(uid).set({
@@ -1401,9 +1196,7 @@ const handleRevokeExpired = async (c: any) => {
       return c.json({ success: true, revoked: 0 })
     }
 
-    let revokedCount = 0
-
-    for (const userDoc of snapshot.docs) {
+    const revokeTasks = snapshot.docs.map(async (userDoc) => {
       const uid = userDoc.id
       try {
         const keySnap = await db.collection('apiKeys').where('uid', '==', uid).get()
@@ -1426,12 +1219,16 @@ const handleRevokeExpired = async (c: any) => {
         await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, uid)))
         await invalidateUserCache(uid)
 
-        revokedCount++
         console.log(`[revoke-expired] Revoked keys and downgraded uid=${uid}`)
+        return true
       } catch (e: any) {
         console.error(`[revoke-expired] Failed for uid=${uid}:`, e.message)
+        return false
       }
-    }
+    })
+
+    const results = await Promise.all(revokeTasks)
+    const revokedCount = results.filter(Boolean).length
 
     return c.json({ success: true, revoked: revokedCount })
   } catch (error: any) {

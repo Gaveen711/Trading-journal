@@ -11,7 +11,7 @@ import { ProTermsModal } from '../components/ProTermsModal';
 import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
 
 const FREE_FEATURES = [
-  '50 trades / month',
+  '25 trades / month',
   'Basic P&L tracking',
   'Trade calendar',
   'Manual trade entry',
@@ -41,7 +41,7 @@ export function PricingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
   const user = auth.currentUser;
-  const { startCheckout, recordProAcceptance } = useSubscription(user);
+  const { startCheckout, recordProAcceptance, isTrialExpired } = useSubscription(user);
   const [showTerms, setShowTerms] = useState(false);
 
   const handleUpgradeClick = () => {
@@ -122,8 +122,8 @@ export function PricingPage() {
         <nav
           style={{ transform: 'translateX(-50%)' }}
           className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl z-[100] h-16 flex items-center justify-between px-6 md:px-10 rounded-2xl md:rounded-full border transition-all duration-300 ease-in-out ${isScrolled
-              ? 'bg-card/90 backdrop-blur-xl border-border/40 shadow-2xl'
-              : 'bg-card/75 backdrop-blur-md border-border/20 shadow-lg'
+            ? 'bg-card/90 backdrop-blur-xl border-border/40 shadow-2xl'
+            : 'bg-card/75 backdrop-blur-md border-border/20 shadow-lg'
             }`}
         >
           <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
@@ -242,7 +242,7 @@ export function PricingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="p-10 md:p-12 rounded-[3rem] border border-white/20 bg-card/40 backdrop-blur-sm flex flex-col hover:border-white/60 transition-all duration-300 shadow-sm"
+            className="p-10 md:p-12 rounded-[3rem] border border-border bg-card/40 backdrop-blur-sm flex flex-col hover:border-primary/50 transition-all duration-300 shadow-sm"
           >
             <div className="mb-10">
               <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-6">Standard</p>
@@ -277,7 +277,7 @@ export function PricingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="relative p-10 md:p-12 rounded-[3rem] border-2 border-white/30 bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+            className="relative p-10 md:p-12 rounded-[3rem] border-2 border-border bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
@@ -292,7 +292,7 @@ export function PricingPage() {
                 <span className="text-6xl font-black tracking-tighter leading-none text-primary">{PRO_MONTHLY_DISPLAY}</span>
                 <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">/mo</span>
               </div>
-              <p className="text-sm text-primary font-bold mt-3">7-Day Free Trial · Cancel anytime</p>
+              <p className="text-sm text-primary font-bold mt-3">{isTrialExpired ? 'Cancel anytime' : '7-Day Free Trial · Cancel anytime'}</p>
               <p className="text-base text-muted-foreground mt-6 leading-relaxed font-medium">The complete professional suite for high-performance gold traders.</p>
             </div>
 
@@ -311,7 +311,7 @@ export function PricingPage() {
               onClick={handleUpgradeClick}
               className="btn-pricing-custom mt-auto"
             >
-              Start 7-Day Free Trial
+              {isTrialExpired ? 'Upgrade to Pro' : 'Start 7-Day Free Trial'}
             </button>
           </Motion.div>
         </div>
@@ -335,9 +335,11 @@ export function PricingPage() {
       <footer className="border-t border-border/40 py-20 px-6 md:px-12 bg-muted/5 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
-            <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-start">
+            <Logo iconSize="w-7 h-7" />
+            <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end text-muted-foreground">
               <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
               <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
+              <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
               <NavLink to="/the-story" className="hover:text-primary transition-colors">The Story</NavLink>
               <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
             </div>
@@ -350,12 +352,12 @@ export function PricingPage() {
                 <li className="icon-content"><a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer"><div className="filled" /><TwitterX /></a></li>
                 <li className="icon-content"><a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer"><div className="filled" /><Discord /></a></li>
               </ul>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-1.5 justify-center md:justify-end">
                 made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
               </p>
             </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-left order-2 md:order-1">
-              © Copyright 2026 Xau Journal.<br />All Rights Reserved.
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center md:text-left order-2 md:order-1">
+              © Copyright 2026 Xau Journal. All Rights Reserved.
             </p>
           </div>
         </div>

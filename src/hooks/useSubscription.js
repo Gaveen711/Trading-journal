@@ -1,20 +1,7 @@
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { initializePaddle } from '@paddle/paddle-js';
+import { useState, useEffect, useMemo } from 'react';
 
-import { db } from '../firebase';
+import { FirebaseSubscriptionRepository } from '../data/repositories/FirebaseSubscriptionRepository';
 import { useToast } from '../components/ToastContext';
-
-let paddleInstance = null;
-export async function getPaddle() {
-  if (!paddleInstance) {
-    paddleInstance = await initializePaddle({
-      environment: import.meta.env.VITE_PADDLE_ENVIRONMENT || 'sandbox',
-      token: import.meta.env.VITE_PADDLE_CLIENT_TOKEN || ''
-    });
-  }
-  return paddleInstance;
-}
 
 
 export function useSubscription(user) {
@@ -27,13 +14,15 @@ export function useSubscription(user) {
   });
   const toast = useToast();
 
+  const repository = useMemo(() => new FirebaseSubscriptionRepository(), []);
+
   useEffect(() => {
     if (!user) {
       setSubscription({ plan: 'free', expiry: null, isTrial: false, isLoading: false });
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+    const unsub = repository.subscribeToUserDoc(user.uid, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const isPro = data.plan === 'pro';
@@ -46,9 +35,6 @@ export function useSubscription(user) {
           const cutoffDate = new Date(expiryDate.getTime() + graceMs);
           
           if (now > cutoffDate) {
-            if (data.plan !== 'free') {
-              updateDoc(doc(db, "users", user.uid), { plan: 'free' });
-            }
             setSubscription({ 
               plan: 'free', 
               expiry: data.planExpiry, 
@@ -111,46 +97,15 @@ export function useSubscription(user) {
           isLoading: true 
         });
       }
+    }, (error) => {
+      console.error('[useSubscription] snap subscription error:', error);
     });
 
     return () => unsub();
-  }, [user, toast]);
+  }, [user, repository, toast]);
 
   const startCheckout = async (planType = 'pro_monthly') => {
-    try {
-      const paddle = await getPaddle();
-      if (!paddle) throw new Error("Paddle could not be initialized.");
-
-      const priceId = planType === 'pro_yearly'
-        ? import.meta.env.VITE_PADDLE_YEARLY_PRICE_ID
-        : import.meta.env.VITE_PADDLE_MONTHLY_PRICE_ID;
-
-      if (!priceId) {
-        throw new Error("Payment price configuration is missing.");
-      }
-
-      paddle.Checkout.open({
-        items: [
-          {
-            priceId: priceId,
-            quantity: 1
-          }
-        ],
-        customer: {
-          email: user.email
-        },
-        customData: {
-          userId: user.uid,
-          planType: planType
-        },
-        settings: {
-          successUrl: `${window.location.origin}/app/checkout-success?planType=${planType}`
-        }
-      });
-    } catch (error) {
-      console.error("Checkout Error:", error);
-      toast(error.message || "Could not initiate secure checkout. Please try again.", "error");
-    }
+    toast("Checkout is currently transitioning to PayPal. Please check back later!", "info");
   };
 
   const openPortal = () => {
@@ -159,12 +114,7 @@ export function useSubscription(user) {
 
   const recordProAcceptance = async () => {
     try {
-      await updateDoc(doc(db, "users", user.uid), { 
-        proLegalAccepted: true,
-        proLegalAcceptedAt: new Date().toISOString(),
-        proLegalVersion: "1.0.4",
-        refundPolicyAcknowledged: true
-      });
+      await repository.recordProAcceptance(user.uid);
       return true;
     } catch (error) {
       console.error("Legal Acceptance Error:", error);
@@ -175,10 +125,7 @@ export function useSubscription(user) {
 
   const agreeToTerms = async () => {
     try {
-      await updateDoc(doc(db, "users", user.uid), { 
-        agreedToTerms: true,
-        agreedAt: new Date().toISOString() 
-      });
+      await repository.agreeToTerms(user.uid);
     } catch (error) {
       console.error("Agreement Error:", error);
       toast("Failed to process agreement. Please check your connection.", "error");
@@ -187,3 +134,4 @@ export function useSubscription(user) {
   
   return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance };
 }
+

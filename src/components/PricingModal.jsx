@@ -3,7 +3,7 @@ import { XLg, CheckCircleFill, CheckCircle } from 'react-bootstrap-icons';
 import { ProTermsModal } from './ProTermsModal';
 import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY } from '../lib/pricing';
 
-export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClose, recordProAcceptance }) {
+export function PricingModal({ plan, expiry, isTrial = false, isTrialExpired = false, onSubscribe, onClose, recordProAcceptance }) {
   const [showTerms, setShowTerms] = useState(false);
   const SUB_LIMITS = { freeTrades: 25, freeJournals: 10 };
 
@@ -92,7 +92,9 @@ export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClo
                 <span className="text-3xl font-black text-primary">{PRO_MONTHLY_DISPLAY}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">7-day free trial, then {PRO_MONTHLY_DISPLAY}/mo (or {PRO_YEARLY_DISPLAY}/yr)</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {isTrialExpired ? `Renews at ${PRO_MONTHLY_DISPLAY}/mo (or ${PRO_YEARLY_DISPLAY}/yr)` : `7-day free trial, then ${PRO_MONTHLY_DISPLAY}/mo (or ${PRO_YEARLY_DISPLAY}/yr)`}
+              </p>
             </div>
             <ul className="space-y-3 flex-1">
               {PRO_FEATS.map(f => (
@@ -147,7 +149,7 @@ export function PricingModal({ plan, expiry, isTrial = false, onSubscribe, onClo
                 onClick={handleProClick}
                 className="btn-primary w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/10 active:scale-95 transition-all"
               >
-                Start 7-Day Free Trial
+                {isTrialExpired ? 'Upgrade to Pro' : 'Start 7-Day Free Trial'}
               </button>
             )}
           </div>

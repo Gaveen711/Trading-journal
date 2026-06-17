@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import {
@@ -7,6 +7,7 @@ import {
   Calendar3, Calendar3Fill,
   BarChartLine, BarChartLineFill,
   Book, BookFill,
+  Gear, GearFill,
   Stars,
   BoxArrowRight,
   SunFill,
@@ -16,7 +17,8 @@ import {
   Lightning,
   LightningFill,
   LockFill,
-  Palette
+  Palette,
+  ExclamationTriangleFill
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -43,6 +45,10 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     return saved !== 'false'; // default to true
   });
 
+  const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
+  
+  // Profile picture is a simple Apple emoji
+
   const toggleSidebar = () => {
     setIsSidebarExpanded(prev => {
       const newVal = !prev;
@@ -51,10 +57,63 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     });
   };
 
+  const [trialTimeLeft, setTrialTimeLeft] = useState('');
+  const [renewCountdown, setRenewCountdown] = useState('');
+
+  const hasTrial = isTrial || plan === 'free';
+  const computedIsTrialActive = hasTrial && expiry && new Date(expiry) > new Date();
+  const computedIsTrialExpired = hasTrial && (!expiry || new Date(expiry) < new Date());
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const updateTimers = () => {
+      const now = new Date();
+      if (hasTrial && expiry) {
+        const exp = new Date(expiry);
+        const diff = exp - now;
+        if (diff > 0) {
+          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const m = Math.floor((diff / 1000 / 60) % 60);
+          setTrialTimeLeft(`${d}d ${h}h ${m}m`);
+        } else {
+          setTrialTimeLeft('Expired');
+        }
+      } else if (hasTrial && !expiry) {
+        // Fallback demo timer if no expiry is set in DB
+        setTrialTimeLeft('6d 23h 59m');
+      }
+
+      // 1-hour renewal countdown (starts only after user logs a trade)
+      let target = localStorage.getItem('xau-renew-target-v2');
+      if (!target) {
+        setRenewCountdown('');
+        return;
+      }
+
+      const remaining = Number(target) - Date.now();
+      if (remaining <= 0) {
+        localStorage.removeItem('xau-renew-target-v2');
+        setRenewCountdown('');
+      } else {
+        const rh = Math.floor(remaining / (1000 * 60 * 60));
+        const rm = Math.floor((remaining / (1000 * 60)) % 60);
+        const rs = Math.floor((remaining / 1000) % 60);
+        const hh = String(rh).padStart(2, '0');
+        const mm = String(rm).padStart(2, '0');
+        const ss = String(rs).padStart(2, '0');
+        setRenewCountdown(`${hh}:${mm}:${ss}`);
+      }
+    };
+
+    updateTimers();
+    const intervalId = setInterval(updateTimers, 1000);
+    return () => clearInterval(intervalId);
+  }, [hasTrial, expiry]);
 
   // Background sync on dashboard load / mount
   useEffect(() => {
@@ -112,11 +171,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     { id: 'calendar', name: 'Calendar', icon: Calendar3, iconSolid: Calendar3Fill },
     { id: 'analytics', name: 'Analytics', icon: BarChartLine, iconSolid: BarChartLineFill },
     { id: 'journal', name: 'Journal', icon: Book, iconSolid: BookFill },
-    (plan === 'pro' || plan === 'grace') && { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill }
+    { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill }
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative overflow-hidden">
+    <div className="h-screen md:h-screen min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative overflow-hidden">
 
       {/* GLASSMORPHIC BACKGROUND MESH */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -125,10 +184,13 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className={`hidden md:flex flex-col fixed inset-y-0 left-0 apple-glass-panel border-r-0 z-30 p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
+      <aside className={`hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
         {/* LOGO & TOGGLE */}
-        <div className="flex items-center justify-between w-full mb-8 relative">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/app')}>
+        <div className={`flex items-center w-full mb-8 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
+          <div 
+            className={`flex items-center cursor-pointer transition-all duration-500 ${isSidebarExpanded ? 'gap-2.5' : 'gap-0'}`} 
+            onClick={() => navigate('/app')}
+          >
             <Logo onlyIcon={!isSidebarExpanded} iconSize="w-8 h-8" />
             <div className={`flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isSidebarExpanded 
@@ -171,10 +233,14 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               <NavLink
                 key={item.name}
                 to={`/app/${item.id}`}
-                className={`flex items-center gap-3 h-11 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'px-4 w-full' : 'px-0 w-12 justify-center'} ${isActive
+                className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  isSidebarExpanded 
+                    ? 'px-4 w-full h-11 gap-3 rounded-xl' 
+                    : 'px-0 w-11 h-11 justify-center gap-0 rounded-full'
+                } ${isActive
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/15'
                   : 'text-foreground/75 hover:bg-muted hover:text-foreground'
-                  }`}
+                }`}
                 title={!isSidebarExpanded ? item.name : undefined}
               >
                 <Icon className="w-[1.2rem] h-[1.2rem] shrink-0" />
@@ -245,52 +311,67 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           </div>
         )}
 
-        {/* SIDEBAR ACTIONS (Logout / Theme) */}
-        <div className={`mt-auto pt-6 border-t border-border/20 flex flex-col gap-4 w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? '' : 'items-center'}`}>
-          <div className={`flex items-center mt-2 w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'justify-between flex-row' : 'flex-col gap-4'}`}>
-            <div className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'gap-2 flex-row' : 'flex-col gap-4'}`}>
-              {/* Custom 3D rotate theme switch */}
-              <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
-                <div className="check">
-                  <input
-                    id="check-desktop"
-                    type="checkbox"
-                    checked={!isLightMode}
-                    onChange={toggleTheme}
-                  />
-                  <label htmlFor="check-desktop" />
+        {/* TRIAL WARNING / EXPIRED CARD */}
+        {hasTrial && (
+          <div className={`mt-auto w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'mt-4' : 'mt-2'}`}>
+            {isSidebarExpanded ? (
+              computedIsTrialActive ? (
+                <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex flex-col gap-2 relative overflow-hidden shadow-sm">
+                  <div className="flex gap-2">
+                    <LightningFill className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <div className="text-[11px] font-black uppercase tracking-wider text-primary">
+                      Trial Active
+                    </div>
+                  </div>
+                  <p className="text-[11.5px] leading-relaxed font-semibold text-foreground/80 m-0">
+                    Your 7-day trial is active with sync option. Terminal locks in: <strong className="text-primary">{trialTimeLeft}</strong>
+                  </p>
+                  <button
+                    onClick={() => setShowPricingModal?.(true)}
+                    className="w-full mt-1.5 py-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                  >
+                    Upgrade To Pro
+                  </button>
                 </div>
-              </div>
-
-              {/* Theme Template Palette Selector */}
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex flex-col gap-2 relative overflow-hidden shadow-sm">
+                  <div className="flex gap-2">
+                    <ExclamationTriangleFill className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      Terminal Locked
+                    </div>
+                  </div>
+                  <p className="text-[11.5px] leading-relaxed font-semibold text-amber-700/95 dark:text-amber-200/90 m-0">
+                    Your 7-day trial has expired. Upgrade to Premium or wait <strong className="text-amber-600 dark:text-amber-400">{renewCountdown}</strong> for access to renew.
+                  </p>
+                  <button
+                    onClick={() => setShowPricingModal?.(true)}
+                    className="w-full mt-1.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                  >
+                    Upgrade to Premium
+                  </button>
+                </div>
+              )
+            ) : (
               <button
-                onClick={() => setShowThemeSelector(true)}
-                className="w-8 h-8 rounded-xl bg-muted hover:bg-muted/80 border border-border/40 flex items-center justify-center transition-colors cursor-pointer"
-                title="Change Accent Template"
+                onClick={() => setShowPricingModal?.(true)}
+                className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
+                  computedIsTrialActive 
+                    ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20' 
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20'
+                }`}
+                title={computedIsTrialActive ? `Trial Active - Locks in ${trialTimeLeft}` : `Terminal Locked - Renews in ${renewCountdown}`}
               >
-                <Palette className="w-4 h-4 text-foreground/70" />
+                {computedIsTrialActive ? <LightningFill className="w-5 h-5" /> : <ExclamationTriangleFill className="w-5 h-5" />}
               </button>
-            </div>
-
-            <button
-              onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
-              className={isSidebarExpanded ? 'Btn' : 'w-10 h-10 flex items-center justify-center rounded-xl bg-destructive hover:bg-destructive/90 transition-all duration-300 cursor-pointer shadow-md'}
-              title="Log out"
-              style={!isSidebarExpanded ? { background: 'var(--loss)' } : undefined}
-            >
-              <div className={isSidebarExpanded ? 'sign' : 'flex items-center justify-center'}>
-                <svg viewBox="0 0 512 512" className="w-[17px] h-[17px]">
-                  <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" fill="white" />
-                </svg>
-              </div>
-              <div className={`text transition-all duration-300 ${isSidebarExpanded ? '' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'}`}>Logout</div>
-            </button>
+            )}
           </div>
-        </div>
+        )}
+
       </aside>
 
       {/* MAIN CONTAINER */}
-      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'md:pl-64' : 'md:pl-24'}`}>
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:h-screen md:overflow-y-auto custom-scrollbar">
         {/* MOBILE HEADER (only visible on mobile/tablet) */}
         <header className={`md:hidden fixed top-3 left-3 right-3 z-40 apple-glass-panel rounded-2xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
           <div className="h-14 px-4 flex items-center justify-between">
@@ -308,75 +389,130 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 <Palette className="w-4 h-4 text-foreground/70" />
               </button>
 
-              {/* Custom 3D rotate theme switch */}
-              <div className="checkbox-wrapper-5" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
-                <div className="check">
-                  <input
-                    id="check-mobile"
-                    type="checkbox"
-                    checked={!isLightMode}
-                    onChange={toggleTheme}
-                  />
-                  <label htmlFor="check-mobile" />
+              {/* Custom Moon/Sun Theme Toggle Switch */}
+              <label htmlFor="check-mobile" className="theme-switch-toggle" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+                <input
+                  id="check-mobile"
+                  type="checkbox"
+                  className="theme-switch-input"
+                  checked={!isLightMode}
+                  onChange={toggleTheme}
+                />
+                <div className="theme-switch-icon theme-switch-icon--moon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={18} height={18}>
+                    <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                  </svg>
                 </div>
-              </div>
+                <div className="theme-switch-icon theme-switch-icon--sun">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={18} height={18}>
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                  </svg>
+                </div>
+              </label>
 
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-8 h-8 rounded-xl bg-muted border border-border/40 flex items-center justify-center hover:shadow-none"
+                className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer overflow-hidden select-none"
               >
-                <PersonCircle className="w-4 h-4 text-foreground/70" />
+                <span className="text-base">🍎</span>
               </button>
             </div>
           </div>
-
-          {/* MOBILE DROPDOWN */}
+ 
           {showProfileMenu && (
-            <div className="absolute top-16 right-4 w-52 bg-background border border-border/50 rounded-2xl p-2 shadow-2xl z-50">
-              <div className="px-3 py-1.5 border-b border-border/20 mb-1">
-                <p className="text-[9px] font-black uppercase text-muted-foreground">My Profile</p>
-                <p className="text-xs font-bold truncate">{auth.currentUser?.email}</p>
-              </div>
-              <button
-                onClick={() => { setShowProfileMenu(false); auth.signOut(); }}
-                className="Btn"
-                title="Log out"
-              >
-                <div className="sign">
-                  <svg viewBox="0 0 512 512">
-                    <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" fill="white" />
-                  </svg>
+            <div className="absolute top-16 right-4 w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 z-50 animate-in fade-in zoom-in-95">
+              
+              {/* User Info Header Section */}
+              <div className="flex items-center gap-3 pb-3 border-b border-border/10">
+                <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden select-none">
+                  <span className="text-xl">🍎</span>
                 </div>
-                <div className="text">Logout</div>
-              </button>
+                <div className="flex flex-col text-left min-w-0">
+                  <span className="text-xs font-bold text-foreground truncate capitalize">{displayName}</span>
+                  <span className="text-[10px] text-muted-foreground truncate">{auth.currentUser?.email}</span>
+                </div>
+              </div>
+ 
+              {/* Settings list */}
+              <div className="flex flex-col gap-1.5">
+                {/* Accent Theme Selection */}
+                <button
+                  onClick={() => { setShowProfileMenu(false); setShowThemeSelector?.(true); }}
+                  className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-left"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                    <Palette className="w-3.5 h-3.5 text-primary" />
+                    Color Accent
+                  </span>
+                  <span className="text-[8px] font-black uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Change</span>
+                </button>
+ 
+                {/* Dark Mode Switch */}
+                <div className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors">
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                    {isLightMode ? (
+                      <SunFill className="w-3.5 h-3.5 text-primary" />
+                    ) : (
+                      <MoonStarsFill className="w-3.5 h-3.5 text-primary" />
+                    )}
+                    Dark Theme
+                  </span>
+                  <label htmlFor="check-mobile-profile" className="theme-switch-toggle" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+                    <input
+                      id="check-mobile-profile"
+                      type="checkbox"
+                      className="theme-switch-input"
+                      checked={!isLightMode}
+                      onChange={toggleTheme}
+                    />
+                    <div className="theme-switch-icon theme-switch-icon--moon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={14} height={14}>
+                        <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="theme-switch-icon theme-switch-icon--sun">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={14} height={14}>
+                        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                      </svg>
+                    </div>
+                  </label>
+                </div>
+ 
+                {/* Manage Sub Button (PayPal billing portal link) */}
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    window.open('https://www.paypal.com/myaccount/billing/subscriptions', '_blank');
+                  }}
+                  className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-left"
+                >
+                  <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Manage Subscription</span>
+                </button>
+ 
+                {/* Logout Button */}
+                <button
+                  onClick={() => { setShowProfileMenu(false); localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
+                  className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-left mt-1 border-t border-border/10 pt-2"
+                >
+                  <BoxArrowRight className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Logout</span>
+                </button>
+              </div>
             </div>
           )}
         </header>
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
-        <div className="flex-1 flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto pt-20 px-4 pb-4 md:p-8 gap-8 md:pb-8">
+        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1600px] w-full mx-auto pt-20 px-4 pb-4 md:py-6 md:px-4 lg:px-6 gap-6 md:pb-8">
 
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
-          <main className="flex-1 min-w-0">
-            {isTrialExpired && (
-              <div className="mb-6 p-4 md:p-5 rounded-[2rem] bg-amber-500/10 border border-amber-500/20 text-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm backdrop-blur-md relative overflow-hidden group">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">7-Day Pro Trial Expired</p>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground font-medium leading-relaxed uppercase tracking-wider">
-                    You've been downgraded to the Basic tier. Upgrade to Pro to resume MT4/MT5 auto-sync and unlimited trades.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowPricingModal(true)}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all duration-300 active:scale-95 shadow-md flex-shrink-0"
-                >
-                  Upgrade to Pro
-                </button>
-              </div>
-            )}
+          <main className="flex-1 min-w-0 relative">
+            {/* Ambient Background Glows for Apple Glass Effect */}
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen" />
+            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen" />
+
+
 
             <Outlet context={{
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
@@ -393,6 +529,10 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 plan={plan}
                 isTrial={isTrial}
                 expiry={expiry}
+                isTrialExpired={computedIsTrialExpired}
+                isTrialActive={computedIsTrialActive}
+                renewCountdown={renewCountdown}
+                trialTimeLeft={trialTimeLeft}
                 trades={trades}
                 journals={journals}
                 walletBalance={walletBalance}
@@ -401,6 +541,9 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 openPortal={openPortal}
                 resetTrades={resetTrades}
                 updateBalance={updateBalance}
+                addTrade={addTrade}
+                isLoadingTrades={isLoadingTrades}
+                setShowThemeSelector={setShowThemeSelector}
               />
             </aside>
           )}
@@ -472,7 +615,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', duration: 0.5 }}
-              className="w-full max-w-[420px] bg-white/90 dark:bg-card/95 border border-slate-200/30 dark:border-white/5 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative z-10 select-none overflow-hidden"
+              className="w-full max-w-[420px] apple-glass-panel rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative z-10 select-none overflow-hidden"
             >
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
@@ -481,7 +624,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 </div>
                 <button
                   onClick={() => setShowThemeSelector(false)}
-                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors border-0 outline-none text-foreground/50 hover:text-foreground"
+                  className="w-7 h-7 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors border-0 outline-none text-foreground/50 hover:text-foreground"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
@@ -489,11 +632,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
               <div className="space-y-3">
                 {[
-                  { id: 'neo-purple', name: 'Neo-Purple', desc: 'Vibrant neon violet & indigo' },
-                  { id: 'emerald-green', name: 'Emerald Forest', desc: 'Bullish green & forest teal' },
-                  { id: 'royal-blue', name: 'Royal Blue', desc: 'Classic professional royal blue' },
-                  { id: 'amber-gold', name: 'Amber Cyber', desc: 'Cyberpunk neon gold & bronze' },
-                  { id: 'rose-pink', name: 'Rose Sunset', desc: 'Sleek premium rose & crimson' }
+                  { id: 'sage-modern', name: 'Sage Modern', desc: 'Minimalist sage green & lavender' },
+                  { id: 'obsidian-teal', name: 'Obsidian Teal', desc: 'Sleek dark teal & platinum' },
+                  { id: 'nordic-slate', name: 'Nordic Slate', desc: 'Ice blue & frost white' },
+                  { id: 'crimson-rust', name: 'Crimson Rust', desc: 'Deep terracotta & copper gold' },
+                  { id: 'royal-gold', name: 'Royal Gold', desc: 'Rich gold & dark bronze' }
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -503,7 +646,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                     }}
                     className={`theme-${t.id} w-full flex items-center gap-4 p-3.5 rounded-2xl border transition-all duration-300 ${currentTemplate === t.id
                       ? 'bg-primary/5 border-primary/40'
-                      : 'bg-slate-50/50 hover:bg-slate-100/80 dark:bg-white/5 dark:hover:bg-white/10 border-transparent'
+                      : 'bg-muted/30 hover:bg-muted/70 border-transparent'
                       }`}
                   >
                     <div

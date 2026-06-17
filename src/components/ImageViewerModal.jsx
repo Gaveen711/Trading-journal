@@ -25,7 +25,7 @@ export function ImageViewerModal({ imageUrl, onClose }) {
         className="relative max-w-5xl max-h-[85vh] flex items-center justify-center z-10 pointer-events-none"
       >
         {hasError ? (
-          <div className="flex flex-col items-center justify-center gap-4 bg-card/90 border border-border/40 w-[320px] p-8 rounded-2xl text-center pointer-events-auto shadow-2xl backdrop-blur-xl animate-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center justify-center gap-4 apple-glass-panel w-[320px] p-8 rounded-2xl text-center pointer-events-auto shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-1">
               <ExclamationTriangleFill className="w-6 h-6 text-destructive" />
             </div>

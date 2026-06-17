@@ -42,10 +42,9 @@ const PageLoader = ({ text = "Syncing Terminal" }) => (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 120" width="380" height="76" className="inline-block select-none max-w-full">
           <defs>
             <linearGradient gradientUnits="userSpaceOnUse" y2={0} x2={600} y1={0} x1={0} id="loader-grad">
-              <stop stopColor="#973BED" offset="0%" />
-              <stop stopColor="#007CFF" offset="33%" />
-              <stop stopColor="#00E0ED" offset="66%" />
-              <stop stopColor="#00DA72" offset="100%" />
+              <stop stopColor="#2E6D47" offset="0%" />
+              <stop stopColor="#594596" offset="50%" />
+              <stop stopColor="#2E6D47" offset="100%" />
             </linearGradient>
           </defs>
           <text
@@ -128,7 +127,7 @@ function AuthenticatedApp({ user }) {
         </Suspense>
       </ErrorBoundary>
 
-      {showPricingModal && <PricingModal plan={plan} expiry={expiry} isTrial={isTrial} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
+      {showPricingModal && <PricingModal plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
       {showBrokerSyncUpsell && (
         <ProFeatureUpsellModal
           feature="broker-sync"

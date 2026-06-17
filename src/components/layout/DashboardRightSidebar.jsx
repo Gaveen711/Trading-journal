@@ -1,1103 +1,51 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, ArrowRight, ArrowUpRight, ArrowDownRight, Gem, Wallet, Book, RefreshCw, X, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Bell, X, Settings, ChevronDown, Palette } from 'lucide-react';
 import { auth } from '../../firebase';
-import { formatCurrency, formatNumber } from '../../lib/tradeUtils';
-
-const CURRENCIES = [
-  {
-    "code": "AED",
-    "name": "United Arab Emirates Dirham",
-    "country": "AE"
-  },
-  {
-    "code": "AFN",
-    "name": "Afghan Afghani",
-    "country": "AF"
-  },
-  {
-    "code": "ALL",
-    "name": "Albanian Lek",
-    "country": "AL"
-  },
-  {
-    "code": "AMD",
-    "name": "Armenian Dram",
-    "country": "AM"
-  },
-  {
-    "code": "ANG",
-    "name": "Netherlands Antillean Guilder",
-    "country": "CW"
-  },
-  {
-    "code": "AOA",
-    "name": "Angolan Kwanza",
-    "country": "AO"
-  },
-  {
-    "code": "ARS",
-    "name": "Argentine Peso",
-    "country": "AR"
-  },
-  {
-    "code": "AUD",
-    "name": "Australian Dollar",
-    "country": "AU"
-  },
-  {
-    "code": "AWG",
-    "name": "Aruban Florin",
-    "country": "AW"
-  },
-  {
-    "code": "AZN",
-    "name": "Azerbaijani Manat",
-    "country": "AZ"
-  },
-  {
-    "code": "BAM",
-    "name": "Bosnia-Herzegovina Convertible Mark",
-    "country": "BA"
-  },
-  {
-    "code": "BBD",
-    "name": "Barbadian Dollar",
-    "country": "BB"
-  },
-  {
-    "code": "BDT",
-    "name": "Bangladeshi Taka",
-    "country": "BD"
-  },
-  {
-    "code": "BGN",
-    "name": "Bulgarian Lev",
-    "country": "BG"
-  },
-  {
-    "code": "BHD",
-    "name": "Bahraini Dinar",
-    "country": "BH"
-  },
-  {
-    "code": "BIF",
-    "name": "Burundian Franc",
-    "country": "BI"
-  },
-  {
-    "code": "BMD",
-    "name": "Bermudan Dollar",
-    "country": "BM"
-  },
-  {
-    "code": "BND",
-    "name": "Brunei Dollar",
-    "country": "BN"
-  },
-  {
-    "code": "BOB",
-    "name": "Bolivian Boliviano",
-    "country": "BO"
-  },
-  {
-    "code": "BRL",
-    "name": "Brazilian Real",
-    "country": "BR"
-  },
-  {
-    "code": "BSD",
-    "name": "Bahamian Dollar",
-    "country": "BS"
-  },
-  {
-    "code": "BTN",
-    "name": "Bhutanese Ngultrum",
-    "country": "BT"
-  },
-  {
-    "code": "BWP",
-    "name": "Botswanan Pula",
-    "country": "BW"
-  },
-  {
-    "code": "BYN",
-    "name": "Belarusian Ruble",
-    "country": "BY"
-  },
-  {
-    "code": "BZD",
-    "name": "Belize Dollar",
-    "country": "BZ"
-  },
-  {
-    "code": "CAD",
-    "name": "Canadian Dollar",
-    "country": "CA"
-  },
-  {
-    "code": "CDF",
-    "name": "Congolese Franc",
-    "country": "CD"
-  },
-  {
-    "code": "CHF",
-    "name": "Swiss Franc",
-    "country": "CH"
-  },
-  {
-    "code": "CLF",
-    "name": "Chilean Unit of Account (UF)",
-    "country": "CL"
-  },
-  {
-    "code": "CLP",
-    "name": "Chilean Peso",
-    "country": "CL"
-  },
-  {
-    "code": "CNH",
-    "name": "Chinese Yuan (Offshore)",
-    "country": "CN"
-  },
-  {
-    "code": "CNY",
-    "name": "Chinese Yuan",
-    "country": "CN"
-  },
-  {
-    "code": "COP",
-    "name": "Colombian Peso",
-    "country": "CO"
-  },
-  {
-    "code": "CRC",
-    "name": "Costa Rican Colón",
-    "country": "CR"
-  },
-  {
-    "code": "CUP",
-    "name": "Cuban Peso",
-    "country": "CU"
-  },
-  {
-    "code": "CVE",
-    "name": "Cape Verdean Escudo",
-    "country": "CV"
-  },
-  {
-    "code": "CZK",
-    "name": "Czech Republic Koruna",
-    "country": "CZ"
-  },
-  {
-    "code": "DJF",
-    "name": "Djiboutian Franc",
-    "country": "DJ"
-  },
-  {
-    "code": "DKK",
-    "name": "Danish Krone",
-    "country": "DK"
-  },
-  {
-    "code": "DOP",
-    "name": "Dominican Peso",
-    "country": "DO"
-  },
-  {
-    "code": "DZD",
-    "name": "Algerian Dinar",
-    "country": "DZ"
-  },
-  {
-    "code": "EGP",
-    "name": "Egyptian Pound",
-    "country": "EG"
-  },
-  {
-    "code": "ERN",
-    "name": "Eritrean Nakfa",
-    "country": "ER"
-  },
-  {
-    "code": "ETB",
-    "name": "Ethiopian Birr",
-    "country": "ET"
-  },
-  {
-    "code": "EUR",
-    "name": "Euro",
-    "country": "EU"
-  },
-  {
-    "code": "FJD",
-    "name": "Fijian Dollar",
-    "country": "FJ"
-  },
-  {
-    "code": "FKP",
-    "name": "Falkland Islands Pound",
-    "country": "FK"
-  },
-  {
-    "code": "FOK",
-    "name": "FOK Currency",
-    "country": "FO"
-  },
-  {
-    "code": "GBP",
-    "name": "British Pound Sterling",
-    "country": "GB"
-  },
-  {
-    "code": "GEL",
-    "name": "Georgian Lari",
-    "country": "GE"
-  },
-  {
-    "code": "GGP",
-    "name": "Guernsey Pound",
-    "country": "GG"
-  },
-  {
-    "code": "GHS",
-    "name": "Ghanaian Cedi",
-    "country": "GH"
-  },
-  {
-    "code": "GIP",
-    "name": "Gibraltar Pound",
-    "country": "GI"
-  },
-  {
-    "code": "GMD",
-    "name": "Gambian Dalasi",
-    "country": "GM"
-  },
-  {
-    "code": "GNF",
-    "name": "Guinean Franc",
-    "country": "GN"
-  },
-  {
-    "code": "GTQ",
-    "name": "Guatemalan Quetzal",
-    "country": "GT"
-  },
-  {
-    "code": "GYD",
-    "name": "Guyanaese Dollar",
-    "country": "GY"
-  },
-  {
-    "code": "HKD",
-    "name": "Hong Kong Dollar",
-    "country": "HK"
-  },
-  {
-    "code": "HNL",
-    "name": "Honduran Lempira",
-    "country": "HN"
-  },
-  {
-    "code": "HRK",
-    "name": "Croatian Kuna",
-    "country": "HR"
-  },
-  {
-    "code": "HTG",
-    "name": "Haitian Gourde",
-    "country": "HT"
-  },
-  {
-    "code": "HUF",
-    "name": "Hungarian Forint",
-    "country": "HU"
-  },
-  {
-    "code": "IDR",
-    "name": "Indonesian Rupiah",
-    "country": "ID"
-  },
-  {
-    "code": "ILS",
-    "name": "Israeli New Sheqel",
-    "country": "IL"
-  },
-  {
-    "code": "IMP",
-    "name": "Manx pound",
-    "country": "IM"
-  },
-  {
-    "code": "INR",
-    "name": "Indian Rupee",
-    "country": "IN"
-  },
-  {
-    "code": "IQD",
-    "name": "Iraqi Dinar",
-    "country": "IQ"
-  },
-  {
-    "code": "IRR",
-    "name": "Iranian Rial",
-    "country": "IR"
-  },
-  {
-    "code": "ISK",
-    "name": "Icelandic Króna",
-    "country": "IS"
-  },
-  {
-    "code": "JEP",
-    "name": "Jersey Pound",
-    "country": "JE"
-  },
-  {
-    "code": "JMD",
-    "name": "Jamaican Dollar",
-    "country": "JM"
-  },
-  {
-    "code": "JOD",
-    "name": "Jordanian Dinar",
-    "country": "JO"
-  },
-  {
-    "code": "JPY",
-    "name": "Japanese Yen",
-    "country": "JP"
-  },
-  {
-    "code": "KES",
-    "name": "Kenyan Shilling",
-    "country": "KE"
-  },
-  {
-    "code": "KGS",
-    "name": "Kyrgystani Som",
-    "country": "KG"
-  },
-  {
-    "code": "KHR",
-    "name": "Cambodian Riel",
-    "country": "KH"
-  },
-  {
-    "code": "KID",
-    "name": "KID Currency",
-    "country": "KI"
-  },
-  {
-    "code": "KMF",
-    "name": "Comorian Franc",
-    "country": "KM"
-  },
-  {
-    "code": "KRW",
-    "name": "South Korean Won",
-    "country": "KR"
-  },
-  {
-    "code": "KWD",
-    "name": "Kuwaiti Dinar",
-    "country": "KW"
-  },
-  {
-    "code": "KYD",
-    "name": "Cayman Islands Dollar",
-    "country": "KY"
-  },
-  {
-    "code": "KZT",
-    "name": "Kazakhstani Tenge",
-    "country": "KZ"
-  },
-  {
-    "code": "LAK",
-    "name": "Laotian Kip",
-    "country": "LA"
-  },
-  {
-    "code": "LBP",
-    "name": "Lebanese Pound",
-    "country": "LB"
-  },
-  {
-    "code": "LKR",
-    "name": "Sri Lankan Rupee",
-    "country": "LK"
-  },
-  {
-    "code": "LRD",
-    "name": "Liberian Dollar",
-    "country": "LR"
-  },
-  {
-    "code": "LSL",
-    "name": "Lesotho Loti",
-    "country": "LS"
-  },
-  {
-    "code": "LYD",
-    "name": "Libyan Dinar",
-    "country": "LY"
-  },
-  {
-    "code": "MAD",
-    "name": "Moroccan Dirham",
-    "country": "MA"
-  },
-  {
-    "code": "MDL",
-    "name": "Moldovan Leu",
-    "country": "MD"
-  },
-  {
-    "code": "MGA",
-    "name": "Malagasy Ariary",
-    "country": "MG"
-  },
-  {
-    "code": "MKD",
-    "name": "Macedonian Denar",
-    "country": "MK"
-  },
-  {
-    "code": "MMK",
-    "name": "Myanma Kyat",
-    "country": "MM"
-  },
-  {
-    "code": "MNT",
-    "name": "Mongolian Tugrik",
-    "country": "MN"
-  },
-  {
-    "code": "MOP",
-    "name": "Macanese Pataca",
-    "country": "MO"
-  },
-  {
-    "code": "MRU",
-    "name": "Mauritanian Ouguiya",
-    "country": "MR"
-  },
-  {
-    "code": "MUR",
-    "name": "Mauritian Rupee",
-    "country": "MU"
-  },
-  {
-    "code": "MVR",
-    "name": "Maldivian Rufiyaa",
-    "country": "MV"
-  },
-  {
-    "code": "MWK",
-    "name": "Malawian Kwacha",
-    "country": "MW"
-  },
-  {
-    "code": "MXN",
-    "name": "Mexican Peso",
-    "country": "MX"
-  },
-  {
-    "code": "MYR",
-    "name": "Malaysian Ringgit",
-    "country": "MY"
-  },
-  {
-    "code": "MZN",
-    "name": "Mozambican Metical",
-    "country": "MZ"
-  },
-  {
-    "code": "NAD",
-    "name": "Namibian Dollar",
-    "country": "NA"
-  },
-  {
-    "code": "NGN",
-    "name": "Nigerian Naira",
-    "country": "NG"
-  },
-  {
-    "code": "NIO",
-    "name": "Nicaraguan Córdoba",
-    "country": "NI"
-  },
-  {
-    "code": "NOK",
-    "name": "Norwegian Krone",
-    "country": "NO"
-  },
-  {
-    "code": "NPR",
-    "name": "Nepalese Rupee",
-    "country": "NP"
-  },
-  {
-    "code": "NZD",
-    "name": "New Zealand Dollar",
-    "country": "NZ"
-  },
-  {
-    "code": "OMR",
-    "name": "Omani Rial",
-    "country": "OM"
-  },
-  {
-    "code": "PAB",
-    "name": "Panamanian Balboa",
-    "country": "PA"
-  },
-  {
-    "code": "PEN",
-    "name": "Peruvian Nuevo Sol",
-    "country": "PE"
-  },
-  {
-    "code": "PGK",
-    "name": "Papua New Guinean Kina",
-    "country": "PG"
-  },
-  {
-    "code": "PHP",
-    "name": "Philippine Peso",
-    "country": "PH"
-  },
-  {
-    "code": "PKR",
-    "name": "Pakistani Rupee",
-    "country": "PK"
-  },
-  {
-    "code": "PLN",
-    "name": "Polish Zloty",
-    "country": "PL"
-  },
-  {
-    "code": "PYG",
-    "name": "Paraguayan Guarani",
-    "country": "PY"
-  },
-  {
-    "code": "QAR",
-    "name": "Qatari Rial",
-    "country": "QA"
-  },
-  {
-    "code": "RON",
-    "name": "Romanian Leu",
-    "country": "RO"
-  },
-  {
-    "code": "RSD",
-    "name": "Serbian Dinar",
-    "country": "RS"
-  },
-  {
-    "code": "RUB",
-    "name": "Russian Ruble",
-    "country": "RU"
-  },
-  {
-    "code": "RWF",
-    "name": "Rwandan Franc",
-    "country": "RW"
-  },
-  {
-    "code": "SAR",
-    "name": "Saudi Riyal",
-    "country": "SA"
-  },
-  {
-    "code": "SBD",
-    "name": "Solomon Islands Dollar",
-    "country": "SB"
-  },
-  {
-    "code": "SCR",
-    "name": "Seychellois Rupee",
-    "country": "SC"
-  },
-  {
-    "code": "SDG",
-    "name": "Sudanese Pound",
-    "country": "SD"
-  },
-  {
-    "code": "SEK",
-    "name": "Swedish Krona",
-    "country": "SE"
-  },
-  {
-    "code": "SGD",
-    "name": "Singapore Dollar",
-    "country": "SG"
-  },
-  {
-    "code": "SHP",
-    "name": "Saint Helena Pound",
-    "country": "SH"
-  },
-  {
-    "code": "SLE",
-    "name": "Sierra Leonean Leone",
-    "country": "SL"
-  },
-  {
-    "code": "SLL",
-    "name": "Sierra Leonean Leone (Old)",
-    "country": "SL"
-  },
-  {
-    "code": "SOS",
-    "name": "Somali Shilling",
-    "country": "SO"
-  },
-  {
-    "code": "SRD",
-    "name": "Surinamese Dollar",
-    "country": "SR"
-  },
-  {
-    "code": "SSP",
-    "name": "South Sudanese Pound",
-    "country": "SS"
-  },
-  {
-    "code": "STN",
-    "name": "São Tomé and Príncipe Dobra",
-    "country": "ST"
-  },
-  {
-    "code": "SYP",
-    "name": "Syrian Pound",
-    "country": "SY"
-  },
-  {
-    "code": "SZL",
-    "name": "Swazi Lilangeni",
-    "country": "SZ"
-  },
-  {
-    "code": "THB",
-    "name": "Thai Baht",
-    "country": "TH"
-  },
-  {
-    "code": "TJS",
-    "name": "Tajikistani Somoni",
-    "country": "TJ"
-  },
-  {
-    "code": "TMT",
-    "name": "Turkmenistani Manat",
-    "country": "TM"
-  },
-  {
-    "code": "TND",
-    "name": "Tunisian Dinar",
-    "country": "TN"
-  },
-  {
-    "code": "TOP",
-    "name": "Tongan Pa'anga",
-    "country": "TO"
-  },
-  {
-    "code": "TRY",
-    "name": "Turkish Lira",
-    "country": "TR"
-  },
-  {
-    "code": "TTD",
-    "name": "Trinidad and Tobago Dollar",
-    "country": "TT"
-  },
-  {
-    "code": "TVD",
-    "name": "TVD Currency",
-    "country": "TV"
-  },
-  {
-    "code": "TWD",
-    "name": "New Taiwan Dollar",
-    "country": "TW"
-  },
-  {
-    "code": "TZS",
-    "name": "Tanzanian Shilling",
-    "country": "TZ"
-  },
-  {
-    "code": "UAH",
-    "name": "Ukrainian Hryvnia",
-    "country": "UA"
-  },
-  {
-    "code": "UGX",
-    "name": "Ugandan Shilling",
-    "country": "UG"
-  },
-  {
-    "code": "USD",
-    "name": "United States Dollar",
-    "country": "US"
-  },
-  {
-    "code": "UYU",
-    "name": "Uruguayan Peso",
-    "country": "UY"
-  },
-  {
-    "code": "UZS",
-    "name": "Uzbekistan Som",
-    "country": "UZ"
-  },
-  {
-    "code": "VES",
-    "name": "Venezuelan Bolívar Soberano",
-    "country": "VE"
-  },
-  {
-    "code": "VND",
-    "name": "Vietnamese Dong",
-    "country": "VN"
-  },
-  {
-    "code": "VUV",
-    "name": "Vanuatu Vatu",
-    "country": "VU"
-  },
-  {
-    "code": "WST",
-    "name": "Samoan Tala",
-    "country": "WS"
-  },
-  {
-    "code": "XAF",
-    "name": "CFA Franc BEAC",
-    "country": "CM"
-  },
-  {
-    "code": "XCD",
-    "name": "East Caribbean Dollar",
-    "country": "AG"
-  },
-  {
-    "code": "XCG",
-    "name": "Caribbean Guilder",
-    "country": "NL"
-  },
-  {
-    "code": "XDR",
-    "name": "Special Drawing Rights",
-    "country": "EU"
-  },
-  {
-    "code": "XOF",
-    "name": "CFA Franc BCEAO",
-    "country": "SN"
-  },
-  {
-    "code": "XPF",
-    "name": "CFP Franc",
-    "country": "PF"
-  },
-  {
-    "code": "YER",
-    "name": "Yemeni Rial",
-    "country": "YE"
-  },
-  {
-    "code": "ZAR",
-    "name": "South African Rand",
-    "country": "ZA"
-  },
-  {
-    "code": "ZMW",
-    "name": "Zambian Kwacha",
-    "country": "ZM"
-  },
-  {
-    "code": "ZWG",
-    "name": "Zimbabwean ZiG",
-    "country": "ZW"
-  },
-  {
-    "code": "ZWL",
-    "name": "Zimbabwean Dollar",
-    "country": "ZW"
-  }
-];
-
-function CurrencySelect({ value, onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const containerRef = useRef(null);
-  const selected = CURRENCIES.find(c => c.code === value);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setIsOpen(false);
-        setSearch('');
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const filteredCurrencies = CURRENCIES.filter(c => 
-    c.code.toLowerCase().includes(search.toLowerCase()) || 
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(!isOpen);
-          if (isOpen) setSearch('');
-        }}
-        className="flex items-center gap-2 px-2 py-1 rounded-lg bg-background/80 hover:bg-muted border border-border/40 transition-all text-[11px] font-bold"
-      >
-        <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/20 flex-shrink-0">
-          <img 
-            src={`/flags/${selected?.country?.toLowerCase()}.svg`} 
-            alt="" 
-            className="w-full h-full object-cover" 
-            onError={(e) => { 
-              if (selected?.code === 'EUR') e.target.src = '/flags/fr.svg';
-              else e.target.src = 'https://placehold.co/40x30/1e1e2e/64748b?text=' + selected?.code; 
-            }}
-          />
-        </div>
-        <span>{selected?.code}</span>
-        <ChevronDown className="w-3 h-3 text-muted-foreground" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-50 p-1.5 rounded-xl border border-border/50 bg-background shadow-xl min-w-[160px] max-w-[200px] flex flex-col gap-1">
-          <div className="px-1 py-0.5">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search..."
-              className="w-full h-7 px-2 rounded-md border border-border/40 bg-muted/20 text-[10px] font-semibold focus:outline-none focus:ring-1 focus:ring-primary/50 text-foreground"
-              autoFocus
-            />
-          </div>
-          <div className="space-y-0.5 max-h-[160px] overflow-y-auto custom-scrollbar pr-1 pl-0.5">
-            {filteredCurrencies.map(c => (
-              <button
-                key={c.code}
-                type="button"
-                onClick={() => {
-                  onChange(c.code);
-                  setIsOpen(false);
-                  setSearch('');
-                }}
-                className={`w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold rounded-lg hover:bg-muted ${
-                  value === c.code ? 'text-primary bg-primary/5' : 'text-foreground/70'
-                }`}
-                title={c.name}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-3.5 overflow-hidden rounded-sm bg-muted/10 flex-shrink-0">
-                    <img 
-                      src={`/flags/${c.country?.toLowerCase()}.svg`} 
-                      alt="" 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => { 
-                        if (c.code === 'EUR') e.target.src = '/flags/fr.svg';
-                      }}
-                    />
-                  </div>
-                  <span>{c.code}</span>
-                </div>
-                {value === c.code && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-              </button>
-            ))}
-            {filteredCurrencies.length === 0 && (
-              <div className="text-center py-2 text-[9px] text-muted-foreground font-semibold">No results</div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
+import { CurrencyConverter } from '../CurrencyConverter';
+import { CustomSelect } from '../ui/CustomSelect';
+import { useAppTheme } from '../../hooks/useAppTheme';
+import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 
 export function DashboardRightSidebar({
   plan,
-  isTrial = false,
-  expiry = null,
-  trades = [],
-  journals = [],
-  walletBalance = 0,
+  isTrial,
+  expiry,
+  isTrialExpired,
+  isTrialActive,
+  renewCountdown,
+  trialTimeLeft,
+  trades,
+  walletBalance,
   setShowPricingModal,
   toast,
   openPortal,
-  resetTrades,
-  updateBalance
+  addTrade,
+  isLoadingTrades,
+  setShowThemeSelector
 }) {
-  const navigate = useNavigate();
-  const [amount, setAmount] = useState('1000');
-  const [from, setFrom] = useState('USD');
-  const [to, setTo] = useState('EUR');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [currentTime, setCurrentTime] = useState('');
-  const [isWiping, setIsWiping] = useState(false);
-  const [isWipingDb, setIsWipingDb] = useState(false);
-  const [trialTimeLeft, setTrialTimeLeft] = useState('');
-
-  useEffect(() => {
-    if (!isTrial || !expiry) return;
-
-    const updateTimer = () => {
-      const now = new Date();
-      const end = new Date(expiry);
-      const diff = end - now;
-
-      if (diff <= 0) {
-        setTrialTimeLeft('Trial ended');
-        return;
-      }
-
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
-      const m = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
-      const s = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
-
-      setTrialTimeLeft(`${d}d ${h}h ${m}m ${s}s remaining`);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [isTrial, expiry]);
-
-  const handleWipeTerminal = async () => {
-    setIsWipingDb(true);
-    try {
-      await resetTrades();
-      await updateBalance(0);
-      setIsWiping(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast("Terminal wiped. Setup new balance.", "warn");
-    } catch (e) {
-      toast("Failed to reset terminal: " + e.message, "error");
-    } finally {
-      setIsWipingDb(false);
-    }
-  };
-
-  useEffect(() => {
-    let timer;
-    if (isWiping) {
-      timer = setTimeout(() => setIsWiping(false), 5000);
-    }
-    return () => clearTimeout(timer);
-  }, [isWiping]);
-
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      let hours = now.getHours();
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      const hoursStr = String(hours).padStart(2, '0');
-      setCurrentTime(`${hoursStr}:${minutes}:${seconds} ${ampm}`);
-    };
-
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchRate = useCallback(async () => {
-    const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) return;
-    if (from === to) {
-      setResult(val);
-      return;
-    }
-    setLoading(true);
-    try {
-      const apiKey = import.meta.env.VITE_CURRENCY_API_KEY;
-      let res = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${from}`);
-      let data;
-      if (res.ok) {
-        data = await res.json();
-      }
-      if (!res.ok || data?.result !== 'success') {
-        res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
-        data = await res.json();
-      }
-      const rates = data.conversion_rates || data.rates;
-      const currentRate = rates[to];
-      if (currentRate) {
-        setResult(val * currentRate);
-      }
-    } catch (error) {
-      console.error('Right Sidebar Conversion Error:', error);
-      setResult(val * 1.0);
-    } finally {
-      setLoading(false);
-    }
-  }, [amount, from, to]);
-
-  useEffect(() => {
-    fetchRate();
-  }, [fetchRate]);
-
-  // Calculate stats
-  const totalBalance = walletBalance + trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-  const winTrades = trades.filter(t => t.outcome === 'WIN');
-  const winRate = trades.length ? ((winTrades.length / trades.length) * 100).toFixed(0) : 0;
-  const totalTradesCount = trades.length;
-  const totalJournalsCount = Object.keys(journals).length;
-
-  // Build contextual notifications from real data
-  const notifications = [];
-  if (totalTradesCount === 0) {
-    notifications.push({ id: 'no-trades', emoji: '📋', title: 'Log your first trade', body: 'Head to the Log tab and record your first XAUUSD trade to start tracking your performance.' });
-  }
-  if (totalTradesCount > 0 && Number(winRate) < 40) {
-    notifications.push({ id: 'low-wr', emoji: '⚠️', title: 'Win rate below 40%', body: `Your current win rate is ${winRate}%. Review your losing trades in History to identify patterns.` });
-  }
-  if (totalTradesCount >= 5 && totalJournalsCount === 0) {
-    notifications.push({ id: 'no-journal', emoji: '📝', title: 'Start journaling', body: 'You have trades logged but no journal entries. Journaling helps you reflect and improve faster.' });
-  }
-  if (totalTradesCount > 0 && Number(winRate) >= 60) {
-    notifications.push({ id: 'good-wr', emoji: '🏆', title: `Strong win rate: ${winRate}%`, body: 'Great consistency! Keep analysing your best trades so you can replicate your edge.' });
-  }
-  if (plan !== 'pro') {
-    notifications.push({ id: 'upgrade', emoji: '⚡', title: 'Unlock Pro features', body: 'Auto-sync your MT5 trades, access advanced analytics, and get priority support with Pro.' });
-  }
-
+  const { isLightMode, toggleTheme } = useAppTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
-  const [readIds, setReadIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('xau-notif-read') || '[]'); } catch { return []; }
-  });
-  const notifRef = useRef(null);
-  const profileRef = useRef(null);
+  const notifRef = useRef();
+  const profileRef = useRef();
+  
+  const [time, setTime] = useState(new Date());
 
-  // Close on outside click
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+  const isFree = plan === 'basic' && !isTrial;
+  const isPro = plan === 'pro' || plan === 'grace';
+  const showLockTimer = !isPro && !!renewCountdown;
+
+  // Profile picture is a simple Apple emoji
+
+  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
@@ -1107,373 +55,525 @@ export function DashboardRightSidebar({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const markRead = (id) => {
-    const updated = [...new Set([...readIds, id])];
-    setReadIds(updated);
-    localStorage.setItem('xau-notif-read', JSON.stringify(updated));
+  // Order Form State
+  const [direction, setDirection] = useState('LONG');
+  const [orderType, setOrderType] = useState('Market'); // Market | Limit
+  
+  const [entry, setEntry] = useState('');
+  const [exit, setExit] = useState('');
+  const [lots, setLots] = useState('0.10');
+  const [sl, setSl] = useState('');
+  const [tp, setTp] = useState('');
+  const [note, setNote] = useState('');
+  const [session, setSession] = useState('');
+  const [strategy, setStrategy] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleNumericChange = (setter) => (e) => {
+    const val = e.target.value;
+    if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+      setter(val.replace(',', '.'));
+    }
   };
 
-  const markAllRead = () => {
-    const ids = notifications.map(n => n.id);
-    const updated = [...new Set([...readIds, ...ids])];
-    setReadIds(updated);
-    localStorage.setItem('xau-notif-read', JSON.stringify(updated));
+  const pnlData = calcPnl(
+    parseFloat(entry) || 0, parseFloat(exit) || 0,
+    parseFloat(lots) || 0, 0,
+    parseFloat(sl) || 0, parseFloat(tp) || 0,
+    direction === 'LONG' ? 'BUY' : 'SELL', 0
+  );
+
+  const handleLogTrade = async () => {
+    if (!entry || !exit || !lots) {
+      toast('Please fill in Entry, Exit, and Amount.', 'error');
+      return;
+    }
+    setSaving(true);
+    const entryVal = parseFloat(entry);
+    const exitVal = parseFloat(exit);
+    const lotsVal = parseFloat(lots);
+    const slVal = parseFloat(sl) || null;
+    const tpVal = parseFloat(tp) || null;
+
+    const mappedDir = direction === 'LONG' ? 'BUY' : 'SELL';
+    const tradeRes = calcPnl(entryVal, exitVal, lotsVal, 0, slVal, tpVal, mappedDir, 0);
+    const { pnl, pips, rr } = tradeRes;
+    const outcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
+
+    const tradeData = {
+      date: todayStr(),
+      direction: mappedDir,
+      entry: entryVal,
+      exit: exitVal,
+      lots: lotsVal,
+      swap: 0,
+      sl: slVal,
+      tp: tpVal,
+      session,
+      strategy,
+      rr,
+      pips,
+      market: 'GOLD',
+      pnl: parseFloat(pnl.toFixed(2)),
+      outcome,
+      note: note.trim(),
+      timestamp: new Date()
+    };
+
+    try {
+      if(addTrade) {
+        await addTrade(tradeData);
+        // Set the 1-hour locked timer target ONLY if they are on a free plan AND have reached or exceeded 25 trades!
+        const totalTradesCount = trades ? trades.length : 0;
+        const isProUser = plan === 'pro' || plan === 'grace';
+        if (!isProUser && totalTradesCount >= 25) {
+          const oneHourFromNow = Date.now() + 1 * 60 * 60 * 1000;
+          localStorage.setItem('xau-renew-target-v2', String(oneHourFromNow));
+        }
+
+        setEntry(''); setExit(''); setLots('0.10'); setSl(''); setTp(''); setNote(''); setSession(''); setStrategy('');
+        toast(`Trade logged: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : 'error');
+      } else {
+        toast('Error: Trade submission unavailable.', 'error');
+      }
+    } catch (err) {
+      toast(err?.message || 'Failed to record trade.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
   
-  // Helper to get initials
-  const getInitials = (name) => {
-    if (!name) return 'TR';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
-  const initials = getInitials(displayName);
-
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* HEADER SECTION */}
-      <div className="hidden lg:flex items-center justify-between bg-card p-3 rounded-2xl border border-border/30 shadow-flat">
+    <div className="flex flex-col gap-4 w-full">
+      
+      {/* HEADER: Profile & Notifications */}
+      <div className="hidden lg:flex items-center justify-between apple-glass-panel p-2.5 rounded-2xl relative z-50">
+        
+        {/* Profile Identity */}
+        <div className="flex items-center gap-2.5 relative" ref={profileRef}>
+          <div 
+            onClick={() => setShowProfileCard(!showProfileCard)}
+            className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 transition-all cursor-pointer shadow-sm overflow-hidden select-none"
+          >
+            <span className="text-xl">🍎</span>
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-bold text-foreground capitalize flex items-center gap-1">
+              {displayName}
+              <svg className="w-3 h-3 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </span>
+            <span className="text-[9px] font-black uppercase text-primary tracking-[0.05em] bg-primary/10 px-2 py-0.5 rounded text-center mt-0.5 w-max flex items-center gap-1 font-mono">
+              {formattedTime}
+            </span>
+          </div>
+
+          {showProfileCard && (
+            <div className="absolute top-[calc(100%+12px)] left-0 z-50 w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in zoom-in-95">
+              
+              {/* User Info Header Section */}
+              <div className="flex items-center gap-3 pb-3 border-b border-border/10">
+                <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden select-none">
+                  <span className="text-xl">🍎</span>
+                </div>
+                <div className="flex flex-col text-left min-w-0">
+                  <span className="text-xs font-bold text-foreground truncate capitalize">{displayName}</span>
+                  <span className="text-[10px] text-muted-foreground truncate">{auth.currentUser?.email}</span>
+                </div>
+              </div>
+
+              {/* Settings list */}
+              <div className="flex flex-col gap-1.5">
+                {/* Accent Theme Selection */}
+                <button
+                  onClick={() => { setShowProfileCard(false); setShowThemeSelector?.(true); }}
+                  className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-left"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                    <Palette className="w-3.5 h-3.5 text-primary" />
+                    Color Accent
+                  </span>
+                  <span className="text-[8px] font-black uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Change</span>
+                </button>
+
+                {/* Dark Mode Switch */}
+                <div className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors">
+                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-primary">
+                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                    </svg>
+                    Dark Theme
+                  </span>
+                  <label htmlFor="check-profile" className="theme-switch-toggle" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+                    <input
+                      id="check-profile"
+                      type="checkbox"
+                      className="theme-switch-input"
+                      checked={!isLightMode}
+                      onChange={toggleTheme}
+                    />
+                    <div className="theme-switch-icon theme-switch-icon--moon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={14} height={14}>
+                        <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="theme-switch-icon theme-switch-icon--sun">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={14} height={14}>
+                        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                      </svg>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Manage Sub Button (PayPal subscriptions dashboard link) */}
+                <button
+                  onClick={() => {
+                    setShowProfileCard(false);
+                    window.open('https://www.paypal.com/myaccount/billing/subscriptions', '_blank');
+                  }}
+                  className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-left"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                  <span className="text-[10px] font-black uppercase tracking-wider">Manage Subscription</span>
+                </button>
+
+                {/* Logout Button */}
+                <button
+                  onClick={() => { localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
+                  className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-left mt-1 border-t border-border/10 pt-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                  </svg>
+                  <span className="text-[10px] font-black uppercase tracking-wider">Logout</span>
+                </button>
+              </div>
+
+            </div>
+          )}
+        </div>
+
         {/* Notification Bell */}
         <div className="relative" ref={notifRef}>
-          <button
-            type="button"
-            onClick={() => setShowNotifications(v => !v)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl border border-border/40 hover:bg-muted text-muted-foreground/70 hover:text-foreground transition-all relative"
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            {notifications.some(n => !readIds.includes(n.id)) && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full ring-2 ring-card" />
-            )}
-          </button>
-
-          {/* Dropdown Panel */}
-          {showNotifications && (
-            <div className="absolute top-[calc(100%+8px)] left-0 z-50 w-72 bg-card border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
-              {/* Panel Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border/20">
-                <span className="text-[11px] font-black uppercase tracking-widest text-foreground">Notifications</span>
-                <div className="flex items-center gap-2">
-                  {notifications.some(n => !readIds.includes(n.id)) && (
-                    <button
-                      type="button"
-                      onClick={markAllRead}
-                      className="text-[10px] font-bold text-primary hover:underline"
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowNotifications(false)}
-                    className="text-muted-foreground/60 hover:text-foreground transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Notification List */}
-              <div className="max-h-72 overflow-y-auto divide-y divide-border/10">
-                {notifications.length === 0 ? (
-                  <div className="px-4 py-6 text-center text-[11px] text-muted-foreground font-medium">
-                    You're all caught up 🎉
-                  </div>
-                ) : (
-                  notifications.map(n => (
-                    <div
-                      key={n.id}
-                      className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-default ${
-                        readIds.includes(n.id) ? 'opacity-50' : 'bg-muted/10 hover:bg-muted/20'
-                      }`}
-                      onClick={() => markRead(n.id)}
-                    >
-                      <span className="text-lg leading-none mt-0.5">{n.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-foreground leading-snug">{n.title}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{n.body}</p>
-                      </div>
-                      {!readIds.includes(n.id) && (
-                        <span className="w-2 h-2 bg-primary rounded-full mt-1.5 shrink-0" />
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2.5 relative" ref={profileRef}>
-          <div className="text-right">
-            <p className="text-xs font-bold text-foreground capitalize">{displayName}</p>
-            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{currentTime}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowProfileCard(v => !v)}
-            className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary text-xs uppercase hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
-            title="User Profile"
-          >
-            {initials}
-          </button>
-
-          {/* Profile Dropdown Panel */}
-          {showProfileCard && (
-            <div className="absolute top-[calc(100%+12px)] right-0 z-50 w-64 bg-card border border-border/40 rounded-2xl shadow-2xl p-4 flex flex-col gap-3.5 animate-in fade-in zoom-in-95 duration-200">
-              <div className="space-y-1">
-                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Logged in as</span>
-                <p className="text-xs font-bold text-foreground capitalize leading-snug">{displayName}</p>
-                <p className="text-[10px] font-medium text-muted-foreground break-all">{auth.currentUser?.email}</p>
-              </div>
-              <div className="h-px bg-border/20" />
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowProfileCard(false);
-                    if (openPortal) {
-                      openPortal();
-                    } else {
-                      setShowPricingModal?.(true);
-                    }
-                  }}
-                  className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-foreground/80 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
-                >
-                  Manage Subscription
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowProfileCard(false);
-                    localStorage.removeItem('xau-auth-hint');
-                    auth.signOut();
-                  }}
-                  className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-destructive hover:bg-destructive/10 rounded-xl transition-all"
-                >
-                  Log out
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* TOTAL BALANCE CARD */}
-      <div className="bg-card p-6 rounded-3xl border border-border/30 shadow-flat relative overflow-hidden flex flex-col gap-2">
-        <div className="flex justify-between items-start">
-          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total balance</span>
-          <span className={`flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-            winRate >= 50 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-          }`}>
-            {winRate >= 50 ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
-            {winRate}% WR
-          </span>
-        </div>
-        <h2 className="text-2xl font-black tracking-tight text-foreground">
-          {formatCurrency(totalBalance)}
-        </h2>
-        <div className="w-full bg-muted/40 h-1.5 rounded-full overflow-hidden mt-1">
-          <div 
-            className="bg-primary h-full rounded-full transition-all duration-500" 
-            style={{ width: `${Math.min(100, Math.max(0, winRate))}%` }}
-          />
-        </div>
-      </div>
-
-      {/* MY ITEMS TRACKER */}
-      <div className="flex flex-col gap-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">My items</p>
-        
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card 1: Logged Trades */}
-          <div 
-            onClick={() => navigate('/app/history')}
-            className="bg-card p-4 rounded-2xl border border-border/30 shadow-flat flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-300 active:scale-[0.98]"
-          >
-            <div className="w-8 h-8 rounded-xl bg-pastel-blue flex items-center justify-center shrink-0">
-              <Wallet className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Trades</p>
-              <p className="text-sm font-black text-foreground">{totalTradesCount}</p>
-            </div>
-          </div>
-
-          {/* Card 2: Journal Entries */}
-          <div 
-            onClick={() => navigate('/app/journal')}
-            className="bg-card p-4 rounded-2xl border border-border/30 shadow-flat flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-300 active:scale-[0.98]"
-          >
-            <div className="w-8 h-8 rounded-xl bg-pastel-pink flex items-center justify-center shrink-0">
-              <Book className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Journals</p>
-              <p className="text-sm font-black text-foreground">{totalJournalsCount}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* RESTYLED CONVERT WIDGET */}
-      <div className="bg-card p-5 rounded-3xl border border-border/30 shadow-flat flex flex-col gap-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Convert</p>
-        
-        <div className="flex flex-col gap-2">
-          {/* Input field */}
-          <div className="flex items-center justify-between bg-muted/30 hover:bg-muted/50 border border-border/20 rounded-xl px-3 py-2.5 transition-colors">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={amount}
-              onChange={e => {
-                const val = e.target.value;
-                if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
-                  setAmount(val.replace(',', '.'));
-                }
-              }}
-              className="bg-transparent border-0 text-xs font-bold text-foreground focus:outline-none focus:ring-0 p-0 w-24"
-              placeholder="0.00"
-            />
-            <CurrencySelect value={from} onChange={setFrom} />
-          </div>
-
-          {/* Output field */}
-          <div className="flex items-center justify-between bg-muted/30 border border-border/20 rounded-xl px-3 py-2.5">
-            <span className="text-xs font-bold text-foreground/70">
-              {loading ? '...' : result !== null ? formatNumber(result, 2) : '0.00'}
-            </span>
-            <CurrencySelect value={to} onChange={setTo} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-[9px] text-muted-foreground font-black uppercase tracking-wider px-1">
-          <span>Rate: 1 {from} ≈ {result !== null && amount > 0 ? (result / parseFloat(amount)).toFixed(4) : '0.0000'} {to}</span>
           <button 
-            type="button" 
-            onClick={fetchRate}
-            className="flex items-center gap-1 text-primary hover:underline cursor-pointer"
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 border border-border/40 hover:bg-muted text-muted-foreground transition-all relative shadow-sm"
           >
-            <RefreshCw className="w-2.5 h-2.5" />
-            Refresh
+            <Bell size={16} strokeWidth={2.5} />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-card"></span>
+          </button>
+
+          {showNotifications && (
+            <div className="absolute top-[calc(100%+12px)] right-0 z-50 w-72 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-border/10 pb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notifications</span>
+                <span className="text-[9px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded">2 New</span>
+              </div>
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                <div className="flex gap-3 items-start p-2 hover:bg-muted/50 rounded-xl transition-colors cursor-pointer">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <span className="text-blue-500 text-xs">🚀</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-foreground">Welcome to XauJournal</p>
+                    <p className="text-[10px] text-muted-foreground">Your premium trading journey begins now.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-start p-2 hover:bg-muted/50 rounded-xl transition-colors cursor-pointer">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <span className="text-amber-500 text-xs">⚠️</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-foreground">Complete Setup</p>
+                    <p className="text-[10px] text-muted-foreground">Connect your MT4/MT5 account to auto-sync trades.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ORDER FORM (ACTION CENTER) - Made more compact for a balanced right column spacing */}
+      <div className="apple-glass-panel flex flex-col p-3 rounded-[2rem] relative z-30">
+        
+        {/* Buy/Long | Sell/Short Segmented Control */}
+        <div className="flex bg-muted p-0.5 rounded-xl mb-2 shrink-0">
+          <button 
+            disabled={showLockTimer}
+            className={`flex-1 py-1 text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'LONG' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setDirection('LONG')}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+              Buy / Long
+            </span>
+          </button>
+          <button 
+            disabled={showLockTimer}
+            className={`flex-1 py-1 text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'SHORT' ? 'bg-rose-500 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setDirection('SHORT')}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+              Sell / Short
+            </span>
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchRate}
-          disabled={loading}
-          className="btn-convert-animated"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="arr-2" viewBox="0 0 24 24">
-            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-          </svg>
-          <span className="circle" />
-          <span className="text">Convert</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="arr-1" viewBox="0 0 24 24">
-            <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* UPGRADE PLAN CARD */}
-      <div className="bg-[#121214] text-white p-5 rounded-3xl border border-white/5 relative overflow-hidden flex flex-col gap-4 group">
-        {/* Decorative Grid Glow background */}
-        <div className="absolute right-0 bottom-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="flex flex-col gap-1 z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-primary">
-              <Gem className="w-3.5 h-3.5" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-primary">
-              {plan === 'pro' && isTrial ? '7-Day Free Trial' : 'Upgrade Plan'}
-            </span>
-          </div>
-          <h3 className="text-base font-black tracking-tight mt-1 leading-snug text-white">
-            {plan === 'pro' 
-              ? (isTrial ? 'Pro Trial Active' : 'Pro Trading Console Active') 
-              : 'Unlock Pro sync with MetaAPI'}
-          </h3>
-          <p className="text-[10px] text-white/50 leading-relaxed font-bold">
-            {plan === 'pro' 
-              ? (isTrial 
-                  ? `You are upgraded to Pro tier! Your 7-day free trial is currently active. ${trialTimeLeft || 'Loading...'}`
-                  : 'Enjoy unlimited sync logs, automated MT5 metrics, and priority analytics.') 
-              : 'Ver 1.0.4 · Connect MT5/MT4, enjoy unlimited logs, and premium reports.'}
-          </p>
-        </div>
-
-        {plan === 'pro' && !isTrial ? null : (
-          <div className="relative group w-full z-10">
-            <button
-              type="button"
-              onClick={() => setShowPricingModal?.(true)}
-              className="relative inline-flex w-full p-px font-semibold leading-6 text-white bg-gray-800 shadow-2xl cursor-pointer rounded-xl shadow-zinc-900 transition-transform duration-300 ease-in-out hover:scale-[1.02] active:scale-95"
+        {/* Order Types */}
+        <div className="flex gap-3 border-b border-border/20 mb-2.5 px-1 shrink-0">
+          {['Market', 'Limit', 'Stop'].map((type) => (
+            <button 
+              key={type}
+              disabled={showLockTimer}
+              className={`text-[9px] font-black uppercase tracking-widest transition-colors pb-1.5 border-b-2 -mb-[2px] disabled:opacity-50 disabled:cursor-not-allowed ${orderType === type ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground/80 border-transparent'}`}
+              onClick={() => setOrderType(type)}
             >
-              <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-              <span className="relative z-10 flex items-center justify-center w-full px-4 py-2 rounded-xl bg-gray-950">
-                <div className="relative z-10 flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest transition-all duration-500 group-hover:translate-x-1">
-                    {isTrial ? 'View Plan Details' : "Let's Go"}
-                  </span>
-                  <ArrowRight className="w-3 h-3 transition-transform duration-500 group-hover:translate-x-1" />
-                </div>
+              {type}
+            </button>
+          ))}
+        </div>
+        
+        {/* SCROLLABLE CONTENT - Spacing compressed */}
+        <div className="flex flex-col gap-2.5 pb-2">
+
+        {showLockTimer && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden group shrink-0 animate-in fade-in duration-300">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-sm animate-pulse">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex flex-col gap-1 z-10 relative">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">
+                Log Window Locked
               </span>
+              <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
+                You can log one trade per hour. The terminal will unlock once the timer expires:
+              </p>
+            </div>
+            <div className="bg-amber-500/15 border border-amber-500/30 px-5 py-2.5 rounded-2xl text-amber-500 text-lg font-black tracking-[0.15em] shadow-inner font-mono">
+              {renewCountdown}
+            </div>
+          </div>
+        )}
+
+        {isTrialActive && (
+          <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col gap-3 relative overflow-hidden group shrink-0">
+            <div className="flex justify-between items-center z-10 relative">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                Pro Trial Active
+              </span>
+              {trialTimeLeft && <span className="text-[10px] font-black tracking-widest text-foreground bg-background/50 px-2 py-1 rounded-md">{trialTimeLeft}</span>}
+            </div>
+            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
+              Enjoy unlimited MT4/MT5 sync and AI analytics. Upgrade to lock in your features.
+            </p>
+            <button
+              onClick={() => setShowPricingModal(true)}
+              className="w-full py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all shadow-md mt-1 z-10 relative"
+            >
+              Upgrade to Pro
             </button>
           </div>
         )}
-      </div>
-      {/* PRO RESET OPTION (Mobile View Only) */}
-      {(plan === 'pro' || import.meta.env.DEV) && (
-        <div className="pt-6 pb-2 flex md:hidden flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
-          {isWiping && (
-            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 max-w-sm flex gap-3 text-left animate-in slide-in-from-bottom-2 duration-300">
-              <AlertTriangle className="w-4.5 h-4.5 text-destructive shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-destructive mb-1">Danger Zone</p>
-                <p className="text-[10px] text-destructive/80 leading-relaxed font-bold">
-                  This will permanently delete all trades and reset your balance. This action cannot be undone.
-                </p>
-              </div>
+
+        {isFree && (
+          <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col gap-3 relative overflow-hidden group shrink-0">
+            <div className="flex justify-between items-center z-10 relative">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                Free Tier
+              </span>
             </div>
-          )}
-          <button
-            type="button"
-            onClick={() => isWiping ? handleWipeTerminal() : setIsWiping(true)}
-            disabled={isWipingDb}
-            className={`reset-trash-btn ${isWipingDb ? 'opacity-70 cursor-not-allowed' : ''}`}
-            title="Reset Terminal"
+            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
+              You are on the Free plan. Upgrade to Pro to unlock auto MT4/MT5 syncing and advanced AI analytics.
+            </p>
+            <button
+              onClick={() => setShowPricingModal(true)}
+              className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all shadow-md mt-1 z-10 relative"
+            >
+              Upgrade to Pro
+            </button>
+          </div>
+        )}
+
+        {/* Trade Order Form */}
+        <div className="flex flex-col relative group shrink-0 rounded-2xl">
+
+          <div className="flex flex-col gap-2">
+          
+          {/* Amount / Lots */}
+          <div className="space-y-0.5">
+            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
+            <div className="relative">
+              <input 
+                type="text" 
+                value={lots} 
+                onChange={handleNumericChange(setLots)} 
+                placeholder="0.10"
+                disabled={showLockTimer}
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-muted-foreground">LOTS</span>
+            </div>
+          </div>
+
+          {/* Entry Price */}
+          <div className="space-y-0.5">
+            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
+            <div className="relative">
+              <input 
+                type="text" 
+                value={entry} 
+                onChange={handleNumericChange(setEntry)} 
+                placeholder="2345.50"
+                disabled={showLockTimer}
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-primary">USD</span>
+            </div>
+          </div>
+
+          {/* Exit Price */}
+          <div className="space-y-0.5">
+            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
+            <div className="relative">
+              <input 
+                type="text" 
+                value={exit} 
+                onChange={handleNumericChange(setExit)} 
+                placeholder="2350.00"
+                disabled={showLockTimer}
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-primary">USD</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-0.5">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
+              <input 
+                type="text" 
+                value={tp} 
+                onChange={handleNumericChange(setTp)} 
+                placeholder="Optional"
+                disabled={showLockTimer}
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-2.5 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
+              <input 
+                type="text" 
+                value={sl} 
+                onChange={handleNumericChange(setSl)} 
+                placeholder="Optional"
+                disabled={showLockTimer}
+                className="w-full bg-muted/30 border border-border/20 rounded-xl px-2.5 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-0.5">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
+              <CustomSelect 
+                value={session}
+                onChange={setSession}
+                placeholder="Select Session"
+                disabled={showLockTimer}
+                className="h-9 px-3"
+                options={[
+                  { value: 'London', label: 'London' },
+                  { value: 'New York', label: 'New York' },
+                  { value: 'Tokyo', label: 'Tokyo' },
+                  { value: 'Sydney', label: 'Sydney' },
+                  { value: 'Asian', label: 'Asian Range' }
+                ]}
+              />
+            </div>
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
+              <CustomSelect 
+                value={strategy}
+                onChange={setStrategy}
+                placeholder="Select Strategy"
+                disabled={showLockTimer}
+                className="h-9 px-3"
+                options={[
+                  { value: 'Breakout', label: 'Breakout' },
+                  { value: 'SMC', label: 'SMC' },
+                  { value: 'ICT', label: 'ICT' },
+                  { value: 'Scalp', label: 'Scalp' },
+                  { value: 'Swing', label: 'Swing' },
+                  { value: 'S/R', label: 'S/R Bounce' }
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="space-y-0.5 mt-0.5">
+            <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Notes</label>
+            <textarea 
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Why did you take this trade?"
+              rows={1.5}
+              disabled={showLockTimer}
+              className="w-full bg-muted/30 border border-border/20 rounded-xl px-2.5 py-1 text-xs text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+
+        </div>
+
+        {/* Order Summary & Execution - Spacing reduced */}
+        <div className="mt-2.5 space-y-2 shrink-0">
+          
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/75">Est. Value / PnL</span>
+            <span className={`text-xs font-black ${(pnlData?.pnl || 0) > 0 ? 'text-green-500' : (pnlData?.pnl || 0) < 0 ? 'text-rose-500' : 'text-foreground'}`}>
+              {formatCurrency(pnlData?.pnl || 0)}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between px-1 border-t border-border/10 pt-1.5 mb-1.5">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-foreground/75">Est. Pips</span>
+            <span className="text-[9px] font-bold text-foreground/80">{(pnlData?.pips || 0).toFixed(1)} pips</span>
+          </div>
+
+          <button 
+            onClick={handleLogTrade}
+            disabled={saving || isLoadingTrades || showLockTimer}
+            className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all shadow-lg active:scale-[0.98] ${
+              showLockTimer
+                ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50 shadow-none'
+                : direction === 'LONG' 
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20' 
+                  : 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/20'
+            }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 69 14" className="svgIcon bin-top">
-              <g clipPath="url(#clip0_35_24)">
-                <path fill="black" d="M20.8232 2.62734L19.9948 4.21304C19.8224 4.54309 19.4808 4.75 19.1085 4.75H4.92857C2.20246 4.75 0 6.87266 0 9.5C0 12.1273 2.20246 14.25 4.92857 14.25H64.0714C66.7975 14.25 69 12.1273 69 9.5C69 6.87266 66.7975 4.75 64.0714 4.75H49.8915C49.5192 4.75 49.1776 4.54309 49.0052 4.21305L48.1768 2.62734C47.3451 1.00938 45.6355 0 43.7719 0H25.2281C23.3645 0 21.6549 1.00938 20.8232 2.62734ZM64.0023 20.0648C64.0397 19.4882 63.5822 19 63.0044 19H5.99556C5.4178 19 4.96025 19.4882 4.99766 20.0648L8.19375 69.3203C8.44018 73.0758 11.6746 76 15.5712 76H53.4288C57.3254 76 60.5598 73.0758 60.8062 69.3203L64.0023 20.0648Z" />
-              </g>
-              <defs>
-                <clipPath id="clip0_35_24">
-                  <rect fill="white" height={14} width={69} />
-                </clipPath>
-              </defs>
-            </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 69 57" className="svgIcon bin-bottom">
-              <g clipPath="url(#clip0_35_22)">
-                <path fill="black" d="M20.8232 -16.3727L19.9948 -14.787C19.8224 -14.4569 19.4808 -14.25 19.1085 -14.25H4.92857C2.20246 -14.25 0 -12.1273 0 -9.5C0 -6.8727 2.20246 -4.75 4.92857 -4.75H64.0714C66.7975 -4.75 69 -6.8727 69 -9.5C69 -12.1273 66.7975 -14.25 64.0714 -14.25H49.8915C49.5192 -14.25 49.1776 -14.4569 49.0052 -14.787L48.1768 -16.3727C47.3451 -17.9906 45.6355 -19 43.7719 -19H25.2281C23.3645 -19 21.6549 -17.9906 20.8232 -16.3727ZM64.0023 1.0648C64.0397 0.4882 63.5822 0 63.0044 0H5.99556C5.4178 0 4.96025 0.4882 4.99766 1.0648L8.19375 50.3203C8.44018 54.0758 11.6746 57 15.5712 57H53.4288C57.3254 57 60.5598 54.0758 60.8062 50.3203L64.0023 1.0648Z" />
-              </g>
-              <defs>
-                <clipPath id="clip0_35_22">
-                  <rect fill="white" height={57} width={69} />
-                </clipPath>
-              </defs>
-            </svg>
-            <span className="button-text">{isWipingDb ? 'Wiping...' : isWiping ? 'Confirm?' : 'Reset'}</span>
+            {saving ? 'Processing...' : showLockTimer ? `Locked (${renewCountdown})` : `${direction === 'LONG' ? 'Buy/Long' : 'Sell/Short'} XAUUSD`}
           </button>
         </div>
-      )}
+        </div>
+        </div>
+
+      </div>
+
+      {/* Currency Converter (Separate Box) */}
+      <div className="w-full shrink-0 pb-6 relative z-10">
+        <CurrencyConverter />
+      </div>
     </div>
   );
 }

@@ -288,7 +288,7 @@ export default function EASetup() {
           <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Broker Sync Terminal</h1>
           <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest">Connect your MT4 / MT5 broker account.</p>
         </header>
-        <div className="max-w-lg mx-auto mt-16 rounded-2xl border border-border/40 bg-card p-10 flex flex-col items-center text-center gap-5 animate-in zoom-in-95 duration-500">
+        <div className="max-w-lg mx-auto mt-16 card-premium p-10 flex flex-col items-center text-center gap-5 animate-in zoom-in-95 duration-500">
           <div className="w-16 h-16 rounded-2xl bg-muted border border-border/40 flex items-center justify-center">
             <LockFill className="w-7 h-7 text-foreground/30" />
           </div>
@@ -686,7 +686,7 @@ export default function EASetup() {
                                     key={b.server}
                                     type="button"
                                     onClick={() => { setServerName(b.server); setDropdownOpen(false); setBrokerSearch(''); }}
-                                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold transition-all text-foreground/80 hover:bg-white/5 hover:text-foreground"
+                                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold transition-all text-foreground/80 hover:bg-muted/50 hover:text-foreground"
                                   >
                                     {b.label}
                                   </button>

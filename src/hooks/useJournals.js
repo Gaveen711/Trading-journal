@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { collection, getDocs, setDoc, deleteDoc, doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../firebase';
+import { useState, useEffect, useMemo } from 'react';
+import { FirebaseJournalRepository } from '../data/repositories/FirebaseJournalRepository';
 
 export function useJournals(user) {
   const [journals, setJournals] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+
+  const repository = useMemo(() => new FirebaseJournalRepository(), []);
 
   const loadJournals = async () => {
     if (!user) {
@@ -13,10 +14,8 @@ export function useJournals(user) {
     }
     try {
       setIsLoading(true);
-      const snapshot = await getDocs(collection(db, 'users', user.uid, 'journals'));
-      const newJournals = {};
-      snapshot.docs.forEach(d => { newJournals[d.id] = d.data(); });
-      setJournals(newJournals);
+      const data = await repository.loadJournals(user.uid);
+      setJournals(data);
     } catch { 
       setJournals({}); 
     } finally {
@@ -32,21 +31,15 @@ export function useJournals(user) {
   const saveJournalEntry = async (date, text, mood) => {
     const newJournals = { ...journals };
     const isNew = !journals[date];
+    const wasPresent = !!journals[date];
 
     if (text.trim()) {
       newJournals[date] = { text, mood };
-      await setDoc(doc(db, 'users', user.uid, 'journals', date), { text, mood });
-      if (isNew) {
-        await updateDoc(doc(db, 'users', user.uid), { totalJournalsLogged: increment(1) });
-      }
     } else {
-      const wasPresent = !!journals[date];
       delete newJournals[date];
-      await deleteDoc(doc(db, 'users', user.uid, 'journals', date));
-      if (wasPresent) {
-        await updateDoc(doc(db, 'users', user.uid), { totalJournalsLogged: increment(-1) });
-      }
     }
+
+    await repository.saveJournalEntry(user.uid, date, text, mood, isNew, wasPresent);
     setJournals(newJournals);
     return newJournals;
   };
@@ -55,13 +48,12 @@ export function useJournals(user) {
     const wasPresent = !!journals[date];
     const newJournals = { ...journals };
     delete newJournals[date];
-    await deleteDoc(doc(db, 'users', user.uid, 'journals', date));
-    if (wasPresent) {
-        await updateDoc(doc(db, 'users', user.uid), { totalJournalsLogged: increment(-1) });
-    }
+    
+    await repository.deleteEntry(user.uid, date, wasPresent);
     setJournals(newJournals);
   };
 
   return { journals, isLoading, saveJournalEntry, deleteEntry, refreshJournals: loadJournals };
 }
+
 

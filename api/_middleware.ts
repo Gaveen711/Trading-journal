@@ -45,7 +45,7 @@ export async function rateLimitMiddleware(c: Context, next: Next) {
   }
 
   const path = c.req.path
-  const isWebhook = path.includes('/paddle-webhook') || path.includes('/tv-webhook')
+  const isWebhook = path.includes('/tv-webhook')
   const ip = getClientIp(c)
   const key = `rl:${ip}`
   const limit = isWebhook ? 500 : 100

@@ -853,8 +853,8 @@ function CurrencySelect({ value, onChange, label }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredCurrencies = CURRENCIES.filter(c => 
-    c.code.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredCurrencies = CURRENCIES.filter(c =>
+    c.code.toLowerCase().includes(search.toLowerCase()) ||
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -867,19 +867,18 @@ function CurrencySelect({ value, onChange, label }) {
           setIsOpen(!isOpen);
           if (isOpen) setSearch('');
         }}
-        className={`w-full h-12 px-4 rounded-xl border flex items-center justify-between transition-all duration-300 ${
-          isOpen ? 'bg-muted/50 border-primary/50 ring-2 ring-primary/10' : 'bg-muted/30 border-border/50 hover:border-primary/30'
-        }`}
+        className={`w-full h-12 px-4 rounded-xl border flex items-center justify-between transition-all duration-300 ${isOpen ? 'bg-muted/50 border-primary/50 ring-2 ring-primary/10' : 'bg-muted/30 border-border/50 hover:border-primary/30'
+          }`}
       >
         <div className="flex items-center gap-3">
           <div className="w-6 h-4 overflow-hidden rounded-sm bg-muted/20 flex-shrink-0">
-            <img 
-              src={`/flags/${selected?.country?.toLowerCase()}.svg`} 
-              alt="" 
-              className="w-full h-full object-cover" 
-              onError={(e) => { 
+            <img
+              src={`/flags/${selected?.country?.toLowerCase()}.svg`}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => {
                 if (selected?.code === 'EUR') e.target.src = '/flags/fr.svg';
-                else e.target.src = 'https://placehold.co/40x30/1e1e2e/64748b?text=' + selected?.code; 
+                else e.target.src = 'https://placehold.co/40x30/1e1e2e/64748b?text=' + selected?.code;
               }}
             />
           </div>
@@ -910,18 +909,17 @@ function CurrencySelect({ value, onChange, label }) {
                   setIsOpen(false);
                   setSearch('');
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                  value === c.code ? 'bg-primary text-white' : 'hover:bg-white/5 text-foreground/70 hover:text-foreground'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${value === c.code ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50 text-foreground/70 hover:text-foreground'
+                  }`}
                 title={c.name}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-4 overflow-hidden rounded-sm bg-muted/10 flex-shrink-0">
-                    <img 
-                      src={`/flags/${c.country?.toLowerCase()}.svg`} 
-                      alt="" 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => { 
+                    <img
+                      src={`/flags/${c.country?.toLowerCase()}.svg`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
                         if (c.code === 'EUR') e.target.src = '/flags/fr.svg';
                       }}
                     />
@@ -960,7 +958,7 @@ export function CurrencyConverter() {
       setResult(val);
       return;
     }
-    
+
     setLoading(true);
     try {
       // Primary: User's private API key
@@ -968,7 +966,7 @@ export function CurrencyConverter() {
       const apiKey = import.meta.env.VITE_CURRENCY_API_KEY;
       let res = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${from}`);
       let data;
-      
+
       if (res.ok) {
         data = await res.json();
       }
@@ -986,7 +984,7 @@ export function CurrencyConverter() {
 
       const rates = data.conversion_rates || data.rates;
       const currentRate = rates[to];
-      
+
       if (!currentRate) throw new Error("Target currency not found in rates");
 
       setResult(val * currentRate);
@@ -994,7 +992,7 @@ export function CurrencyConverter() {
       console.error('Currency Conversion Error:', error);
       toast("Connection error. Using estimated rates.", "error");
       // Basic fallback result to prevent "Calculating..." being stuck
-      setResult(val * 1.0); 
+      setResult(val * 1.0);
     } finally {
       setLoading(false);
     }
@@ -1010,51 +1008,51 @@ export function CurrencyConverter() {
   };
 
   return (
-    <div className="card-premium p-8 space-y-8 animate-in slide-in-from-bottom-4 duration-700 delay-300">
+    <div className="card-premium rounded-3xl p-5 space-y-4 animate-in slide-in-from-bottom-4 duration-700 delay-300">
       <div className="text-center space-y-2">
-        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground">Currency Converter</h3>
+        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground">Currency Converter</h3>
         <div className="w-12 h-1 bg-primary mx-auto rounded-full" />
       </div>
 
-      <form onSubmit={handleConvert} className="space-y-8">
-        <div className="space-y-2 flex flex-col items-center">
+      <form onSubmit={handleConvert} className="space-y-4">
+        <div className="space-y-1.5 flex flex-col items-center">
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Enter Amount</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             inputMode="decimal"
-            value={amount} 
+            value={amount}
             onChange={e => {
               const val = e.target.value;
               if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
                 setAmount(val.replace(',', '.'));
               }
             }}
-            className="input-premium h-12 text-sm font-bold text-center max-w-[220px]"
+            className="input-premium h-10 text-sm font-bold text-center max-w-[220px]"
             placeholder="100"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-2">
           <CurrencySelect label="From" value={from} onChange={setFrom} />
           <CurrencySelect label="To" value={to} onChange={setTo} />
         </div>
 
         {result !== null && (
-          <div className="py-2 text-center animate-in fade-in duration-500">
+          <div className="py-1 text-center animate-in fade-in duration-500">
             <div className="text-sm font-bold text-foreground/80 tracking-tight">
               {loading ? (
                 <span>Calculating...</span>
               ) : (
-                <span>{formatNumber(parseFloat(amount) || 0, 0)} {from} = {result.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})} {to}</span>
+                <span>{formatNumber(parseFloat(amount) || 0, 0)} {from} = {result.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {to}</span>
               )}
             </div>
           </div>
         )}
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading}
-          className="btn-primary w-full h-12 text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95 transition-all"
+          className="w-full py-3 bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 disabled:opacity-50 mt-2"
         >
           {loading ? 'Converting...' : 'Convert'}
         </button>
@@ -1062,4 +1060,3 @@ export function CurrencyConverter() {
     </div>
   );
 }
-

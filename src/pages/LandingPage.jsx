@@ -942,10 +942,10 @@ export function LandingPage() {
                   <li className="icon-content"><a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer"><div className="filled" /><TwitterX /></a></li>
                   <li className="icon-content"><a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer"><div className="filled" /><Discord /></a></li>
                 </ul>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center md:justify-end">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-1.5 justify-center md:justify-end">
                   made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
                 </p>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-center md:text-right">© Copyright 2026 Xau Journal.<br />All Rights Reserved.</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center md:text-right">© Copyright 2026 Xau Journal. All Rights Reserved.</p>
               </div>
             </div>
           </div>
@@ -957,7 +957,7 @@ export function LandingPage() {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         animate={{ opacity: isScrolled ? 1 : 0, y: isScrolled ? 0 : 40 }}
         transition={{ duration: 0.3 }}
-        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-white/40 text-primary shadow-xl hover:-translate-y-2 active:scale-90 transition-transform ${!isScrolled ? 'pointer-events-none' : ''}`}
+        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl hover:-translate-y-2 active:scale-90 transition-transform ${!isScrolled ? 'pointer-events-none' : ''}`}
         aria-label="Scroll to top"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
@@ -1035,7 +1035,7 @@ function FeatureCard({ icon, title, body, index }) {
       transition={{ duration: 0.5, delay: index * 0.07 }}
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
-      className="p-8 rounded-[2.5rem] flex flex-col cursor-default select-none transition-all duration-500 ease-out group border border-transparent hover:bg-white/5 hover:border-white/15 hover:shadow-[0_8px_40px_-12px_rgba(139,92,246,0.5)]"
+      className="p-8 rounded-[2.5rem] flex flex-col cursor-default select-none transition-all duration-500 ease-out group border border-transparent hover:bg-foreground/5 hover:border-foreground/15 hover:shadow-[0_8px_40px_-12px_rgba(139,92,246,0.5)]"
     >
       <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-5 transition-all duration-300 group-hover:bg-primary/25">{icon}</div>
       <h3 className="text-lg font-bold tracking-tight text-foreground/90 group-hover:text-foreground transition-colors duration-300">{title}</h3>
@@ -1060,7 +1060,7 @@ function MobileFeatureAccordion({ icon, title, body, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
-      className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${isOpen ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_-8px_rgba(139,92,246,0.4)]' : 'bg-white/5 border-white/10'}`}
+      className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${isOpen ? 'bg-primary/10 border-primary/30 shadow-[0_4px_24px_-8px_rgba(139,92,246,0.4)]' : 'bg-foreground/5 border-foreground/10'}`}
     >
       <button type="button" onClick={() => setIsOpen(o => !o)} className="w-full flex items-center gap-4 p-4 text-left" aria-expanded={isOpen}>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${isOpen ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary'}`}>{icon}</div>

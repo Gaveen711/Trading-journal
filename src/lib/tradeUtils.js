@@ -72,17 +72,16 @@ export const formatCurrencyCompact = (val) => {
   return `$${formatted}`;
 };
 
-// XAUUSD only: 1 pip = $1.00 per 1.00 lot (contract size 100, pip size 0.01)
+// XAUUSD only: 1 pip = $1.00 per 1.00 lot (contract size 100, pip size 0.1)
 const XAUUSD_CONTRACT_SIZE = 100;
-const XAUUSD_PIP_SIZE      = 0.01;
+const XAUUSD_PIP_SIZE      = 0.1;
 
 export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
 
   const swapNum = Number(swap) || 0;
   const diff    = dir === 'BUY' ? exit - entry : entry - exit;
-  const absDiff = Math.abs(exit - entry);
-  const pips    = parseFloat((absDiff / XAUUSD_PIP_SIZE).toFixed(1));
+  const pips    = parseFloat((diff / XAUUSD_PIP_SIZE).toFixed(1));
 
   // If actual broker P&L is provided, trust it directly
   let pnl;

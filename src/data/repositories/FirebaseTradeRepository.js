@@ -79,17 +79,31 @@ export class FirebaseTradeRepository extends TradeRepository {
       const { getDocs } = await import('firebase/firestore');
       const q = query(collection(db, 'users', userId, 'trades'));
       const snapshot = await getDocs(q);
+      const docs = snapshot.docs;
+      const CHUNK_SIZE = 400;
       
-      const batch = writeBatch(db);
-      snapshot.docs.forEach((documentSnapshot) => {
-        batch.delete(doc(db, 'users', userId, 'trades', documentSnapshot.id));
-      });
+      for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = docs.slice(i, i + CHUNK_SIZE);
+        chunk.forEach((documentSnapshot) => {
+          batch.delete(doc(db, 'users', userId, 'trades', documentSnapshot.id));
+        });
+        
+        if (i + CHUNK_SIZE >= docs.length) {
+          batch.update(doc(db, 'users', userId), {
+            totalTradesLogged: 0
+          });
+        }
+        await batch.commit();
+      }
       
-      batch.update(doc(db, 'users', userId), {
-        totalTradesLogged: 0
-      });
-      
-      await batch.commit();
+      if (docs.length === 0) {
+        const batch = writeBatch(db);
+        batch.update(doc(db, 'users', userId), {
+          totalTradesLogged: 0
+        });
+        await batch.commit();
+      }
     }
   }
 }

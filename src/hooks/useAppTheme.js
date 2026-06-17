@@ -5,11 +5,11 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
   const [isLightMode, setIsLightMode] = useState(() => {
     const saved = localStorage.getItem('xau-theme');
-    return saved === 'light';
+    return saved !== 'dark';
   });
 
   const [currentTemplate, setTemplateState] = useState(() => {
-    return localStorage.getItem('xau-template') || 'neo-purple';
+    return localStorage.getItem('xau-template') || 'sage-modern';
   });
 
   const isInitialMount = useRef(true);
@@ -74,7 +74,7 @@ export function ThemeProvider({ children }) {
       if (e.key === 'xau-theme') {
         setIsLightMode(e.newValue === 'light');
       } else if (e.key === 'xau-template') {
-        setTemplateState(e.newValue || 'neo-purple');
+        setTemplateState(e.newValue || 'sage-modern');
       }
     };
 

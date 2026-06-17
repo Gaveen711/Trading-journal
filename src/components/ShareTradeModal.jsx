@@ -65,7 +65,7 @@ export function ShareTradeModal({ trade, onClose }) {
         <TradeShareCard ref={cardRef} trade={trade} />
       </div>
 
-      <div className="w-full max-w-4xl bg-card border border-border/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+      <div className="w-full max-w-4xl apple-glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-4 border-b border-border/10 bg-muted/20">
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground">Share Trade</h3>

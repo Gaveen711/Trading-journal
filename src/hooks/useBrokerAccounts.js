@@ -2,14 +2,9 @@
 // Hook for managing broker sync accounts via local storage (client-side only credentials)
 // and checking sync stats from Firestore profile metadata
 
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../firebase';
-import {
-  connectBrokerCallable,
-  syncBrokerTradesCallable,
-  disconnectBrokerCallable,
-} from '../lib/brokerSync';
+import { useState, useEffect, useMemo } from 'react';
+import { auth } from '../firebase';
+import { FirebaseBrokerRepository } from '../data/repositories/FirebaseBrokerRepository';
 
 // Module-level in-memory password cache (persists during the active session until page reload)
 const passwordCache = new Map();
@@ -18,6 +13,8 @@ export function useBrokerAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const repository = useMemo(() => new FirebaseBrokerRepository(), []);
 
   // Load broker accounts from localStorage on mount/user change
   useEffect(() => {
@@ -62,9 +59,8 @@ export function useBrokerAccounts() {
         }
       };
 
-      const userRef = doc(db, 'users', user.uid);
-      unsubscribeSnapshot = onSnapshot(
-        userRef,
+      unsubscribeSnapshot = repository.subscribeToUserDoc(
+        user.uid,
         (docSnap) => {
           let dbData = {};
           if (docSnap.exists()) {
@@ -90,7 +86,7 @@ export function useBrokerAccounts() {
         unsubscribeSnapshot();
       }
     };
-  }, []);
+  }, [repository]);
 
   async function addAccount(login, password, server, brokerType, accountName) {
     setError(null);
@@ -99,7 +95,7 @@ export function useBrokerAccounts() {
 
     try {
       // Connect / transient test/initial sync on the server
-      const result = await connectBrokerCallable({
+      const result = await repository.connectBroker({
         accountId: login,
         password,
         server,
@@ -160,7 +156,7 @@ export function useBrokerAccounts() {
         throw new Error('Broker credentials are not in-memory. Please reconnect or re-enter your password.');
       }
 
-      const result = await syncBrokerTradesCallable({
+      const result = await repository.syncBrokerTrades({
         accountId: acc.login,
         password: inMemoryPassword,
         server: acc.server,
@@ -180,7 +176,7 @@ export function useBrokerAccounts() {
 
     try {
       // Clean up server-side stats/transient triggers if any
-      const result = await disconnectBrokerCallable();
+      const result = await repository.disconnectBroker();
 
       // Remove from client-side localStorage
       const localKey = `xau-broker-accounts-${user.uid}`;
@@ -206,3 +202,4 @@ export function useBrokerAccounts() {
     removeAccount,
   };
 }
+

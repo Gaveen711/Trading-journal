@@ -1,5 +1,5 @@
 const XAUUSD_CONTRACT_SIZE = 100;
-const XAUUSD_PIP_SIZE = 0.01;
+const XAUUSD_PIP_SIZE = 0.1;
 
 export class TradeEntity {
   static calcPnl(entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) {

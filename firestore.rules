@@ -6,8 +6,8 @@ service cloud.firestore {
       // Allow write only if sensitive fields are not modified or set by the client
       allow write: if request.auth != null && request.auth.uid == userId
         && (
-          (resource == null && !request.resource.data.keys().hasAny(['plan', 'planExpiry', 'isTrial', 'paddleSubscriptionId', 'paddleTransactionId', 'graceUntil', 'graceReason'])) ||
-          (resource != null && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'planExpiry', 'isTrial', 'paddleSubscriptionId', 'paddleTransactionId', 'graceUntil', 'graceReason']))
+          (resource == null && !request.resource.data.keys().hasAny(['plan', 'planExpiry', 'isTrial', 'paypalSubscriptionId', 'paypalTransactionId', 'graceUntil', 'graceReason'])) ||
+          (resource != null && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'planExpiry', 'isTrial', 'paypalSubscriptionId', 'paypalTransactionId', 'graceUntil', 'graceReason']))
         );
       
       // VULN-08: Add explicit security rules for the auditLogs subcollection.
