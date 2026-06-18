@@ -196,7 +196,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className={`hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-5.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
+      <aside className={`group hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-5.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
         {/* LOGO & TOGGLE */}
         <div className={`flex items-center w-full mb-7 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
           <div 
@@ -217,7 +217,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           {/* Collapse/Expand Toggle button */}
           <button
             onClick={toggleSidebar}
-            className={`w-6 h-6 rounded-lg bg-muted border border-border/40 flex items-center justify-center text-foreground hover:bg-muted/80 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] absolute top-1/2 -translate-y-1/2 z-10 ${isSidebarExpanded ? 'right-0' : '-right-2'}`}
+            className={`w-6 h-6 rounded-lg bg-muted border border-border/40 flex items-center justify-center text-foreground hover:bg-muted/80 transition-all duration-300 absolute top-1/2 -translate-y-1/2 z-10 ${isSidebarExpanded ? 'right-0' : '-right-2'} opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus:opacity-100 focus:pointer-events-auto active:opacity-100 active:pointer-events-auto`}
             title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
           >
             <svg
