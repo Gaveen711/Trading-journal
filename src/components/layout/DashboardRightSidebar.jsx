@@ -284,12 +284,12 @@ export function DashboardRightSidebar({
         </div>
 
         {/* ── Order-type sub-tabs ─────────────────────────────────────────── */}
-        <div className="flex gap-3 border-b border-border/10 px-5 mt-2 shrink-0">
+        <div className="flex gap-4 border-b border-border/10 px-5 mt-2 shrink-0">
           {['Market', 'Limit', 'Stop'].map((type) => (
             <button
               key={type}
               disabled={showLockTimer}
-              className={`text-[9px] font-black uppercase tracking-widest transition-colors pb-1.5 border-b-2 -mb-[2px] disabled:opacity-50 disabled:cursor-not-allowed ${orderType === type ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground/80 border-transparent'}`}
+              className={`text-[11px] font-black uppercase tracking-widest transition-colors pb-1.5 border-b-2 -mb-[2px] disabled:opacity-50 disabled:cursor-not-allowed ${orderType === type ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground/80 border-transparent'}`}
               onClick={() => setOrderType(type)}
             >
               {type}
@@ -298,7 +298,7 @@ export function DashboardRightSidebar({
         </div>
 
         {/* ── Feature Tabs ────────────────────────────────────────────────── */}
-        <div className="flex gap-0 border-b border-border/10 px-4 mt-1 shrink-0">
+        <div className="flex gap-0.5 border-b border-border/10 px-4 mt-1.5 shrink-0">
           {TABS.map((tab) => {
             const badge = tab.id === 'risk' ? riskFilled : tab.id === 'mood' ? moodFilled : tab.id === 'advanced' ? advancedFilled : 0;
             const IconComponent = tab.icon;
@@ -306,7 +306,7 @@ export function DashboardRightSidebar({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-2.5 py-2 text-[9px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group ${
                   activeTab === tab.id
                     ? 'text-foreground border-primary'
                     : 'text-muted-foreground hover:text-foreground/70 border-transparent'
@@ -318,7 +318,7 @@ export function DashboardRightSidebar({
                 />
                 {tab.label}
                 {badge > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground text-[7px] font-black flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground text-[8px] font-black flex items-center justify-center">
                     {badge}
                   </span>
                 )}
@@ -421,52 +421,52 @@ export function DashboardRightSidebar({
 
               {/* Amount / Lots */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
+                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
                 <div className="relative">
                   <input
                     type="text" value={lots} onChange={handleNumericChange(setLots)} placeholder="0.10"
                     disabled={showLockTimer}
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-muted-foreground">LOTS</span>
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-muted-foreground">LOTS</span>
                 </div>
               </div>
 
               {/* Entry Price */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
+                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
                 <div className="relative">
                   <input
                     type="text" value={entry} onChange={handleNumericChange(setEntry)} placeholder="2345.50"
                     disabled={showLockTimer}
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-primary">USD</span>
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary">USD</span>
                 </div>
               </div>
 
               {/* Exit Price */}
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
+                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
                 <div className="relative">
                   <input
                     type="text" value={exit} onChange={handleNumericChange(setExit)} placeholder="2350.00"
                     disabled={showLockTimer}
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-primary">USD</span>
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary">USD</span>
                 </div>
               </div>
 
               {/* TP / SL */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
+                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
                   <input type="text" value={tp} onChange={handleNumericChange(setTp)} placeholder="Optional" disabled={showLockTimer}
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
                 </div>
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
+                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
                   <input type="text" value={sl} onChange={handleNumericChange(setSl)} placeholder="Optional" disabled={showLockTimer}
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
                 </div>
@@ -475,7 +475,7 @@ export function DashboardRightSidebar({
               {/* Session / Strategy */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
+                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
                   <CustomSelect value={session} onChange={setSession} placeholder="Session" disabled={showLockTimer} className="h-9 px-3" align="top"
                     options={[
                       { value: 'London',   label: 'London'       },
@@ -486,7 +486,7 @@ export function DashboardRightSidebar({
                   />
                 </div>
                 <div className="space-y-0.5">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
+                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
                   <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" disabled={showLockTimer} className="h-9 px-3" align="top"
                     options={[
                       { value: 'Breakout', label: 'Breakout'    },
@@ -502,10 +502,10 @@ export function DashboardRightSidebar({
 
               {/* Trade Notes */}
               <div className="space-y-0.5">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Notes</label>
+                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Notes</label>
                 <textarea
                   value={note} onChange={(e) => setNote(e.target.value)}
-                  placeholder="Why did you take this trade?" rows={2} disabled={showLockTimer}
+                  placeholder="Why did you take this trade?" rows={4} disabled={showLockTimer}
                   className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>

@@ -196,7 +196,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className={`hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-5.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-60' : 'w-22 items-center'}`}>
+      <aside className={`hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-5.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
         {/* LOGO & TOGGLE */}
         <div className={`flex items-center w-full mb-7 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
           <div 
@@ -247,18 +247,18 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 to={`/app/${item.id}`}
                 className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSidebarExpanded 
-                    ? 'px-3.5 w-full h-11 gap-2.5 rounded-xl' 
-                    : 'px-0 w-11 h-11 justify-center gap-0 rounded-full'
+                    ? 'px-4 w-full h-12 gap-3 rounded-xl' 
+                    : 'px-0 w-12 h-12 justify-center gap-0 rounded-full'
                 } ${isActive
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/15'
                   : 'text-foreground/75 hover:bg-muted hover:text-foreground'
                 }`}
                 title={!isSidebarExpanded ? item.name : undefined}
               >
-                <Icon className="w-[1.15rem] h-[1.15rem] shrink-0" />
-                <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                <Icon className="w-[1.25rem] h-[1.25rem] shrink-0" />
+                <span className={`text-[12px] font-black uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSidebarExpanded 
-                    ? 'opacity-100 max-w-[130px] ml-0' 
+                    ? 'opacity-100 max-w-[150px] ml-0' 
                     : 'opacity-0 max-w-0 ml-0 overflow-hidden pointer-events-none'
                 }`}>
                   {item.name}
@@ -384,7 +384,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
           {/* DESKTOP PROFILE & NOTIFICATIONS CARD */}
           <div className={`w-full relative z-40 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? '' : 'flex flex-col items-center'}`}>
-            <div className={`flex items-center justify-between bg-card/45 backdrop-blur-md border border-border/20 rounded-2xl w-full p-2 ${
+            <div className={`desktop-profile-card flex items-center justify-between bg-card/45 backdrop-blur-md border border-border/20 rounded-2xl w-full p-2 ${
               isSidebarExpanded ? 'flex-row' : 'flex-col gap-3'
             }`}>
               {/* Profile Identity */}
@@ -398,22 +398,20 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 
                 {isSidebarExpanded && (
                   <div className="flex flex-col text-left">
-                    <span className="text-[11px] font-bold text-foreground capitalize flex items-center gap-1">
+                    <span className="text-[12.5px] font-bold text-foreground capitalize flex items-center gap-1">
                       {displayName}
                       <svg className="w-2.5 h-2.5 text-primary" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                       </svg>
                     </span>
-                    <span className="text-[8px] font-black uppercase text-primary tracking-[0.05em] bg-primary/10 px-1.5 py-0.5 rounded text-center mt-0.5 w-max flex items-center gap-1 font-mono">
+                    <span className="text-[9.5px] font-black uppercase text-primary tracking-[0.05em] bg-primary/10 px-1.5 py-0.5 rounded text-center mt-0.5 w-max flex items-center gap-1 font-mono">
                       {formattedTime}
                     </span>
                   </div>
                 )}
 
                 {showDesktopProfile && (
-                  <div className={`absolute z-50 w-60 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in zoom-in-95 ${
-                    isSidebarExpanded ? 'bottom-[calc(100%+12px)] left-0' : 'bottom-0 left-[calc(100%+12px)]'
-                  }`}>
+                  <div className="absolute z-50 w-60 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in zoom-in-95 bottom-0 left-[calc(100%+12px)]">
                     <div className="flex items-center gap-3 pb-3 border-b border-border/10">
                       <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden select-none">
                         <span className="text-xl">🍎</span>
@@ -494,9 +492,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 </button>
 
                 {showDesktopNotifications && (
-                  <div className={`absolute z-50 w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95 ${
-                    isSidebarExpanded ? 'bottom-[calc(100%+12px)] right-0' : 'bottom-0 left-[calc(100%+12px)]'
-                  }`}>
+                  <div className="absolute z-50 w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95 bottom-0 left-[calc(100%+12px)]">
                     <div className="flex items-center justify-between border-b border-border/10 pb-2">
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notifications</span>
                       <span className="text-[9px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded">2 New</span>
@@ -683,7 +679,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
           {/* RIGHT COLUMN - SIDEBAR (Only visible on Log page) */}
           {(location.pathname === '/app' || location.pathname === '/app/') && (
-            <aside className="w-full lg:w-80 shrink-0">
+            <aside className="w-full lg:w-[350px] shrink-0">
               <DashboardRightSidebar
                 plan={plan}
                 isTrial={isTrial}
