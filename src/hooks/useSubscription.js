@@ -104,12 +104,14 @@ export function useSubscription(user) {
     return () => unsub();
   }, [user, repository, toast]);
 
-  const startCheckout = async (_planType = 'pro_monthly') => {
-    toast("Checkout is currently transitioning to PayPal. Please check back later!", "info");
+  const [payPalCheckout, setPayPalCheckout] = useState({ isOpen: false, planType: 'pro_monthly' });
+
+  const startCheckout = async (planType = 'pro_monthly') => {
+    setPayPalCheckout({ isOpen: true, planType });
   };
 
   const openPortal = () => {
-    toast("Billing portal is currently unavailable during our payment gateway transition.", "info");
+    toast("Billing details can be managed via your PayPal account dashboard.", "info");
   };
 
   const recordProAcceptance = async () => {
@@ -132,6 +134,6 @@ export function useSubscription(user) {
     }
   };
   
-  return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance };
+  return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance, payPalCheckout, setPayPalCheckout };
 }
 

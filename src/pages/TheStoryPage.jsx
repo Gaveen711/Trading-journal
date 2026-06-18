@@ -3,8 +3,9 @@ import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill, Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
+import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
+import { PublicNavbar } from '../components/PublicNavbar';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -749,9 +750,8 @@ const MANIFESTO = [
 
 export default function TheStoryPage() {
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { isLightMode, toggleTheme } = useAppTheme();
+  const { isLightMode } = useAppTheme();
 
   const containerRef = useRef(null);
 
@@ -767,12 +767,6 @@ export default function TheStoryPage() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
 
     window.scrollTo(0, 0);
 
@@ -848,7 +842,7 @@ export default function TheStoryPage() {
                 const spaceSpan = document.createElement('span');
                 spaceSpan.style.display = 'inline-block';
                 spaceSpan.innerHTML = '&nbsp;';
-                emNode.appendChild(spaceSpan);
+                hl.appendChild(spaceSpan);
               }
             });
             hl.appendChild(emNode);
@@ -1010,14 +1004,13 @@ export default function TheStoryPage() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
-      document.body.style.overflow = '';
       if (ctx) ctx.revert();
       if (updateLenis) {
         gsap.ticker.remove(updateLenis);
       }
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
-  }, [mobileMenuOpen]);
+  }, []);
 
   /* ── PROGRESS BAR, INTERSECTION OBSERVER, & BLOB PARALLAX ── */
   useEffect(() => {
@@ -1114,15 +1107,10 @@ export default function TheStoryPage() {
     '--hscroll-card-shadow': isLightMode ? '0 20px 40px rgba(0,0,0,0.06)' : '0 30px 60px rgba(0,0,0,0.5)',
   };
 
-  const navLinks = [
-    { to: '/', label: 'How it works' },
-    { to: '/the-story', label: 'The Story' },
-    { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' }
-  ];
-
   return (
-    <div className="xj-story-container" style={themeVariables} ref={containerRef}>
+    <div className="font-sans">
+      <PublicNavbar />
+      <div className="xj-story-container" style={themeVariables} ref={containerRef}>
       <style>{STYLES}</style>
       {/* Progress Bar */}
       <div id="xj-progress-bar" />
@@ -1146,108 +1134,6 @@ export default function TheStoryPage() {
           />
         ))}
       </nav>
-
-      {/* ─── NAV ─── */}
-      <header>
-        <nav
-          style={{ transform: 'translateX(-50%)' }}
-          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl z-[100] h-16 flex items-center justify-between px-6 md:px-10 rounded-2xl md:rounded-full transition-all duration-300 ease-in-out ${isScrolled
-            ? 'bg-card/90 backdrop-blur-xl shadow-2xl'
-            : 'bg-card/75 backdrop-blur-md shadow-lg'
-            }`}
-        >
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]">
-            <Logo iconSize="w-7 h-7" />
-          </button>
-
-          <ul className="hidden lg:flex items-center gap-2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2">
-            {navLinks.map(({ to, label }) => (
-              <Motion.li
-                key={to}
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <NavLink
-                  to={to}
-                  className="text-sm font-semibold px-4 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all"
-                >
-                  {label}
-                </NavLink>
-              </Motion.li>
-            ))}
-          </ul>
-
-          <div className="flex items-center gap-3 z-[101]">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
-              aria-label="Toggle theme"
-            >
-              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
-            </button>
-            <div className="hidden lg:block">
-              <button
-                onClick={() => navigate('/login')}
-                className="cta active:scale-95 transition-all duration-300"
-              >
-                <span>Get Started</span>
-                <svg width="15px" height="10px" viewBox="0 0 13 10">
-                  <path d="M1,5 L11,5" />
-                  <polyline points="8 1 12 5 8 9" />
-                </svg>
-              </button>
-            </div>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-full border border-border/40 hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
-              aria-label="Toggle menu"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
-              </svg>
-            </button>
-          </div>
-        </nav>
-
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <Motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]"
-                aria-label="Close menu"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-
-              <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
-                {navLinks.map(({ to, label }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-3xl font-bold tracking-tight hover:text-primary transition-colors"
-                  >
-                    {label}
-                  </NavLink>
-                ))}
-                <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300 w-full max-w-[280px]">
-                  <span>Get started</span>
-                  <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
-                </button>
-              </div>
-            </Motion.div>
-          )}
-        </AnimatePresence>
-      </header>
 
       {/* ① HERO */}
       <section className="xj-hero" data-section="0">
@@ -1471,6 +1357,7 @@ export default function TheStoryPage() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

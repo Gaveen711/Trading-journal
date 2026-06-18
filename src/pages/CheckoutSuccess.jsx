@@ -31,14 +31,14 @@ export function CheckoutSuccess() {
         if (!user) throw new Error('Please sign in again to complete checkout.');
 
         const idToken = await user.getIdToken();
-        const resp = await fetch('/api/paddle-success', {
+        const resp = await fetch('/api/paypal-success', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
-            transactionId: token,
+            subscriptionId: token,
             planType,
             userId: user.uid,
           }),
@@ -55,13 +55,13 @@ export function CheckoutSuccess() {
           attempts++;
           if (attempts >= maxAttempts) {
             setStatus('done');
-            setMessage('Your payment is still being processed by Paddle. Your account will be upgraded to Pro automatically within a few minutes.');
+            setMessage('Your payment is still being processed by PayPal. Your account will be upgraded to Pro automatically within a few minutes.');
           } else {
             setTimeout(verifyTransaction, delay);
           }
         } else {
           setStatus('done');
-          setMessage('Thank you! Your account has been upgraded to Pro, and your 7-day free trial is now active.');
+          setMessage('Thank you! Your account has been upgraded to Pro.');
         }
       } catch (error) {
         if (!mounted) return;

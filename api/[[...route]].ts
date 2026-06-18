@@ -688,8 +688,129 @@ app.post('/init-user', async (c) => {
   }
 })
 
-// ── 6. Payment Transition ────────────────────────────────────────────────────
-// (Paddle removed, preparing for PayPal transition)
+// ── 6. PayPal Payment Integration ────────────────────────────────────────────
+app.post('/paypal-success', async (c) => {
+  let uid: string
+  try {
+    uid = await getUidFromContext(c)
+  } catch (err: any) {
+    console.error('[paypal-success] verifyIdToken failed:', err.message)
+    return c.json({ error: 'Invalid or expired token', details: 'Authentication verification failed' }, 401)
+  }
+
+  try {
+    const { subscriptionId, orderId, planType } = await c.req.json()
+    if (!subscriptionId && !orderId) {
+      return c.json({ error: 'Missing subscriptionId or orderId' }, 400)
+    }
+
+    const payPalClientId = process.env.PAYPAL_CLIENT_ID
+    const payPalClientSecret = process.env.PAYPAL_CLIENT_SECRET
+    const payPalMode = process.env.PAYPAL_MODE || 'sandbox'
+
+    let isVerified = false
+    let verificationDetail = 'Mock verification successful'
+
+    if (payPalClientId && payPalClientSecret) {
+      // Perform actual API verification with PayPal
+      const host = payPalMode === 'live' ? 'api-m.paypal.com' : 'api-m.sandbox.paypal.com'
+      const authHeader = 'Basic ' + Buffer.from(`${payPalClientId}:${payPalClientSecret}`).toString('base64')
+      
+      // 1. Get access token
+      const tokenResp = await fetch(`https://${host}/v1/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'grant_type=client_credentials'
+      })
+
+      if (!tokenResp.ok) {
+        const errBody = await tokenResp.text()
+        console.error('[paypal-success] failed to get oauth token:', errBody)
+        throw new Error('Failed to authenticate with PayPal API')
+      }
+
+      const tokenData = await tokenResp.json()
+      const accessToken = tokenData.access_token
+
+      // 2. Verify subscription or order details
+      if (subscriptionId) {
+        const subResp = await fetch(`https://${host}/v1/billing/subscriptions/${subscriptionId}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (subResp.ok) {
+          const subData = await subResp.json()
+          if (subData.status === 'ACTIVE' || subData.status === 'APPROVED') {
+            isVerified = true
+            verificationDetail = `Subscription status is ${subData.status}`
+          } else {
+            verificationDetail = `Subscription status is ${subData.status}`
+          }
+        } else {
+          console.error('[paypal-success] subscription fetch failed:', await subResp.text())
+        }
+      } else if (orderId) {
+        const orderResp = await fetch(`https://${host}/v2/checkout/orders/${orderId}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        if (orderResp.ok) {
+          const orderData = await orderResp.json()
+          if (orderData.status === 'COMPLETED' || orderData.status === 'APPROVED') {
+            isVerified = true
+            verificationDetail = `Order status is ${orderData.status}`
+          } else {
+            verificationDetail = `Order status is ${orderData.status}`
+          }
+        } else {
+          console.error('[paypal-success] order fetch failed:', await orderResp.text())
+        }
+      }
+    } else {
+      // Fallback: Mock success when keys are not shared/configured yet
+      console.warn('[paypal-success] PayPal API credentials not configured. Falling back to Mock Success Mode.')
+      isVerified = true
+    }
+
+    if (!isVerified) {
+      return c.json({ error: `PayPal verification failed: ${verificationDetail}` }, 400)
+    }
+
+    // Provision the Pro subscription in the database
+    const userDocRef = db.collection('users').doc(uid)
+    const durationDays = planType === 'pro_yearly' ? 365 : 30
+    const expiry = new Date()
+    expiry.setDate(expiry.getDate() + durationDays)
+
+    const updateData = {
+      plan: 'pro',
+      isTrial: false,
+      planExpiry: expiry.toISOString(),
+      paypalSubscriptionId: subscriptionId || null,
+      paypalOrderId: orderId || null,
+      updatedAt: now()
+    }
+
+    await userDocRef.set(updateData, { merge: true })
+    console.log(`[paypal-success] Upgraded user uid=${uid} to Pro via PayPal. Expiry=${expiry.toISOString()}`)
+
+    return c.json({
+      success: true,
+      plan: 'pro',
+      isTrial: false,
+      planExpiry: expiry.toISOString()
+    })
+  } catch (err: any) {
+    return handleRouteError('paypal-success', err, c)
+  }
+})
 
 
 

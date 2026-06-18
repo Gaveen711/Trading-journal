@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
-import { Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
 
 import { useToast } from './components/ToastContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -15,6 +15,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
 import CustomCursor from './components/CustomCursor';
+import { PayPalCheckoutModal } from './components/PayPalCheckoutModal';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -76,10 +77,11 @@ const PageLoader = ({ text = "Syncing Terminal" }) => (
 );
 
 function AuthenticatedApp({ user }) {
+  const navigate = useNavigate();
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showBrokerSyncUpsell, setShowBrokerSyncUpsell] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { plan, expiry, isTrial, isTrialExpired, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
+  const { plan, expiry, isTrial, isTrialExpired, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance, payPalCheckout, setPayPalCheckout } = useSubscription(user);
   const { updateBalance } = useWallet(user);
   const toast = useToast();
 
@@ -128,6 +130,21 @@ function AuthenticatedApp({ user }) {
       </ErrorBoundary>
 
       {showPricingModal && <PricingModal plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
+      <PayPalCheckoutModal
+        isOpen={payPalCheckout.isOpen}
+        planType={payPalCheckout.planType}
+        onClose={() => {
+          setPayPalCheckout({ isOpen: false, planType: 'pro_monthly' });
+          setShowPricingModal(false);
+          setShowBrokerSyncUpsell(false);
+        }}
+        onPaymentSuccess={(subscriptionId, planType) => {
+          setPayPalCheckout({ isOpen: false, planType: 'pro_monthly' });
+          setShowPricingModal(false);
+          setShowBrokerSyncUpsell(false);
+          navigate(`/checkout-success?token=${subscriptionId}&planType=${planType}`);
+        }}
+      />
       {showBrokerSyncUpsell && (
         <ProFeatureUpsellModal
           feature="broker-sync"
