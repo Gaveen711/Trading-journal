@@ -2572,71 +2572,51 @@ button.bg-rose-500 {
   box-shadow: 0 4px 12px hsl(var(--primary) / 0.25) !important;
 }
 
-/* Premium Save Trade Glowing Button */
+/* Premium Save Trade Button */
 .btn-save-glow {
-  border: 0.18em solid var(--glow-color) !important;
+  border: none !important;
   padding: 0.75em 1.5em !important;
-  color: var(--btn-text-color) !important;
+  color: #ffffff !important;
   font-size: 11px !important;
-  font-weight: 900 !important;
+  font-weight: 800 !important;
   text-transform: uppercase;
   letter-spacing: 0.15em;
   background-color: var(--btn-color) !important;
   border-radius: 12px !important;
   outline: none;
-  box-shadow: 0 0 0.8em 0.15em var(--glow-color),
-              0 0 2.5em 0.6em var(--glow-spread-color),
-              inset 0 0 0.5em 0.15em var(--glow-color) !important;
-  text-shadow: 0 0 0.25em var(--glow-color);
+  box-shadow: 0 4px 12px var(--glow-spread-color) !important;
+  text-shadow: none !important;
   position: relative;
   transition: all 0.3s !important;
   cursor: pointer;
 }
 
 .btn-save-glow::after {
-  pointer-events: none;
-  content: "";
-  position: absolute;
-  top: 110%;
-  left: 0;
-  height: 80%;
-  width: 100%;
-  background-color: var(--glow-spread-color);
-  filter: blur(1.5em);
-  opacity: 0.6;
-  transform: perspective(1.5em) rotateX(35deg) scale(1, 0.6);
-  transition: all 0.3s;
+  display: none !important;
 }
 
 .btn-save-glow:hover {
-  color: var(--btn-color) !important;
-  background-color: var(--glow-color) !important;
-  box-shadow: 0 0 0.8em 0.15em var(--glow-color),
-              0 0 3em 1.2em var(--glow-spread-color),
-              inset 0 0 0.5em 0.15em var(--glow-color) !important;
+  color: #ffffff !important;
+  background-color: var(--btn-hover-color) !important;
+  box-shadow: 0 6px 16px var(--glow-spread-color) !important;
 }
 
 .btn-save-glow:active {
   transform: scale(0.98);
-  box-shadow: 0 0 0.5em 0.15em var(--glow-color),
-              0 0 1.8em 1.2em var(--glow-spread-color),
-              inset 0 0 0.4em 0.15em var(--glow-color) !important;
 }
 
 /* Buy Mode variables (Emerald Green) */
 .btn-save-glow-buy {
-  --glow-color: rgb(52, 211, 153);
-  --glow-spread-color: rgba(16, 185, 129, 0.65);
-  --btn-color: rgb(6, 78, 59);
-  --btn-text-color: rgb(167, 243, 208);
+  --glow-spread-color: rgba(16, 185, 129, 0.2);
+  --btn-color: rgb(16, 185, 129);
+  --btn-hover-color: rgb(5, 150, 105);
 }
 
 /* Sell Mode variables (Rose Red) */
 .btn-save-glow-sell {
-  --glow-color: rgb(251, 113, 133);
-  --glow-spread-color: rgba(244, 63, 94, 0.65);
-  --btn-color: rgb(136, 19, 55);
-  --btn-text-color: rgb(254, 205, 211);
+  --glow-spread-color: rgba(244, 63, 94, 0.2);
+  --btn-color: rgb(244, 63, 94);
+  --btn-hover-color: rgb(225, 29, 72);
 }
 
 /* Disabled/Locked state */
@@ -2646,9 +2626,9 @@ button.bg-rose-500 {
   pointer-events: none;
   box-shadow: none !important;
   text-shadow: none !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  background-color: rgb(30, 30, 35) !important;
-  color: rgba(255, 255, 255, 0.3) !important;
+  border: none !important;
+  background-color: rgba(120, 120, 120, 0.15) !important;
+  color: rgba(120, 120, 120, 0.5) !important;
 }
 .btn-save-glow:disabled::after {
   display: none;
@@ -2724,4 +2704,11 @@ button.bg-rose-500 {
 }
 .btn-slide-reveal:disabled::before {
   display: none;
+}
+
+/* Prevent the main left sidebar from animating (moving/shrinking/translating) on hover or active click states */
+aside.apple-glass-panel,
+aside.apple-glass-panel:hover,
+aside.apple-glass-panel:active {
+  transform: none !important;
 }

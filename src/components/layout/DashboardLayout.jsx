@@ -18,7 +18,8 @@ import {
   LightningFill,
   LockFill,
   Palette,
-  ExclamationTriangleFill
+  ExclamationTriangleFill,
+  Bell
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -39,6 +40,10 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const toast = useToast();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showDesktopProfile, setShowDesktopProfile] = useState(false);
+  const [showDesktopNotifications, setShowDesktopNotifications] = useState(false);
+  const desktopProfileRef = useRef(null);
+  const desktopNotifRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
     const saved = localStorage.getItem('xau-sidebar-expanded');
@@ -46,6 +51,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   });
 
   const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
+  const formattedTime = new Date(currentTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   
   // Profile picture is a simple Apple emoji
 
@@ -65,7 +71,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const computedIsTrialExpired = hasTrial && (!expiry || new Date(expiry) < new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -154,6 +160,12 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setShowProfileMenu(false);
+      }
+      if (desktopProfileRef.current && !desktopProfileRef.current.contains(event.target)) {
+        setShowDesktopProfile(false);
+      }
+      if (desktopNotifRef.current && !desktopNotifRef.current.contains(event.target)) {
+        setShowDesktopNotifications(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -311,63 +323,210 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           </div>
         )}
 
-        {/* TRIAL WARNING / EXPIRED CARD */}
-        {hasTrial && (
-          <div className={`mt-auto w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'mt-4' : 'mt-2'}`}>
-            {isSidebarExpanded ? (
-              computedIsTrialActive ? (
-                <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex flex-col gap-2 relative overflow-hidden shadow-sm">
-                  <div className="flex gap-2">
-                    <LightningFill className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <div className="text-[11px] font-black uppercase tracking-wider text-primary">
-                      Trial Active
+        {/* SIDEBAR FOOTER SECTION */}
+        <div className="mt-auto w-full flex flex-col gap-3">
+          {/* TRIAL WARNING / EXPIRED CARD */}
+          {hasTrial && (
+            <div className="w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+              {isSidebarExpanded ? (
+                computedIsTrialActive ? (
+                  <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex flex-col gap-2 relative overflow-hidden shadow-sm">
+                    <div className="flex gap-2">
+                      <LightningFill className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <div className="text-[11px] font-black uppercase tracking-wider text-primary">
+                        Trial Active
+                      </div>
                     </div>
+                    <p className="text-[11.5px] leading-relaxed font-semibold text-foreground/80 m-0">
+                      Your 7-day trial is active with sync option. Terminal locks in: <strong className="text-primary">{trialTimeLeft}</strong>
+                    </p>
+                    <button
+                      onClick={() => setShowPricingModal?.(true)}
+                      className="w-full mt-1.5 py-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                    >
+                      Upgrade To Pro
+                    </button>
                   </div>
-                  <p className="text-[11.5px] leading-relaxed font-semibold text-foreground/80 m-0">
-                    Your 7-day trial is active with sync option. Terminal locks in: <strong className="text-primary">{trialTimeLeft}</strong>
-                  </p>
-                  <button
-                    onClick={() => setShowPricingModal?.(true)}
-                    className="w-full mt-1.5 py-1.5 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
-                  >
-                    Upgrade To Pro
-                  </button>
-                </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex flex-col gap-2 relative overflow-hidden shadow-sm">
+                    <div className="flex gap-2">
+                      <ExclamationTriangleFill className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                        Terminal Locked
+                      </div>
+                    </div>
+                    <p className="text-[11.5px] leading-relaxed font-semibold text-amber-700/95 dark:text-amber-200/90 m-0">
+                      Your 7-day trial has expired. Upgrade to Premium or wait <strong className="text-amber-600 dark:text-amber-400">{renewCountdown}</strong> for access to renew.
+                    </p>
+                    <button
+                      onClick={() => setShowPricingModal?.(true)}
+                      className="w-full mt-1.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                    >
+                      Upgrade to Premium
+                    </button>
+                  </div>
+                )
               ) : (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex flex-col gap-2 relative overflow-hidden shadow-sm">
-                  <div className="flex gap-2">
-                    <ExclamationTriangleFill className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <div className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                      Terminal Locked
+                <button
+                  onClick={() => setShowPricingModal?.(true)}
+                  className={`w-12 h-12 mx-auto rounded-xl border flex items-center justify-center transition-all shadow-sm ${
+                    computedIsTrialActive 
+                      ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20' 
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20'
+                  }`}
+                  title={computedIsTrialActive ? `Trial Active - Locks in ${trialTimeLeft}` : `Terminal Locked - Renews in ${renewCountdown}`}
+                >
+                  {computedIsTrialActive ? <LightningFill className="w-5 h-5" /> : <ExclamationTriangleFill className="w-5 h-5" />}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* DESKTOP PROFILE & NOTIFICATIONS CARD */}
+          <div className={`w-full relative z-40 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? '' : 'flex flex-col items-center'}`}>
+            <div className={`flex items-center justify-between bg-card/45 backdrop-blur-md border border-border/20 rounded-2xl w-full p-2 ${
+              isSidebarExpanded ? 'flex-row' : 'flex-col gap-3'
+            }`}>
+              {/* Profile Identity */}
+              <div className="flex items-center gap-2 relative" ref={desktopProfileRef}>
+                <div
+                  onClick={() => setShowDesktopProfile(!showDesktopProfile)}
+                  className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 transition-all cursor-pointer shadow-sm overflow-hidden select-none"
+                >
+                  <span className="text-base">🍎</span>
+                </div>
+                
+                {isSidebarExpanded && (
+                  <div className="flex flex-col text-left">
+                    <span className="text-[11px] font-bold text-foreground capitalize flex items-center gap-1">
+                      {displayName}
+                      <svg className="w-2.5 h-2.5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    </span>
+                    <span className="text-[8px] font-black uppercase text-primary tracking-[0.05em] bg-primary/10 px-1.5 py-0.5 rounded text-center mt-0.5 w-max flex items-center gap-1 font-mono">
+                      {formattedTime}
+                    </span>
+                  </div>
+                )}
+
+                {showDesktopProfile && (
+                  <div className={`absolute z-50 w-60 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in zoom-in-95 ${
+                    isSidebarExpanded ? 'bottom-[calc(100%+12px)] left-0' : 'bottom-0 left-[calc(100%+12px)]'
+                  }`}>
+                    <div className="flex items-center gap-3 pb-3 border-b border-border/10">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden select-none">
+                        <span className="text-xl">🍎</span>
+                      </div>
+                      <div className="flex flex-col text-left min-w-0">
+                        <span className="text-xs font-bold text-foreground truncate capitalize">{displayName}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">{auth.currentUser?.email}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        onClick={() => { setShowDesktopProfile(false); setShowThemeSelector?.(true); }}
+                        className="flex items-center justify-between w-full p-2 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Palette className="w-3.5 h-3.5 text-primary" />
+                          Color Accent
+                        </span>
+                        <span className="text-[8px] font-black uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Change</span>
+                      </button>
+
+                      <div className="flex items-center justify-between w-full p-2 rounded-xl hover:bg-muted/50 text-foreground transition-colors text-[10px] font-black uppercase tracking-wider">
+                        <span className="flex items-center gap-2">
+                          {isLightMode ? (
+                            <SunFill className="w-3.5 h-3.5 text-primary" />
+                          ) : (
+                            <MoonStarsFill className="w-3.5 h-3.5 text-primary" />
+                          )}
+                          Dark Theme
+                        </span>
+                        <label htmlFor="check-desktop-profile" className="theme-switch-toggle" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
+                          <input id="check-desktop-profile" type="checkbox" className="theme-switch-input" checked={!isLightMode} onChange={toggleTheme} />
+                          <div className="theme-switch-icon theme-switch-icon--moon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={12} height={12}>
+                              <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="theme-switch-icon theme-switch-icon--sun">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={12} height={12}>
+                              <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                            </svg>
+                          </div>
+                        </label>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setShowDesktopProfile(false);
+                          window.open('https://www.paypal.com/myaccount/billing/subscriptions', '_blank');
+                        }}
+                        className="flex items-center gap-2 w-full p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                        <span>Subscription</span>
+                      </button>
+
+                      <button
+                        onClick={() => { setShowDesktopProfile(false); localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
+                        className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left mt-1 border-t border-border/10 pt-2"
+                      >
+                        <BoxArrowRight className="w-3.5 h-3.5 shrink-0" />
+                        <span>Logout</span>
+                      </button>
                     </div>
                   </div>
-                  <p className="text-[11.5px] leading-relaxed font-semibold text-amber-700/95 dark:text-amber-200/90 m-0">
-                    Your 7-day trial has expired. Upgrade to Premium or wait <strong className="text-amber-600 dark:text-amber-400">{renewCountdown}</strong> for access to renew.
-                  </p>
-                  <button
-                    onClick={() => setShowPricingModal?.(true)}
-                    className="w-full mt-1.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
-                  >
-                    Upgrade to Premium
-                  </button>
-                </div>
-              )
-            ) : (
-              <button
-                onClick={() => setShowPricingModal?.(true)}
-                className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
-                  computedIsTrialActive 
-                    ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20' 
-                    : 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20'
-                }`}
-                title={computedIsTrialActive ? `Trial Active - Locks in ${trialTimeLeft}` : `Terminal Locked - Renews in ${renewCountdown}`}
-              >
-                {computedIsTrialActive ? <LightningFill className="w-5 h-5" /> : <ExclamationTriangleFill className="w-5 h-5" />}
-              </button>
-            )}
-          </div>
-        )}
+                )}
+              </div>
 
+              {/* Notification Bell */}
+              <div className="relative" ref={desktopNotifRef}>
+                <button
+                  onClick={() => setShowDesktopNotifications(!showDesktopNotifications)}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-muted/50 border border-border/40 hover:bg-muted text-muted-foreground transition-all relative shadow-sm"
+                >
+                  <Bell size={15} />
+                  <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-rose-500 border border-card"></span>
+                </button>
+
+                {showDesktopNotifications && (
+                  <div className={`absolute z-50 w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95 ${
+                    isSidebarExpanded ? 'bottom-[calc(100%+12px)] right-0' : 'bottom-0 left-[calc(100%+12px)]'
+                  }`}>
+                    <div className="flex items-center justify-between border-b border-border/10 pb-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notifications</span>
+                      <span className="text-[9px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded">2 New</span>
+                    </div>
+                    <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto custom-scrollbar">
+                      <div className="flex gap-2.5 items-start p-1.5 hover:bg-muted/50 rounded-xl transition-colors cursor-pointer">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                          <span className="text-blue-500 text-xs">🚀</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold text-foreground">Welcome to XauJournal</p>
+                          <p className="text-[9px] text-muted-foreground leading-snug">Your premium trading journey begins now.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2.5 items-start p-1.5 hover:bg-muted/50 rounded-xl transition-colors cursor-pointer">
+                        <div className="w-7 h-7 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                          <span className="text-amber-500 text-xs">⚠️</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold text-foreground">Complete Setup</p>
+                          <p className="text-[9px] text-muted-foreground leading-snug">Connect your MT4/MT5 account to auto-sync trades.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* MAIN CONTAINER */}
