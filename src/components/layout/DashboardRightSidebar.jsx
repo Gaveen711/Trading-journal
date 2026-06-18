@@ -104,7 +104,6 @@ export function DashboardRightSidebar({
 
   // ── TAB 1: BASIC – Order Form State ────────────────────────────────────────
   const [direction, setDirection] = useState('LONG');
-  const [orderType, setOrderType] = useState('Market');
   const [entry, setEntry]         = useState('');
   const [exit,  setExit]          = useState('');
   const [lots,  setLots]          = useState('0.10');
@@ -359,19 +358,7 @@ export function DashboardRightSidebar({
           </div>
         </div>
 
-        {/* ── Order-type sub-tabs ─────────────────────────────────────────── */}
-        <div className="flex gap-4 border-b border-border/10 px-5 mt-2 shrink-0">
-          {['Market', 'Limit', 'Stop'].map((type) => (
-            <button
-              key={type}
-              disabled={showLockTimer}
-              className={`text-[11px] font-black uppercase tracking-widest transition-colors pb-1.5 border-b-2 -mb-[2px] disabled:opacity-50 disabled:cursor-not-allowed ${orderType === type ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground/80 border-transparent'}`}
-              onClick={() => setOrderType(type)}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
+
 
         {/* ── Feature Tabs ────────────────────────────────────────────────── */}
         <div className="flex gap-0.5 border-b border-border/10 px-4 mt-1.5 shrink-0">

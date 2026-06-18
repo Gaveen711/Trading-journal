@@ -1052,7 +1052,7 @@ export function CurrencyConverter() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-10 flex items-center justify-center rounded-xl font-black uppercase tracking-widest text-[9px] bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98] dark:bg-white dark:text-black dark:hover:bg-zinc-100 transition-all duration-300 mt-2 shadow-sm"
+          className="w-full h-10 flex items-center justify-center rounded-xl font-black uppercase tracking-widest text-[9px] bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all duration-300 mt-2 shadow-sm"
         >
           <span>{loading ? 'Converting...' : 'Convert'}</span>
         </button>
