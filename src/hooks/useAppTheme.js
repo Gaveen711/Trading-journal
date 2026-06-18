@@ -12,11 +12,41 @@ export function ThemeProvider({ children }) {
     return localStorage.getItem('xau-template') || 'sage-modern';
   });
 
+  const [pathname, setPathname] = useState(window.location.pathname);
   const isInitialMount = useRef(true);
+
+  // ── Track location changes for theme scoping ────────────────────────────
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setPathname(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function(...args) {
+      originalPushState.apply(this, args);
+      handleLocationChange();
+    };
+
+    window.history.replaceState = function(...args) {
+      originalReplaceState.apply(this, args);
+      handleLocationChange();
+    };
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, []);
 
   // ── Apply theme & template to the DOM ──────────────────────────────────
   useEffect(() => {
     const root = window.document.documentElement;
+    const isAppPath = pathname.startsWith('/app');
 
     let css;
     if (isInitialMount.current) {
@@ -39,19 +69,29 @@ export function ThemeProvider({ children }) {
       root.classList.add('theme-toggling');
     }
 
-    if (isLightMode) {
-      root.classList.remove('dark');
-    } else {
-      root.classList.add('dark');
-    }
-
-    // Update template classes on the HTML element
-    root.classList.forEach(className => {
-      if (className.startsWith('theme-') && className !== 'theme-toggling') {
-        root.classList.remove(className);
+    if (isAppPath) {
+      if (isLightMode) {
+        root.classList.remove('dark');
+      } else {
+        root.classList.add('dark');
       }
-    });
-    root.classList.add(`theme-${currentTemplate}`);
+
+      // Update template classes on the HTML element
+      root.classList.forEach(className => {
+        if (className.startsWith('theme-') && className !== 'theme-toggling') {
+          root.classList.remove(className);
+        }
+      });
+      root.classList.add(`theme-${currentTemplate}`);
+    } else {
+      // On landing pages/public routes, force standard dark mode and no custom template accent
+      root.classList.add('dark');
+      root.classList.forEach(className => {
+        if (className.startsWith('theme-') && className !== 'theme-toggling') {
+          root.classList.remove(className);
+        }
+      });
+    }
 
     localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
     localStorage.setItem('xau-template', currentTemplate);
@@ -66,7 +106,7 @@ export function ThemeProvider({ children }) {
         root.classList.remove('theme-toggling');
       });
     }
-  }, [isLightMode, currentTemplate]);
+  }, [isLightMode, currentTemplate, pathname]);
 
   // ── Cross-tab sync via storage event ───────────────────────────────────
   useEffect(() => {

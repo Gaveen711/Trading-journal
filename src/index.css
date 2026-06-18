@@ -2737,3 +2737,13 @@ aside.apple-glass-panel:active {
 .dark .desktop-profile-card:active {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

@@ -361,7 +361,7 @@ export function DashboardRightSidebar({
 
 
         {/* ── Feature Tabs ────────────────────────────────────────────────── */}
-        <div className="flex gap-0.5 border-b border-border/10 px-4 mt-1.5 shrink-0">
+        <div className="flex gap-0.5 border-b border-border/10 px-4 mt-1.5 shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap scroll-smooth">
           {TABS.map((tab) => {
             const badge = tab.id === 'risk' ? riskFilled : tab.id === 'mood' ? moodFilled : tab.id === 'advanced' ? advancedFilled : 0;
             const IconComponent = tab.icon;
@@ -369,7 +369,7 @@ export function DashboardRightSidebar({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group shrink-0 ${
                   activeTab === tab.id
                     ? 'text-foreground border-primary'
                     : 'text-muted-foreground hover:text-foreground/70 border-transparent'

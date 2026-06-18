@@ -62,7 +62,53 @@ export function LiveMarketWidget() {
       });
     }, 1000);
 
-    return () => window.clearInterval(timer);
+  }, []);
+
+  // Fetch actual prices on mount to sync simulated prices with TradingView charts
+  useEffect(() => {
+    const fetchRealPrices = async () => {
+      const assets = [
+        { id: 'xauusd', symbol: 'XAU' },
+        { id: 'xagusd', symbol: 'XAG' },
+        { id: 'xptusd', symbol: 'XPT' },
+        { id: 'xpdusd', symbol: 'XPD' }
+      ];
+      try {
+        const results = await Promise.all(
+          assets.map(async (asset) => {
+            const res = await fetch(`https://api.gold-api.com/price/${asset.symbol}`);
+            if (res.ok) {
+              const data = await res.json();
+              return { id: asset.id, price: Number(data.price) };
+            }
+            return null;
+          })
+        );
+
+        setTickers(prev => {
+          const next = { ...prev };
+          results.forEach(res => {
+            if (res && res.price) {
+              const basePrice = res.price;
+              const currentHistory = [...next[res.id].history];
+              const historyMultiplier = basePrice / next[res.id].price;
+              const newHistory = currentHistory.map(h => Number((h * historyMultiplier).toFixed(3)));
+              
+              next[res.id] = {
+                ...next[res.id],
+                price: basePrice,
+                history: newHistory
+              };
+            }
+          });
+          return next;
+        });
+      } catch (err) {
+        console.error('Error fetching real-time prices from gold-api.com:', err);
+      }
+    };
+
+    fetchRealPrices();
   }, []);
 
   // Helper to generate SVG sparkline path
