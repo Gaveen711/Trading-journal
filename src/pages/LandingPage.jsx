@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion as Motion, useScroll, useTransform, useSpring, useInView, useMotionValueEvent } from 'framer-motion';
+import { AnimatePresence, motion as Motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -402,9 +402,8 @@ function AnimatedText({ text, className = '' }) {
 export function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { isLightMode, toggleTheme } = useAppTheme();
+  const { isLightMode } = useAppTheme();
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [isHoveredButton, setIsHoveredButton] = useState(false);
   const [isMobileLanding, setIsMobileLanding] = useState(false);
@@ -504,12 +503,7 @@ export function LandingPage() {
     }
   }, [location.hash]);
 
-  useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileMenuOpen]);
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -520,12 +514,7 @@ export function LandingPage() {
     visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 90, damping: 17, mass: 1 } },
   };
 
-  const navLinks = [
-    { to: '/', label: 'How it works' },
-    { to: '/the-story', label: 'The Story' },
-    { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' },
-  ];
+
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">
@@ -719,7 +708,6 @@ export function LandingPage() {
               <div className="hidden md:block absolute top-20 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
 
               {STEPS.map((step, i) => {
-                const pastelColors = ['rgba(167,139,250,0.12)', 'rgba(251,113,133,0.12)', 'rgba(52,211,153,0.12)'];
                 const accentColors = ['#a78bfa', '#fb7185', '#34d399'];
                 return (
                   <div

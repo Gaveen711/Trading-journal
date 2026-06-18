@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';

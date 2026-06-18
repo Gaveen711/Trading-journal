@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
+import { MoonStarsFill, SunFill, Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
 import { PublicNavbar } from '../components/PublicNavbar';
 import gsap from 'gsap';
