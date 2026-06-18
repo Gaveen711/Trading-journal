@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Bell, X, Settings, ChevronDown, Palette, ClipboardList, Shield, Brain, Cpu, Lightbulb } from 'lucide-react';
-import { auth } from '../../firebase';
+import { auth, storage } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
 import { submitTrade, getRemainingFreeTrades } from '../../services/tradeService';
 import { CurrencyConverter } from '../CurrencyConverter';
@@ -13,7 +13,13 @@ import {
   EmojiNeutralFill,
   EmojiSmileFill,
   EmojiSunglassesFill,
+  CloudArrowUp,
+  LockFill,
+  Trash,
 } from 'react-bootstrap-icons';
+import { requireProFeature } from '../../services/featureGate';
+import { ImageViewerModal } from '../ImageViewerModal';
+import { AnimatePresence } from 'framer-motion';
 
 import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
 
@@ -108,6 +114,10 @@ export function DashboardRightSidebar({
   const [session,  setSession]    = useState('');
   const [strategy, setStrategy]   = useState('');
   const [saving, setSaving]       = useState(false);
+  const [screenshots, setScreenshots] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeImageUrl, setActiveImageUrl] = useState(null);
 
   // ── TAB 2: RISK – State ────────────────────────────────────────────────────
   const [riskPercent,    setRiskPercent]    = useState('1');
@@ -155,6 +165,70 @@ export function DashboardRightSidebar({
   }, [entry, sl, tp]);
 
   const remainingFreeTrades = getRemainingFreeTrades(trades);
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (!requireProFeature(plan, setShowPricingModal, toast, 'attach analysis screenshots')) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    const uploadedUrls = [];
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      toast?.('Please sign in to upload images.', 'error');
+      setUploading(false);
+      return;
+    }
+
+    const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
+
+    try {
+      let completedCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uniqueName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${file.name}`;
+        const storageRef = ref(storage, `users/${userId}/trades/${uniqueName}`);
+        
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const totalProgress = ((completedCount + fileProgress / 100) / files.length) * 100;
+              setUploadProgress(Math.round(totalProgress));
+            },
+            (err) => {
+              console.error('File upload error in sidebar:', err);
+              reject(err);
+            },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              uploadedUrls.push(url);
+              completedCount++;
+              resolve();
+            }
+          );
+        });
+      }
+
+      setScreenshots(prev => [...prev, ...uploadedUrls]);
+      toast?.('Images uploaded successfully.', 'success');
+    } catch (err) {
+      console.error('Upload error in sidebar:', err);
+      toast?.('Failed to upload some images. Please try again.', 'error');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const removeScreenshot = (indexToRemove) => {
+    setScreenshots(prev => prev.filter((_, i) => i !== indexToRemove));
+  };
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleLogTrade = async () => {
@@ -204,6 +278,7 @@ export function DashboardRightSidebar({
       marketStructure,
       confluenceFactors,
       autoRR:            autoRR ? parseFloat(autoRR) : null,
+      screenshots,
     };
 
     try {
@@ -215,6 +290,7 @@ export function DashboardRightSidebar({
         setRiskPercent('1'); setMaxDailyLoss(''); setMaxDailyActive(false);
         setPreTradeMood(''); setConfidence(0); setConviction(''); setPostReflect('');
         setTimeframe(''); setSetupGrade(''); setMarketStructure([]); setConfluenceFactors([]);
+        setScreenshots([]);
         setActiveTab('basic');
         toast(`Trade logged: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : 'error');
       } else {
@@ -508,6 +584,75 @@ export function DashboardRightSidebar({
                   placeholder="Why did you take this trade?" rows={4} disabled={showLockTimer}
                   className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+              </div>
+
+              {/* Screenshots Upload & Edit Zone */}
+              <div className="space-y-1">
+                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1 flex justify-between">
+                  <span>Analysis Screenshots</span>
+                  {plan !== 'pro' && <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
+                </label>
+
+                {plan === 'pro' ? (
+                  <div className="space-y-2">
+                    <div className="relative border border-dashed border-border/20 hover:border-primary/50 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 bg-muted/10 group hover:bg-muted/20">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploading || showLockTimer}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <CloudArrowUp className="w-5 h-5 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                      <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-widest text-center">
+                        {uploading ? `Uploading (${uploadProgress}%)...` : 'Drag & Drop or Click to Add'}
+                      </span>
+                      <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">PNG, JPG, WEBP (Max 5MB)</span>
+                    </div>
+
+                    {uploading && (
+                      <div className="h-1 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
+                        <div 
+                          className="bg-primary h-full rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {screenshots && screenshots.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {screenshots.map((url, i) => (
+                          <div key={i} className="relative w-12 h-12 rounded-lg border border-border/50 overflow-hidden bg-muted group/thumb shadow-sm">
+                            <img 
+                              src={url} 
+                              alt="screenshot preview" 
+                              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity" 
+                              onClick={() => setActiveImageUrl(url)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeScreenshot(i)}
+                              className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-destructive/85 text-white flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow active:scale-90"
+                              title="Delete screenshot"
+                            >
+                              <Trash className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => { requireProFeature(plan, setShowPricingModal, toast, 'attach analysis screenshots'); }}
+                    className="border border-dashed border-border/40 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-muted/5 opacity-60 hover:opacity-100 transition-opacity"
+                  >
+                    <LockFill className="w-5 h-5 text-muted-foreground/40" />
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest text-center">Attach Analysis Screenshots</span>
+                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 mt-1">Unlock with Pro</span>
+                  </div>
+                )}
               </div>
 
               {/* Pip Count Live Display */}
@@ -842,6 +987,13 @@ export function DashboardRightSidebar({
       <div className="w-full shrink-0 pb-6 relative z-10">
         <CurrencyConverter />
       </div>
+
+      {/* Lightbox for zooming screenshots */}
+      <AnimatePresence>
+        {activeImageUrl && (
+          <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
