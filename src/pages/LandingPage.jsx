@@ -269,89 +269,64 @@ function Counter({ target, suffix = '', prefix = '' }) {
 /* ─── Story chapter with scroll reveal ─── */
 function StoryChapter({ chapter, label, headline, sub, accent, glow, dotColor, index }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: false, margin: '-20% 0px -20% 0px' });
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
+  
   return (
     <Motion.div
       ref={ref}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: inView ? 1 : 0 }}
-      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-      className="story-chapter-card relative min-h-[35vh] flex flex-col justify-center py-12 md:py-16"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="story-chapter-card relative w-full flex flex-col justify-center items-start text-left"
     >
-      {/* Soft ambient glow */}
-      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen transform pointer-events-none">
-        <Motion.div
-          initial={{ opacity: 0, x: index % 2 === 0 ? '-20%' : '20%', scale: 0.95 }}
-          animate={{
-            opacity: inView ? 0.8 : 0,
-            x: inView ? '0%' : (index % 2 === 0 ? '-20%' : '20%'),
-            scale: inView ? 1 : 0.95
-          }}
-          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full h-full"
-          style={{
-            background: `radial-gradient(ellipse 60% 50% at ${index % 2 === 0 ? '0%' : '100%'} 50%, ${glow}, transparent)`,
+      {/* Background Glow */}
+      <Motion.div 
+        className="absolute inset-0 pointer-events-none"
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 0.8, scale: 1 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        <div 
+          className="absolute inset-0 blur-3xl rounded-full"
+          style={{ 
+            background: `radial-gradient(circle at center, ${glow} 0%, transparent 70%)`,
+            transform: 'translateZ(0)'
           }}
         />
-      </div>
+      </Motion.div>
 
-      <div className={`relative flex flex-col ${index % 2 === 0 ? 'items-start text-left' : 'items-start text-left md:items-end md:text-right'} max-w-2xl ${index % 2 === 0 ? 'ml-0' : 'ml-0 md:ml-auto'}`}>
-        <Motion.div
-          initial={{ opacity: 0, x: isMobile ? 0 : (index % 2 === 0 ? -40 : 40), y: isMobile ? 20 : 0 }}
-          animate={{ opacity: inView ? 1 : 0, x: inView ? 0 : (isMobile ? 0 : (index % 2 === 0 ? -40 : 40)), y: inView ? 0 : (isMobile ? 20 : 0) }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-3 mb-6"
-        >
-          <div className="relative w-5 h-5 flex items-center justify-center shrink-0">
-            <div
-              className="w-2.5 h-2.5 rounded-full shadow-sm transition-all duration-500"
-              style={{ backgroundColor: dotColor, boxShadow: `0 0 10px ${dotColor}40` }}
-            />
+      <div className="relative z-10 w-full max-w-xl mx-auto md:mx-0">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-3 bg-secondary/50 backdrop-blur-sm border border-border/50 px-3 py-1.5 rounded-full">
+            <div className="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ backgroundColor: dotColor, boxShadow: `0 0 12px ${dotColor}` }} />
+            <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground">{chapter}</span>
           </div>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: dotColor }}>
-            Chapter {chapter}
-          </div>
-          <div className="h-px w-10 bg-border/50" />
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
-            {label}
-          </div>
-        </Motion.div>
+          <div className="h-px bg-border/50 flex-1" />
+          <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground/60 hidden sm:block">{label}</span>
+        </div>
 
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 30 }}
-          transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        <Motion.h2 
+          className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground mb-6"
         >
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.08] tracking-tight mb-5 text-foreground">
-            {headline}
-          </h2>
-        </Motion.div>
-
-        <Motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 20 }}
-          transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="text-sm md:text-lg text-muted-foreground leading-relaxed font-medium"
-        >
+          {headline}
+        </Motion.h2>
+        
+        <p className="text-xl md:text-2xl font-medium text-muted-foreground mb-6 leading-relaxed">
           {sub}
-        </Motion.p>
+        </p>
 
-        <Motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: inView ? 1 : 0 }}
-          transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          style={{ transformOrigin: index % 2 === 0 ? 'left' : 'right' }}
-          className={`mt-8 h-px w-20 bg-gradient-to-r ${accent}`}
-        />
+        <div className="text-lg text-muted-foreground/80 leading-relaxed max-w-lg relative pl-5">
+          <Motion.span 
+            className="absolute left-0 top-0 bottom-0 w-1 rounded-full"
+            style={{ backgroundColor: dotColor }}
+            initial={{ scaleY: 0, originY: 0 }}
+            whileInView={{ scaleY: 1 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+          />
+          {accent}
+        </div>
       </div>
     </Motion.div>
   );
@@ -380,7 +355,7 @@ function AnimatedText({ text, className = '' }) {
     visible: { y: "0%", transition: { ease: [0.16, 1, 0.3, 1], duration: 0.8 } }
   };
   return (
-    <span className={`inline-flex flex-wrap justify-center pb-2 ${className}`}>
+    <span className={`inline-flex flex-wrap pb-2 ${className}`}>
       {text.split(' ').map((word, i, arr) => (
         <span key={i} className={`inline-block whitespace-nowrap overflow-hidden ${i < arr.length - 1 ? 'mr-[0.25em]' : ''}`}>
           {word.split('').map((char, j) => (
@@ -397,6 +372,186 @@ function AnimatedText({ text, className = '' }) {
     </span>
   );
 }
+
+/* ─── Mock Trading Dashboard UI for Hero ─── */
+function MockDashboardUI({ isLightMode }) {
+  return (
+    <div className="relative w-full max-w-[580px] lg:max-w-none aspect-[1.32] group select-none">
+      {/* Dynamic ambient radial gradients under/behind mockup */}
+      <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-primary/30 via-purple-500/25 to-pink-500/20 blur-2xl opacity-60 group-hover:opacity-75 transition-all duration-700 pointer-events-none" />
+
+      {/* Floating tag badges */}
+      <Motion.div
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -top-5 -right-3 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 backdrop-blur-md text-emerald-400 text-[10px] font-black tracking-wider uppercase z-30 shadow-md flex items-center gap-1.5"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+        MT5 Live Synced
+      </Motion.div>
+
+      <Motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute -bottom-4 -left-4 px-3 py-2 rounded-xl bg-primary/10 border border-primary/25 backdrop-blur-md text-foreground z-30 shadow-md flex items-center gap-2"
+      >
+        <div className="w-4 h-4 rounded bg-primary/20 flex items-center justify-center text-primary text-[9px] font-black">2.8</div>
+        <div className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Profit Factor</div>
+      </Motion.div>
+
+      {/* Main glassomorphic terminal frame */}
+      <Motion.div
+        whileHover={{ y: -3, rotateX: 1.5, rotateY: -1.5 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full h-full rounded-[2rem] border border-border/40 bg-card/65 dark:bg-card/45 backdrop-blur-xl shadow-2xl p-4 overflow-hidden flex flex-col will-change-transform"
+      >
+        {/* Mock Title Bar */}
+        <div className="flex items-center justify-between border-b border-border/30 pb-3 mb-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+            </div>
+            <div className="h-4 w-px bg-border/30 mx-1" />
+            <div className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/60">XAU Journal v2.0</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-foreground/[0.03] border border-border/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span className="text-[9px] font-bold text-foreground">XAUUSD $2,342.15</span>
+              <span className="text-[9px] font-black text-emerald-400">+0.85%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+              <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Connected</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Workspace panel */}
+        <div className="flex-1 flex gap-4 min-h-0">
+          {/* Sidebar */}
+          <div className="w-[110px] md:w-[130px] border-r border-border/25 pr-3 flex flex-col gap-1 shrink-0">
+            <div className="px-2 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              Dashboard
+            </div>
+            <div className="px-2 py-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.02] text-[10px] font-bold flex items-center gap-2 transition-colors cursor-pointer">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />
+              Playbook
+            </div>
+            <div className="px-2 py-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.02] text-[10px] font-bold flex items-center gap-2 transition-colors cursor-pointer">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />
+              Analytics
+            </div>
+            <div className="px-2 py-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.02] text-[10px] font-bold flex items-center gap-2 transition-colors cursor-pointer">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />
+              Calendar
+            </div>
+
+            <div className="mt-auto border-t border-border/25 pt-2.5 flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary to-purple-400 flex items-center justify-center text-[8px] font-black text-white">
+                TR
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-[9px] font-black text-foreground truncate">GoldTrader</div>
+                <div className="text-[7.5px] font-black text-muted-foreground/50 tracking-wider">PRO LIFE</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main content grid */}
+          <div className="flex-1 flex flex-col gap-3 min-h-0">
+            {/* Stat Row */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-foreground/[0.01] border border-border/20 rounded-xl p-2">
+                <div className="text-[8px] font-bold text-muted-foreground/50 uppercase tracking-wider mb-0.5">Net Profit</div>
+                <div className="text-xs font-black text-emerald-400 font-mono">+$14,250.00</div>
+              </div>
+              <div className="bg-foreground/[0.01] border border-border/20 rounded-xl p-2">
+                <div className="text-[8px] font-bold text-muted-foreground/50 uppercase tracking-wider mb-0.5">Win Rate</div>
+                <div className="text-xs font-black text-foreground font-mono">72.4%</div>
+              </div>
+              <div className="bg-foreground/[0.01] border border-border/20 rounded-xl p-2">
+                <div className="text-[8px] font-bold text-muted-foreground/50 uppercase tracking-wider mb-0.5">Trades</div>
+                <div className="text-xs font-black text-foreground font-mono">134</div>
+              </div>
+            </div>
+
+            {/* Price Chart SVG */}
+            <div className="relative bg-foreground/[0.01] border border-border/20 rounded-xl p-3 flex-1 flex flex-col min-h-[110px] overflow-hidden">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+
+              <div className="flex justify-between items-center relative z-10 mb-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-foreground">XAUUSD Performance</span>
+                <span className="text-[8px] font-bold text-muted-foreground/50">Trade Execution Path</span>
+              </div>
+
+              {/* Graphic line chart */}
+              <div className="flex-1 relative mt-1">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 320 100" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Dash grid base lines */}
+                  <line x1="0" y1="70" x2="320" y2="70" stroke="rgba(128,128,128,0.15)" strokeWidth="0.5" strokeDasharray="3 3" />
+                  <line x1="0" y1="30" x2="320" y2="30" stroke="rgba(128,128,128,0.15)" strokeWidth="0.5" strokeDasharray="3 3" />
+
+                  {/* Gradient fill */}
+                  <path
+                    d="M 0 85 Q 60 70 110 80 T 210 35 T 300 15 L 320 20 L 320 100 L 0 100 Z"
+                    fill="url(#chart-grad)"
+                  />
+
+                  {/* Execution paths */}
+                  <path
+                    d="M 0 85 Q 60 70 110 80 T 210 35 T 300 15 L 320 20"
+                    fill="none"
+                    stroke="#a78bfa"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Buy point */}
+                  <circle cx="110" cy="80" r="4.5" className="fill-emerald-400 stroke-card" strokeWidth="1.5" />
+                  <text x="117" y="83" className="fill-muted-foreground text-[7px] font-black uppercase tracking-wider">Buy MT5</text>
+
+                  {/* Take Profit point */}
+                  <circle cx="300" cy="15" r="4.5" className="fill-emerald-400 stroke-card" strokeWidth="1.5" />
+                  <text x="250" y="12" className="fill-emerald-400 text-[7px] font-black uppercase tracking-wider font-mono">+$4,820.00</text>
+                </svg>
+              </div>
+            </div>
+
+            {/* Recent trade item */}
+            <div className="bg-foreground/[0.01] border border-border/20 rounded-xl p-2.5 flex items-center justify-between transition-colors hover:bg-foreground/[0.03]">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] font-black">
+                  BUY
+                </div>
+                <div>
+                  <div className="text-[10px] font-black text-foreground">London Breakout</div>
+                  <div className="text-[8px] font-bold text-muted-foreground/50">2321.40 → 2335.10 | +137 pips</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-black text-emerald-400 font-mono">+$1,644.00</div>
+                <div className="text-[7.5px] font-black px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-400 uppercase tracking-wider inline-block">Focused</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Motion.div>
+    </div>
+  );
+}
+
 
 /* ─── Main landing ─── */
 export function LandingPage() {
@@ -488,6 +643,22 @@ export function LandingPage() {
       }
     );
 
+    // Set up GSAP for Bento features section
+    gsap.fromTo("#features .grid > div",
+      { opacity: 0, y: 40 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.12,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: "#features .grid",
+          start: "top 85%",
+        }
+      }
+    );
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
@@ -537,152 +708,121 @@ export function LandingPage() {
 
       <main>
         {/* ─── HERO ─── */}
-        <section ref={heroRef} className="relative z-10 min-h-[100vh] flex flex-col items-center justify-center px-6 pt-28 pb-32 md:pb-44 text-center overflow-hidden">
-          <Motion.div style={{ y: heroY, opacity: heroOpacity, scale: heroScale }} className="max-w-4xl mx-auto flex flex-col items-center relative z-10 will-change-transform">
+        <section ref={heroRef} className="relative z-10 min-h-[100vh] flex flex-col justify-center px-6 pt-28 pb-32 md:pb-44 overflow-hidden">
+          <Motion.div style={{ y: heroY, opacity: heroOpacity, scale: heroScale }} className="max-w-7xl mx-auto w-full relative z-10 will-change-transform">
 
-            <Motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col items-center">
-              {/* Badge */}
-              <Motion.div
-                variants={itemVariants}
-                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-border/40 bg-foreground/[0.03] text-muted-foreground text-[11px] font-bold uppercase tracking-[0.15em] mb-10 backdrop-blur-sm relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.03] to-transparent -translate-x-full animate-[shimmer_4s_infinite] pointer-events-none" />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-                Exclusively for Gold Traders
-              </Motion.div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-12 items-center">
+              {/* Left Column: Hero Copy & Actions */}
+              <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left">
+                <Motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col items-center lg:items-start">
 
-              {/* Hero headline */}
-              <Motion.div variants={{
-                hidden: { opacity: 0, y: 30 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    type: 'spring',
-                    stiffness: 300,
-                    damping: 24,
-                    staggerChildren: 0.02
-                  }
-                }
-              }}>
-                <h1 className="!text-[clamp(2.5rem,8vw,5.5rem)] font-black leading-[0.95] tracking-tighter mb-10 text-foreground flex flex-col items-center">
-                  <AnimatedText text="Every trade" />
-                  <AnimatedText text="you make" />
-                  <AnimatedText text="tells a story." className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic" />
-                </h1>
-              </Motion.div>
+                  {/* Badge */}
+                  <Motion.div
+                    variants={itemVariants}
+                    className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-border/40 bg-foreground/[0.03] text-muted-foreground text-[11px] font-bold uppercase tracking-[0.15em] mb-8 backdrop-blur-sm relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.03] to-transparent -translate-x-full animate-[shimmer_4s_infinite] pointer-events-none" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                    Exclusively for Gold Traders
+                  </Motion.div>
 
-              {/* Sub text */}
-              <Motion.p variants={itemVariants} className="text-sm md:text-lg text-muted-foreground leading-relaxed max-w-xl mb-12 font-medium">
-                XAU Journal is the precision trading journal built for gold traders — track, analyse, and master your edge in XAUUSD.
-              </Motion.p>
+                  {/* Hero headline */}
+                  <Motion.div variants={{
+                    hidden: { opacity: 0, y: 30 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: {
+                        type: 'spring',
+                        stiffness: 300,
+                        damping: 24,
+                        staggerChildren: 0.02
+                      }
+                    }
+                  }}>
+                    <h1 className="!text-[clamp(2.5rem,5.5vw,4.5rem)] font-black leading-[0.95] tracking-tighter mb-8 text-foreground flex flex-col items-center lg:items-start">
+                      <AnimatedText text="Every trade" className="justify-center lg:justify-start" />
+                      <AnimatedText text="you make" className="justify-center lg:justify-start" />
+                      <AnimatedText text="tells a story." className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-to to-purple-400 italic justify-center lg:justify-start" />
+                    </h1>
+                  </Motion.div>
 
-              {/* CTA */}
-              <Motion.div variants={itemVariants} className="flex flex-col items-center justify-center w-full sm:w-auto mt-4">
-                <div
-                  onClick={() => navigate('/login')}
-                  onMouseEnter={() => setIsHoveredButton(true)}
-                  onMouseLeave={() => setIsHoveredButton(false)}
-                  onTouchStart={() => setIsHoveredButton(true)}
-                  onTouchEnd={() => setIsHoveredButton(false)}
-                  onTouchCancel={() => setIsHoveredButton(false)}
-                  className="group flex flex-col items-center justify-center rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden relative"
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    minWidth: '300px',
-                    padding: '14px 20px',
-                  }}
-                >
-                  <MagicTextReveal
-                    text="Try 7-Day Free Trial"
-                    text2="CANCEL ANYTIME · NO CARD REQUIRED"
-                    fontSize={20}
-                    fontWeight={600}
-                    color={isLightMode ? "rgba(0, 0, 0, 1)" : "rgba(255, 255, 255, 1)"}
-                    color2={isLightMode ? "rgba(0, 0, 0, 0.5)" : "rgba(161, 161, 170, 0.7)"}
-                    forceHover={isHoveredButton}
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      minHeight: '36px',
-                      backdropFilter: 'none',
-                    }}
-                  />
-                </div>
-              </Motion.div>
+                  {/* Sub text */}
+                  <Motion.p variants={itemVariants} className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-xl mb-10 font-medium">
+                    XAU Journal is the precision trading journal built for gold traders — track, analyse, and master your edge in XAUUSD.
+                  </Motion.p>
 
-              {/* Stats */}
-              <Motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-16 mt-16 md:mt-24 w-full max-w-3xl px-4">
-                {STATS.map((s) => (
-                  <div key={s.label} className="text-center group">
-                    <div className="text-2xl md:text-3xl font-black tracking-tight text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
-                      <Counter target={s.value} />
+                  {/* CTA */}
+                  <Motion.div variants={itemVariants} className="flex flex-col items-center lg:items-start justify-center w-full sm:w-auto mb-12">
+                    <div
+                      onClick={() => navigate('/login')}
+                      onMouseEnter={() => setIsHoveredButton(true)}
+                      onMouseLeave={() => setIsHoveredButton(false)}
+                      onTouchStart={() => setIsHoveredButton(true)}
+                      onTouchEnd={() => setIsHoveredButton(false)}
+                      onTouchCancel={() => setIsHoveredButton(false)}
+                      className="group flex flex-col items-center lg:items-start justify-center rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden relative"
+                      style={{
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        minWidth: '300px',
+                        padding: '14px 20px',
+                      }}
+                    >
+                      <MagicTextReveal
+                        text="Try 7-Day Free Trial"
+                        text2="CANCEL ANYTIME · NO CARD REQUIRED"
+                        fontSize={20}
+                        fontWeight={600}
+                        color={isLightMode ? "rgba(0, 0, 0, 1)" : "rgba(255, 255, 255, 1)"}
+                        color2={isLightMode ? "rgba(0, 0, 0, 0.5)" : "rgba(161, 161, 170, 0.7)"}
+                        forceHover={isHoveredButton}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          minHeight: '36px',
+                          backdropFilter: 'none',
+                        }}
+                      />
                     </div>
-                    <div className="text-[0.6rem] font-bold text-muted-foreground/70 uppercase tracking-[0.15em]">{s.label}</div>
-                  </div>
-                ))}
-              </Motion.div>
-            </Motion.div>
-          </Motion.div>
+                  </Motion.div>
 
+                  {/* Stats */}
+                  <Motion.div variants={itemVariants} className="grid grid-cols-3 gap-6 md:gap-12 w-full max-w-md">
+                    {STATS.map((s) => (
+                      <div key={s.label} className="text-left group">
+                        <div className="text-xl md:text-2xl font-black tracking-tight text-foreground mb-1.5 group-hover:text-primary transition-colors duration-300">
+                          <Counter target={s.value} />
+                        </div>
+                        <div className="text-[0.55rem] font-bold text-muted-foreground/70 uppercase tracking-[0.15em] leading-tight">{s.label}</div>
+                      </div>
+                    ))}
+                  </Motion.div>
+
+                </Motion.div>
+              </div>
+
+              {/* Right Column: High-Fidelity Mock Terminal/Dashboard UI */}
+              <div className="lg:col-span-6 w-full flex justify-center items-center">
+                <Motion.div
+                  initial={{ opacity: 0, scale: 0.96, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full"
+                >
+                  <MockDashboardUI isLightMode={isLightMode} />
+                </Motion.div>
+              </div>
+            </div>
+
+          </Motion.div>
         </section>
 
         {/* ─── STORY NARRATIVE ─── */}
-        <section id="story" className="relative z-10 px-6 overflow-hidden">
-          <StoryLine />
-
-          <div className="max-w-5xl mx-auto">
-            <Motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-8 pt-8"
-            >
-              <span className="text-muted-foreground/50 text-[10px] font-black tracking-[0.4em] uppercase">Your Trading Story</span>
-            </Motion.div>
-
-            {STORY_CHAPTERS.map((ch, i) => (
-              <StoryChapter key={ch.chapter} {...ch} index={i} />
-            ))}
-          </div>
-        </section>
+        <ScrollStorytelling isLightMode={isLightMode} />
 
         {/* ─── FEATURES ─── */}
-        <section id="features" className="relative z-10 py-28 md:py-40 px-6">
-          <div className="max-w-7xl mx-auto">
-            <Motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="max-w-3xl mb-20 md:mb-28"
-            >
-              <span className="text-[11px] font-bold tracking-[0.2em] uppercase mb-5 inline-block px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground">The Platform</span>
-              <h2 className="text-[clamp(2rem,5.5vw,4rem)] font-black leading-[1.05] tracking-tight mb-6 mt-4">
-                Every tool you need.<br />Nothing you don't.
-              </h2>
-              <p className="text-sm md:text-lg text-muted-foreground font-medium leading-relaxed">
-                Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
-              </p>
-            </Motion.div>
-
-            <DraggableMarquee className="hidden sm:block">
-              {[...FEATURES, ...FEATURES].map((f, i) => (
-                <div key={`${f.title}-${i}`} className="w-[280px] lg:w-[320px] shrink-0 px-2.5">
-                  <FeatureCard {...f} index={i % FEATURES.length} />
-                </div>
-              ))}
-            </DraggableMarquee>
-
-            <div className="sm:hidden mt-8 flex flex-col gap-2.5">
-              {FEATURES.map((f, i) => (
-                <MobileFeatureAccordion key={f.title} {...f} index={i} />
-              ))}
-            </div>
-          </div>
-        </section>
+        <BentoFeatures isLightMode={isLightMode} />
 
         {/* ─── STEPS ─── */}
         <section className="relative z-10 py-28 md:py-40 px-6 overflow-hidden">
@@ -898,138 +1038,391 @@ export function LandingPage() {
   );
 }
 
-/* ─── Animated vertical story line ─── */
-function StoryLine() {
-  return null;
-}
-
-/* ─── Feature card ─── */
-function FeatureCard({ icon, title, body, index }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const pastelBgs = ['rgba(167,139,250,0.08)', 'rgba(251,113,133,0.08)', 'rgba(52,211,153,0.08)', 'rgba(129,140,248,0.08)', 'rgba(251,191,36,0.08)', 'rgba(56,189,248,0.08)'];
-  const pastelAccents = ['#a78bfa', '#fb7185', '#34d399', '#818cf8', '#fbbf24', '#38bdf8'];
-
+/* ─── Storytelling Mockups ─── */
+function MockupDrawdown({ isLightMode }) {
   return (
-    <Motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.5, delay: index * 0.06 }}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-      className="p-7 rounded-3xl flex flex-col cursor-default select-none transition-all duration-500 ease-out group border border-transparent hover:border-border/30 hover:bg-foreground/[0.02]"
-      style={{
-        boxShadow: isOpen ? `0 8px 40px -12px ${pastelAccents[index]}30` : 'none',
-      }}
-    >
-      <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-all duration-300"
-        style={{
-          backgroundColor: pastelBgs[index],
-          color: pastelAccents[index],
-        }}
-      >
-        {icon}
-      </div>
-      <h3 className="text-base font-bold tracking-tight text-foreground/90 group-hover:text-foreground transition-colors duration-300">{title}</h3>
-      <Motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="overflow-hidden"
-      >
-        <p className="text-muted-foreground leading-relaxed text-sm mt-3">{body}</p>
-      </Motion.div>
-    </Motion.div>
-  );
-}
-
-/* ─── Mobile feature accordion ─── */
-function MobileFeatureAccordion({ icon, title, body, index }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const pastelBgs = ['rgba(167,139,250,0.1)', 'rgba(251,113,133,0.1)', 'rgba(52,211,153,0.1)', 'rgba(129,140,248,0.1)', 'rgba(251,191,36,0.1)', 'rgba(56,189,248,0.1)'];
-  const pastelAccents = ['#a78bfa', '#fb7185', '#34d399', '#818cf8', '#fbbf24', '#38bdf8'];
-
-  return (
-    <Motion.div
-      initial={{ opacity: 0, y: 15 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      className={`w-full rounded-2xl border transition-all duration-300 overflow-hidden ${isOpen ? 'border-border/40 shadow-md' : 'border-border/20'}`}
-      style={isOpen ? { backgroundColor: `${pastelAccents[index]}08` } : {}}
-    >
-      <button type="button" onClick={() => setIsOpen(o => !o)} className="w-full flex items-center gap-4 p-4 text-left" aria-expanded={isOpen}>
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300"
-          style={{
-            backgroundColor: isOpen ? pastelAccents[index] : pastelBgs[index],
-            color: isOpen ? '#fff' : pastelAccents[index],
-          }}
-        >
-          {icon}
+    <div className="relative w-full h-full rounded-2xl border border-rose-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden group shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-b from-rose-500/5 to-transparent pointer-events-none" />
+      <div className="flex justify-between items-center z-10">
+        <div>
+          <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Drawdown Alert</div>
+          <div className="text-lg font-black text-foreground font-mono">-$2,450.00</div>
         </div>
-        <span className="flex-1 text-[15px] font-bold text-foreground leading-tight">{title}</span>
-        <Motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.25 }} className="text-muted-foreground text-xl font-light shrink-0">+</Motion.span>
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <Motion.div key="body" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
-            <p className="px-4 pb-4 pl-[3.5rem] text-sm text-muted-foreground leading-relaxed">{body}</p>
-          </Motion.div>
-        )}
-      </AnimatePresence>
-    </Motion.div>
-  );
-}
-
-/* ─── Draggable marquee ─── */
-function DraggableMarquee({ children, className = '', speed = 0.5 }) {
-  const outerRef = useRef(null);
-  const trackRef = useRef(null);
-  const posRef = useRef(0);
-  const rafRef = useRef(null);
-  const dragRef = useRef({ active: false, startX: 0, startPos: 0 });
-  const [grabbing, setGrabbing] = useState(false);
-
-  useEffect(() => {
-    function tick() {
-      const track = trackRef.current;
-      if (!track) { rafRef.current = requestAnimationFrame(tick); return; }
-      if (!dragRef.current.active) posRef.current -= speed;
-      const half = track.scrollWidth / 2;
-      if (posRef.current <= -half) posRef.current += half;
-      if (posRef.current > 0) posRef.current -= half;
-      track.style.transform = `translateX(${posRef.current}px)`;
-      rafRef.current = requestAnimationFrame(tick);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [speed]);
-
-  const onPointerDown = (e) => { dragRef.current = { active: true, startX: e.clientX, startPos: posRef.current }; outerRef.current?.setPointerCapture(e.pointerId); setGrabbing(true); };
-  const onPointerMove = (e) => { if (!dragRef.current.active) return; posRef.current = dragRef.current.startPos + (e.clientX - dragRef.current.startX); };
-  const onPointerUp = () => { dragRef.current.active = false; setGrabbing(false); };
-
-  return (
-    <div
-      ref={outerRef}
-      className={`w-full overflow-hidden relative py-8 ${className}`}
-      style={{ cursor: grabbing ? 'grabbing' : 'grab', maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', userSelect: 'none' }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
-      <div
-        ref={trackRef}
-        className="flex items-stretch will-change-transform"
-        style={{ touchAction: 'none' }}
-      >
-        {children}
+        <div className="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[9px] font-black uppercase">
+          Uncontrolled
+        </div>
+      </div>
+      <div className="flex-1 relative flex items-center justify-center my-4 h-[120px]">
+        <svg className="w-full h-full overflow-visible" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="rose-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d="M 0 10 Q 30 15 60 45 T 120 30 T 180 75 L 200 70 L 200 80 L 0 80 Z" fill="url(#rose-grad)" />
+          <path d="M 0 10 Q 30 15 60 45 T 120 30 T 180 75 L 200 70" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="60" cy="45" r="3.5" className="fill-rose-500 stroke-card" strokeWidth="1.5" />
+          <circle cx="180" cy="75" r="3.5" className="fill-rose-500 stroke-card" strokeWidth="1.5" />
+        </svg>
+      </div>
+      <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider text-center z-10">
+        No Playbook · No Journal · Repeating Mistakes
       </div>
     </div>
+  );
+}
+
+function MockupRadar({ isLightMode }) {
+  return (
+    <div className="relative w-full h-full rounded-2xl border border-amber-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent pointer-events-none" />
+      <div className="flex justify-between items-center z-10">
+        <div>
+          <div className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Edge Discovery</div>
+          <div className="text-lg font-black text-foreground">Analyzing Sessions</div>
+        </div>
+        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+      </div>
+
+      <div className="flex-1 relative flex items-center justify-center my-4 h-[120px]">
+        <div className="absolute w-[110px] h-[110px] rounded-full border border-amber-500/10 flex items-center justify-center">
+          <div className="w-[80px] h-[80px] rounded-full border border-amber-500/15 flex items-center justify-center">
+            <div className="w-[50px] h-[50px] rounded-full border border-amber-500/20" />
+          </div>
+        </div>
+
+        <div
+          className="absolute w-[110px] h-[110px] rounded-full overflow-hidden pointer-events-none"
+          style={{
+            maskImage: 'conic-gradient(from 0deg, black, transparent 30%)',
+            WebkitMaskImage: 'conic-gradient(from 0deg, black, transparent 30%)'
+          }}
+        >
+          <div className="w-full h-full origin-center animate-[spin_4s_linear_infinite] bg-gradient-to-r from-amber-500/20 to-transparent" />
+        </div>
+
+        <div className="absolute w-[120px] h-px bg-amber-500/10" />
+        <div className="absolute h-[120px] w-px bg-amber-500/10" />
+
+        <div className="absolute top-[35%] left-[30%] w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse" />
+        <div className="absolute bottom-[28%] right-[35%] w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)] animate-pulse [animation-delay:0.7s]" />
+        <div className="absolute top-[25%] right-[28%] w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)] animate-pulse [animation-delay:1.4s]" />
+      </div>
+
+      <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider text-center z-10">
+        Scanning 124 trades... patterns detected
+      </div>
+    </div>
+  );
+}
+
+function MockupHeatmap({ isLightMode }) {
+  return (
+    <div className="relative w-full h-full rounded-2xl border border-violet-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent pointer-events-none" />
+      <div className="flex justify-between items-center z-10">
+        <div>
+          <div className="text-[10px] font-black text-violet-400 uppercase tracking-widest">Analytics Layer</div>
+          <div className="text-lg font-black text-foreground">Session Efficiency</div>
+        </div>
+        <div className="px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[9px] font-black uppercase">
+          78.4% WR
+        </div>
+      </div>
+
+      <div className="flex-1 my-4 flex flex-col justify-center gap-1.5 h-[120px] px-2">
+        <div className="flex justify-between items-center gap-2">
+          <span className="text-[8px] font-black text-muted-foreground/60 w-10 uppercase tracking-wider">London</span>
+          <div className="flex-1 h-3 rounded bg-violet-500/40 relative overflow-hidden">
+            <div className="absolute inset-y-0 left-0 w-[78%] bg-gradient-to-r from-violet-500 to-purple-400" />
+          </div>
+          <span className="text-[9px] font-black text-foreground font-mono">78%</span>
+        </div>
+        <div className="flex justify-between items-center gap-2">
+          <span className="text-[8px] font-black text-muted-foreground/60 w-10 uppercase tracking-wider">New York</span>
+          <div className="flex-1 h-3 rounded bg-violet-500/40 relative overflow-hidden">
+            <div className="absolute inset-y-0 left-0 w-[52%] bg-gradient-to-r from-violet-500 to-purple-400" />
+          </div>
+          <span className="text-[9px] font-black text-foreground font-mono">52%</span>
+        </div>
+        <div className="flex justify-between items-center gap-2">
+          <span className="text-[8px] font-black text-muted-foreground/60 w-10 uppercase tracking-wider">Tokyo</span>
+          <div className="flex-1 h-3 rounded bg-violet-500/40 relative overflow-hidden">
+            <div className="absolute inset-y-0 left-0 w-[24%] bg-gradient-to-r from-violet-500 to-purple-400" />
+          </div>
+          <span className="text-[9px] font-black text-foreground font-mono">24%</span>
+        </div>
+      </div>
+
+      <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider text-center z-10">
+        London session is your primary edge
+      </div>
+    </div>
+  );
+}
+
+function MockupSync({ isLightMode }) {
+  return (
+    <div className="relative w-full h-full rounded-2xl border border-emerald-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
+      <div className="flex justify-between items-center z-10">
+        <div>
+          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Precision Terminal</div>
+          <div className="text-lg font-black text-foreground">Sync Complete</div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
+          <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">Connected</span>
+        </div>
+      </div>
+
+      <div className="flex-1 my-4 flex flex-col items-center justify-center gap-3 h-[120px]">
+        <div className="flex items-center justify-between w-full max-w-[200px]">
+          <div className="w-10 h-10 rounded-xl bg-foreground/[0.03] border border-border/20 flex items-center justify-center text-xs font-black">
+            MT5
+          </div>
+          <div className="flex-1 mx-2 relative h-1 flex items-center justify-center">
+            <div className="absolute inset-0 bg-border/20 rounded" />
+            <div className="absolute inset-y-0 left-0 bg-emerald-500 rounded animate-[shimmer_2s_infinite]" style={{ width: '40%' }} />
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-[10px] font-black text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.15)]">
+            XAU
+          </div>
+        </div>
+
+        <div className="text-[10px] font-black text-foreground flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          232 positions imported
+        </div>
+      </div>
+
+      <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider text-center z-10">
+        Institutional pipeline is fully operational
+      </div>
+    </div>
+  );
+}
+
+/* ─── Scroll-Driven Storytelling Component ─── */
+export function ScrollStorytelling({ isLightMode }) {
+  return (
+    <div className="relative w-full border-t border-border/20 bg-background z-10 py-20 md:py-32 overflow-hidden">
+      <div className="max-w-7xl mx-auto w-full px-6 flex flex-col gap-24 md:gap-32">
+        {STORY_CHAPTERS.map((ch, i) => {
+          const isEven = i % 2 === 0;
+          
+          return (
+            <div key={ch.chapter} className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16 items-center">
+              
+              {/* Image Column */}
+              <div className={`col-span-12 md:col-span-6 w-full ${isEven ? 'md:order-1' : 'md:order-2'}`}>
+                <Motion.div 
+                  initial={{ opacity: 0, x: isEven ? -40 : 40 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.8 }}
+                  className="w-full max-w-[500px] h-[300px] md:h-[380px] mx-auto relative shrink-0"
+                >
+                  {i === 0 && <MockupDrawdown isLightMode={isLightMode} />}
+                  {i === 1 && <MockupRadar isLightMode={isLightMode} />}
+                  {i === 2 && <MockupHeatmap isLightMode={isLightMode} />}
+                  {i === 3 && <MockupSync isLightMode={isLightMode} />}
+                </Motion.div>
+              </div>
+
+              {/* Text Column */}
+              <div className={`col-span-12 md:col-span-6 flex flex-col ${isEven ? 'md:order-2' : 'md:order-1'}`}>
+                <StoryChapter {...ch} index={i} isEven={isEven} />
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Bento Features Component ─── */
+export function BentoFeatures({ isLightMode }) {
+  return (
+    <section id="features" className="relative z-10 py-28 md:py-40 px-6 overflow-hidden border-t border-border/20">
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: isLightMode
+          ? 'radial-gradient(ellipse at bottom, rgba(167,139,250,0.03) 0%, transparent 60%)'
+          : 'radial-gradient(ellipse at bottom, rgba(167,139,250,0.06) 0%, transparent 60%)'
+      }} />
+
+      <div className="max-w-7xl mx-auto">
+        <Motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="max-w-3xl mb-20 md:mb-28"
+        >
+          <span className="text-[11px] font-bold tracking-[0.2em] uppercase mb-5 inline-block px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground">The Platform</span>
+          <h2 className="text-[clamp(2rem,5.5vw,4rem)] font-black leading-[1.05] tracking-tight mb-6 mt-4">
+            Every tool you need.<br />Nothing you don't.
+          </h2>
+          <p className="text-sm md:text-lg text-muted-foreground font-medium leading-relaxed">
+            Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
+          </p>
+        </Motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          {/* Card 1: MT5 Sync */}
+          <div className="md:col-span-2 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+            <div className="flex-1 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-6">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Instant MT5 Sync</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+                  Effortlessly capture your trade history and sync your performance data to the cloud. Eliminate manual logging and ensure 100% accuracy for every position closed.
+                </p>
+              </div>
+
+              <div className="mt-8 flex items-center gap-4 bg-foreground/[0.01] border border-border/20 rounded-2xl p-4 w-full max-w-[340px]">
+                <div className="text-[10px] font-black text-foreground">Broker Server</div>
+                <div className="flex-1 h-1 bg-border/20 rounded relative overflow-hidden">
+                  <div className="absolute inset-y-0 w-8 bg-primary rounded animate-[shimmer_2s_infinite]" />
+                </div>
+                <div className="text-[10px] font-black text-primary">Terminal Sync</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Session Intelligence */}
+          <div className="md:col-span-1 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">Session Intelligence</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                London, New York, Tokyo, Sydney — see exactly which session your edge lives in and schedule your trading around it.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-center items-center h-20">
+              <div className="w-14 h-14 rounded-full border border-amber-500/30 flex items-center justify-center relative">
+                <div className="absolute top-1 bottom-1/2 w-0.5 bg-amber-500 origin-bottom rotate-[45deg]" />
+                <div className="absolute left-1 right-1/2 h-0.5 bg-amber-500/60 origin-right" />
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Trade Calendar */}
+          <div className="md:col-span-1 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent pointer-events-none" />
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">Trade Calendar</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A month-view calendar shows your P&L heat at a glance. Identify your best and worst days in a single look.
+              </p>
+            </div>
+
+            <div className="mt-6 grid grid-cols-5 gap-1 w-full max-w-[140px] mx-auto">
+              {[...Array(15)].map((_, i) => {
+                const profitColors = ['bg-emerald-500/20 border-emerald-500/30', 'bg-emerald-500/40 border-emerald-500/50', 'bg-rose-500/20 border-rose-500/30', 'bg-foreground/[0.02] border-border/20'];
+                const colIdx = i % profitColors.length;
+                return <div key={i} className={`aspect-square rounded border ${profitColors[colIdx]}`} />;
+              })}
+            </div>
+          </div>
+
+          {/* Card 4: Deep Analytics */}
+          <div className="md:col-span-2 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent pointer-events-none" />
+            <div className="flex-1 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center mb-6">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Deep Analytics</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+                  Win-rate by session, drawdown clusters, streak analysis, and behavioural heatmaps — every metric purpose-built for clarity.
+                </p>
+              </div>
+
+              <div className="mt-8 flex gap-6 overflow-hidden">
+                <div className="flex-1 h-14 bg-foreground/[0.01] border border-border/20 rounded-xl p-2 flex items-end gap-1">
+                  <div className="flex-1 h-[30%] bg-violet-500/40 rounded-sm" />
+                  <div className="flex-1 h-[60%] bg-violet-500/60 rounded-sm" />
+                  <div className="flex-1 h-[45%] bg-violet-500/40 rounded-sm" />
+                  <div className="flex-1 h-[80%] bg-violet-500 rounded-sm" />
+                </div>
+                <div className="flex-1 h-14 bg-foreground/[0.01] border border-border/20 rounded-xl p-2 flex items-end gap-1">
+                  <div className="flex-1 h-[70%] bg-violet-500 rounded-sm" />
+                  <div className="flex-1 h-[40%] bg-violet-500/40 rounded-sm" />
+                  <div className="flex-1 h-[55%] bg-violet-500/60 rounded-sm" />
+                  <div className="flex-1 h-[90%] bg-violet-500 rounded-sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: Private Vault */}
+          <div className="md:col-span-1 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-3">Private & Secure Data</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your trading data is yours alone. We use industry-standard encryption and isolated storage protocols to protect your history.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-center items-center h-14">
+              <div className="w-10 h-10 rounded-full border border-emerald-500/30 flex items-center justify-center relative shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 6: Playbook Journal */}
+          <div className="md:col-span-2 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent pointer-events-none" />
+            <div className="flex-1 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center mb-6">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Trade Journal & Playbook</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+                  Attach thoughts, emotions, and notes to each trade. Build an annotated playbook straight from your own history and easily review the setups that actually work for you.
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-2">
+                <span className="px-3 py-1 rounded bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary">Focused</span>
+                <span className="px-3 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-500">FOMO Avoided</span>
+                <span className="px-3 py-1 rounded bg-foreground/[0.03] border border-border/20 text-[10px] font-bold text-muted-foreground">Setup: Breakout</span>
+                <span className="px-3 py-1 rounded bg-rose-500/10 border border-rose-500/20 text-[10px] font-bold text-rose-500">Revenge Trade</span>
+                <span className="px-3 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-500">Followed Plan</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1263,7 +1656,7 @@ function ScaleTimeline() {
             <div className="w-1 h-1 rounded-sm bg-white shadow-[0_0_3px_#fff]" />
           </div>
 
-          <div className="flex flex-col gap-[20vh] md:gap-[40vh] relative z-10 py-[15vh] md:py-[25vh]">
+          <div className="flex flex-col gap-10 md:gap-20 relative z-10 py-10 md:py-20">
             {TIMELINE_ITEMS.map((item, idx) => {
               const isLeft = item.side === 'left';
               return (

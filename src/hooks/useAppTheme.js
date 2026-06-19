@@ -69,13 +69,13 @@ export function ThemeProvider({ children }) {
       root.classList.add('theme-toggling');
     }
 
-    if (isAppPath) {
-      if (isLightMode) {
-        root.classList.remove('dark');
-      } else {
-        root.classList.add('dark');
-      }
+    if (isLightMode) {
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+    }
 
+    if (isAppPath) {
       // Update template classes on the HTML element
       root.classList.forEach(className => {
         if (className.startsWith('theme-') && className !== 'theme-toggling') {
@@ -84,8 +84,6 @@ export function ThemeProvider({ children }) {
       });
       root.classList.add(`theme-${currentTemplate}`);
     } else {
-      // On landing pages/public routes, force standard dark mode and no custom template accent
-      root.classList.add('dark');
       root.classList.forEach(className => {
         if (className.startsWith('theme-') && className !== 'theme-toggling') {
           root.classList.remove(className);

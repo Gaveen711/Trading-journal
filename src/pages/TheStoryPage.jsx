@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
@@ -750,17 +750,11 @@ const MANIFESTO = [
 
 export default function TheStoryPage() {
   const navigate = useNavigate();
-  const [isScrolled, setIsScrolled] = useState(false);
   const { isLightMode } = useAppTheme();
 
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
     // Initialize Lenis
     const lenis = new Lenis({
       duration: 1.2,
@@ -1002,7 +996,6 @@ export default function TheStoryPage() {
     }, 150);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
       if (ctx) ctx.revert();
       if (updateLenis) {

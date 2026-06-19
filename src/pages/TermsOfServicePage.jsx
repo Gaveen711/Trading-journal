@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
-import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
 import { PublicNavbar } from '../components/PublicNavbar';
 
@@ -124,10 +122,7 @@ If you have a dispute or complaint, please contact us first at info@xaujournal.c
 ];
 
 export function TermsOfServicePage() {
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
     // SEO meta tags
@@ -163,7 +158,7 @@ export function TermsOfServicePage() {
     function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
 
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    document.body.style.overflow = '';
     window.scrollTo(0, 0);
 
     return () => {
@@ -171,7 +166,7 @@ export function TermsOfServicePage() {
       lenis.destroy();
       document.body.style.overflow = '';
     };
-  }, [mobileMenuOpen]);
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -183,12 +178,7 @@ export function TermsOfServicePage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
   };
 
-  const navLinks = [
-    { to: '/', label: 'How it works' },
-    { to: '/the-story', label: 'The Story' },
-    { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' },
-  ];
+
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">

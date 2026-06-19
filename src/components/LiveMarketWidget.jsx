@@ -62,6 +62,7 @@ export function LiveMarketWidget() {
       });
     }, 1000);
 
+    return () => clearInterval(timer);
   }, []);
 
   // Fetch actual prices on mount to sync simulated prices with TradingView charts

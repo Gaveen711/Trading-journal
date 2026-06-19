@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Bell, X, Settings, ChevronDown, Palette, ClipboardList, Shield, Brain, Cpu, Lightbulb } from 'lucide-react';
 import { auth, storage } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
 import { submitTrade, getRemainingFreeTrades } from '../../services/tradeService';
 import { CurrencyConverter } from '../CurrencyConverter';
 import { CustomSelect } from '../ui/CustomSelect';
-import { useAppTheme } from '../../hooks/useAppTheme';
+
 import {
   ExclamationTriangleFill,
   EmojiAngryFill,
@@ -70,37 +70,12 @@ export function DashboardRightSidebar({
   toast,
   addTrade,
   isLoadingTrades,
-  setShowThemeSelector,
 }) {
-  const { isLightMode, toggleTheme } = useAppTheme();
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileCard, setShowProfileCard] = useState(false);
-  const notifRef = useRef();
-  const profileRef = useRef();
-
-  const [time, setTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState('basic');
-
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formattedTime = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
   const isFree = plan === 'basic' && !isTrial;
   const isPro  = plan === 'pro' || plan === 'grace';
   const showLockTimer = !isPro && !!renewCountdown;
-
-  // ── Close dropdowns on outside click ──────────────────────────────────────
-  useEffect(() => {
-    const handler = (e) => {
-      if (notifRef.current   && !notifRef.current.contains(e.target))   setShowNotifications(false);
-      if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfileCard(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   // ── TAB 1: BASIC – Order Form State ────────────────────────────────────────
   const [direction, setDirection] = useState('LONG');
@@ -302,7 +277,6 @@ export function DashboardRightSidebar({
     }
   };
 
-  const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
 
   // ── Tab badge counts (optional fields filled) ──────────────────────────────
   const riskFilled    = [riskPercent !== '1' && riskPercent, maxDailyActive].filter(Boolean).length;

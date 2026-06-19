@@ -1,19 +1,15 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
-import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill, Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
+import { Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
 import { PublicNavbar } from '../components/PublicNavbar';
 
 export function ContactPage() {
-    const navigate = useNavigate();
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
     const [status, setStatus] = useState('idle'); // idle | sending | sent | error
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const { isLightMode, toggleTheme } = useAppTheme();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -34,11 +30,7 @@ export function ContactPage() {
         }
         requestAnimationFrame(raf);
 
-        if (mobileMenuOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        document.body.style.overflow = '';
 
         window.scrollTo(0, 0);
 
@@ -47,7 +39,7 @@ export function ContactPage() {
             lenis.destroy();
             document.body.style.overflow = '';
         };
-    }, [mobileMenuOpen]);
+    }, []);
 
     const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -92,12 +84,7 @@ export function ContactPage() {
         visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
     };
 
-    const navLinks = [
-        { to: '/', label: 'How it works' },
-        { to: '/the-story', label: 'The Story' },
-        { to: '/pricing', label: 'Pricing' },
-        { to: '/contact', label: 'Contact' }
-    ];
+
 
     return (
         <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased">

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
-import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
-import { useAppTheme } from '../hooks/useAppTheme';
+
 import Logo from './Logo';
+import { useAppTheme } from '../hooks/useAppTheme';
+import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
 export function PublicNavbar() {
   const navigate = useNavigate();
@@ -85,8 +86,12 @@ export function PublicNavbar() {
           </ul>
 
           <div className="flex items-center gap-2.5 z-[101]">
-            <button onClick={toggleTheme} className="p-2 rounded-full border border-border/30 hover:bg-foreground/5 transition-all duration-200 text-muted-foreground hover:text-foreground" aria-label="Toggle theme">
-              {isLightMode ? <MoonStarsFill className="w-3.5 h-3.5" /> : <SunFill className="w-3.5 h-3.5" />}
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-full hover:bg-foreground/5 text-muted-foreground hover:text-foreground transition-all duration-200"
+              aria-label="Toggle theme"
+            >
+              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
             <div className="hidden lg:block">
               <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300">
