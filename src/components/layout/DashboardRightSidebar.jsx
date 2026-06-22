@@ -19,7 +19,7 @@ import {
 } from 'react-bootstrap-icons';
 import { requireProFeature } from '../../services/featureGate';
 import { ImageViewerModal } from '../ImageViewerModal';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
 
@@ -70,6 +70,8 @@ export function DashboardRightSidebar({
   toast,
   addTrade,
   isLoadingTrades,
+  isExpanded,
+  setIsExpanded,
 }) {
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -266,6 +268,7 @@ export function DashboardRightSidebar({
         setTimeframe(''); setSetupGrade(''); setMarketStructure([]); setConfluenceFactors([]);
         setScreenshots([]);
         setActiveTab('basic');
+        setIsExpanded(false);
         toast(`Trade logged: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : 'error');
       } else {
         toast('Error: Trade submission unavailable.', 'error');
@@ -286,24 +289,63 @@ export function DashboardRightSidebar({
   return (
     <div className="flex flex-col gap-4 w-full">
 
+      {/* ─── NEW TRADE BUTTON ─── */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-full py-3 px-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all duration-300 flex items-center justify-center gap-2 border cursor-pointer select-none ${
+          isExpanded 
+            ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20' 
+            : 'bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground border-transparent shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]'
+        }`}
+      >
+        {isExpanded ? (
+          <>
+            <X className="w-3.5 h-3.5 shrink-0" />
+            Close Trade Logger
+          </>
+        ) : (
+          <>
+            <span className="text-sm font-light leading-none">+</span>
+            New Trade
+          </>
+        )}
+      </button>
 
-
-      {/* ─── ORDER FORM (ACTION CENTER) ───────────────────────────────────── */}
-      <div className="apple-glass-panel flex flex-col rounded-3xl relative z-30 overflow-hidden">
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden w-full"
+          >
+            {/* ─── ORDER FORM (ACTION CENTER) ───────────────────────────────────── */}
+            <div className="apple-glass-panel flex flex-col rounded-3xl relative z-30 overflow-hidden">
 
         {/* ── Panel Header ────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-center px-5 pt-4 pb-3 border-b border-border/10 shrink-0 relative">
+        <div className="flex items-center justify-center px-4 pt-4 pb-3 border-b border-border/10 shrink-0 relative">
           <div className="flex items-center gap-2 mx-auto">
             <span className="w-2 h-2 rounded-full bg-[#E5B80B] shadow-[0_0_6px_rgba(229,184,11,0.6)]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Record Gold Trade</span>
             <span className="text-[8px] font-black uppercase bg-[#E5B80B]/15 text-[#E5B80B] px-1.5 py-0.5 rounded tracking-widest">XAU/USD</span>
           </div>
-          {/* PnL live preview badge */}
-          {(parseFloat(entry) > 0 && parseFloat(exit) > 0) && (
-            <span className={`absolute right-5 text-[10px] font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
-              {(pnlData?.pnl || 0) >= 0 ? '+' : ''}{formatCurrency(pnlData?.pnl || 0)}
-            </span>
-          )}
+          <div className="absolute right-4 flex items-center gap-2">
+            {/* PnL live preview badge */}
+            {(parseFloat(entry) > 0 && parseFloat(exit) > 0) && (
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                {(pnlData?.pnl || 0) >= 0 ? '+' : ''}{formatCurrency(pnlData?.pnl || 0)}
+              </span>
+            )}
+            {/* Minimal button to minimize/collapse */}
+            <button 
+              onClick={() => setIsExpanded(false)}
+              className="p-1 hover:bg-muted/50 rounded-lg text-muted-foreground hover:text-foreground/80 transition-all cursor-pointer"
+              title="Minimize Panel"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* ── Buy / Sell Segmented Control ────────────────────────────────── */}
@@ -943,6 +985,9 @@ export function DashboardRightSidebar({
           )}
         </div>
       </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── Currency Converter (Separate Box) ────────────────────────────── */}
       <div className="w-full shrink-0 pb-6 relative z-10">

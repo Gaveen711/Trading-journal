@@ -20,10 +20,10 @@ export function LiveMarketWidget() {
 
   // Real-time Simulated Tickers state
   const [tickers, setTickers] = useState({
-    xauusd: { id: 'xauusd', name: 'XAU/USD', desc: 'Gold Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAUUSD', symbol: 'Au', color: 'amber-500', price: 4329.105, change: -0.13, history: [4335, 4332, 4328, 4330, 4334, 4327, 4331, 4328, 4329.105] },
-    xagusd: { id: 'xagusd', name: 'XAG/USD', desc: 'Silver Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAGUSD', symbol: 'Ag', color: 'slate-300', price: 29.372, change: +0.26, history: [29.20, 29.25, 29.30, 29.28, 29.35, 29.32, 29.38, 29.35, 29.372] },
-    xptusd: { id: 'xptusd', name: 'XPT/USD', desc: 'Platinum Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPTUSD', symbol: 'Pt', color: 'slate-400', price: 995.238, change: +0.02, history: [994, 995, 993, 996, 995, 994, 997, 995, 995.238] },
-    xpdusd: { id: 'xpdusd', name: 'XPD/USD', desc: 'Palladium Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPDUSD', symbol: 'Pd', color: 'slate-500', price: 1028.070, change: -0.03, history: [1029, 1028, 1030, 1027, 1028, 1029, 1026, 1027, 1028.070] }
+    xauusd: { id: 'xauusd', name: 'XAU/USD', desc: 'Gold Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAUUSD', symbol: 'Au', color: 'amber-500', price: 4190.500, change: -0.20, history: [4200.000, 4195.000, 4188.000, 4192.000, 4196.000, 4187.000, 4191.000, 4189.000, 4190.500] },
+    xagusd: { id: 'xagusd', name: 'XAG/USD', desc: 'Silver Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAGUSD', symbol: 'Ag', color: 'slate-300', price: 29.355, change: -0.07, history: [29.400, 29.380, 29.320, 29.350, 29.370, 29.310, 29.360, 29.340, 29.355] },
+    xptusd: { id: 'xptusd', name: 'XPT/USD', desc: 'Platinum Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPTUSD', symbol: 'Pt', color: 'slate-400', price: 995.100, change: -0.01, history: [996.000, 995.500, 994.000, 995.000, 995.800, 994.200, 995.300, 994.800, 995.100] },
+    xpdusd: { id: 'xpdusd', name: 'XPD/USD', desc: 'Palladium Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPDUSD', symbol: 'Pd', color: 'slate-500', price: 1028.100, change: -0.02, history: [1029.000, 1028.500, 1027.000, 1028.000, 1028.600, 1027.400, 1028.300, 1027.800, 1028.100] }
   });
 
   // Ticks updater loop
@@ -69,18 +69,48 @@ export function LiveMarketWidget() {
   useEffect(() => {
     const fetchRealPrices = async () => {
       const assets = [
-        { id: 'xauusd', symbol: 'XAU' },
-        { id: 'xagusd', symbol: 'XAG' },
-        { id: 'xptusd', symbol: 'XPT' },
-        { id: 'xpdusd', symbol: 'XPD' }
+        { id: 'xauusd', spotSymbol: 'XAU', yahooSymbol: 'GC=F' },
+        { id: 'xagusd', spotSymbol: 'XAG', yahooSymbol: 'SI=F' },
+        { id: 'xptusd', spotSymbol: 'XPT', yahooSymbol: 'PL=F' },
+        { id: 'xpdusd', spotSymbol: 'XPD', yahooSymbol: 'PA=F' }
       ];
       try {
         const results = await Promise.all(
           assets.map(async (asset) => {
-            const res = await fetch(`https://api.gold-api.com/price/${asset.symbol}`);
-            if (res.ok) {
-              const data = await res.json();
-              return { id: asset.id, price: Number(data.price) };
+            try {
+              // Fetch spot price directly from Gold-API (supports CORS!)
+              const spotPromise = fetch(`https://api.gold-api.com/price/${asset.spotSymbol}`)
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null);
+
+              // Fetch yahoo chart change via proxy (if it fails/404s, we fall back gracefully)
+              const yahooPromise = fetch(`/api/yahoo-chart/${asset.yahooSymbol}?interval=1m&range=1d`)
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null);
+
+              const [spotData, yahooData] = await Promise.all([spotPromise, yahooPromise]);
+              
+              let price = null;
+              let change = null;
+              
+              if (spotData && spotData.price) {
+                price = Number(spotData.price);
+              }
+              
+              if (yahooData) {
+                const result = yahooData.chart?.result?.[0];
+                if (result && result.meta) {
+                  const yahooPrice = Number(result.meta.regularMarketPrice);
+                  const prevClose = Number(result.meta.chartPreviousClose);
+                  change = prevClose ? Number((((yahooPrice - prevClose) / prevClose) * 100).toFixed(2)) : 0;
+                }
+              }
+              
+              if (price !== null) {
+                return { id: asset.id, price, change };
+              }
+            } catch (e) {
+              console.error(`Error fetching for ${asset.id}:`, e);
             }
             return null;
           })
@@ -95,9 +125,15 @@ export function LiveMarketWidget() {
               const historyMultiplier = basePrice / next[res.id].price;
               const newHistory = currentHistory.map(h => Number((h * historyMultiplier).toFixed(3)));
               
+              // Ensure history[0] aligns with the actual daily change percentage
+              if (res.change !== null && res.change !== undefined) {
+                newHistory[0] = Number((basePrice / (1 + res.change / 100)).toFixed(3));
+              }
+
               next[res.id] = {
                 ...next[res.id],
                 price: basePrice,
+                change: res.change !== null && res.change !== undefined ? res.change : next[res.id].change,
                 history: newHistory
               };
             }
@@ -105,11 +141,13 @@ export function LiveMarketWidget() {
           return next;
         });
       } catch (err) {
-        console.error('Error fetching real-time prices from gold-api.com:', err);
+        console.error('Error fetching real-time prices:', err);
       }
     };
 
     fetchRealPrices();
+    const intervalId = window.setInterval(fetchRealPrices, 15000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Helper to generate SVG sparkline path

@@ -49,6 +49,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     const saved = localStorage.getItem('xau-sidebar-expanded');
     return saved !== 'false'; // default to true
   });
+  const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(false);
 
   const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
   const formattedTime = new Date(currentTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
@@ -635,33 +636,43 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
               trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
-              walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync
+              walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
+              isExpanded: isRightSidebarExpanded,
+              setIsExpanded: setIsRightSidebarExpanded
             }} />
           </main>
 
           {/* RIGHT COLUMN - SIDEBAR (Only visible on Log page) */}
           {(location.pathname === '/app' || location.pathname === '/app/') && (
-            <aside className="w-full lg:w-[350px] shrink-0">
-              <DashboardRightSidebar
-                plan={plan}
-                isTrial={isTrial}
-                expiry={expiry}
-                isTrialExpired={computedIsTrialExpired}
-                isTrialActive={computedIsTrialActive}
-                renewCountdown={renewCountdown}
-                trialTimeLeft={trialTimeLeft}
-                trades={trades}
-                journals={journals}
-                walletBalance={walletBalance}
-                setShowPricingModal={setShowPricingModal}
-                toast={toast}
-                openPortal={openPortal}
-                resetTrades={resetTrades}
-                updateBalance={updateBalance}
-                addTrade={addTrade}
-                isLoadingTrades={isLoadingTrades}
-                setShowThemeSelector={setShowThemeSelector}
-              />
+            <aside className={`w-full shrink-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
+              isRightSidebarExpanded ? 'lg:w-[350px] opacity-100 block' : 'lg:w-0 lg:opacity-0 hidden lg:block'
+            }`}>
+              <div className={`w-full lg:w-[350px] transition-all duration-300 ${
+                isRightSidebarExpanded ? 'opacity-100 delay-150' : 'opacity-0 delay-0'
+              }`}>
+                <DashboardRightSidebar
+                  plan={plan}
+                  isTrial={isTrial}
+                  expiry={expiry}
+                  isTrialExpired={computedIsTrialExpired}
+                  isTrialActive={computedIsTrialActive}
+                  renewCountdown={renewCountdown}
+                  trialTimeLeft={trialTimeLeft}
+                  trades={trades}
+                  journals={journals}
+                  walletBalance={walletBalance}
+                  setShowPricingModal={setShowPricingModal}
+                  toast={toast}
+                  openPortal={openPortal}
+                  resetTrades={resetTrades}
+                  updateBalance={updateBalance}
+                  addTrade={addTrade}
+                  isLoadingTrades={isLoadingTrades}
+                  setShowThemeSelector={setShowThemeSelector}
+                  isExpanded={isRightSidebarExpanded}
+                  setIsExpanded={setIsRightSidebarExpanded}
+                />
+              </div>
             </aside>
           )}
         </div>

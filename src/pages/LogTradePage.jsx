@@ -12,7 +12,7 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 export function LogTradePage() {
-  const { trades, walletBalance, monthlyGoal, updateMonthlyGoal } = useOutletContext();
+  const { trades, walletBalance, monthlyGoal, updateMonthlyGoal, isExpanded, setIsExpanded } = useOutletContext();
   const { isLightMode } = useAppTheme();
   const [equityPeriod, setEquityPeriod] = useState('all');
   const [activeTab, setActiveTab] = useState('history');
@@ -130,6 +130,23 @@ export function LogTradePage() {
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-200 pb-6">
       
+      {/* HEADER SECTION WITH TITLE AND NEW TRADE TOGGLE */}
+      <div className="flex justify-between items-center shrink-0">
+        <div>
+          <h1 className="text-xl font-black uppercase tracking-wider text-foreground">Dashboard</h1>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Overview & Trade Intelligence</p>
+        </div>
+        {!isExpanded && (
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="py-1.5 px-3 rounded-xl font-black uppercase tracking-wider text-[9px] transition-all duration-200 flex items-center justify-center gap-1 border border-primary/20 hover:border-primary bg-primary/5 hover:bg-primary/10 text-primary active:scale-[0.96] cursor-pointer select-none"
+          >
+            <span className="text-xs font-light leading-none">+</span>
+            New Trade
+          </button>
+        )}
+      </div>
+
       {/* TOP TIER: METRICS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
         

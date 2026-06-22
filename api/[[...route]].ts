@@ -618,7 +618,7 @@ app.post('/revoke-api-key', async (c) => {
       return c.json({ success: true, message: 'No active key to revoke' })
     }
 
-    const apiKeys = snapshot.docs.map(doc => doc.id)
+    const apiKeys = snapshot.docs.map((doc: any) => doc.id)
     const batch = db.batch()
     snapshot.docs.forEach((doc: any) => batch.delete(doc.ref))
     await batch.commit()
@@ -626,7 +626,7 @@ app.post('/revoke-api-key', async (c) => {
     await db.collection('users').doc(uid).update({ mt5SyncEnabled: false })
 
     // Invalidate caches
-    await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, uid)))
+    await Promise.all(apiKeys.map((key: any) => invalidateApiKeyCache(key, uid)))
 
     console.log(`[revoke-api-key] Key(s) revoked for uid=${uid}`)
     return c.json({ success: true })
@@ -1317,11 +1317,11 @@ const handleRevokeExpired = async (c: any) => {
       return c.json({ success: true, revoked: 0 })
     }
 
-    const revokeTasks = snapshot.docs.map(async (userDoc) => {
+    const revokeTasks = snapshot.docs.map(async (userDoc: any) => {
       const uid = userDoc.id
       try {
         const keySnap = await db.collection('apiKeys').where('uid', '==', uid).get()
-        const apiKeys = keySnap.docs.map(doc => doc.id)
+        const apiKeys = keySnap.docs.map((doc: any) => doc.id)
         const batch = db.batch()
         keySnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
@@ -1337,7 +1337,7 @@ const handleRevokeExpired = async (c: any) => {
         await batch.commit()
         
         // Invalidate KV caches
-        await Promise.all(apiKeys.map(key => invalidateApiKeyCache(key, uid)))
+        await Promise.all(apiKeys.map((key: any) => invalidateApiKeyCache(key, uid)))
         await invalidateUserCache(uid)
 
         console.log(`[revoke-expired] Revoked keys and downgraded uid=${uid}`)
@@ -1358,6 +1358,50 @@ const handleRevokeExpired = async (c: any) => {
 }
 app.get('/cron/revoke-expired', handleRevokeExpired)
 app.post('/cron/revoke-expired', handleRevokeExpired)
+
+// Proxy route for Yahoo Finance to bypass client-side CORS issues
+app.get('/yahoo-chart/:symbol', async (c) => {
+  const symbol = c.req.param('symbol')
+  const interval = c.req.query('interval') || '1m'
+  const range = c.req.query('range') || '1d'
+
+  try {
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`
+    const res = await fetch(yahooUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    })
+    
+    if (!res.ok) {
+      return c.json({ error: 'Failed to fetch from Yahoo Finance', status: res.status }, res.status as any)
+    }
+
+    const data = await res.json()
+    return c.json(data)
+  } catch (error: any) {
+    console.error('[yahoo-chart] Proxy error:', error)
+    return c.json({ error: 'Internal Server Error', message: error.message }, 500)
+  }
+})
+
+// Proxy route for spot precious metals prices from Gold-API
+app.get('/spot-price/:symbol', async (c) => {
+  const symbol = c.req.param('symbol')
+  try {
+    const res = await fetch(`https://api.gold-api.com/price/${encodeURIComponent(symbol)}`)
+    if (!res.ok) {
+      return c.json({ error: 'Failed to fetch spot price from Gold-API', status: res.status }, res.status as any)
+    }
+    const data = await res.json()
+    return c.json(data)
+  } catch (error: any) {
+    console.error('[spot-price] Proxy error:', error)
+    return c.json({ error: 'Internal Server Error', message: error.message }, 500)
+  }
+})
+
+
 
 // Export handlers for Vercel
 export const GET = handle(app)
