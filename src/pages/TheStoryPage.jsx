@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
@@ -721,11 +721,7 @@ const STYLES = `
   }
 `;
 
-const MARQUEE_ITEMS = [
-  "MT5 Auto-Sync", "Gold-Native Pip Math", "Drawdown Curve",
-  "Calendar Heatmap", "Session Analytics", "Mindset Journal",
-  "PayPal Payment", "Realtime Sync",
-];
+
 
 const FEATURES = [
   { icon: "⚡", tag: "Live Sync", title: "MT5 MetaApi Bridge", body: "Secure server-side connection via MetaApi. Your broker credentials never touch the client. Firebase Cloud Functions handle the sync pipeline end-to-end." },
@@ -753,6 +749,79 @@ export default function TheStoryPage() {
   const { isLightMode } = useAppTheme();
 
   const containerRef = useRef(null);
+
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [signals, setSignals] = useState([
+    { symbol: 'XAUUSD', change: 2.45 },
+    { symbol: 'XAGUSD', change: 1.85 },
+    { symbol: 'XPTUSD', change: -0.45 },
+    { symbol: 'XPDUSD', change: -0.92 },
+    { symbol: 'NAS100', change: 4.12 },
+    { symbol: 'SPX500', change: 1.25 },
+    { symbol: 'EURUSD', change: 0.68 },
+    { symbol: 'GBPUSD', change: 1.22 },
+    { symbol: 'USDJPY', change: -0.35 },
+    { symbol: 'BTCUSD', change: -1.12 },
+  ]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 200);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const fetchSignals = async () => {
+      const tickersToFetch = [
+        { key: 'XAUUSD', symbol: 'GC=F' },
+        { key: 'XAGUSD', symbol: 'SI=F' },
+        { key: 'XPTUSD', symbol: 'PL=F' },
+        { key: 'XPDUSD', symbol: 'PA=F' },
+        { key: 'NAS100', symbol: 'NQ=F' },
+        { key: 'SPX500', symbol: 'ES=F' },
+        { key: 'EURUSD', symbol: 'EURUSD=X' },
+        { key: 'GBPUSD', symbol: 'GBPUSD=X' },
+        { key: 'USDJPY', symbol: 'USDJPY=X' },
+        { key: 'BTCUSD', symbol: 'BTC-USD' }
+      ];
+
+      try {
+        const results = await Promise.all(
+          tickersToFetch.map(async (t) => {
+            try {
+              const res = await fetch(`/api/yahoo-chart/${t.symbol}?interval=1d&range=1d`);
+              if (res.ok) {
+                const data = await res.json();
+                const result = data.chart?.result?.[0];
+                if (result && result.meta) {
+                  const price = Number(result.meta.regularMarketPrice);
+                  const prevClose = Number(result.meta.chartPreviousClose);
+                  const change = prevClose ? Number((((price - prevClose) / prevClose) * 100).toFixed(2)) : 0;
+                  return { symbol: t.key, change };
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to fetch marquee signal for ${t.key}:`, err);
+            }
+            return null;
+          })
+        );
+
+        const validResults = results.filter(r => r !== null);
+        if (validResults.length > 0) {
+          setSignals(validResults);
+        }
+      } catch (err) {
+        console.error('Failed to fetch marquee signals:', err);
+      }
+    };
+
+    fetchSignals();
+    const interval = setInterval(fetchSignals, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Initialize Lenis
@@ -836,7 +905,7 @@ export default function TheStoryPage() {
                 const spaceSpan = document.createElement('span');
                 spaceSpan.style.display = 'inline-block';
                 spaceSpan.innerHTML = '&nbsp;';
-                hl.appendChild(spaceSpan);
+                emNode.appendChild(spaceSpan);
               }
             });
             hl.appendChild(emNode);
@@ -1148,9 +1217,12 @@ export default function TheStoryPage() {
       {/* MARQUEE */}
       <div className="xj-marquee-wrap" aria-hidden="true">
         <div className="xj-marquee-track" id="xj-mtrack">
-          {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, i) => (
-            <div key={i} className="xj-marquee-item">
-              {item} <span className="xj-marquee-sep" />
+          {signals.concat(signals).concat(signals).concat(signals).map((sig, i) => (
+            <div key={i} className="xj-marquee-item font-mono" style={{ fontFamily: "monospace" }}>
+              <span className="text-[#e0b034]">{sig.symbol}</span>
+              <span className={sig.change >= 0 ? 'text-[#14b8a6] ml-2' : 'text-[#f43f5e] ml-2'}>
+                {sig.change >= 0 ? '+' : ''}{sig.change.toFixed(2)}%
+              </span>
             </div>
           ))}
         </div>
@@ -1350,6 +1422,17 @@ export default function TheStoryPage() {
           </div>
         </div>
       </footer>
+
+      {/* Scroll to top */}
+      <Motion.button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        animate={{ opacity: isScrolled ? 1 : 0, y: isScrolled ? 0 : 30 }}
+        transition={{ duration: 0.3 }}
+        className={`fixed bottom-6 right-6 z-[90] p-3.5 rounded-2xl bg-background/80 backdrop-blur-md border border-transparent text-muted-foreground hover:text-foreground shadow-lg hover:-translate-y-1 active:scale-90 transition-all duration-200 ${!isScrolled ? 'pointer-events-none' : ''}`}
+        aria-label="Scroll to top"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
+      </Motion.button>
       </div>
     </div>
   );

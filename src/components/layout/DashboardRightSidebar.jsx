@@ -19,7 +19,7 @@ import {
 } from 'react-bootstrap-icons';
 import { requireProFeature } from '../../services/featureGate';
 import { ImageViewerModal } from '../ImageViewerModal';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
 
@@ -288,20 +288,19 @@ export function DashboardRightSidebar({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-
       {/* ─── NEW TRADE BUTTON ─── */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full py-3 px-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all duration-300 flex items-center justify-center gap-2 border cursor-pointer select-none ${
+        className={`font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 border cursor-pointer select-none mx-auto ${
           isExpanded 
-            ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20' 
-            : 'bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground border-transparent shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]'
+            ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20 py-1.5 px-3 rounded-xl w-max text-[9px] md:text-[10px]' 
+            : 'w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground border-transparent shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] text-[10px]'
         }`}
       >
         {isExpanded ? (
           <>
-            <X className="w-3.5 h-3.5 shrink-0" />
-            Close Trade Logger
+            <X className="w-3 h-3 shrink-0" />
+            Close Trade
           </>
         ) : (
           <>
@@ -311,15 +310,7 @@ export function DashboardRightSidebar({
         )}
       </button>
 
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden w-full"
-          >
+      <div className="w-full">
             {/* ─── ORDER FORM (ACTION CENTER) ───────────────────────────────────── */}
             <div className="apple-glass-panel flex flex-col rounded-3xl relative z-30 overflow-hidden">
 
@@ -327,24 +318,16 @@ export function DashboardRightSidebar({
         <div className="flex items-center justify-center px-4 pt-4 pb-3 border-b border-border/10 shrink-0 relative">
           <div className="flex items-center gap-2 mx-auto">
             <span className="w-2 h-2 rounded-full bg-[#E5B80B] shadow-[0_0_6px_rgba(229,184,11,0.6)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">Record Gold Trade</span>
-            <span className="text-[8px] font-black uppercase bg-[#E5B80B]/15 text-[#E5B80B] px-1.5 py-0.5 rounded tracking-widest">XAU/USD</span>
+            <span className="text-[11px] md:text-xs font-black uppercase tracking-widest text-foreground/80">Record Gold Trade</span>
+            <span className="text-[10px] md:text-xs font-black uppercase bg-[#E5B80B]/15 text-[#E5B80B] px-1.5 py-0.5 rounded tracking-widest">XAU/USD</span>
           </div>
           <div className="absolute right-4 flex items-center gap-2">
             {/* PnL live preview badge */}
             {(parseFloat(entry) > 0 && parseFloat(exit) > 0) && (
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
+              <span className={`text-[10px] md:text-xs font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
                 {(pnlData?.pnl || 0) >= 0 ? '+' : ''}{formatCurrency(pnlData?.pnl || 0)}
               </span>
             )}
-            {/* Minimal button to minimize/collapse */}
-            <button 
-              onClick={() => setIsExpanded(false)}
-              className="p-1 hover:bg-muted/50 rounded-lg text-muted-foreground hover:text-foreground/80 transition-all cursor-pointer"
-              title="Minimize Panel"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
 
@@ -353,7 +336,7 @@ export function DashboardRightSidebar({
           <div className="flex bg-muted/60 p-0.5 rounded-xl">
             <button
               disabled={showLockTimer}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'LONG' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-1.5 text-xs md:text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'LONG' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setDirection('LONG')}
             >
               <span className="flex items-center justify-center gap-1.5">
@@ -363,7 +346,7 @@ export function DashboardRightSidebar({
             </button>
             <button
               disabled={showLockTimer}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'SHORT' ? 'bg-rose-500 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-1.5 text-xs md:text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'SHORT' ? 'bg-rose-500 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setDirection('SHORT')}
             >
               <span className="flex items-center justify-center gap-1.5">
@@ -385,7 +368,7 @@ export function DashboardRightSidebar({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group shrink-0 ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group shrink-0 ${
                   activeTab === tab.id
                     ? 'text-foreground border-primary'
                     : 'text-muted-foreground hover:text-foreground/70 border-transparent'
@@ -397,7 +380,7 @@ export function DashboardRightSidebar({
                 />
                 {tab.label}
                 {badge > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground text-[8px] font-black flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-black flex items-center justify-center">
                     {badge}
                   </span>
                 )}
@@ -414,7 +397,7 @@ export function DashboardRightSidebar({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-500">Log Window Locked</span>
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-amber-500">Log Window Locked</span>
             <div className="bg-amber-500/15 border border-amber-500/30 px-4 py-1.5 rounded-xl text-amber-500 text-sm font-black tracking-[0.15em] font-mono">
               {renewCountdown}
             </div>
@@ -425,13 +408,13 @@ export function DashboardRightSidebar({
         {isTrialActive && (
           <div className="mx-4 mt-3 p-3 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col gap-2 shrink-0">
             <div className="flex justify-between items-center">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-1.5">
+              <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                 Pro Trial Active
               </span>
-              {trialTimeLeft && <span className="text-[9px] font-black text-foreground bg-background/50 px-2 py-0.5 rounded font-mono">{trialTimeLeft}</span>}
+              {trialTimeLeft && <span className="text-[10px] md:text-xs font-black text-foreground bg-background/50 px-2 py-0.5 rounded font-mono">{trialTimeLeft}</span>}
             </div>
-            <button onClick={() => setShowPricingModal(true)} className="w-full py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all">
+            <button onClick={() => setShowPricingModal(true)} className="w-full py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] md:text-xs font-black uppercase tracking-[0.15em] rounded-xl transition-all">
               Upgrade to Pro
             </button>
           </div>
@@ -441,11 +424,11 @@ export function DashboardRightSidebar({
           <div className="mx-4 mt-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 overflow-hidden shrink-0">
             {/* Header row */}
             <div className="flex items-center justify-between px-3 pt-3 pb-1.5">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
+              <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                 Free Tier
               </span>
-              <span className={`text-[9px] font-black tabular-nums ${
+              <span className={`text-[10px] md:text-xs font-black tabular-nums ${
                 remainingFreeTrades === 0 ? 'text-rose-400' :
                 remainingFreeTrades <= 5  ? 'text-amber-400' :
                 'text-blue-400'
@@ -467,11 +450,11 @@ export function DashboardRightSidebar({
                 />
               </div>
               {remainingFreeTrades > 0 ? (
-                <p className="text-[8px] text-muted-foreground/50 mt-1">
+                <p className="text-[9px] md:text-[10.5px] text-muted-foreground/50 mt-1">
                   {remainingFreeTrades} trade{remainingFreeTrades !== 1 ? 's' : ''} remaining — once limit is reached, resets after 1 hour
                 </p>
               ) : (
-                <p className="text-[8px] text-rose-400/70 mt-1">
+                <p className="text-[9px] md:text-[10.5px] text-rose-400/70 mt-1">
                   Limit reached · Unlocks in: <strong className="text-rose-400 font-mono">{renewCountdown || '01:00:00'}</strong>
                 </p>
               )}
@@ -481,7 +464,7 @@ export function DashboardRightSidebar({
             <div className="px-3 pb-3">
               <button
                 onClick={() => setShowPricingModal(true)}
-                className="w-full py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[9px] font-black uppercase tracking-[0.15em] rounded-xl transition-all"
+                className="w-full py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.15em] rounded-xl transition-all"
               >
                 Unlock Unlimited — Upgrade Pro
               </button>
@@ -490,72 +473,72 @@ export function DashboardRightSidebar({
         )}
 
         {/* ── TAB CONTENT ─────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 flex flex-col gap-2.5">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 flex flex-col gap-4">
 
           {/* ════════════════════════════════════════════════════════════════
               TAB 1 — BASIC
           ════════════════════════════════════════════════════════════════ */}
           {activeTab === 'basic' && (
-            <div className="flex flex-col gap-2.5 animate-in fade-in duration-200">
+            <div className="flex flex-col gap-4 animate-in fade-in duration-200">
 
               {/* Amount / Lots */}
               <div className="space-y-1">
-                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
+                <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Amount (Lots)</label>
                 <div className="relative">
                   <input
                     type="text" value={lots} onChange={handleNumericChange(setLots)} placeholder="0.10"
                     disabled={showLockTimer}
-                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-muted-foreground">LOTS</span>
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-muted-foreground">LOTS</span>
                 </div>
               </div>
 
               {/* Entry Price */}
               <div className="space-y-1">
-                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
+                <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Entry Price</label>
                 <div className="relative">
                   <input
                     type="text" value={entry} onChange={handleNumericChange(setEntry)} placeholder="2345.50"
                     disabled={showLockTimer}
-                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary">USD</span>
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-primary">USD</span>
                 </div>
               </div>
 
               {/* Exit Price */}
               <div className="space-y-1">
-                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
+                <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Exit Price</label>
                 <div className="relative">
                   <input
                     type="text" value={exit} onChange={handleNumericChange(setExit)} placeholder="2350.00"
                     disabled={showLockTimer}
-                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary">USD</span>
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-primary">USD</span>
                 </div>
               </div>
 
               {/* TP / SL */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
+                  <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
                   <input type="text" value={tp} onChange={handleNumericChange(setTp)} placeholder="Optional" disabled={showLockTimer}
-                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
+                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
                 </div>
                 <div className="space-y-0.5">
-                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
+                  <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
                   <input type="text" value={sl} onChange={handleNumericChange(setSl)} placeholder="Optional" disabled={showLockTimer}
-                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
+                    className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
                 </div>
               </div>
 
               {/* Session / Strategy */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
-                  <CustomSelect value={session} onChange={setSession} placeholder="Session" disabled={showLockTimer} className="h-9 px-3" align="top"
+                  <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
+                  <CustomSelect value={session} onChange={setSession} placeholder="Session" disabled={showLockTimer} className="h-10 px-3.5" align="top"
                     options={[
                       { value: 'London',   label: 'London'       },
                       { value: 'NewYork',  label: 'New York'     },
@@ -565,8 +548,8 @@ export function DashboardRightSidebar({
                   />
                 </div>
                 <div className="space-y-0.5">
-                  <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
-                  <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" disabled={showLockTimer} className="h-9 px-3" align="top"
+                  <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
+                  <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" disabled={showLockTimer} className="h-10 px-3.5" align="top"
                     options={[
                       { value: 'Breakout', label: 'Breakout'    },
                       { value: 'SMC',      label: 'SMC'         },
@@ -581,19 +564,19 @@ export function DashboardRightSidebar({
 
               {/* Trade Notes */}
               <div className="space-y-0.5">
-                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Notes</label>
+                <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Notes</label>
                 <textarea
                   value={note} onChange={(e) => setNote(e.target.value)}
-                  placeholder="Why did you take this trade?" rows={4} disabled={showLockTimer}
-                  className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="Why did you take this trade?" rows={5} disabled={showLockTimer}
+                  className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
 
               {/* Screenshots Upload & Edit Zone */}
               <div className="space-y-1">
-                <label className="text-[11.5px] font-bold uppercase text-foreground/75 tracking-wider pl-1 flex justify-between">
+                <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1 flex justify-between">
                   <span>Analysis Screenshots</span>
-                  {plan !== 'pro' && <span className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
+                  {plan !== 'pro' && <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
                 </label>
 
                 {plan === 'pro' ? (
@@ -608,10 +591,10 @@ export function DashboardRightSidebar({
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                       />
                       <CloudArrowUp className="w-5 h-5 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
-                      <span className="text-[10px] font-bold text-foreground/80 uppercase tracking-widest text-center">
+                      <span className="text-[10px] md:text-[11px] font-bold text-foreground/80 uppercase tracking-widest text-center">
                         {uploading ? `Uploading (${uploadProgress}%)...` : 'Drag & Drop or Click to Add'}
                       </span>
-                      <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">PNG, JPG, WEBP (Max 5MB)</span>
+                      <span className="text-[10px] md:text-xs font-bold text-muted-foreground/60 uppercase">PNG, JPG, WEBP (Max 5MB)</span>
                     </div>
 
                     {uploading && (
@@ -652,8 +635,8 @@ export function DashboardRightSidebar({
                     className="border border-dashed border-border/40 rounded-xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer bg-muted/5 opacity-60 hover:opacity-100 transition-opacity"
                   >
                     <LockFill className="w-5 h-5 text-muted-foreground/40" />
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest text-center">Attach Analysis Screenshots</span>
-                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 mt-1">Unlock with Pro</span>
+                    <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest text-center">Attach Analysis Screenshots</span>
+                    <span className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 mt-1">Unlock with Pro</span>
                   </div>
                 )}
               </div>
@@ -672,7 +655,7 @@ export function DashboardRightSidebar({
                     (pnlData?.pips || 0) < 0 ? 'bg-rose-500' :
                     'bg-muted-foreground/30'
                   }`} />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Pip Count</span>
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground">Pip Count</span>
                 </div>
                 <span className={`text-sm font-black tabular-nums ${
                   (pnlData?.pips || 0) > 0 ? 'text-green-500' :
@@ -697,25 +680,25 @@ export function DashboardRightSidebar({
               {/* Auto R:R display */}
               <div className="p-3 rounded-2xl bg-muted/30 border border-border/20 flex items-center justify-between">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Auto R:R Ratio</span>
-                  <span className={`text-lg font-black ${autoRR ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground">Auto R:R Ratio</span>
+                  <span className={`text-lg md:text-xl font-black ${autoRR ? 'text-foreground' : 'text-muted-foreground/40'}`}>
                     {autoRR ? `1 : ${autoRR}` : '—'}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Est. Pips</span>
-                  <span className="text-sm font-black text-foreground/70">{(pnlData?.pips || 0).toFixed(1)}</span>
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground">Est. Pips</span>
+                  <span className="text-sm md:text-base font-black text-foreground/70">{(pnlData?.pips || 0).toFixed(1)}</span>
                 </div>
               </div>
               {!autoRR && (
-                <p className="text-[9px] text-muted-foreground/60 text-center -mt-1">Fill Entry, SL & TP in the Log tab to auto-calculate</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground/60 text-center -mt-1">Fill Entry, SL & TP in the Log tab to auto-calculate</p>
               )}
 
               {/* Risk % per Trade */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center pl-1">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider">Risk % per Trade</label>
-                  <span className="text-[10px] font-black text-primary">{riskPercent || 0}%</span>
+                  <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider">Risk % per Trade</label>
+                  <span className="text-[10px] md:text-xs font-black text-primary">{riskPercent || 0}%</span>
                 </div>
                 <input
                   type="range" min="0.1" max="10" step="0.1"
@@ -724,7 +707,7 @@ export function DashboardRightSidebar({
                   disabled={showLockTimer}
                   className="w-full h-1.5 appearance-none bg-muted/60 rounded-full accent-primary cursor-pointer disabled:opacity-50"
                 />
-                <div className="flex justify-between text-[8px] text-muted-foreground/50 font-bold uppercase px-0.5">
+                <div className="flex justify-between text-[10px] md:text-xs text-muted-foreground/50 font-bold uppercase px-0.5">
                   <span>0.1%</span><span>2%</span><span>5%</span><span>10%</span>
                 </div>
               </div>
@@ -736,13 +719,13 @@ export function DashboardRightSidebar({
                   placeholder="1.0" disabled={showLockTimer}
                   className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50"
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-muted-foreground">% RISK</span>
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-muted-foreground">% RISK</span>
               </div>
 
               {/* Max Daily Loss */}
               <div className="p-3 rounded-2xl border border-border/20 bg-muted/20 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider">Max Daily Loss Limit</label>
+                  <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider">Max Daily Loss Limit</label>
                   <button
                     onClick={() => setMaxDailyActive(v => !v)}
                     className={`w-9 h-5 rounded-full transition-all relative ${maxDailyActive ? 'bg-primary' : 'bg-muted/60'}`}
@@ -757,7 +740,7 @@ export function DashboardRightSidebar({
                       placeholder="e.g. 50.00" disabled={showLockTimer}
                       className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50"
                     />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-muted-foreground">USD</span>
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-muted-foreground">USD</span>
                   </div>
                 )}
               </div>
@@ -765,7 +748,7 @@ export function DashboardRightSidebar({
               {/* Risk tip */}
               <div className="flex gap-2 p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20">
                 <span className="text-amber-500 shrink-0 mt-0.5">⚡</span>
-                <p className="text-[9px] text-muted-foreground leading-relaxed">Professional traders risk <strong className="text-foreground">1–2%</strong> per trade. Never exceed 5% to protect your capital.</p>
+                <p className="text-[10px] md:text-[11.5px] text-muted-foreground leading-relaxed">Professional traders risk <strong className="text-foreground">1–2%</strong> per trade. Never exceed 5% to protect your capital.</p>
               </div>
             </div>
           )}
@@ -778,7 +761,7 @@ export function DashboardRightSidebar({
 
               {/* Pre-Trade Mood — same icons as JournalPage */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Pre-Trade Mood</label>
+                <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider pl-1">Pre-Trade Mood</label>
                 <div className="flex justify-between bg-muted/40 rounded-[1.25rem] p-1.5 gap-1 border border-border/40">
                   {MOODS.map(({ icon: MoodIcon, label, colorClass }) => (
                     <button
@@ -792,7 +775,7 @@ export function DashboardRightSidebar({
                       }`}
                     >
                       <MoodIcon className={`w-5 h-5 ${colorClass}`} />
-                      <span className={`text-[7px] font-black uppercase tracking-widest leading-none ${
+                      <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest leading-none ${
                         preTradeMood === label ? 'text-foreground' : 'text-muted-foreground/60'
                       }`}>{label}</span>
                     </button>
@@ -803,15 +786,15 @@ export function DashboardRightSidebar({
               {/* Confidence Level */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center pl-1">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider">Confidence Level</label>
-                  <span className="text-[10px] font-black text-primary">{confidence > 0 ? `${confidence}/10` : '—'}</span>
+                  <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider">Confidence Level</label>
+                  <span className="text-[10px] md:text-xs font-black text-primary">{confidence > 0 ? `${confidence}/10` : '—'}</span>
                 </div>
                 <div className="flex gap-1">
                   {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                     <button
                       key={n}
                       onClick={() => setConfidence(confidence === n ? 0 : n)}
-                      className={`flex-1 h-6 rounded-md text-[8px] font-black transition-all ${
+                      className={`flex-1 h-6 rounded-md text-[10px] md:text-xs font-black transition-all ${
                         n <= confidence
                           ? n <= 3  ? 'bg-rose-500/80 text-white'
                           : n <= 6  ? 'bg-amber-500/80 text-white'
@@ -823,20 +806,20 @@ export function DashboardRightSidebar({
                     </button>
                   ))}
                 </div>
-                <div className="flex justify-between text-[8px] text-muted-foreground/40 font-bold uppercase px-0.5">
+                <div className="flex justify-between text-[10px] md:text-xs text-muted-foreground/40 font-bold uppercase px-0.5">
                   <span>Low</span><span>Medium</span><span>High</span>
                 </div>
               </div>
 
               {/* Trade Conviction */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Conviction</label>
+                <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Conviction</label>
                 <div className="flex gap-2">
                   {['High', 'Medium', 'Low'].map((lvl) => (
                     <button
                       key={lvl}
                       onClick={() => setConviction(conviction === lvl ? '' : lvl)}
-                      className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                      className={`flex-1 py-1.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest border transition-all ${
                         conviction === lvl
                           ? lvl === 'High'   ? 'bg-green-500/20 border-green-500/50 text-green-400'
                           : lvl === 'Medium' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
@@ -852,7 +835,7 @@ export function DashboardRightSidebar({
 
               {/* Post-Trade Reflection */}
               <div className="space-y-0.5">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Post-Trade Reflection</label>
+                <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider pl-1">Post-Trade Reflection</label>
                 <textarea
                   value={postReflect} onChange={(e) => setPostReflect(e.target.value)}
                   placeholder="What did you learn? Did you follow your plan?" rows={3}
@@ -870,13 +853,13 @@ export function DashboardRightSidebar({
 
               {/* Timeframe */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Timeframe</label>
+                <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider pl-1">Timeframe</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {TIMEFRAMES.map((tf) => (
                     <button
                       key={tf}
                       onClick={() => setTimeframe(timeframe === tf ? '' : tf)}
-                      className={`py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                      className={`py-1.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest border transition-all ${
                         timeframe === tf
                           ? 'bg-primary/20 border-primary/50 text-primary shadow-sm'
                           : 'bg-muted/30 border-border/20 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
@@ -890,13 +873,13 @@ export function DashboardRightSidebar({
 
               {/* Setup Grade */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Setup Quality Grade</label>
+                <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider pl-1">Setup Quality Grade</label>
                 <div className="flex gap-2">
                   {GRADES.map(({ value, color }) => (
                     <button
                       key={value}
                       onClick={() => setSetupGrade(setupGrade === value ? '' : value)}
-                      className={`flex-1 py-2 rounded-xl text-[11px] font-black border transition-all ${
+                      className={`flex-1 py-2 rounded-xl text-[11px] md:text-xs font-black border transition-all ${
                         setupGrade === value
                           ? color + ' shadow-sm'
                           : 'bg-muted/30 border-border/20 text-muted-foreground hover:bg-muted/50'
@@ -910,13 +893,13 @@ export function DashboardRightSidebar({
 
               {/* Market Structure */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Market Structure</label>
+                <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider pl-1">Market Structure</label>
                 <div className="flex flex-wrap gap-1.5">
                   {STRUCTURES.map((s) => (
                     <button
                       key={s}
                       onClick={() => toggleArrayItem(marketStructure, setMarketStructure, s)}
-                      className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all ${
+                      className={`px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all ${
                         marketStructure.includes(s)
                           ? 'bg-primary/20 border-primary/50 text-primary'
                           : 'bg-muted/30 border-border/20 text-muted-foreground hover:bg-muted/50'
@@ -931,9 +914,9 @@ export function DashboardRightSidebar({
               {/* Confluence Factors */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between pl-1">
-                  <label className="text-[10px] font-bold uppercase text-foreground/75 tracking-wider">Confluence Factors</label>
+                  <label className="text-[11px] md:text-xs font-bold uppercase text-foreground/75 tracking-wider">Confluence Factors</label>
                   {confluenceFactors.length > 0 && (
-                    <span className="text-[9px] font-black text-primary">{confluenceFactors.length} selected</span>
+                    <span className="text-[10px] md:text-xs font-black text-primary">{confluenceFactors.length} selected</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -941,7 +924,7 @@ export function DashboardRightSidebar({
                     <button
                       key={c}
                       onClick={() => toggleArrayItem(confluenceFactors, setConfluenceFactors, c)}
-                      className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all ${
+                      className={`px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all ${
                         confluenceFactors.includes(c)
                           ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
                           : 'bg-muted/30 border-border/20 text-muted-foreground hover:bg-muted/50'
@@ -959,8 +942,8 @@ export function DashboardRightSidebar({
         {/* ── Footer: Est. PnL + Save Button ──────────────────────────────── */}
         <div className="px-4 pt-2 pb-4 border-t border-border/10 shrink-0 space-y-2">
           <div className="flex items-center justify-between px-1">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-foreground/60">Est. PnL</span>
-            <span className={`text-xs font-black ${(pnlData?.pnl || 0) > 0 ? 'text-green-500' : (pnlData?.pnl || 0) < 0 ? 'text-rose-500' : 'text-foreground/50'}`}>
+            <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-foreground/60">Est. PnL</span>
+            <span className={`text-xs md:text-sm font-black ${(pnlData?.pnl || 0) > 0 ? 'text-green-500' : (pnlData?.pnl || 0) < 0 ? 'text-rose-500' : 'text-foreground/50'}`}>
               {formatCurrency(pnlData?.pnl || 0)}
             </span>
           </div>
@@ -975,7 +958,7 @@ export function DashboardRightSidebar({
 
           {/* Tab completion hints */}
           {(riskFilled === 0 || moodFilled === 0) && !showLockTimer && (
-            <p className="text-[8px] text-muted-foreground/40 text-center flex items-center justify-center gap-1">
+            <p className="text-[9px] md:text-[10px] text-muted-foreground/40 text-center flex items-center justify-center gap-1">
               <Lightbulb 
                 className="w-2.5 h-2.5 text-amber-400 shrink-0" 
                 style={{ filter: 'drop-shadow(0 0 2px #fbbf24)' }}
@@ -985,9 +968,7 @@ export function DashboardRightSidebar({
           )}
         </div>
       </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
 
       {/* ─── Currency Converter (Separate Box) ────────────────────────────── */}
       <div className="w-full shrink-0 pb-6 relative z-10">

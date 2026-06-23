@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { pad2, formatCurrency, formatNumber } from '../lib/tradeUtils';
 import { 
   ChevronLeft, 
@@ -193,19 +194,24 @@ export function CalendarPage() {
       cells.push(
         <button 
           key={`day-${d}`} 
-          className={`relative aspect-square rounded-xl sm:rounded-2xl transition-all duration-300 flex flex-col justify-between p-1 sm:p-3 group ${
+          className={`relative aspect-square rounded-xl sm:rounded-2xl transition-all duration-300 flex flex-col justify-between p-1 sm:p-3 group overflow-hidden ${
             isSelected 
               ? 'border-2 border-primary ring-2 ring-primary/20 shadow-[0_0_25px_rgba(139,92,246,0.25)] bg-primary/5 scale-105 z-10' 
               : hasTrades 
                 ? (isWin 
-                    ? 'bg-green-500/[0.04] border border-green-500/25 hover:border-green-500/50 hover:bg-green-500/[0.08] hover:scale-[1.03] shadow-sm shadow-green-500/5' 
+                    ? `bg-green-500/[0.04] border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.03] to-transparent' : 'border-green-500/25'} hover:border-green-500/50 hover:bg-green-500/[0.08] hover:scale-[1.03] shadow-sm shadow-green-500/5` 
                     : isLoss 
-                      ? 'bg-red-500/[0.04] border border-red-500/25 hover:border-red-500/50 hover:bg-red-500/[0.08] hover:scale-[1.03] shadow-sm shadow-red-500/5' 
-                      : 'bg-muted/10 border border-border/80 hover:bg-muted/20 hover:scale-[1.03]') 
-                : 'bg-muted/5 border border-border/10 hover:bg-muted/10 hover:border-border/30 hover:scale-[1.03]'
+                      ? `bg-red-500/[0.04] border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.03] to-transparent' : 'border-red-500/25'} hover:border-red-500/50 hover:bg-red-500/[0.08] hover:scale-[1.03] shadow-sm shadow-red-500/5` 
+                      : `bg-muted/10 border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.03] to-transparent' : 'border-border/80'} hover:bg-muted/20 hover:scale-[1.03]`) 
+                : `bg-muted/5 border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.05] to-transparent' : 'border-border/10'} hover:bg-muted/10 hover:border-border/30 hover:scale-[1.03]`
           }`}
           onClick={() => setSelectedCalDay(d)}
         >
+          {/* Glowing neon top stripe for today */}
+          {isToday && (
+            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary via-purple-500 to-indigo-500 pointer-events-none animate-pulse" />
+          )}
+
           {/* Day Number (Top Left) */}
           <div className="w-full flex justify-between items-center">
             <span className={`text-[10px] sm:text-xs font-black transition-colors ${
@@ -217,8 +223,10 @@ export function CalendarPage() {
             }`}>
               {d}
             </span>
-            {isToday && !isSelected && (
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            {isToday && (
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(139,92,246,0.8)] relative flex shrink-0">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+              </div>
             )}
           </div>
 
@@ -301,7 +309,7 @@ export function CalendarPage() {
   const strokeDashoffset = circumference - (consistencyRate / 100) * circumference;
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-[1250px] mx-auto w-full space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* HEADER SECTION */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -344,75 +352,13 @@ export function CalendarPage() {
         </div>
       </header>
 
-      {/* MONTH STATISTICS SUMMARY ROW */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-        {/* Card 1 — Monthly Net P&L */}
-        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          {/* Icon badge */}
-          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${monthlyPnl >= 0 ? 'bg-green-500/15 border border-green-500/25' : 'bg-red-500/15 border border-red-500/25'}`}>
-            {monthlyPnl >= 0
-              ? <GraphUp size={18} className="text-green-500" />
-              : <GraphDown size={18} className="text-red-500" />}
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Monthly Net P&amp;L</span>
-            <span className={`text-xl font-black tracking-tight ${monthlyPnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {formatCurrency(monthlyPnl, true)}
-            </span>
-            <span className="text-[10px] font-semibold text-muted-foreground/60">Realized in closed trades</span>
-          </div>
-        </div>
-
-        {/* Card 2 — Consistency */}
-        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-primary/15 border border-primary/25">
-            <ShieldCheck size={18} className="text-primary" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Consistency (Win Rate)</span>
-            <span className="text-xl font-black tracking-tight text-foreground">
-              {consistencyRate.toFixed(1)}%
-            </span>
-            <span className="text-[10px] font-semibold text-muted-foreground/60">{winDays} Green / {activeDays} Traded Days</span>
-          </div>
-        </div>
-
-        {/* Card 3 — Total Signals */}
-        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-yellow-500/15 border border-yellow-500/25">
-            <LightningChargeFill size={18} className="text-yellow-500" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Total Signals</span>
-            <span className="text-xl font-black tracking-tight text-foreground">
-              {totalMonthlyTrades}
-            </span>
-            <span className="text-[10px] font-semibold text-muted-foreground/60">Executions logged this month</span>
-          </div>
-        </div>
-
-        {/* Card 4 — Volume & Pips */}
-        <div className="card-premium p-5 flex flex-col gap-3 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-sky-500/15 border border-sky-500/25">
-            <Activity size={18} className="text-sky-500" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Volume &amp; Pips</span>
-            <span className="text-xl font-black tracking-tight text-foreground">
-              {totalPips >= 0 ? '+' : ''}{formatNumber(totalPips, 0)} <span className="text-sm font-bold text-muted-foreground">Pips</span>
-            </span>
-            <span className="text-[10px] font-semibold text-muted-foreground/60">{formatNumber(totalLots, 2)} Total Lots Traded</span>
-          </div>
-        </div>
-
-      </section>
 
       {/* MAIN CONTAINER: CALENDAR GRID + INTELLIGENCE PANEL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Calendar Grid Card */}
-        <div className="lg:col-span-2 card-premium p-3 sm:p-8 animate-in slide-in-from-left-4 duration-700">
+        <div className="lg:col-span-2 card-premium p-3 sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 gap-2 mb-4 border-b border-border/10 pb-3">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => {
@@ -427,7 +373,7 @@ export function CalendarPage() {
           </div>
           
           {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-2.5 sm:gap-4">
+          <div key={`${calMonth}-${calYear}`} className="grid grid-cols-7 gap-1.5 sm:gap-2.5 animate-in fade-in duration-300">
             {renderCells()}
           </div>
           
@@ -440,190 +386,206 @@ export function CalendarPage() {
         </div>
 
         {/* Intelligence Feed Panel (Right Column) */}
-        <div className="card-premium p-5 sm:p-6 h-fit shadow-xl shadow-primary/5 animate-in slide-in-from-right-4 duration-700 delay-200">
+        <div className="card-premium p-5 sm:p-6 h-fit shadow-xl shadow-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
           
-          {selectedCalDay ? (
-            /* Day Details View */
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
+          <AnimatePresence mode="wait">
+            {selectedCalDay ? (
+              /* Day Details View */
+              <Motion.div 
+                key="day-details"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/85">
+                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    Day Intelligence
+                  </h3>
+                  <button 
+                    onClick={() => setSelectedCalDay(null)}
+                    className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground/70 active:scale-95 transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {/* Day Header Box */}
+                <div className="p-5 rounded-[2rem] bg-muted/30 border border-border/50 shadow-inner space-y-4 animate-in fade-in zoom-in-95 duration-500">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em]">{fmtDate(selectedDate)}</span>
+                    <div className={`w-2.5 h-2.5 rounded-full ${selectedTotal >= 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'} animate-pulse`} />
+                  </div>
+                  
+                  <div className="flex justify-between items-end text-foreground/90">
+                    <div className="flex flex-col">
+                      <span className={`text-3xl font-black tracking-tighter ${selectedTotal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {formatCurrency(selectedTotal, true)}
+                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{selectedTotal >= 0 ? 'Net Profit' : 'Net Loss'}</span>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-background/50 border border-border/50">
+                      {selectedTrades.length} {selectedTrades.length === 1 ? 'Signal' : 'Signals'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Day Metrics Mini Row */}
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
+                    <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Lots</div>
+                    <div className="text-xs font-bold text-foreground mt-0.5">{formatNumber(selectedLots, 2)}</div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
+                    <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Win Rate</div>
+                    <div className="text-xs font-bold text-foreground mt-0.5">{selectedDayWinRate.toFixed(0)}%</div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
+                    <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Pips</div>
+                    <div className="text-xs font-bold text-foreground mt-0.5">{selectedPips >= 0 ? '+' : ''}{formatNumber(selectedPips, 0)}</div>
+                  </div>
+                </div>
+
+                {/* Trade Signal Feed */}
+                <div className="space-y-3">
+                  <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest">Signal Executions</p>
+                  <div className="space-y-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
+                    {selectedTrades.map((trade, idx) => (
+                      <div 
+                        key={trade.id} 
+                        className="flex items-center justify-between p-4 rounded-2xl border border-border/40 hover:bg-muted/20 transition-all group animate-in slide-in-from-bottom-2 duration-500"
+                        style={{ animationDelay: `${idx * 80}ms` }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-transform group-hover:rotate-12 ${
+                            trade.direction?.toUpperCase() === 'BUY' 
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                              : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                          }`}>
+                            {trade.direction ? trade.direction[0] : 'S'}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-foreground tracking-tight">XAU/USD</span>
+                            <span className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest truncate max-w-[120px]">{trade.setup || 'Direct Execution'}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={`text-xs font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {formatCurrency(trade.pnl, true)}
+                          </span>
+                          <span className="text-[8px] font-bold text-muted-foreground/50 uppercase flex items-center gap-1">
+                            <Clock size={8} /> {trade.session || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Motion.div>
+            ) : (
+              /* Default Monthly Performance Insights view */
+              <Motion.div 
+                key="monthly-insights"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
                 <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/85">
                   <div className="w-2 h-2 rounded-full bg-primary" />
-                  Day Intelligence
+                  Monthly Analytics
                 </h3>
-                <button 
-                  onClick={() => setSelectedCalDay(null)}
-                  className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground/70 active:scale-95 transition-all"
-                >
-                  Close
-                </button>
-              </div>
 
-              {/* Day Header Box */}
-              <div className="p-5 rounded-[2rem] bg-muted/30 border border-border/50 shadow-inner space-y-4 animate-in fade-in zoom-in-95 duration-500">
-                <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em]">{fmtDate(selectedDate)}</span>
-                  <div className={`w-2.5 h-2.5 rounded-full ${selectedTotal >= 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'} animate-pulse`} />
-                </div>
-                
-                <div className="flex justify-between items-end text-foreground/90">
-                  <div className="flex flex-col">
-                    <span className={`text-3xl font-black tracking-tighter ${selectedTotal >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {formatCurrency(selectedTotal, true)}
-                    </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{selectedTotal >= 0 ? 'Net Profit' : 'Net Loss'}</span>
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-background/50 border border-border/50">
-                    {selectedTrades.length} {selectedTrades.length === 1 ? 'Signal' : 'Signals'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Day Metrics Mini Row */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
-                  <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Lots</div>
-                  <div className="text-xs font-bold text-foreground mt-0.5">{formatNumber(selectedLots, 2)}</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
-                  <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Win Rate</div>
-                  <div className="text-xs font-bold text-foreground mt-0.5">{selectedDayWinRate.toFixed(0)}%</div>
-                </div>
-                <div className="p-3 rounded-2xl bg-muted/10 border border-border/20">
-                  <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Pips</div>
-                  <div className="text-xs font-bold text-foreground mt-0.5">{selectedPips >= 0 ? '+' : ''}{formatNumber(selectedPips, 0)}</div>
-                </div>
-              </div>
-
-              {/* Trade Signal Feed */}
-              <div className="space-y-3">
-                <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest">Signal Executions</p>
-                <div className="space-y-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
-                  {selectedTrades.map((trade, idx) => (
-                    <div 
-                      key={trade.id} 
-                      className="flex items-center justify-between p-4 rounded-2xl border border-border/40 hover:bg-muted/20 transition-all group animate-in slide-in-from-bottom-2 duration-500"
-                      style={{ animationDelay: `${idx * 80}ms` }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest transition-transform group-hover:rotate-12 ${
-                          trade.direction?.toUpperCase() === 'BUY' 
-                            ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
-                            : 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        }`}>
-                          {trade.direction ? trade.direction[0] : 'S'}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black text-foreground tracking-tight">XAU/USD</span>
-                          <span className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest truncate max-w-[120px]">{trade.setup || 'Direct Execution'}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className={`text-xs font-black ${trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {formatCurrency(trade.pnl, true)}
-                        </span>
-                        <span className="text-[8px] font-bold text-muted-foreground/50 uppercase flex items-center gap-1">
-                          <Clock size={8} /> {trade.session || 'N/A'}
-                        </span>
-                      </div>
+                {/* SVG Win Rate Gauge Card */}
+                <div className="p-6 rounded-[2rem] bg-muted/20 border border-border/40 flex flex-col items-center justify-center relative overflow-hidden shadow-inner min-h-[160px]">
+                  <div className="relative flex items-center justify-center">
+                    <svg className="w-24 h-24 transform -rotate-90">
+                      <circle cx="48" cy="48" r={radius} className="text-muted/10" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" />
+                      <circle 
+                        cx="48" 
+                        cy="48" 
+                        r={radius} 
+                        className="text-primary transition-all duration-1000 ease-out" 
+                        strokeWidth={strokeWidth} 
+                        strokeDasharray={circumference} 
+                        strokeDashoffset={strokeDashoffset} 
+                        strokeLinecap="round" 
+                        stroke="currentColor" 
+                        fill="transparent" 
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center justify-center mt-0.5">
+                      <span className="text-xl font-black leading-none">{consistencyRate.toFixed(0)}%</span>
+                      <span className="text-[8px] uppercase font-black text-muted-foreground/80 tracking-widest mt-0.5">Consistency</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Default Monthly Performance Insights view */
-            <div className="space-y-6">
-              <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/85">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                Monthly Analytics
-              </h3>
-
-              {/* SVG Win Rate Gauge Card */}
-              <div className="p-6 rounded-[2rem] bg-muted/20 border border-border/40 flex flex-col items-center justify-center relative overflow-hidden shadow-inner min-h-[160px]">
-                <div className="relative flex items-center justify-center">
-                  <svg className="w-24 h-24 transform -rotate-90">
-                    <circle cx="48" cy="48" r={radius} className="text-muted/10" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" />
-                    <circle 
-                      cx="48" 
-                      cy="48" 
-                      r={radius} 
-                      className="text-primary transition-all duration-1000 ease-out" 
-                      strokeWidth={strokeWidth} 
-                      strokeDasharray={circumference} 
-                      strokeDashoffset={strokeDashoffset} 
-                      strokeLinecap="round" 
-                      stroke="currentColor" 
-                      fill="transparent" 
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center justify-center mt-0.5">
-                    <span className="text-xl font-black leading-none">{consistencyRate.toFixed(0)}%</span>
-                    <span className="text-[8px] uppercase font-black text-muted-foreground/80 tracking-widest mt-0.5">Consistency</span>
+                  </div>
+                  <div className="text-center mt-3 space-y-1">
+                    <span className="text-xs font-black uppercase tracking-widest text-foreground/90">{winDays} of {activeDays} Trading Days Green</span>
                   </div>
                 </div>
-                <div className="text-center mt-3 space-y-1">
-                  <span className="text-xs font-black uppercase tracking-widest text-foreground/90">{winDays} of {activeDays} Trading Days Green</span>
-                </div>
-              </div>
 
-              {/* Setups Breakdown */}
-              <div className="space-y-3">
-                <p className="text-xs font-black text-muted-foreground/80 uppercase tracking-widest">Best Execution Setups</p>
-                {sortedSetups.length > 0 ? (
-                  sortedSetups.map((setup) => (
-                    <div key={setup.name} className="p-3 rounded-2xl bg-muted/10 border border-border/10 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-black text-foreground truncate max-w-[140px]">{setup.name}</span>
-                        <span className={`text-xs font-black ${setup.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {formatCurrency(setup.pnl, true)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${setup.winRate}%` }}
-                          />
+                {/* Setups Breakdown */}
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-muted-foreground/80 uppercase tracking-widest">Best Execution Setups</p>
+                  {sortedSetups.length > 0 ? (
+                    sortedSetups.map((setup) => (
+                      <div key={setup.name} className="p-3 rounded-2xl bg-muted/10 border border-border/10 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-black text-foreground truncate max-w-[140px]">{setup.name}</span>
+                          <span className={`text-xs font-black ${setup.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {formatCurrency(setup.pnl, true)}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-black text-muted-foreground uppercase shrink-0">{setup.winRate.toFixed(0)}% Win</span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full" 
+                              style={{ width: `${setup.winRate}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-black text-muted-foreground uppercase shrink-0">{setup.winRate.toFixed(0)}% Win</span>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-xs font-bold text-muted-foreground/60 uppercase">No Setups Recorded</div>
-                )}
-              </div>
-
-              {/* Session Performance */}
-              <div className="space-y-3">
-                <p className="text-xs font-black text-muted-foreground/80 uppercase tracking-widest">Session Performance</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {Object.entries(sessionStats).map(([name, data]) => {
-                    const isSessionWin = data.pnl > 0.01;
-                    const isSessionLoss = data.pnl < -0.01;
-                    return (
-                      <div key={name} className="p-2.5 rounded-xl bg-muted/15 border border-border/10 flex flex-col justify-between items-center text-center gap-1">
-                        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">{name}</span>
-                        <span className={`text-xs font-black ${isSessionWin ? 'text-green-500' : isSessionLoss ? 'text-red-500' : 'text-muted-foreground'}`}>
-                          {data.count > 0 ? formatCurrency(data.pnl, true, 0) : '—'}
-                        </span>
-                        <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase">{data.count} Trades</span>
-                      </div>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-xs font-bold text-muted-foreground/60 uppercase">No Setups Recorded</div>
+                  )}
                 </div>
-              </div>
 
-              {/* Cognitive coach tip */}
-              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex gap-3 items-start select-none">
-                <TrophyFill className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Intelligence Tip</p>
-                  <p className="text-xs leading-relaxed text-muted-foreground font-semibold uppercase">{smartTip}</p>
+                {/* Session Performance */}
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-muted-foreground/80 uppercase tracking-widest">Session Performance</p>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {Object.entries(sessionStats).map(([name, data]) => {
+                      const isSessionWin = data.pnl > 0.01;
+                      const isSessionLoss = data.pnl < -0.01;
+                      return (
+                        <div key={name} className="p-2.5 rounded-xl bg-muted/15 border border-border/10 flex flex-col justify-between items-center text-center gap-1">
+                          <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">{name}</span>
+                          <span className={`text-xs font-black ${isSessionWin ? 'text-green-500' : isSessionLoss ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            {data.count > 0 ? formatCurrency(data.pnl, true, 0) : '—'}
+                          </span>
+                          <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase">{data.count} Trades</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+
+                {/* Cognitive coach tip */}
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex gap-3 items-start select-none">
+                  <TrophyFill className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Intelligence Tip</p>
+                    <p className="text-xs leading-relaxed text-muted-foreground font-semibold uppercase">{smartTip}</p>
+                  </div>
+                </div>
+              </Motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

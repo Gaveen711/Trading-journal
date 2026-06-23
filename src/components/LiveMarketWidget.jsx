@@ -13,9 +13,9 @@ const TIMEFRAMES = [
   { id: 'W', label: '1W' }
 ];
 
-export function LiveMarketWidget() {
+export function LiveMarketWidget({ onTickersUpdate }) {
   const { isLightMode } = useAppTheme();
-  const [interval, setIntervalState] = useState('60'); // default '1h'
+  const [interval, setIntervalState] = useState('5'); // default '5m'
   const [activeAsset, setActiveAsset] = useState('xauusd');
 
   // Real-time Simulated Tickers state
@@ -149,6 +149,12 @@ export function LiveMarketWidget() {
     const intervalId = window.setInterval(fetchRealPrices, 15000);
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (typeof onTickersUpdate === 'function') {
+      onTickersUpdate(tickers);
+    }
+  }, [tickers, onTickersUpdate]);
 
   // Helper to generate SVG sparkline path
   const getSparklinePath = (history, width = 120, height = 36) => {

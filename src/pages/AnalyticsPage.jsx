@@ -65,8 +65,14 @@ export function AnalyticsPage() {
     });
 
     const sessionDataMap = {};
+    const PLAYBOOK_STRATEGIES = ['Breakout', 'SMC', 'ICT', 'Scalp', 'Swing', 'S/R'];
     const strategyDataMap = {};
     
+    // Initialize standard playbook strategies
+    PLAYBOOK_STRATEGIES.forEach(strat => {
+      strategyDataMap[strat] = { pnl: 0, wins: 0, total: 0 };
+    });
+
     tradesList.forEach(t => {
       const s = t.session || 'Unknown';
       if (!sessionDataMap[s]) sessionDataMap[s] = { pnl: 0, wins: 0, total: 0 };
@@ -78,40 +84,47 @@ export function AnalyticsPage() {
         ? t.strategies
         : t.setup
           ? [t.setup]
-          : ['Untagged'];
+          : [];
 
       tags.forEach(tag => {
-        if (!strategyDataMap[tag]) strategyDataMap[tag] = { pnl: 0, wins: 0, total: 0 };
-        strategyDataMap[tag].pnl += t.pnl;
-        strategyDataMap[tag].total++;
-        if (t.outcome === 'WIN') strategyDataMap[tag].wins++;
+        if (!tag) return;
+        const normTag = tag.trim().toLowerCase();
+        
+        // Match standard playbook strategy names (case-insensitive)
+        const found = PLAYBOOK_STRATEGIES.find(strat => {
+          const normStrat = strat.toLowerCase();
+          return normTag === normStrat || normTag.includes(normStrat) || normStrat.includes(normTag);
+        });
+
+        const key = found || tag.trim();
+
+        if (!strategyDataMap[key]) {
+          strategyDataMap[key] = { pnl: 0, wins: 0, total: 0 };
+        }
+        strategyDataMap[key].pnl += t.pnl;
+        strategyDataMap[key].total++;
+        if (t.outcome === 'WIN') strategyDataMap[key].wins++;
       });
     });
 
-    // 1. Equity Curve
-    let runningBalance = walletBalance || 0;
-    const equityCurvePoints = [runningBalance];
-    const equityCurveLabels = ['Start'];
-    sortedTrades.forEach(t => {
-      runningBalance += t.pnl;
-      equityCurvePoints.push(parseFloat(runningBalance.toFixed(2)));
-      equityCurveLabels.push(t.date);
-    });
+    // Ensure all standard strategies and custom strategy tags are included
+    const allStrategies = Array.from(new Set([...PLAYBOOK_STRATEGIES, ...Object.keys(strategyDataMap)]));
 
-    const equityCurveChartData = {
-      labels: equityCurveLabels,
-      datasets: [{
-        label: 'Equity Curve',
-        data: equityCurvePoints,
-        borderColor: 'rgb(59, 130, 246)', // elegant blue line
-        backgroundColor: 'rgba(59, 130, 246, 0.05)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 0, // no visible dots on the line
-        pointHoverRadius: 6,
-        borderWidth: 2.5,
-      }]
-    };
+    // 1. Setup Performance List
+    const setupPerformanceList = allStrategies.map(name => {
+      const data = strategyDataMap[name] || { pnl: 0, wins: 0, total: 0 };
+      const wins = data.wins;
+      const losses = data.total - data.wins;
+      const winRate = data.total > 0 ? Math.round((wins / data.total) * 100) : 0;
+      return {
+        name,
+        wins,
+        losses,
+        winRate,
+        pnl: data.pnl,
+        total: data.total
+      };
+    }).sort((a, b) => b.pnl - a.pnl);
 
     // 2. Monthly P/L
     const monthlyPnlMap = {};
@@ -138,66 +151,83 @@ export function AnalyticsPage() {
       }]
     };
 
-    // 3. Session Performance Pie Chart
-    const sessionNames = ['London', 'New York', 'Tokyo', 'Sydney'];
-    const sessionPnlMap = { London: 0, 'New York': 0, Tokyo: 0, Sydney: 0 };
-    
-    tradesList.forEach(t => {
-      // Standardize casing for key matching
-      let s = t.session || '';
-      if (s.toLowerCase() === 'london') sessionPnlMap.London += t.pnl;
-      else if (s.toLowerCase() === 'new york' || s.toLowerCase() === 'new-york' || s.toLowerCase() === 'newyork') sessionPnlMap['New York'] += t.pnl;
-      else if (s.toLowerCase() === 'tokyo' || s.toLowerCase().includes('asia')) sessionPnlMap.Tokyo += t.pnl;
-      else if (s.toLowerCase() === 'sydney') sessionPnlMap.Sydney += t.pnl;
-    });
-
-    const sessionChartLabels = sessionNames.map(name => {
-      const val = sessionPnlMap[name];
-      const sign = val >= 0 ? '+' : '';
-      return `${name}: ${sign}${formatCurrency(val)}`;
-    });
-
-    const sessionChartData = {
-      labels: sessionChartLabels,
-      datasets: [{
-        data: sessionNames.map(name => Math.max(1, Math.abs(sessionPnlMap[name]))), // segment sizing by volume weight
-        backgroundColor: [
-          'rgb(59, 130, 246)',   // London (Blue)
-          'rgb(16, 185, 129)',   // New York (Green)
-          'rgb(245, 158, 11)',   // Tokyo (Orange)
-          'rgb(239, 68, 68)'     // Sydney (Red)
-        ],
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-      }]
+    // 3. Session Edge Analysis Grouped Bar Chart & Stats
+    const getNormalizedSession = (s) => {
+      if (!s) return 'Asia';
+      const norm = s.toLowerCase().trim();
+      if (norm.includes('london')) return 'London';
+      if (norm.includes('ny') || norm.includes('new york') || norm.includes('new-york') || norm.includes('newyork')) return 'NY';
+      if (norm.includes('asia') || norm.includes('tokyo') || norm.includes('sydney')) return 'Asia';
+      if (norm.includes('overlap')) return 'Overlap';
+      return 'Asia';
     };
 
-    // 4. Performance by Day
-    const dayPnlMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0 };
+    const sessionWeeklyPnl = {
+      London: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+      NY: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+      Asia: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+      Overlap: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 }
+    };
+
+    const sessionSummaryMap = {
+      Asia: { wins: 0, total: 0 },
+      London: { wins: 0, total: 0 },
+      Overlap: { wins: 0, total: 0 },
+      NY: { wins: 0, total: 0 }
+    };
+
     tradesList.forEach(t => {
-      if (!t.date) return;
-      const dateObj = new Date(t.date);
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const dayName = days[dateObj.getDay()];
-      if (dayName && dayPnlMap[dayName] !== undefined) {
-        dayPnlMap[dayName] += t.pnl;
+      const session = getNormalizedSession(t.session);
+      
+      // Update summary maps
+      if (sessionSummaryMap[session]) {
+        sessionSummaryMap[session].total++;
+        if (t.outcome === 'WIN') {
+          sessionSummaryMap[session].wins++;
+        }
+      }
+
+      // Update weekly P&L
+      if (t.date) {
+        const dateObj = new Date(t.date);
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = days[dateObj.getDay()];
+        if (sessionWeeklyPnl[session] && sessionWeeklyPnl[session][dayName] !== undefined) {
+          sessionWeeklyPnl[session][dayName] += t.pnl;
+        }
       }
     });
 
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    const dayValues = dayLabels.map(d => dayPnlMap[d]);
-
-    const performanceByDayChartData = {
-      labels: dayLabels,
-      datasets: [{
-        label: 'Performance by Day',
-        data: dayValues,
-        backgroundColor: 'rgba(77, 124, 15, 0.85)', // darker shade of green
-        borderColor: '#4d7c0f',
-        borderWidth: 1.5,
-        borderRadius: 8,
-      }]
+    const sessionColors = {
+      London: '#E5B80B',
+      NY: '#8b5cf6',
+      Asia: '#10b981',
+      Overlap: '#f97316'
     };
+
+    const sessionWeeklyChartData = {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: ['London', 'NY', 'Asia', 'Overlap'].map(session => ({
+        label: session,
+        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => parseFloat(sessionWeeklyPnl[session][day].toFixed(2))),
+        backgroundColor: sessionColors[session],
+        borderRadius: 4,
+        borderWidth: 0,
+        barPercentage: 0.8,
+        categoryPercentage: 0.8,
+      }))
+    };
+
+    const sessionSummary = ['Asia', 'London', 'Overlap', 'NY'].map(key => {
+      const s = sessionSummaryMap[key];
+      const winRate = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0;
+      return {
+        key,
+        label: key === 'NY' ? 'NY' : key.toUpperCase(),
+        winRate,
+        total: s.total
+      };
+    });
 
     // 5. Performance by Strategy
     const strategyLabels = Object.keys(strategyDataMap).sort((a, b) => strategyDataMap[b].pnl - strategyDataMap[a].pnl);
@@ -227,10 +257,10 @@ export function AnalyticsPage() {
       expectancy,
       pf,
       sortedTrades,
-      equityCurveChartData,
+      setupPerformanceList,
       monthlyPnlChartData,
-      sessionChartData,
-      performanceByDayChartData,
+      sessionWeeklyChartData,
+      sessionSummary,
       performanceByStrategyChartData,
       currentWalletBalance,
       winRatePercent
@@ -254,10 +284,10 @@ export function AnalyticsPage() {
     expectancy,
     pf,
     sortedTrades,
-    equityCurveChartData,
+    setupPerformanceList,
     monthlyPnlChartData,
-    sessionChartData,
-    performanceByDayChartData,
+    sessionWeeklyChartData,
+    sessionSummary,
     performanceByStrategyChartData,
     currentWalletBalance,
     winRatePercent
@@ -361,21 +391,82 @@ export function AnalyticsPage() {
 
       {/* 2x2 Grid of Performance Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Chart 1: Equity Curve */}
-        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-            <BarChartLine className="w-4 h-4 text-primary" />
-            Equity Curve
-          </h3>
-          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Progression of total account equity over logged operations.</p>
-          <div className="h-64">
-            <Line data={equityCurveChartData} options={{
-              ...chartOptions,
-              scales: {
-                ...chartOptions.scales,
-                x: { ...chartOptions.scales.x, display: true }
-              }
-            }} />
+        {/* Setup Performance Card */}
+        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300 flex flex-col">
+          <div className="flex items-center gap-2 mb-1 shrink-0">
+            <span className="w-1.5 h-4 bg-[#10b981] rounded-full shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-foreground/80">
+              Setup Performance
+            </h3>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-6 shrink-0">
+            Win rate metrics and Net P&L distribution by playbook setup.
+          </p>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-[256px] space-y-4">
+            {setupPerformanceList.map((setup) => {
+              // Custom map for strategy specific colors to give distinct identity to each playbook setup
+              const strategyColorsMap = {
+                'Breakout': '#06b6d4', // Cyan
+                'SMC': '#8b5cf6',      // Purple
+                'ICT': '#f97316',      // Orange
+                'Scalp': '#10b981',    // Emerald
+                'Swing': '#6366f1',    // Indigo
+                'S/R': '#E5B80B',      // Amber/Gold
+              };
+              
+              // Fallback palette for any custom user strategies
+              const defaultPalette = ['#ec4899', '#f43f5e', '#a855f7', '#06b6d4'];
+              const pbColor = strategyColorsMap[setup.name] || defaultPalette[Math.abs(setup.name.charCodeAt(0) || 0) % defaultPalette.length];
+
+              return (
+                <div key={setup.name} className="flex items-center justify-between gap-4 p-2 rounded-xl hover:bg-muted/10 transition-colors">
+                  {/* Setup Name */}
+                  <div className="w-24 sm:w-28 shrink-0">
+                    <span className="text-xs font-black tracking-tight text-foreground/80 truncate block">
+                      {setup.name}
+                    </span>
+                  </div>
+
+                  {/* Progress & Stats Bar */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="flex justify-between items-baseline text-[9px] font-black uppercase tracking-wider">
+                      <span className="text-muted-foreground/60">
+                        {setup.wins}W / {setup.losses}L
+                      </span>
+                      <span className="font-bold" style={{ color: pbColor }}>
+                        {setup.winRate}%
+                      </span>
+                    </div>
+                    
+                    {/* Horizontal Progress Bar */}
+                    <div className="w-full bg-muted/40 h-1.5 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500" 
+                        style={{ 
+                          width: `${setup.winRate}%`,
+                          backgroundColor: pbColor
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Net P&L Far Right */}
+                  <div className="w-20 text-right shrink-0">
+                    <span className={`text-xs md:text-sm font-black tabular-nums ${
+                      setup.pnl >= 0 ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {setup.pnl >= 0 ? '+' : ''}{formatCurrency(setup.pnl)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            {setupPerformanceList.length === 0 && (
+              <div className="text-center py-12 text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                No setup data found.
+              </div>
+            )}
           </div>
         </div>
 
@@ -397,48 +488,99 @@ export function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Chart 3: Session Performance */}
-        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-            <BarChartLine className="w-4 h-4 text-primary" />
-            Session Performance
-          </h3>
-          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distributed across global trading sessions.</p>
-          <div className="h-64 flex items-center justify-center">
-            <div className="w-full h-full flex items-center justify-center">
-              <Pie data={sessionChartData} options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: 'bottom',
-                    labels: {
-                      color: isLightMode ? '#1e293b' : '#e2e8f0',
-                      font: { size: 12, weight: 'bold' },
-                      padding: 12
-                    }
-                  }
-                }
-              }} />
+        {/* Session Edge Analysis */}
+        <div className="card-premium p-4 sm:p-8 lg:col-span-2 animate-in slide-in-from-bottom-4 duration-700 delay-400">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/80">
+                <ClockFill className="w-4 h-4 text-primary" />
+                Session Edge Analysis
+              </h3>
+              <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mt-1">
+                Comparative weekly session edge analysis and win rates.
+              </p>
+            </div>
+            
+            {/* Custom HTML Legend */}
+            <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-wider">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#E5B80B' }} />
+                <span>London</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
+                <span>NY</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10b981' }} />
+                <span>Asia</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                <span>Overlap</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Chart 4: Performance by Day */}
-        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-            <BarChartLine className="w-4 h-4 text-primary" />
-            Performance by Day
-          </h3>
-          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Historical trading day edge and net efficiency performance.</p>
-          <div className="h-64">
-            <Bar data={performanceByDayChartData} options={{
-              ...chartOptions,
-              scales: {
-                ...chartOptions.scales,
-                x: { ...chartOptions.scales.x, display: true }
-              }
-            }} />
+          <div className="h-64 mb-8">
+            <Bar 
+              data={sessionWeeklyChartData} 
+              options={{
+                ...chartOptions,
+                plugins: {
+                  ...chartOptions.plugins,
+                  legend: { display: false }
+                },
+                scales: {
+                  ...chartOptions.scales,
+                  x: { ...chartOptions.scales.x, display: true }
+                }
+              }} 
+            />
+          </div>
+
+          {/* Session Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/40">
+            {sessionSummary.map((session) => {
+              const sessionColorsMap = {
+                London: '#E5B80B',
+                NY: '#8b5cf6',
+                Asia: '#10b981',
+                Overlap: '#f97316'
+              };
+              const pbColor = sessionColorsMap[session.key] || '#10b981';
+              return (
+                <div key={session.key} className="p-3.5 rounded-xl bg-muted/20 border border-border/20 flex flex-col justify-between group hover:border-primary/20 transition-all duration-300">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/80 group-hover:text-primary transition-colors">
+                    {session.label}
+                  </span>
+                  
+                  <div className="mt-2 mb-1 flex items-baseline justify-between">
+                    <span className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+                      {session.winRate}%
+                    </span>
+                    <span className="text-[9px] text-muted-foreground/60 font-black uppercase tracking-tight">
+                      Win Rate
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden mt-1 mb-2">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500" 
+                      style={{ 
+                        width: `${session.winRate}%`,
+                        backgroundColor: pbColor
+                      }}
+                    />
+                  </div>
+
+                  <span className="text-[10px] text-foreground/75 font-black uppercase tracking-tighter">
+                    {session.total} {session.total === 1 ? 'trade' : 'trades'}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

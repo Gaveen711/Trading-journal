@@ -165,6 +165,68 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+
+    const styleId = 'global-scroll-reveal-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        .scroll-reveal-text {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: transform, opacity;
+        }
+        .scroll-reveal-text.revealed {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.05,
+      rootMargin: '0px 0px -20px 0px'
+    });
+
+    const isPublicPage = ['/', '/home', '/pricing', '/contact', '/privacy', '/terms-and-conditions', '/refund-policy', '/the-story'].includes(location.pathname);
+    if (!isPublicPage) return;
+
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll('h1, h2, h3, p, .prose p');
+      elements.forEach(el => {
+        if (
+          el.closest('.framer-motion') || 
+          el.classList.contains('char') || 
+          el.classList.contains('scroll-reveal-text') ||
+          el.closest('footer') ||
+          el.closest('header') ||
+          el.tagName === 'A'
+        ) {
+          return;
+        }
+        el.classList.add('scroll-reveal-text');
+        observer.observe(el);
+      });
+    }, 450);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {

@@ -622,15 +622,13 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </header>
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
-        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1550px] w-full mx-auto pt-20 px-6 pb-6 md:py-6 md:px-6 lg:px-8 gap-6 md:pb-8">
+        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1550px] w-full mx-auto pt-20 px-6 pb-6 md:py-6 md:px-6 lg:px-8 md:pb-8">
 
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0 relative">
             {/* Ambient Background Glows for Apple Glass Effect */}
             <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen" />
             <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen" />
-
-
 
             <Outlet context={{
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
@@ -645,9 +643,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           {/* RIGHT COLUMN - SIDEBAR (Only visible on Log page) */}
           {(location.pathname === '/app' || location.pathname === '/app/') && (
             <aside className={`w-full shrink-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
-              isRightSidebarExpanded ? 'lg:w-[350px] opacity-100 block' : 'lg:w-0 lg:opacity-0 hidden lg:block'
+              isRightSidebarExpanded 
+                ? 'max-h-[1500px] opacity-100 mb-6 lg:mb-0 lg:w-[400px] lg:ml-6 lg:max-h-none block' 
+                : 'max-h-0 opacity-0 mb-0 lg:w-0 lg:ml-0 lg:max-h-none pointer-events-none lg:pointer-events-auto block'
             }`}>
-              <div className={`w-full lg:w-[350px] transition-all duration-300 ${
+              <div className={`w-full lg:w-[400px] transition-opacity duration-300 ${
                 isRightSidebarExpanded ? 'opacity-100 delay-150' : 'opacity-0 delay-0'
               }`}>
                 <DashboardRightSidebar

@@ -267,7 +267,7 @@ function Counter({ target, suffix = '', prefix = '' }) {
 }
 
 /* ─── Story chapter with scroll reveal ─── */
-function StoryChapter({ chapter, label, headline, sub, accent, glow, dotColor, index }) {
+function StoryChapter({ chapter, label, headline, sub, glow, dotColor }) {
   const ref = useRef(null);
   
   return (
@@ -315,18 +315,6 @@ function StoryChapter({ chapter, label, headline, sub, accent, glow, dotColor, i
         <p className="text-xl md:text-2xl font-medium text-muted-foreground mb-6 leading-relaxed">
           {sub}
         </p>
-
-        <div className="text-lg text-muted-foreground/80 leading-relaxed max-w-lg relative pl-5">
-          <Motion.span 
-            className="absolute left-0 top-0 bottom-0 w-1 rounded-full"
-            style={{ backgroundColor: dotColor }}
-            initial={{ scaleY: 0, originY: 0 }}
-            whileInView={{ scaleY: 1 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-          />
-          {accent}
-        </div>
       </div>
     </Motion.div>
   );
@@ -374,7 +362,7 @@ function AnimatedText({ text, className = '' }) {
 }
 
 /* ─── Mock Trading Dashboard UI for Hero ─── */
-function MockDashboardUI({ isLightMode }) {
+function MockDashboardUI() {
   return (
     <div className="relative w-full max-w-[580px] lg:max-w-none aspect-[1.32] group select-none">
       {/* Dynamic ambient radial gradients under/behind mockup */}
@@ -1029,7 +1017,7 @@ export function LandingPage() {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         animate={{ opacity: isScrolled ? 1 : 0, y: isScrolled ? 0 : 30 }}
         transition={{ duration: 0.3 }}
-        className={`fixed bottom-6 right-6 z-[90] p-3.5 rounded-2xl bg-background/80 backdrop-blur-md border border-border/30 text-muted-foreground hover:text-foreground shadow-lg hover:-translate-y-1 active:scale-90 transition-all duration-200 ${!isScrolled ? 'pointer-events-none' : ''}`}
+        className={`fixed bottom-6 right-6 z-[90] p-3.5 rounded-2xl bg-background/80 backdrop-blur-md border border-transparent text-muted-foreground hover:text-foreground shadow-lg hover:-translate-y-1 active:scale-90 transition-all duration-200 ${!isScrolled ? 'pointer-events-none' : ''}`}
         aria-label="Scroll to top"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
@@ -1039,7 +1027,7 @@ export function LandingPage() {
 }
 
 /* ─── Storytelling Mockups ─── */
-function MockupDrawdown({ isLightMode }) {
+function MockupDrawdown() {
   return (
     <div className="relative w-full h-full rounded-2xl border border-rose-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden group shadow-lg">
       <div className="absolute inset-0 bg-gradient-to-b from-rose-500/5 to-transparent pointer-events-none" />
@@ -1073,7 +1061,7 @@ function MockupDrawdown({ isLightMode }) {
   );
 }
 
-function MockupRadar({ isLightMode }) {
+function MockupRadar() {
   return (
     <div className="relative w-full h-full rounded-2xl border border-amber-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden shadow-lg">
       <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent pointer-events-none" />
@@ -1117,7 +1105,7 @@ function MockupRadar({ isLightMode }) {
   );
 }
 
-function MockupHeatmap({ isLightMode }) {
+function MockupHeatmap() {
   return (
     <div className="relative w-full h-full rounded-2xl border border-violet-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden shadow-lg">
       <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent pointer-events-none" />
@@ -1162,7 +1150,7 @@ function MockupHeatmap({ isLightMode }) {
   );
 }
 
-function MockupSync({ isLightMode }) {
+function MockupSync() {
   return (
     <div className="relative w-full h-full rounded-2xl border border-emerald-500/30 bg-card/60 backdrop-blur-md p-5 flex flex-col justify-between overflow-hidden shadow-lg">
       <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />

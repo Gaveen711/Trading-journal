@@ -244,7 +244,7 @@ export function ContactPage() {
 
             <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+                className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-transparent text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
                     }`}
                 aria-label="Scroll to top"
             >
