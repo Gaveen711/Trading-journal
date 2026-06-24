@@ -6,8 +6,8 @@ service cloud.firestore {
       // Allow write only if sensitive fields are not modified or set by the client
       allow write: if request.auth != null && request.auth.uid == userId
         && (
-          (resource == null && !request.resource.data.keys().hasAny(['plan', 'planExpiry', 'isTrial', 'paypalSubscriptionId', 'paypalTransactionId', 'graceUntil', 'graceReason'])) ||
-          (resource != null && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'planExpiry', 'isTrial', 'paypalSubscriptionId', 'paypalTransactionId', 'graceUntil', 'graceReason']))
+          (resource == null && !request.resource.data.keys().hasAny(['plan', 'planExpiry', 'isTrial', 'graceUntil', 'graceReason'])) ||
+          (resource != null && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'planExpiry', 'isTrial', 'graceUntil', 'graceReason']))
         );
       
       // VULN-08: Add explicit security rules for the auditLogs subcollection.
@@ -93,16 +93,6 @@ service cloud.firestore {
 
     // Secure API keys (server-only write/read)
     match /apiKeys/{keyId} {
-      allow read, write: if false;
-    }
-
-    // Secure PayPal Webhooks (server-only)
-    match /paypalWebhookEvents/{eventId} {
-      allow read, write: if false;
-    }
-
-    // Secure PayPal Captures (server-only)
-    match /paypalCaptures/{captureId} {
       allow read, write: if false;
     }
   }

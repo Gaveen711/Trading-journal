@@ -9,7 +9,7 @@ const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal29';
 const firebase = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   // Custom domain (Firebase Console → Auth → Settings → Authorized domains)
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'auth.xaujournal.com',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'xaujournal-0429.firebaseapp.com',
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || import.meta.env.VITE_FIREBASE_DATABASEURL_ID,
   projectId: PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${PROJECT_ID}.firebasestorage.app`,

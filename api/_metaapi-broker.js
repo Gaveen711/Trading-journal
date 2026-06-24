@@ -33,7 +33,7 @@ function normalizeDeal(deal, ctx) {
     positionId: String(deal.positionId ?? deal.position ?? ticket),
     closeDealTicket: ticket,
     symbol: deal.symbol || 'XAUUSD',
-    direction: isBuy ? 'buy' : 'sell',
+    direction: isBuy ? 'BUY' : 'SELL',
     lots: volume,
     closePrice: price,
     openPrice,

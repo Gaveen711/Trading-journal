@@ -104,14 +104,12 @@ export function useSubscription(user) {
     return () => unsub();
   }, [user, repository, toast]);
 
-  const [payPalCheckout, setPayPalCheckout] = useState({ isOpen: false, planType: 'pro_monthly' });
-
   const startCheckout = async (planType = 'pro_monthly') => {
-    setPayPalCheckout({ isOpen: true, planType });
+    toast("Payment gateway is currently being updated. Please try again later.", "info");
   };
 
   const openPortal = () => {
-    toast("Billing details can be managed via your PayPal account dashboard.", "info");
+    toast("Billing portal is currently being updated. Please check back later.", "info");
   };
 
   const recordProAcceptance = async () => {
@@ -134,6 +132,6 @@ export function useSubscription(user) {
     }
   };
   
-  return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance, payPalCheckout, setPayPalCheckout };
+  return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance };
 }
 

@@ -16,7 +16,7 @@ The application utilizes the following credentials:
 |-------------|----------|---------|-------------------|
 | `METAAPI_TOKEN` | Vercel & Firebase | Broker Sync API & Cloud Functions | Annually / On compromise |
 | `RESEND_API_KEY` | Vercel | Hono API (emails/alerts) | 6 Months |
-| `PADDLE_API_KEY` | Vercel | Hono API (billing webhook/API) | 6 Months |
+| `LEMON_SQUEEZY_API_KEY` | Vercel | Hono API (billing webhook/API) | 6 Months |
 | `FIREBASE_TOKEN` | GitHub Secrets | CI/CD (Firebase deployments) | 3 Months |
 | `VERCEL_TOKEN` | GitHub Secrets | CI/CD (Vercel deployments) | 3 Months |
 | `VERCEL_ORG_ID` | GitHub Secrets | CI/CD (Vercel build linking) | Permanent |
@@ -79,7 +79,7 @@ Create alert notifications (via Email or Slack) in Google Cloud and Vercel dashb
 * **Rollbacks**: If a bug is detected in production, go to Vercel dashboard → **Deployments** → Locate the previous working build → Click **Rollback**. The change is instant (takes less than 1 second) and requires no rebuilding.
 
 ### 🛡️ Third-Party API Circuit Breakers
-If external APIs (MetaApi, Resend, Paddle) experience an outage:
+If external APIs (MetaApi, Resend, Lemon Squeezy) experience an outage:
 * **Resend email alerts**: If Resend fails, we log the error but allow the user login flow to succeed (avoiding blocking the user due to email server issues).
 * **MetaApi Broker Sync**: Sync failures do not block the user interface. If a sync fails, we mark `lastSyncStatus = "failed"` in Firestore and output a helpful message in the UI, allowing the user to retry manually.
 

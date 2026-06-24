@@ -10,7 +10,7 @@ import resend from './_resend.js'
 import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
 import { isSyncAllowed, getUidFromContext, verifyIdToken } from './_auth.js'
 // @ts-ignore
-import { fetchBrokerTrades, provisionMetaApiAccount } from './_metaapi-broker.js'
+import { fetchBrokerTrades, provisionMetaApiAccount, fetchMetaApiDeals } from './_metaapi-broker.js'
 import {
   resolveKey,
   invalidateUserCache,
@@ -240,6 +240,100 @@ app.post('/contact', async (c) => {
 })
 
 
+// ── Helper to consolidate Broker Connection logic ───────────────────────────
+async function consolidateBrokerConnect({
+  uid,
+  login,
+  password,
+  server,
+  brokerType,
+  accountName
+}: any) {
+  const metaApiAccountId = await provisionMetaApiAccount({ login, password, server, brokerType })
+  const deals = await fetchMetaApiDeals(metaApiAccountId)
+
+  const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
+  const name = accountName || `${server} · ${login}`
+  
+  await brokerRef.set({
+    id: brokerRef.id,
+    accountName: name,
+    brokerType,
+    server,
+    login: String(login),
+    metaApiAccountId,
+    isActive: true,
+    lastSyncTime: now(),
+    lastSyncStatus: 'success',
+    tradeCount: deals.length,
+    createdAt: now(),
+    updatedAt: now(),
+  })
+
+  const tradesRef = db.collection('users').doc(uid).collection('trades')
+  const batch = db.batch()
+  let stored = 0
+  for (const trade of deals) {
+    const tradeDocId = `broker_${brokerRef.id}_${trade.closeDealTicket}`
+    batch.set(tradesRef.doc(tradeDocId), { ...trade, accountId: brokerRef.id, syncedAt: now(), createdAt: now(), updatedAt: now() }, { merge: true })
+    stored++
+  }
+  if (stored > 0) await batch.commit()
+
+  return {
+    accountId: brokerRef.id,
+    metaApiAccountId,
+    tradeCount: deals.length,
+  }
+}
+
+// ── Helper to handle Broker Addition logic ───────────────────────────
+async function handleBrokerAdd(
+  c: any,
+  uid: string,
+  { login, password, server, brokerType, accountName, legacyResponse = false }: any
+) {
+  try {
+    const result = await consolidateBrokerConnect({
+      uid,
+      login,
+      password,
+      server,
+      brokerType,
+      accountName
+    })
+
+    if (legacyResponse) {
+      return c.json({
+        message: `Connected to ${server}. Synced ${result.tradeCount} closed deal(s).`,
+        accountId: result.accountId,
+        metaApiAccountId: result.metaApiAccountId,
+        tradeCount: result.tradeCount,
+      })
+    }
+
+    return c.json({
+      ok: true,
+      message: 'Broker account added successfully',
+      accountId: result.accountId,
+      tradeCount: result.tradeCount,
+    })
+  } catch (error: any) {
+    console.error('[broker-connect-add] Add account error:', error.message)
+    const msg = error.message || 'Failed to connect to broker'
+    if (/invalid|auth|credential|password|login/i.test(msg)) {
+      return c.json({ error: 'Invalid broker credentials. Check login, password, and server name.' }, 401)
+    }
+    return handleRouteError(
+      legacyResponse ? 'connect-broker' : 'broker-login-sync:add',
+      error,
+      c,
+      'Failed to connect to broker'
+    )
+  }
+}
+
+
 // ── 2. Broker Login Sync Route ──────────────────────────────────────────────
 app.post('/broker-login-sync', async (c) => {
   let uid: string
@@ -277,40 +371,14 @@ app.post('/broker-login-sync', async (c) => {
       return c.json({ error: 'brokerType must be mt4 or mt5' }, 400)
     }
 
-    try {
-
-      const metaApiAccountId = await provisionMetaApiAccount({ login, password, server, brokerType })
-      const testResult = await fetchBrokerTrades({ metaApiAccountId }, null)
-      const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
-
-      await brokerRef.set({
-        id: brokerRef.id,
-        accountName: accountName || `${brokerType.toUpperCase()}-${server}`,
-        brokerType,
-        server,
-        login,
-        metaApiAccountId,
-        isActive: true,
-        lastSyncTime: null,
-        lastSyncStatus: 'pending',
-        tradeCount: testResult.length,
-        createdAt: now(),
-        updatedAt: now(),
-      })
-
-      return c.json({
-        ok: true,
-        message: 'Broker account added successfully',
-        accountId: brokerRef.id,
-        tradeCount: testResult.length,
-      })
-    } catch (error: any) {
-      console.error('[broker-login-sync] Add account error:', error.message)
-      if (error.message.includes('Invalid') || error.message.includes('Authentication') || error.message.includes('password')) {
-        return c.json({ error: 'Invalid broker credentials. Please check your login, password, and server.' }, 401)
-      }
-      return handleRouteError('broker-login-sync:add', error, c, 'Failed to connect to broker')
-    }
+    return handleBrokerAdd(c, uid, {
+      login,
+      password,
+      server,
+      brokerType,
+      accountName,
+      legacyResponse: false
+    })
   }
 
   if (action === 'sync') {
@@ -511,41 +579,13 @@ app.post('/connect-broker', async (c) => {
       }, 403)
     }
 
-    const { provisionMetaApiAccount, fetchMetaApiDeals } = await import('./_metaapi-broker.js')
-    const metaApiAccountId = await provisionMetaApiAccount({ login: accountId, password, server, brokerType })
-    const deals = await fetchMetaApiDeals(metaApiAccountId)
-
-    const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
-    await brokerRef.set({
-      id: brokerRef.id,
-      accountName: `${server} · ${accountId}`,
-      brokerType,
+    return handleBrokerAdd(c, uid, {
+      login: accountId,
+      password,
       server,
-      login: String(accountId),
-      metaApiAccountId,
-      isActive: true,
-      lastSyncTime: now(),
-      lastSyncStatus: 'success',
-      tradeCount: deals.length,
-      createdAt: now(),
-      updatedAt: now(),
-    })
-
-    const tradesRef = db.collection('users').doc(uid).collection('trades')
-    const batch = db.batch()
-    let stored = 0
-    for (const trade of deals) {
-      const tradeDocId = `broker_${brokerRef.id}_${trade.closeDealTicket}`
-      batch.set(tradesRef.doc(tradeDocId), { ...trade, accountId: brokerRef.id, syncedAt: now(), createdAt: now(), updatedAt: now() }, { merge: true })
-      stored++
-    }
-    if (stored > 0) await batch.commit()
-
-    return c.json({
-      message: `Connected to ${server}. Synced ${deals.length} closed deal(s).`,
-      accountId: brokerRef.id,
-      metaApiAccountId,
-      tradeCount: deals.length,
+      brokerType,
+      accountName: `${server} · ${accountId}`,
+      legacyResponse: true
     })
   } catch (err: any) {
     console.error('[connect-broker]', err.message)
@@ -687,132 +727,6 @@ app.post('/init-user', async (c) => {
     return handleRouteError('init-user', err, c)
   }
 })
-
-// ── 6. PayPal Payment Integration ────────────────────────────────────────────
-app.post('/paypal-success', async (c) => {
-  let uid: string
-  try {
-    uid = await getUidFromContext(c)
-  } catch (err: any) {
-    console.error('[paypal-success] verifyIdToken failed:', err.message)
-    return c.json({ error: 'Invalid or expired token', details: 'Authentication verification failed' }, 401)
-  }
-
-  try {
-    const { subscriptionId, orderId, planType } = await c.req.json()
-    if (!subscriptionId && !orderId) {
-      return c.json({ error: 'Missing subscriptionId or orderId' }, 400)
-    }
-
-    const payPalClientId = process.env.PAYPAL_CLIENT_ID
-    const payPalClientSecret = process.env.PAYPAL_CLIENT_SECRET
-    const payPalMode = process.env.PAYPAL_MODE || 'sandbox'
-
-    let isVerified = false
-    let verificationDetail = 'Mock verification successful'
-
-    if (payPalClientId && payPalClientSecret) {
-      // Perform actual API verification with PayPal
-      const host = payPalMode === 'live' ? 'api-m.paypal.com' : 'api-m.sandbox.paypal.com'
-      const authHeader = 'Basic ' + Buffer.from(`${payPalClientId}:${payPalClientSecret}`).toString('base64')
-      
-      // 1. Get access token
-      const tokenResp = await fetch(`https://${host}/v1/oauth2/token`, {
-        method: 'POST',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: 'grant_type=client_credentials'
-      })
-
-      if (!tokenResp.ok) {
-        const errBody = await tokenResp.text()
-        console.error('[paypal-success] failed to get oauth token:', errBody)
-        throw new Error('Failed to authenticate with PayPal API')
-      }
-
-      const tokenData = await tokenResp.json()
-      const accessToken = tokenData.access_token
-
-      // 2. Verify subscription or order details
-      if (subscriptionId) {
-        const subResp = await fetch(`https://${host}/v1/billing/subscriptions/${subscriptionId}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        if (subResp.ok) {
-          const subData = await subResp.json()
-          if (subData.status === 'ACTIVE' || subData.status === 'APPROVED') {
-            isVerified = true
-            verificationDetail = `Subscription status is ${subData.status}`
-          } else {
-            verificationDetail = `Subscription status is ${subData.status}`
-          }
-        } else {
-          console.error('[paypal-success] subscription fetch failed:', await subResp.text())
-        }
-      } else if (orderId) {
-        const orderResp = await fetch(`https://${host}/v2/checkout/orders/${orderId}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        if (orderResp.ok) {
-          const orderData = await orderResp.json()
-          if (orderData.status === 'COMPLETED' || orderData.status === 'APPROVED') {
-            isVerified = true
-            verificationDetail = `Order status is ${orderData.status}`
-          } else {
-            verificationDetail = `Order status is ${orderData.status}`
-          }
-        } else {
-          console.error('[paypal-success] order fetch failed:', await orderResp.text())
-        }
-      }
-    } else {
-      // Fallback: Mock success when keys are not shared/configured yet
-      console.warn('[paypal-success] PayPal API credentials not configured. Falling back to Mock Success Mode.')
-      isVerified = true
-    }
-
-    if (!isVerified) {
-      return c.json({ error: `PayPal verification failed: ${verificationDetail}` }, 400)
-    }
-
-    // Provision the Pro subscription in the database
-    const userDocRef = db.collection('users').doc(uid)
-    const durationDays = planType === 'pro_yearly' ? 365 : 30
-    const expiry = new Date()
-    expiry.setDate(expiry.getDate() + durationDays)
-
-    const updateData = {
-      plan: 'pro',
-      isTrial: false,
-      planExpiry: expiry.toISOString(),
-      paypalSubscriptionId: subscriptionId || null,
-      paypalOrderId: orderId || null,
-      updatedAt: now()
-    }
-
-    await userDocRef.set(updateData, { merge: true })
-    console.log(`[paypal-success] Upgraded user uid=${uid} to Pro via PayPal. Expiry=${expiry.toISOString()}`)
-
-    return c.json({
-      success: true,
-      plan: 'pro',
-      isTrial: false,
-      planExpiry: expiry.toISOString()
-    })
-  } catch (err: any) {
-    return handleRouteError('paypal-success', err, c)
-  }
-})
-
-
 
 // ── 8. Save Trade Route ──────────────────────────────────────────────────────
 app.post('/save-trade', async (c) => {

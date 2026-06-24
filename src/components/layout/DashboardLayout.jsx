@@ -462,7 +462,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                       <button
                         onClick={() => {
                           setShowDesktopProfile(false);
-                          window.open('https://www.paypal.com/myaccount/billing/subscriptions', '_blank');
+                          openPortal();
                         }}
                         className="flex items-center gap-2 w-full p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left"
                       >
@@ -600,7 +600,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);
-                    window.open('https://www.paypal.com/myaccount/billing/subscriptions', '_blank');
+                    openPortal();
                   }}
                   className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-left"
                 >

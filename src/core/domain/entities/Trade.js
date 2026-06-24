@@ -1,7 +1,7 @@
 // Gold (XAUUSD) math — must stay in sync with tradeUtils.js and firestore.rules
 // 1 point = $0.01 price move | PnL = price_move × (lots × 100)
 const XAUUSD_OZ_PER_LOT = 100;   // ounces per 1.0 standard lot
-const XAUUSD_POINT_SIZE = 0.01;  // 1 point = $0.01 price move
+const XAUUSD_PIP_SIZE = 0.1;   // 1 pip = $0.10 price move
 
 export class TradeEntity {
   static calcPnl(entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) {
@@ -11,8 +11,8 @@ export class TradeEntity {
     const diff = dir === 'BUY' ? exit - entry : entry - exit;
     const absDiff = Math.abs(exit - entry);
 
-    // Points: price move / point size (e.g. $5.00 / $0.01 = 500 pts)
-    const pips = parseFloat((absDiff / XAUUSD_POINT_SIZE).toFixed(1));
+    // Pips: price move / pip size (e.g. $5.00 / $0.10 = 50 pips)
+    const pips = parseFloat((absDiff / XAUUSD_PIP_SIZE).toFixed(1));
 
     // If actual broker P&L is provided, trust it directly
     let pnl;

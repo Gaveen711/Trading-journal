@@ -26,7 +26,7 @@ Periodic polling (every 60 seconds) fetches new trades
 
 ### Backend Components
 
-#### 1. **Broker Service** (`api/broker-service.js`)
+#### 1. **Broker Service** (`api/_metaapi-broker.js`)
 - `MT4MT5BrokerAdapter`: Base class for broker connections
 - Handles authentication with broker servers
 - Normalizes trade data across different brokers
@@ -256,7 +256,7 @@ Currently configured brokers:
 | Roboforex | Roboforex-Live | MT4 | https://www.roboforex.com |
 | FXCM | FXCM-Demo | MT5 | https://api-demo.fxcm.com |
 
-To add new brokers, update `broker-service.js`:
+To add new MetaAPI configurations, update `_metaapi-broker.js`:
 ```javascript
 const brokerMap = {
   'YourBroker-Live': 'https://your-broker-api.com',
@@ -344,7 +344,7 @@ console.log('Fetched trades:', trades);
 
 ### Unit Tests
 
-See `api/_sync-trade.test.js` for example test structure. Create similar tests for broker-service:
+See `api/_sync-trade.test.js` for example test structure. Create similar tests for broker sync:
 
 ```javascript
 describe('MT4MT5BrokerAdapter', () => {
@@ -388,10 +388,10 @@ All endpoints require Firebase authentication:
 
 ```
 api/
-  ├── broker-service.js          # Broker connection logic
-  ├── broker-login-sync.js       # API endpoint
+  ├── _metaapi-broker.js         # Broker connection logic
+  ├── [[...route]].ts            # Hono API endpoints (connect, sync, success, etc.)
   └── cron/
-      └── broker-sync-poller.js  # Periodic sync job
+      └── broker-sync-poller.js  # Periodic sync job (mapped via vercel.json)
 
 src/
   ├── components/

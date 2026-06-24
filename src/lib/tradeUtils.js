@@ -94,7 +94,7 @@ export const formatCurrencyCompact = (val) => {
 //    points = $25 / $0.01 = 2500 pts  ✓
 
 const XAUUSD_OZ_PER_LOT  = 100;   // ounces per 1.0 standard lot
-const XAUUSD_POINT_SIZE  = 0.01;  // 1 point = $0.01 price move
+const XAUUSD_PIP_SIZE  = 0.1;   // 1 pip = $0.10 price move
 
 export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
@@ -102,9 +102,9 @@ export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap =
   const swapNum = Number(swap) || 0;
   const diff    = dir === 'BUY' ? exit - entry : entry - exit;
 
-  // Points (displayed as "pips" in the UI): price move / point size
-  // e.g. $25.00 move → 25 / 0.01 = 2500 pts
-  const pips = parseFloat((diff / XAUUSD_POINT_SIZE).toFixed(1));
+  // Pips (displayed in the UI): price move / pip size
+  // e.g. $25.00 move → 25 / 0.1 = 250 pips
+  const pips = parseFloat((diff / XAUUSD_PIP_SIZE).toFixed(1));
 
   // If actual broker P&L is provided, trust it directly
   let pnl;

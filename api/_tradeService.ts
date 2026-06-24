@@ -66,7 +66,7 @@ export async function handleOpenTradeSync(tradeRef: any, payload: any, defaultSo
     positionId: payload.positionId,
     openDealTicket: isTv ? null : (payload.ticket || null),
     symbol: payload.symbol,
-    direction: payload.direction,
+    direction: String(payload.direction || '').toUpperCase(),
     lots: Number(payload.lots) || 0,
     openPrice: Number(payload.price) || 0,
     openTime: payload.time,
@@ -102,7 +102,7 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     const openPrice = snap.data().openPrice || 0
     const direction = snap.data().direction || payload.direction
     const closePrice = Number(payload.price) || 0
-    const diff = direction === 'buy' ? closePrice - openPrice : openPrice - closePrice
+    const diff = String(direction || '').toUpperCase() === 'BUY' ? closePrice - openPrice : openPrice - closePrice
     pips = Math.round(diff / PIP_SIZE)
 
     const updateData: any = {
@@ -125,7 +125,7 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     const setData: any = {
       positionId: payload.positionId,
       symbol: payload.symbol,
-      direction: payload.direction,
+      direction: String(payload.direction || '').toUpperCase(),
       lots: Number(payload.lots) || 0,
       closePrice: Number(payload.price) || 0,
       closeTime: payload.time,

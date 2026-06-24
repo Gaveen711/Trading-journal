@@ -116,21 +116,6 @@ vi.mock('./_resend.js', () => {
   };
 });
 
-// Mock paypal module
-vi.mock('./_paypal.js', () => {
-  return {
-    checkoutNodeJssdk: {
-      orders: {
-        OrdersCreateRequest: class {},
-        OrdersCaptureRequest: class {},
-      },
-      Webhooks: class {},
-    },
-    default: {
-      execute: vi.fn()
-    }
-  };
-});
 
 // Mock metaapi-broker helper module
 vi.mock('./_metaapi-broker.js', () => {
@@ -226,7 +211,7 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
     expect(db.__mocks.mockDocSet).toHaveBeenCalledWith(expect.objectContaining({
       positionId: '98765',
       symbol: 'XAUUSD',
-      direction: 'buy',
+      direction: 'BUY',
       openPrice: 2000.50,
       lots: 0.5,
       status: 'open',
