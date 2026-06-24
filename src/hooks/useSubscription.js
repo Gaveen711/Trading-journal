@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 import { FirebaseSubscriptionRepository } from '../data/repositories/FirebaseSubscriptionRepository';
 import { useToast } from '../components/ToastContext';
+import { auth } from '../firebase';
 
 
 export function useSubscription(user) {
