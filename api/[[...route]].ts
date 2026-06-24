@@ -728,6 +728,84 @@ app.post('/init-user', async (c) => {
   }
 })
 
+// ── 6. Lemon Squeezy Webhook Integration ─────────────────────────────────────
+app.post('/lemon-squeezy-webhook', async (c) => {
+  const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET
+  if (!secret) {
+    console.error('[lemon-squeezy-webhook] Webhook secret missing on server')
+    return c.text('Webhook secret not configured', 500)
+  }
+
+  const signature = c.req.header('x-signature')
+  if (!signature) {
+    return c.text('Missing x-signature header', 400)
+  }
+
+  const rawBody = await c.req.text()
+  const hmac = crypto.createHmac('sha256', secret)
+  const digest = hmac.update(rawBody).digest('hex')
+
+  if (digest !== signature) {
+    console.error('[lemon-squeezy-webhook] Signature verification failed')
+    return c.text('Invalid signature', 401)
+  }
+
+  try {
+    const body = JSON.parse(rawBody)
+    const eventName = body.meta?.event_name
+    const userId = body.meta?.custom_data?.user_id
+
+    if (!userId) {
+      console.warn(`[lemon-squeezy-webhook] Event ${eventName} received without user_id`)
+      return c.json({ ok: true, message: 'No user_id found in custom_data' })
+    }
+
+    const attributes = body.data?.attributes
+    const subscriptionId = body.data?.id
+    const status = attributes?.status
+
+    // Process subscription events
+    if (
+      eventName === 'subscription_created' ||
+      eventName === 'subscription_updated' ||
+      eventName === 'subscription_cancelled' ||
+      eventName === 'subscription_expired'
+    ) {
+      const userDocRef = db.collection('users').doc(userId)
+      let plan = 'free'
+      let planExpiry: string | null = null
+
+      const endsAt = attributes?.ends_at
+      const renewsAt = attributes?.renews_at
+
+      if (status === 'active' || status === 'on_trial' || status === 'cancelled') {
+        const expiryDate = endsAt ? new Date(endsAt) : null
+        if (status === 'cancelled' && expiryDate && expiryDate.getTime() < Date.now()) {
+          plan = 'free'
+          planExpiry = null
+        } else {
+          plan = 'pro'
+          planExpiry = endsAt || renewsAt || null
+        }
+      }
+
+      await userDocRef.set({
+        plan,
+        planExpiry,
+        lemonSqueezySubscriptionId: String(subscriptionId),
+        lemonSqueezyStatus: status,
+        updatedAt: now(),
+      }, { merge: true })
+
+      console.log(`[lemon-squeezy-webhook] User ${userId} plan set to ${plan} (status: ${status}, expiry: ${planExpiry})`)
+    }
+
+    return c.json({ ok: true })
+  } catch (err: any) {
+    return handleRouteError('lemon-squeezy-webhook', err, c)
+  }
+})
+
 // ── 8. Save Trade Route ──────────────────────────────────────────────────────
 app.post('/save-trade', async (c) => {
   let uid: string

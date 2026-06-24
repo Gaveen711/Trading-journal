@@ -596,7 +596,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 </button>
  
  
-                {/* Manage Sub Button (PayPal billing portal link) */}
+                {/* Manage Sub Button (Lemon Squeezy billing portal link) */}
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);

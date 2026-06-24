@@ -105,11 +105,35 @@ export function useSubscription(user) {
   }, [user, repository, toast]);
 
   const startCheckout = async (planType = 'pro_monthly') => {
-    toast("Payment gateway is currently being updated. Please try again later.", "info");
+    const user = auth.currentUser;
+    if (!user) {
+      toast("You must be logged in to subscribe.", "error");
+      return;
+    }
+    const baseUrl = planType === 'pro_yearly'
+      ? (import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL_YEARLY || '')
+      : (import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL_MONTHLY || '');
+    
+    if (!baseUrl) {
+      toast("Checkout is currently unavailable. Please try again later.", "info");
+      return;
+    }
+
+    try {
+      const checkoutUrl = new URL(baseUrl);
+      checkoutUrl.searchParams.set('checkout[custom][user_id]', user.uid);
+      if (user.email) {
+        checkoutUrl.searchParams.set('checkout[email]', user.email);
+      }
+      window.location.href = checkoutUrl.toString();
+    } catch (err) {
+      console.error('Failed to construct checkout URL:', err);
+      toast("Could not initiate checkout. Please contact support.", "error");
+    }
   };
 
   const openPortal = () => {
-    toast("Billing portal is currently being updated. Please check back later.", "info");
+    window.open('https://my.lemonsqueezy.com/billing', '_blank');
   };
 
   const recordProAcceptance = async () => {
