@@ -145,13 +145,9 @@ export function CalendarPage() {
   const {
     tradesByDate,
     daysInMonth,
-    monthlyPnl,
-    totalMonthlyTrades,
     consistencyRate,
     winDays,
     activeDays,
-    totalLots,
-    totalPips,
     sortedSetups,
     sessionStats,
     smartTip

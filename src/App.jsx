@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
-import { Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
 import { useToast } from './components/ToastContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -77,7 +77,6 @@ const PageLoader = ({ text = "Syncing Terminal" }) => (
 );
 
 function AuthenticatedApp({ user }) {
-  const navigate = useNavigate();
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showBrokerSyncUpsell, setShowBrokerSyncUpsell] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
