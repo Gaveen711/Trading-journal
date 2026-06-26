@@ -541,7 +541,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
                       <button
                         onClick={() => { setShowDesktopProfile(false); localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
-                        className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left mt-1 border-t border-border/10 pt-2"
+                        className="flex items-center gap-2 w-full p-2 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left mt-1 border-t border-border/10 pt-2"
                       >
                         <BoxArrowRight className="w-3.5 h-3.5 shrink-0" />
                         <span>Logout</span>

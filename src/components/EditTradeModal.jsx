@@ -174,7 +174,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Strategies</label>
-              <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-[44px] px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('modal-strategy-input')?.focus()}>
+              <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-[48px] px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('modal-strategy-input')?.focus()}>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   {strategies.map((tag, i) => (
                     <span key={i} className="flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">

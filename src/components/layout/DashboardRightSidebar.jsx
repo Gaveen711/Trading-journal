@@ -753,7 +753,7 @@ export function DashboardRightSidebar({
                       }`}
                     >
                       <MoodIcon className={`w-5 h-5 ${colorClass}`} />
-                      <span className={`text-[10px] md:text-xs font-black uppercase tracking-widest leading-none ${
+                      <span className={`hidden lg:block text-[8px] font-black uppercase tracking-normal leading-none mt-0.5 ${
                         preTradeMood === label ? 'text-foreground' : 'text-muted-foreground/60'
                       }`}>{label}</span>
                     </button>

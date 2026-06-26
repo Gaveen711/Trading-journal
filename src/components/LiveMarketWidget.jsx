@@ -192,6 +192,20 @@ export function LiveMarketWidget({ onTickersUpdate }) {
   const activeData = tickers[activeAsset];
   const iframeSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(activeData.tvSymbol)}&interval=${interval}&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=${tvTheme}&timezone=exchange&showpopupbutton=1&studylabelbg=rgba(255%2C%20255%2C%20255%2C%201)&page-uri=https%3A%2F%2Fwww.tradingview.com%2Fwidgetembed%2F`;
 
+  const getAssetColorClasses = (color) => {
+    switch (color) {
+      case 'slate-300':
+        return 'bg-slate-300/10 border-slate-300/20 text-slate-300';
+      case 'slate-400':
+        return 'bg-slate-400/10 border-slate-400/20 text-slate-400';
+      case 'slate-500':
+        return 'bg-slate-500/10 border-slate-500/20 text-slate-500';
+      case 'amber-500':
+      default:
+        return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
@@ -201,7 +215,7 @@ export function LiveMarketWidget({ onTickersUpdate }) {
         {/* Chart Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-2xl bg-${activeData.color}/10 border border-${activeData.color}/20 flex items-center justify-center font-bold text-${activeData.color} text-sm`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm border ${getAssetColorClasses(activeData.color)}`}>
               {activeData.symbol}
             </div>
             <div>

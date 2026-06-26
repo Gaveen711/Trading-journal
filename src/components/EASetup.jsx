@@ -701,8 +701,8 @@ export default function EASetup() {
                     </span>
                   )}
                   {preset.comingSoon && (
-                    <span className="text-[9px] text-[#0D9488] font-bold bg-[#0D9488]/10 border border-[#0D9488]/20 px-2 py-0.5 rounded-full">
-                      Ready
+                    <span className="text-[9px] text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                      Soon
                     </span>
                   )}
                   {!isCurrentActive && !preset.comingSoon && (

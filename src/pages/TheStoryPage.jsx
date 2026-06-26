@@ -1388,18 +1388,18 @@ export default function TheStoryPage() {
                 Precision performance terminal and automated MT5 synchronization designed exclusively for XAUUSD traders.
               </p>
             </div>
-            <div className="text-center md:text-center flex flex-col items-center md:items-center lg:items-start lg:text-left">
+            <div className="text-center md:text-left flex flex-col items-center md:items-start">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Platform</h4>
-              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center lg:text-left">
+              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center md:text-left">
                 <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
                 <li><Link to="/the-story" className="hover:text-primary transition-colors">The Story</Link></li>
                 <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
                 <li><Link to="/login?mode=signin" className="hover:text-primary transition-colors">Login</Link></li>
               </ul>
             </div>
-            <div className="text-center md:text-center flex flex-col items-center md:items-center lg:items-start lg:text-left">
+            <div className="text-center md:text-left flex flex-col items-center md:items-start">
               <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Legal</h4>
-              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center lg:text-left">
+              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center md:text-left">
                 <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms of Service</Link></li>
                 <li><Link to="/refund-policy" className="hover:text-primary transition-colors">Refund Policy</Link></li>

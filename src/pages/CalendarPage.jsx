@@ -334,7 +334,7 @@ export function CalendarPage() {
             Today
           </button>
           
-          <div className="flex bg-muted/50 p-1 rounded-full border border-border/40 shadow-inner justify-between items-center flex-1 sm:flex-initial">
+          <div className="h-11 flex bg-muted/50 p-1 rounded-full border border-border/40 shadow-inner justify-between items-center flex-1 sm:flex-initial">
             <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>

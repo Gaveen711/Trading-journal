@@ -18,16 +18,40 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
 
   const selectedOption = options.find(opt => opt.value === value);
 
+  // Split classes: layout classes for wrapper, styling classes for button
+  const wrapperClasses = [];
+  const buttonClasses = [];
+
+  if (className) {
+    className.split(' ').forEach(cls => {
+      if (
+        cls.startsWith('h-') ||
+        cls.startsWith('px-') ||
+        cls.startsWith('py-') ||
+        cls.startsWith('bg-') ||
+        cls.startsWith('border-') ||
+        cls.startsWith('rounded-') ||
+        cls.startsWith('text-')
+      ) {
+        buttonClasses.push(cls);
+      } else {
+        wrapperClasses.push(cls);
+      }
+    });
+  }
+
   return (
-    <div className={cn("relative w-full", className)} ref={containerRef}>
+    <div className={cn("relative w-full", wrapperClasses.join(' '))} ref={containerRef}>
       {name && <input type="hidden" name={name} value={value || ''} />}
       <button
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={cn(
-          "w-full px-4 rounded-xl border border-border bg-muted flex items-center justify-between group transition-all duration-300 hover:border-primary hover:bg-muted-foreground/10",
-          !className?.includes('h-') && "h-12",
+          "w-full rounded-xl border border-border bg-muted flex items-center justify-between group transition-all duration-300 hover:border-primary hover:bg-muted-foreground/10",
+          !buttonClasses.some(c => c.startsWith('h-')) ? "h-12" : buttonClasses.filter(c => c.startsWith('h-')).join(' '),
+          !buttonClasses.some(c => c.startsWith('px-')) ? "px-4" : buttonClasses.filter(c => c.startsWith('px-')).join(' '),
+          buttonClasses.filter(c => !c.startsWith('h-') && !c.startsWith('px-')).join(' '),
           isOpen && "border-primary ring-1 ring-primary shadow-[0_0_20px_rgba(139,92,246,0.1)]",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none"
         )}

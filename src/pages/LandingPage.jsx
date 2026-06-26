@@ -977,18 +977,18 @@ export function LandingPage() {
                 Precision performance terminal and automated MT5 synchronization designed exclusively for XAUUSD traders.
               </p>
             </div>
-            <div className="text-center md:text-center flex flex-col items-center md:items-center lg:items-start lg:text-left">
+            <div className="text-center md:text-left flex flex-col items-center md:items-start">
               <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-foreground/70 mb-6">Platform</h4>
-              <ul className="space-y-3 text-[13px] font-medium text-muted-foreground text-center lg:text-left">
+              <ul className="space-y-3 text-[13px] font-medium text-muted-foreground text-center md:text-left">
                 <li><Link to="/pricing" className="hover:text-foreground transition-colors duration-200">Pricing</Link></li>
                 <li><Link to="/the-story" className="hover:text-foreground transition-colors duration-200">The Story</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground transition-colors duration-200">Contact</Link></li>
                 <li><Link to="/login?mode=signin" className="hover:text-foreground transition-colors duration-200">Login</Link></li>
               </ul>
             </div>
-            <div className="text-center md:text-center flex flex-col items-center md:items-center lg:items-start lg:text-left">
+            <div className="text-center md:text-left flex flex-col items-center md:items-start">
               <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-foreground/70 mb-6">Legal</h4>
-              <ul className="space-y-3 text-[13px] font-medium text-muted-foreground text-center lg:text-left">
+              <ul className="space-y-3 text-[13px] font-medium text-muted-foreground text-center md:text-left">
                 <li><Link to="/privacy" className="hover:text-foreground transition-colors duration-200">Privacy Policy</Link></li>
                 <li><Link to="/terms-and-conditions" className="hover:text-foreground transition-colors duration-200">Terms of Service</Link></li>
                 <li><Link to="/refund-policy" className="hover:text-foreground transition-colors duration-200">Refund Policy</Link></li>
