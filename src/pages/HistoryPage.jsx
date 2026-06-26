@@ -47,6 +47,7 @@ export function HistoryPage() {
   const [activeImageUrl, setActiveImageUrl] = useState(null);
   const [sharingTrade, setSharingTrade] = useState(null);
   const [editingTrade, setEditingTrade] = useState(null);
+  const [downloadState, setDownloadState] = useState('idle'); // 'idle' | 'downloading' | 'ready'
 
   const formatTradeTime = (timestamp) => {
     if (!timestamp) return '';
@@ -235,6 +236,31 @@ export function HistoryPage() {
     toast('CSV exported.', 'success');
   };
 
+  const handleExportClick = (e) => {
+    e.preventDefault();
+
+    if (downloadState === 'idle') {
+      setDownloadState('downloading');
+      setTimeout(() => {
+        setDownloadState('ready');
+      }, 3900); // 3.9 seconds (0.4s delay + 3s rotating animation + transition buffer)
+    } else if (downloadState === 'ready') {
+      if (plan !== 'pro') {
+        setShowPricingModal(true);
+        toast('Upgrade to Pro to export your trade data.', 'warn');
+        setDownloadState('idle');
+        return;
+      }
+      if (!trades.length) {
+        toast('No trades to export.', 'warn');
+        setDownloadState('idle');
+        return;
+      }
+      onExportCSV();
+      setDownloadState('idle');
+    }
+  };
+
   const onSaveEdit = async (id, data) => {
     try {
       await editTrade(id, data);
@@ -262,15 +288,24 @@ export function HistoryPage() {
       {/* HEADER SECTION */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-gradient uppercase tracking-tight font-sans">Trade History</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-gradient uppercase tracking-tight font-sans">Trade History</h1>
           <p className="text-muted-foreground text-xs font-semibold mt-1">A comprehensive log of your past performance.</p>
         </div>
-        <button onClick={onExportCSV} className="learn-more shrink-0 scale-90 sm:scale-100 origin-right">
-          <span className="circle" aria-hidden="true">
-            <span className="icon arrow" />
-          </span>
-          <span className="button-text">Export</span>
-        </button>
+        <div className="download-btn-wrapper shrink-0">
+          <div 
+            className={`export-btn ${downloadState === 'idle' ? '' : downloadState}`}
+            onClick={handleExportClick}
+          >
+            <span className="export-btn__text">{downloadState === 'ready' ? 'Open' : 'Export'}</span>
+            <span className="export-btn__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" className="export-btn__svg">
+                <path d="M17.5,22.131a1.249,1.249,0,0,1-1.25-1.25V2.187a1.25,1.25,0,0,1,2.5,0V20.881A1.25,1.25,0,0,1,17.5,22.131Z" />
+                <path d="M17.5,22.693a3.189,3.189,0,0,1-2.262-.936L8.487,15.006a1.249,1.249,0,0,1,1.767-1.767l6.751,6.751a.7.7,0,0,0,.99,0l6.751-6.751a1.25,1.25,0,0,1,1.768,1.767l-6.752,6.751A3.191,3.191,0,0,1,17.5,22.693Z" />
+                <path d="M31.436,34.063H3.564A3.318,3.318,0,0,1,.25,30.749V22.011a1.25,1.25,0,0,1,2.5,0v8.738a.815.815,0,0,0,.814.814H31.436a.815.815,0,0,0,.814-.814V22.011a1.25,1.25,0,1,1,2.5,0v8.738A3.318,3.318,0,0,1,31.436,34.063Z" />
+              </svg>
+            </span>
+          </div>
+        </div>
       </header>
       
       {/* TOP TIER: FILTERED METRICS CARDS (COMPACT & RESPONSIVE) */}
@@ -351,7 +386,7 @@ export function HistoryPage() {
       </div>
 
       {/* FILTER BAR SECTION */}
-      <div className="space-y-4">
+      <div className="space-y-4 relative z-30">
         <div className="apple-glass-panel p-3 rounded-2xl flex flex-col lg:flex-row items-center gap-4 border border-border/10">
           
           {/* Search Box */}
@@ -436,11 +471,18 @@ export function HistoryPage() {
         <AnimatePresence>
           {showMoreFilters && (
             <Motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+              animate={{ 
+                height: 'auto', 
+                opacity: 1,
+                transitionEnd: { overflow: 'visible' }
+              }}
+              exit={{ 
+                height: 0, 
+                opacity: 0,
+                overflow: 'hidden'
+              }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
             >
               <div className="apple-glass-panel p-5 rounded-2xl border border-border/10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 

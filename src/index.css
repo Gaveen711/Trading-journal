@@ -391,8 +391,17 @@
     @apply border shadow-xl;
     background: rgba(255, 255, 255, 0.65);
     border-color: rgba(255, 255, 255, 0.4);
-    -webkit-backdrop-filter: blur(48px) saturate(180%);
-    backdrop-filter: blur(48px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  @media (min-width: 768px) {
+    .apple-glass-panel {
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+    }
   }
 
   .dark .apple-glass-panel {
@@ -401,16 +410,34 @@
     border-top-color: rgba(255, 255, 255, 0.12);
     border-left-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 16px 40px -8px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
-    -webkit-backdrop-filter: blur(48px) saturate(150%);
-    backdrop-filter: blur(48px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  @media (min-width: 768px) {
+    .dark .apple-glass-panel {
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      backdrop-filter: blur(24px) saturate(150%);
+    }
   }
 
   .card-premium {
     @apply rounded-2xl text-card-foreground shadow-xl transition-all duration-200 border;
     background: rgba(255, 255, 255, 0.65);
     border-color: rgba(255, 255, 255, 0.4);
-    -webkit-backdrop-filter: blur(48px) saturate(180%);
-    backdrop-filter: blur(48px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  @media (min-width: 768px) {
+    .card-premium {
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+    }
   }
 
   .dark .card-premium {
@@ -419,8 +446,17 @@
     border-top-color: rgba(255, 255, 255, 0.12);
     border-left-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 16px 40px -8px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
-    -webkit-backdrop-filter: blur(48px) saturate(150%);
-    backdrop-filter: blur(48px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  @media (min-width: 768px) {
+    .dark .card-premium {
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      backdrop-filter: blur(24px) saturate(150%);
+    }
   }
 
   .btn-primary {
@@ -1770,96 +1806,128 @@ a[href*="neat.firecms.co"] {
 
 
 
-/* Custom learn-more Export Button */
-button.learn-more {
+/* Custom Interactive Export Button */
+.export-btn {
   position: relative;
-  display: inline-block;
+  width: 150px;
+  height: 40px;
   cursor: pointer;
-  outline: none;
-  border: 0;
-  vertical-align: middle;
-  text-decoration: none;
-  background: transparent;
-  padding: 0;
-  font-size: inherit;
-  font-family: inherit;
-  width: 12rem;
-  height: auto;
+  display: flex;
+  align-items: center;
+  border: 1px solid #17795E;
+  background-color: #209978;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  transition: all 0.3s;
 }
 
-button.learn-more .circle {
-  transition: all 0.45s cubic-bezier(0.65, 0, 0.076, 1);
-  position: relative;
-  display: block;
-  margin: 0;
-  width: 3rem;
-  height: 3rem;
-  background: hsl(var(--primary));
-  border-radius: 1.625rem;
+.export-btn,
+.export-btn__icon,
+.export-btn__text {
+  transition: all 0.3s;
 }
 
-button.learn-more .circle .icon {
-  transition: all 0.45s cubic-bezier(0.65, 0, 0.076, 1);
+.export-btn .export-btn__text {
+  transform: translateX(22px);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.export-btn .export-btn__icon {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  margin: auto;
-  background: #fff;
-}
-
-button.learn-more .circle .icon.arrow {
-  transition: all 0.45s cubic-bezier(0.65, 0, 0.076, 1);
-  left: 0.625rem;
-  width: 1.125rem;
-  height: 0.125rem;
-  background: none;
-}
-
-button.learn-more .circle .icon.arrow::before {
-  position: absolute;
-  content: "";
-  top: -0.29rem;
-  right: 0.0625rem;
-  width: 0.625rem;
-  height: 0.625rem;
-  border-top: 0.125rem solid #fff;
-  border-right: 0.125rem solid #fff;
-  transform: rotate(45deg);
-}
-
-button.learn-more .button-text {
-  transition: all 0.45s cubic-bezier(0.65, 0, 0.076, 1);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0 0 0 1.85rem;
-  color: hsl(var(--foreground));
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
+  transform: translateX(109px);
+  height: 100%;
+  width: 39px;
+  background-color: #17795E;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-transform: uppercase;
+  border-radius: 0 0.5rem 0.5rem 0;
 }
 
-button.learn-more:hover .circle {
-  width: 100%;
+.export-btn .export-btn__svg {
+  width: 20px;
+  fill: #fff;
 }
 
-button.learn-more:hover .circle .icon.arrow {
-  background: #fff;
-  transform: translate(1rem, 0);
+/* Hover — icon slides in to cover the full button */
+.export-btn:not(.downloading):not(.ready):hover {
+  background: #17795E;
 }
 
-button.learn-more:hover .button-text {
-  color: hsl(var(--primary-foreground));
+.export-btn:not(.downloading):not(.ready):hover .export-btn__text {
+  color: transparent;
 }
 
-button.learn-more:active {
-  transform: translate(1px, 1px);
+.export-btn:not(.downloading):not(.ready):hover .export-btn__icon {
+  width: 148px;
+  transform: translateX(0);
+  border-radius: 0.5rem;
+}
+
+.export-btn:active .export-btn__icon {
+  background-color: #146c54;
+}
+
+.export-btn:active {
+  border-color: #146c54;
+}
+
+/* ── Downloading state ── */
+.export-btn.downloading {
+  background: #17795E;
+  pointer-events: none;
+}
+
+.export-btn.downloading .export-btn__text {
+  color: transparent;
+}
+
+.export-btn.downloading .export-btn__icon {
+  width: 148px;
+  transform: translateX(0);
+  border-radius: 0.5rem;
+}
+
+.export-btn.downloading .export-btn__svg {
+  animation: export-bounce 0.8s ease-in-out infinite;
+}
+
+/* ── Ready state ── */
+.export-btn.ready {
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.export-btn.ready .export-btn__text {
+  color: #fff;
+  transform: translateX(30px);
+  font-weight: 800;
+}
+
+.export-btn.ready .export-btn__icon {
+  background-color: hsl(var(--primary-to, var(--primary)));
+  transform: translateX(0);
+  width: 39px;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.export-btn.ready .export-btn__svg {
+  animation: none;
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+@keyframes export-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
 }
 
 /* Custom Interactive Footer Logo Button */
@@ -2746,4 +2814,90 @@ aside.apple-glass-panel:active {
 .scrollbar-none {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* Touch & Inertia Scrolling for Mobile Viewports */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Compose enter animations using CSS variables (TailwindCSS Animate Emulation) */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1));
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+  }
+}
+
+.animate-in {
+  animation-name: enter;
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+/* Fade utilities */
+.fade-in {
+  --tw-enter-opacity: 0;
+}
+
+/* Zoom/Scale utilities */
+.zoom-in {
+  --tw-enter-scale: 0.95;
+}
+.zoom-in-95 {
+  --tw-enter-scale: 0.95;
+}
+.zoom-in-90 {
+  --tw-enter-scale: 0.90;
+}
+
+/* Translate utilities */
+.slide-in-from-bottom-4 {
+  --tw-enter-translate-y: 1rem;
+}
+.slide-in-from-bottom-8 {
+  --tw-enter-translate-y: 2rem;
+}
+.slide-in-from-top-2 {
+  --tw-enter-translate-y: -0.5rem;
+}
+.slide-in-from-left-4 {
+  --tw-enter-translate-x: -1rem;
+}
+.slide-in-from-right-4 {
+  --tw-enter-translate-x: 1rem;
+}
+.slide-in-from-right-full {
+  --tw-enter-translate-x: 100%;
+}
+
+/* Durations */
+.duration-200 {
+  animation-duration: 200ms;
+}
+.duration-300 {
+  animation-duration: 300ms;
+}
+.duration-500 {
+  animation-duration: 500ms;
+}
+.duration-700 {
+  animation-duration: 700ms;
+}
+
+/* Delays */
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
 }

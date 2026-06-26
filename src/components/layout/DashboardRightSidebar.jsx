@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Bell, X, Settings, ChevronDown, Palette, ClipboardList, Shield, Brain, Cpu, Lightbulb } from 'lucide-react';
+import { Bell, Settings, ChevronDown, Palette, ClipboardList, Shield, Brain, Cpu, Lightbulb } from 'lucide-react';
 import { auth, storage } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
 import { submitTrade, getRemainingFreeTrades } from '../../services/tradeService';
@@ -288,28 +288,6 @@ export function DashboardRightSidebar({
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {/* ─── NEW TRADE BUTTON ─── */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={`font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 border cursor-pointer select-none mx-auto ${
-          isExpanded 
-            ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20 py-1.5 px-3 rounded-xl w-max text-[9px] md:text-[10px]' 
-            : 'w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-primary-foreground border-transparent shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] text-[10px]'
-        }`}
-      >
-        {isExpanded ? (
-          <>
-            <X className="w-3 h-3 shrink-0" />
-            Close Trade
-          </>
-        ) : (
-          <>
-            <span className="text-sm font-light leading-none">+</span>
-            New Trade
-          </>
-        )}
-      </button>
-
       <div className="w-full">
             {/* ─── ORDER FORM (ACTION CENTER) ───────────────────────────────────── */}
             <div className="apple-glass-panel flex flex-col rounded-3xl relative z-30 overflow-hidden">

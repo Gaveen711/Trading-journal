@@ -94,16 +94,20 @@ export function ThemeProvider({ children }) {
     localStorage.setItem('xau-theme', isLightMode ? 'light' : 'dark');
     localStorage.setItem('xau-template', currentTemplate);
 
+    let timer;
     if (isInitialMount.current) {
       window.getComputedStyle(root).opacity;
       document.head.removeChild(css);
       isInitialMount.current = false;
     } else {
-      // Remove class on next frame — transitions are instant, no delay needed
-      requestAnimationFrame(() => {
+      timer = setTimeout(() => {
         root.classList.remove('theme-toggling');
-      });
+      }, 250);
     }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isLightMode, currentTemplate, pathname]);
 
   // ── Cross-tab sync via storage event ───────────────────────────────────
