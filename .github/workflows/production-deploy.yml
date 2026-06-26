@@ -78,7 +78,9 @@ jobs:
 
       - name: Deploy Firebase Rules (Staging)
         run: |
-          npx firebase-tools deploy --only firestore:rules,storage --project=xaujournal-staging --token="${{ secrets.FIREBASE_TOKEN }}"
+          npx firebase-tools deploy --only firestore:rules,storage --project=xaujournal-staging
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
   deploy-production:
     name: Deploy to Production
@@ -121,4 +123,6 @@ jobs:
 
       - name: Deploy Firebase Cloud Functions & Rules (Production)
         run: |
-          npx firebase-tools deploy --only functions,firestore:rules,storage --project=xaujournal-prod --token="${{ secrets.FIREBASE_TOKEN }}"
+          npx firebase-tools deploy --only functions,firestore:rules,storage --project=xaujournal-prod
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

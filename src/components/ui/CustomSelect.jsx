@@ -26,9 +26,9 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={cn(
-          "w-full px-4 rounded-xl border border-border/50 bg-muted/30 flex items-center justify-between group transition-all duration-300 hover:border-primary/50 hover:bg-muted/50",
+          "w-full px-4 rounded-xl border border-border bg-muted flex items-center justify-between group transition-all duration-300 hover:border-primary hover:bg-muted-foreground/10",
           !className?.includes('h-') && "h-12",
-          isOpen && "border-primary/50 ring-2 ring-primary/10 shadow-[0_0_20px_rgba(139,92,246,0.1)]",
+          isOpen && "border-primary ring-1 ring-primary shadow-[0_0_20px_rgba(139,92,246,0.1)]",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none"
         )}
       >
@@ -48,11 +48,11 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
         <div
           style={align === 'top' ? { bottom: 'calc(100% + 8px)' } : { top: 'calc(100% + 8px)' }}
           className={cn(
-            "absolute left-0 right-0 z-[100] p-1.5 rounded-2xl border border-border/50 bg-card/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200",
+            "absolute left-0 right-0 z-[100] p-1.5 rounded-2xl border border-border bg-card backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200",
             align === 'top' ? "origin-bottom" : "origin-top"
           )}
         >
-          <div className="space-y-1 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+          <div data-lenis-prevent className="space-y-1 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
             {options.map((option) => (
               <button
                 key={option.value}
@@ -64,8 +64,8 @@ export function CustomSelect({ options, value, onChange, placeholder = 'Select..
                 className={cn(
                   "w-full flex items-center px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-200 group relative overflow-hidden text-left",
                   value === option.value 
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                    : "text-foreground/60 hover:text-foreground hover:bg-muted/50"
+                    ? "bg-primary text-primary-foreground shadow-lg" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
                 {option.label}

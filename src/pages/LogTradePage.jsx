@@ -49,7 +49,7 @@ export function LogTradePage() {
     const ticker = liveTickers?.xauusd;
     const history = ticker?.history || [];
     const change = ticker?.change || 0;
-    
+
     // Default base bias (neutral)
     let score = 50;
 
@@ -317,39 +317,53 @@ export function LogTradePage() {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-200 pb-6">
-      
+
       {/* HEADER SECTION WITH TITLE AND NEW TRADE TOGGLE */}
       <div className="flex justify-between items-center shrink-0">
         <div>
-          <h1 className="text-xl font-black uppercase tracking-wider text-foreground">Dashboard</h1>
-          <p className="text-xs md:text-sm uppercase tracking-widest text-muted-foreground">Overview & Trade Intelligence</p>
+          <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider text-foreground">Dashboard</h1>
+          <p className="text-[10px] md:text-sm uppercase tracking-widest text-muted-foreground">Overview & Trade Intelligence</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Markets Open Badge */}
-          <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-border/10 bg-muted/20 text-[10px] md:text-xs font-black uppercase tracking-widest select-none">
+          <div className="flex items-center gap-1.5 py-1.5 px-2 sm:px-3 rounded-xl border border-border/10 bg-muted/20 text-[9px] md:text-xs font-black uppercase tracking-widest select-none shrink-0">
             <span className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse' : 'bg-gray-500'} shrink-0`} />
             <span className={isMarketOpen ? 'text-green-500' : 'text-muted-foreground'}>
               {isMarketOpen ? 'Markets Open' : 'Markets Closed'}
             </span>
           </div>
 
-          {!isExpanded && (
-            <button
-              onClick={() => setIsExpanded(true)}
-              className="py-1.5 px-3 rounded-xl font-black uppercase tracking-wider text-[10px] md:text-xs transition-all duration-200 flex items-center justify-center gap-1.5 bg-[#FACC15] hover:bg-[#EAB308] text-black active:scale-[0.96] cursor-pointer select-none border-none shadow-md shadow-amber-400/10"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3 h-3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-              </svg>
-              New Trade
-            </button>
-          )}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`hidden md:flex py-1.5 px-2.5 sm:px-3 rounded-xl font-black uppercase tracking-wider text-[10px] md:text-xs transition-all duration-300 items-center justify-center gap-1.5 active:scale-[0.96] cursor-pointer select-none shrink-0 shadow-md ${
+              isExpanded
+                ? 'bg-rose-500/10 border border-rose-500/30 text-rose-500 hover:bg-rose-500/20 shadow-rose-500/5'
+                : 'bg-[#FACC15] hover:bg-[#EAB308] text-black border border-transparent shadow-amber-400/10'
+            }`}
+            title={isExpanded ? 'Close Trade' : 'New Trade'}
+          >
+            {isExpanded ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="hidden sm:inline">Close Trade</span>
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                </svg>
+                <span className="hidden sm:inline">New Trade</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
       {/* TOP TIER: METRICS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0">
-        
+
         {/* Metric 1: Net P&L (MTD) */}
         <div className="apple-glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-colors border border-border/10">
           <div className="space-y-1 relative z-10">
@@ -433,14 +447,14 @@ export function LogTradePage() {
 
       {/* BOTTOM TIER: BIAS GAUGE & PERFORMANCE GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 shrink-0">
-        
+
         {/* GOLD BIAS GAUGE CARD */}
         <div className="apple-glass-panel rounded-3xl p-6 flex flex-col relative overflow-hidden border border-border/10 hover:border-primary/30 transition-colors">
           <div className="flex items-center gap-2 mb-6 text-left relative z-10">
             <div className="w-[4px] h-[16px] bg-[#facc15] rounded-full shrink-0" />
             <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#9e9ea7]">GOLD BIAS GAUGE</span>
           </div>
-          
+
           <div className="flex-1 flex flex-col justify-center items-center py-4 relative z-10">
             <svg viewBox="0 0 200 145" className="w-full max-w-[220px] mx-auto overflow-visible">
               <defs>
@@ -473,7 +487,7 @@ export function LogTradePage() {
               {/* Labels */}
               <text x="62" y="80" className="text-[10px] md:text-xs font-black fill-[#ff4b55] uppercase tracking-wider" textAnchor="middle">BEAR</text>
               <text x="138" y="80" className="text-[10px] md:text-xs font-black fill-[#10b981] uppercase tracking-wider" textAnchor="middle">BULL</text>
-              
+
               {/* Center percentage and text */}
               <text x="100" y="108" className={`text-3xl font-black tracking-tight ${biasPercentage >= 60 ? 'fill-[#10b981]' : biasPercentage <= 40 ? 'fill-[#ff4b55]' : 'fill-[#facc15]'}`} textAnchor="middle">
                 {biasPercentage}%
@@ -558,20 +572,20 @@ export function LogTradePage() {
       <div className="w-full shrink-0">
         <div className="apple-glass-panel rounded-3xl flex flex-col overflow-hidden min-h-[300px]">
           <div className="p-5 flex gap-6 border-b border-border/10">
-            <button 
+            <button
               className={`text-xs md:text-sm font-black uppercase tracking-[0.2em] pb-1 border-b-2 -mb-[21px] transition-colors ${activeTab === 'history' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}
               onClick={() => setActiveTab('history')}
             >
               Positions / History
             </button>
-            <button 
+            <button
               className={`text-xs md:text-sm font-black uppercase tracking-[0.2em] pb-1 border-b-2 -mb-[21px] transition-colors ${activeTab === 'orders' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}
               onClick={() => setActiveTab('orders')}
             >
               Orders
             </button>
           </div>
-          
+
           {activeTab === 'history' ? (
             <div className="flex-1 overflow-x-auto p-2">
               <table className="w-full text-left text-xs whitespace-nowrap">
@@ -597,9 +611,8 @@ export function LogTradePage() {
                         {t.market || 'GOLD'}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] md:text-xs font-black tracking-widest ${
-                          t.direction === 'BUY' || t.direction === 'LONG' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                        }`}>{t.direction}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] md:text-xs font-black tracking-widest ${t.direction === 'BUY' || t.direction === 'LONG' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                          }`}>{t.direction}</span>
                       </td>
                       <td className="py-3 px-4 hidden md:table-cell">
                         {t.strategy || (t.strategies && t.strategies[0]) || t.setup ? (
@@ -618,9 +631,8 @@ export function LogTradePage() {
                       <td className="py-3 px-4 text-muted-foreground">{t.entry}</td>
                       <td className="py-3 px-4 text-muted-foreground">{t.exit || '-'}</td>
                       <td className="py-3 px-4">{t.lots}</td>
-                      <td className={`py-3 px-4 text-right font-black ${
-                        t.pnl >= 0 ? 'text-green-500' : 'text-red-500'
-                      }`}>{t.pnl >= 0 ? '+' : ''}{formatCurrency(t.pnl)}</td>
+                      <td className={`py-3 px-4 text-right font-black ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'
+                        }`}>{t.pnl >= 0 ? '+' : ''}{formatCurrency(t.pnl)}</td>
                     </tr>
                   ))}
                   {trades.length === 0 && (

@@ -311,7 +311,7 @@ export function CalendarPage() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">Consistency Terminal</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-gradient uppercase tracking-tight">Consistency Terminal</h1>
             {plan === 'free' && (
               <span className="px-2 py-0.5 rounded-md bg-primary/5 border border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary shadow-sm">
                 Basic Edition

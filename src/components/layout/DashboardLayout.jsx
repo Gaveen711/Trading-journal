@@ -31,6 +31,7 @@ import { useJournals } from '../../hooks/useJournals';
 import { useWallet } from '../../hooks/useWallet';
 import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
+import Lenis from 'lenis';
 
 export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
   const { isLightMode, toggleTheme, currentTemplate, setTemplate } = useAppTheme();
@@ -75,6 +76,31 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smooth: true,
+    });
+
+    let rafId;
+    function raf(time) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    // Reset scroll on location change
+    lenis.scrollTo(0, { immediate: true });
+
+    return () => {
+      lenis.destroy();
+      cancelAnimationFrame(rafId);
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     const updateTimers = () => {
@@ -178,6 +204,49 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
 
+  // Load permissions from localStorage
+  const [syncPermissions, setSyncPermissions] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`xau-sync-permissions-${user?.uid}`);
+      return saved ? JSON.parse(saved) : {
+        readPositions: true,
+        tradeHistory: true,
+        accountBalance: true,
+        executeTrades: false
+      };
+    } catch {
+      return {
+        readPositions: true,
+        tradeHistory: true,
+        accountBalance: true,
+        executeTrades: false
+      };
+    }
+  });
+
+  // Listen for changes in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const saved = localStorage.getItem(`xau-sync-permissions-${user?.uid}`);
+        if (saved) {
+          setSyncPermissions(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('xau-permissions-changed', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('xau-permissions-changed', handleStorageChange);
+    };
+  }, [user]);
+
+  const displayedTrades = syncPermissions.tradeHistory ? trades : [];
+  const displayedWalletBalance = syncPermissions.accountBalance ? walletBalance : 0;
+
   const navigation = [
     { id: '', name: 'Dashboard', icon: House, iconSolid: HouseFill },
     { id: 'history', name: 'History', icon: ClockHistory, iconSolid: ClockFill },
@@ -188,12 +257,12 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   ].filter(Boolean);
 
   return (
-    <div className="h-screen md:h-screen min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative overflow-y-auto md:overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative">
 
       {/* GLASSMORPHIC BACKGROUND MESH */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden transform-gpu will-change-transform">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px] transform-gpu" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px] transform-gpu" />
       </div>
 
       {/* DESKTOP SIDEBAR */}
@@ -527,7 +596,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </aside>
 
       {/* MAIN CONTAINER */}
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] h-auto md:h-screen overflow-y-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] min-h-screen">
         {/* MOBILE HEADER (only visible on mobile/tablet) */}
         <header className={`md:hidden fixed top-3 left-3 right-3 z-40 apple-glass-panel rounded-2xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
           <div className="h-14 px-4 flex items-center justify-between">
@@ -622,19 +691,19 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </header>
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
-        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1550px] w-full mx-auto pt-20 px-6 pb-6 md:py-6 md:px-6 lg:px-8 md:pb-8">
+        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1850px] w-full mx-auto pt-20 px-6 pb-32 md:py-6 md:px-6 lg:px-8 md:pb-8">
 
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
           <main className="flex-1 min-w-0 relative">
             {/* Ambient Background Glows for Apple Glass Effect */}
-            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen" />
-            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen" />
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
+            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
 
             <Outlet context={{
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
-              trades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
+              trades: displayedTrades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
-              walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
+              walletBalance: displayedWalletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
               isExpanded: isRightSidebarExpanded,
               setIsExpanded: setIsRightSidebarExpanded
             }} />
@@ -658,9 +727,9 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                   isTrialActive={computedIsTrialActive}
                   renewCountdown={renewCountdown}
                   trialTimeLeft={trialTimeLeft}
-                  trades={trades}
+                  trades={displayedTrades}
                   journals={journals}
-                  walletBalance={walletBalance}
+                  walletBalance={displayedWalletBalance}
                   setShowPricingModal={setShowPricingModal}
                   toast={toast}
                   openPortal={openPortal}
@@ -678,7 +747,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </div>
 
         {/* FOOTER */}
-        <footer className="w-full py-8 px-4 border-t border-border/10 bg-muted/5 flex flex-col items-center justify-center gap-1">
+        <footer className="w-full pt-8 pb-32 px-4 md:py-8 border-t border-border/10 bg-muted/5 flex flex-col items-center justify-center gap-1">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 flex items-center gap-1.5 justify-center animate-pulse">
             made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 animate-rgb shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
           </p>
@@ -687,6 +756,31 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           </p>
         </footer>
       </div>
+
+      {/* MOBILE FLOATING ACTION BUTTON (FAB) */}
+      {(location.pathname === '/app' || location.pathname === '/app/') && (
+        <button
+          onClick={() => setIsRightSidebarExpanded(!isRightSidebarExpanded)}
+          className={`md:hidden fixed z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-300 select-none cursor-pointer border border-white/5 right-6 ${
+            isVisible ? 'bottom-24' : 'bottom-6'
+          } ${
+            isRightSidebarExpanded
+              ? 'bg-rose-500 text-white shadow-rose-500/40 hover:bg-rose-600'
+              : 'bg-[#FACC15] text-black shadow-amber-400/40 hover:bg-[#EAB308]'
+          }`}
+          title={isRightSidebarExpanded ? 'Close Trade' : 'New Trade'}
+        >
+          {isRightSidebarExpanded ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          )}
+        </button>
+      )}
 
       {/* MOBILE NAV */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe pt-2 transition-[transform,opacity] duration-300 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
