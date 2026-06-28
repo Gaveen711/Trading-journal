@@ -191,6 +191,14 @@ function App() {
       elements.forEach(el => {
         if (
           el.closest('.framer-motion') || 
+          el.closest('#features') ||
+          el.closest('.step-card') ||
+          el.closest('#scale-timeline-container') ||
+          el.closest('.reveal-up') ||
+          el.closest('.xj-split-h2') ||
+          el.closest('.xj-manifesto-list') ||
+          el.closest('.xj-section-label') ||
+          el.closest('.xj-stat-num') ||
           el.classList.contains('char') || 
           el.classList.contains('scroll-reveal-text') ||
           el.closest('footer') ||
