@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { auth } from '../firebase';
 import { useBrokerAccounts } from '../hooks/useBrokerAccounts';
 // connectBrokerCallable and syncBrokerTradesCallable removed in favor of Hono useBrokerAccounts hook
 import { getFriendlyErrorMessage } from '../lib/errorUtils';
@@ -659,7 +660,6 @@ export default function EASetup() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {BROKER_PRESETS.map((preset) => {
           const isCurrentActive = isAccountConnected && activeCardId === preset.id;
-          const syncInfo = isCurrentActive ? getSyncStatusInfo(activeAccount) : getSyncStatusInfo(null);
           
           return (
             <div
