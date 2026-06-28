@@ -109,36 +109,36 @@ const STORY_CHAPTERS = [
     label: 'The Problem',
     headline: "You're trading blindly.",
     sub: "Every missed trade. Every blown stop. Every emotional entry. Without a journal, you repeat the same mistakes and the market keeps the tuition.",
-    accent: 'from-rose-400/20 to-pink-300/10',
-    glow: 'rgba(251,113,133,0.2)',
-    dotColor: '#fb7185',
+    accent: 'from-[#FF6392]/20 to-[#FF6392]/5',
+    glow: 'rgba(255,99,146,0.2)',
+    dotColor: '#FF6392',
   },
   {
     chapter: '02',
     label: 'The Pattern',
     headline: 'Your edge already exists.',
     sub: "It's buried in your trade history in the sessions where you win, the setups that perform, the hours when your focus is sharp. You just can't see it yet.",
-    accent: 'from-amber-400/20 to-orange-300/10',
-    glow: 'rgba(251,191,36,0.2)',
-    dotColor: '#fbbf24',
+    accent: 'from-[#FFE45E]/20 to-[#FFE45E]/5',
+    glow: 'rgba(255,228,94,0.2)',
+    dotColor: '#FFE45E',
   },
   {
     chapter: '03',
     label: 'The Insight',
     headline: 'Data reveals what instinct misses.',
     sub: 'Drawdown curves. Session heatmaps. Streak analysis. When your trades become data, patterns emerge that transform how you approach every position.',
-    accent: 'from-violet-400/20 to-purple-300/10',
-    glow: 'rgba(167,139,250,0.2)',
-    dotColor: '#a78bfa',
+    accent: 'from-[#5AA9E6]/20 to-[#5AA9E6]/5',
+    glow: 'rgba(90,169,230,0.2)',
+    dotColor: '#5AA9E6',
   },
   {
     chapter: '04',
     label: 'The Solution',
     headline: 'Meet XAU Journal.',
     sub: 'The only trading journal built exclusively for XAUUSD. Auto-sync every trade from MT5. Analyze your edge. Journal your psychology. All in one precision tool.',
-    accent: 'from-emerald-400/20 to-teal-300/10',
-    glow: 'rgba(52,211,153,0.2)',
-    dotColor: '#34d399',
+    accent: 'from-[#7FC8F8]/20 to-[#7FC8F8]/5',
+    glow: 'rgba(127,200,248,0.2)',
+    dotColor: '#7FC8F8',
   },
 ];
 
@@ -330,7 +330,7 @@ function ScrollProgress() {
       className="fixed top-0 left-0 right-0 h-[2px] z-[200] origin-left"
       style={{
         scaleX,
-        background: 'linear-gradient(to right, #a78bfa, #fb7185, #34d399)',
+        background: 'linear-gradient(to right, #5AA9E6, #FF6392, #FFE45E)',
       }}
     />
   );
@@ -366,7 +366,7 @@ function MockDashboardUI() {
   return (
     <div className="relative w-full max-w-[580px] lg:max-w-none aspect-[1.32] group select-none">
       {/* Dynamic ambient radial gradients under/behind mockup */}
-      <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-primary/30 via-purple-500/25 to-pink-500/20 blur-2xl opacity-60 group-hover:opacity-75 transition-all duration-700 pointer-events-none" />
+      <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-tr from-primary/30 via-[#FFE45E]/20 to-[#FF6392]/20 blur-2xl opacity-60 group-hover:opacity-75 transition-all duration-700 pointer-events-none" />
 
       {/* Floating tag badges */}
       <Motion.div
@@ -439,7 +439,7 @@ function MockDashboardUI() {
             </div>
 
             <div className="mt-auto border-t border-border/25 pt-2.5 flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary to-purple-400 flex items-center justify-center text-[8px] font-black text-white">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary to-[#7FC8F8] flex items-center justify-center text-[8px] font-black text-white">
                 TR
               </div>
               <div className="overflow-hidden">
@@ -481,8 +481,8 @@ function MockDashboardUI() {
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 320 100" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.0" />
+                      <stop offset="0%" stopColor="#5AA9E6" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#5AA9E6" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
@@ -500,7 +500,7 @@ function MockDashboardUI() {
                   <path
                     d="M 0 85 Q 60 70 110 80 T 210 35 T 300 15 L 320 20"
                     fill="none"
-                    stroke="#a78bfa"
+                    stroke="#5AA9E6"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   />
@@ -600,12 +600,17 @@ export function LandingPage() {
     });
     lenisRef.current = lenis;
 
-    let rafId;
-    function raf(time) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
+    let updateLenis;
+
+    // Sync ScrollTrigger with Lenis
+    lenis.on('scroll', ScrollTrigger.update);
+
+    // Drive GSAP ticker with Lenis scroll RAF
+    updateLenis = (time) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(updateLenis);
+    gsap.ticker.lagSmoothing(0);
 
     if (location.hash) {
       setTimeout(() => {
@@ -632,7 +637,7 @@ export function LandingPage() {
     );
 
     // Set up GSAP for Bento features section
-    gsap.fromTo("#features .grid > div",
+    gsap.fromTo("#features .bento-grid > div",
       { opacity: 0, y: 40 },
       {
         opacity: 1,
@@ -641,7 +646,7 @@ export function LandingPage() {
         stagger: 0.12,
         ease: "power2.out",
         scrollTrigger: {
-          trigger: "#features .grid",
+          trigger: "#features .bento-grid",
           start: "top 85%",
         }
       }
@@ -650,7 +655,10 @@ export function LandingPage() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
-      cancelAnimationFrame(rafId);
+      if (updateLenis) {
+        gsap.ticker.remove(updateLenis);
+      }
+      ScrollTrigger.getAll().forEach(t => t.kill());
       lenisRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -836,7 +844,7 @@ export function LandingPage() {
               <div className="hidden md:block absolute top-20 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
 
               {STEPS.map((step, i) => {
-                const accentColors = ['#a78bfa', '#fb7185', '#34d399'];
+                const accentColors = ['#5AA9E6', '#FF6392', '#FFE45E'];
                 return (
                   <div
                     key={step.id}
@@ -1261,7 +1269,7 @@ export function BentoFeatures({ isLightMode }) {
           </p>
         </Motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bento-grid">
 
           {/* Card 1: MT5 Sync */}
           <div className="md:col-span-2 relative group overflow-hidden rounded-3xl border border-border/30 bg-card/45 backdrop-blur-md p-8 flex flex-col justify-between min-h-[300px] hover:border-border/60 hover:shadow-lg transition-all duration-500">
@@ -1539,11 +1547,11 @@ function ScaleTimeline() {
 
         tl.to(".scale-box", {
           keyframes: [
-            { backgroundColor: "#a78bfa", boxShadow: "0 0 18px rgba(167, 139, 250, 0.8)", duration: 0.16 },
-            { backgroundColor: "#fb7185", boxShadow: "0 0 18px rgba(251, 113, 133, 0.8)", duration: 0.16 },
-            { backgroundColor: "#fbbf24", boxShadow: "0 0 18px rgba(251, 191, 36, 0.8)", duration: 0.16 },
-            { backgroundColor: "#34d399", boxShadow: "0 0 18px rgba(52, 211, 153, 0.8)", duration: 0.16 },
-            { backgroundColor: "#818cf8", boxShadow: "0 0 18px rgba(129, 140, 248, 0.8)", duration: 0.16 }
+            { backgroundColor: "#5AA9E6", boxShadow: "0 0 18px rgba(90, 169, 230, 0.8)", duration: 0.16 },
+            { backgroundColor: "#7FC8F8", boxShadow: "0 0 18px rgba(127, 200, 248, 0.8)", duration: 0.16 },
+            { backgroundColor: "#FF6392", boxShadow: "0 0 18px rgba(255, 99, 146, 0.8)", duration: 0.16 },
+            { backgroundColor: "#FFE45E", boxShadow: "0 0 18px rgba(255, 228, 94, 0.8)", duration: 0.16 },
+            { backgroundColor: "#5AA9E6", boxShadow: "0 0 18px rgba(90, 169, 230, 0.8)", duration: 0.16 }
           ],
           ease: "none",
           duration: 0.8
@@ -1585,18 +1593,17 @@ function ScaleTimeline() {
     };
   }, []);
 
-  const pastelAccents = ['#a78bfa', '#fb7185', '#34d399', '#818cf8', '#fbbf24', '#38bdf8'];
+  const pastelAccents = ['#5AA9E6', '#7FC8F8', '#FF6392', '#FFE45E', '#5AA9E6', '#7FC8F8'];
 
   return (
     <section ref={containerRef} className="relative z-10 py-20 md:py-28 px-6 overflow-hidden">
       <style>{`
         @keyframes pastelBorderGlow {
-          0%   { border-color: rgba(167,139,250,0.5); box-shadow: 0 8px 24px rgba(167,139,250,0.15); }
-          20%  { border-color: rgba(251,113,133,0.5); box-shadow: 0 8px 24px rgba(251,113,133,0.15); }
-          40%  { border-color: rgba(251,191,36,0.5);  box-shadow: 0 8px 24px rgba(251,191,36,0.15); }
-          60%  { border-color: rgba(52,211,153,0.5);  box-shadow: 0 8px 24px rgba(52,211,153,0.15); }
-          80%  { border-color: rgba(129,140,248,0.5); box-shadow: 0 8px 24px rgba(129,140,248,0.15); }
-          100% { border-color: rgba(167,139,250,0.5); box-shadow: 0 8px 24px rgba(167,139,250,0.15); }
+          0%   { border-color: rgba(90,169,230,0.5); box-shadow: 0 8px 24px rgba(90,169,230,0.15); }
+          25%  { border-color: rgba(127,200,248,0.5); box-shadow: 0 8px 24px rgba(127,200,248,0.15); }
+          50%  { border-color: rgba(255,99,146,0.5);  box-shadow: 0 8px 24px rgba(255,99,146,0.15); }
+          75%  { border-color: rgba(255,228,94,0.5);  box-shadow: 0 8px 24px rgba(255,228,94,0.15); }
+          100% { border-color: rgba(90,169,230,0.5); box-shadow: 0 8px 24px rgba(90,169,230,0.15); }
         }
         .pastel-active {
           animation: pastelBorderGlow 5s linear infinite;
@@ -1627,11 +1634,10 @@ function ScaleTimeline() {
               <path id="scale-path-progress" fill="none" stroke="url(#scale-glow-gradient)" strokeWidth="3" strokeLinecap="round" className="opacity-0" />
               <defs>
                 <linearGradient id="scale-glow-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#a78bfa" />
-                  <stop offset="25%" stopColor="#fb7185" />
-                  <stop offset="50%" stopColor="#fbbf24" />
-                  <stop offset="75%" stopColor="#34d399" />
-                  <stop offset="100%" stopColor="#818cf8" />
+                  <stop offset="0%" stopColor="#5AA9E6" />
+                  <stop offset="33%" stopColor="#7FC8F8" />
+                  <stop offset="66%" stopColor="#FF6392" />
+                  <stop offset="100%" stopColor="#FFE45E" />
                 </linearGradient>
               </defs>
             </svg>
