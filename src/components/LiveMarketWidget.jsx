@@ -29,6 +29,26 @@ export function LiveMarketWidget({ onTickersUpdate }) {
   // Ticks updater loop
   useEffect(() => {
     const timer = window.setInterval(() => {
+      // Check if market is closed (Friday 5:00 PM EST to Sunday 5:00 PM EST)
+      const isMarketClosed = () => {
+        try {
+          const now = new Date();
+          const estTimeStr = now.toLocaleString("en-US", { timeZone: "America/New_York" });
+          const estDate = new Date(estTimeStr);
+          const day = estDate.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
+          const hours = estDate.getHours();
+
+          if (day === 6) return true; // Saturday
+          if (day === 5 && hours >= 17) return true; // Friday after 5pm EST
+          if (day === 0 && hours < 17) return true; // Sunday before 5pm EST
+        } catch (e) {
+          console.error("Error checking timezone-based market hours:", e);
+        }
+        return false;
+      };
+
+      if (isMarketClosed()) return;
+
       setTickers(prev => {
         const next = { ...prev };
 

@@ -13,10 +13,10 @@ gsap.registerPlugin(ScrollTrigger);
 
 const STYLES = `
   .xj-story-container {
-    --violet: #5AA9E6;
-    --violet-light: #7FC8F8;
-    --violet-faint: rgba(90, 169, 230, 0.08);
-    --gold: #FFE45E;
+    --violet: #00E5FF;
+    --violet-light: #FF5A36;
+    --violet-faint: rgba(0, 229, 255, 0.08);
+    --gold: #FF5A36;
     font-family: 'Poppins', sans-serif;
     background: var(--bg);
     color: var(--ink);
@@ -47,21 +47,21 @@ const STYLES = `
   }
   .xj-blob-1 {
     width: 700px; height: 700px;
-    background: radial-gradient(circle, #7FC8F8 0%, transparent 70%);
+    background: radial-gradient(circle, #00E5FF 0%, transparent 70%);
     top: -200px; right: -200px;
     filter: blur(80px);
     opacity: 0.35;
   }
   .xj-blob-2 {
     width: 500px; height: 500px;
-    background: radial-gradient(circle, #FF6392 0%, transparent 70%);
+    background: radial-gradient(circle, #FF5A36 0%, transparent 70%);
     bottom: 10%; left: -150px;
     filter: blur(70px);
     opacity: 0.3;
   }
   .xj-blob-3 {
     width: 400px; height: 400px;
-    background: radial-gradient(circle, #FFE45E 0%, transparent 70%);
+    background: radial-gradient(circle, #00E5FF 0%, transparent 70%);
     top: 40%; right: 8%;
     filter: blur(90px);
     opacity: 0.25;
@@ -116,18 +116,30 @@ const STYLES = `
     font-size: clamp(64px, 10vw, 130px);
     line-height: 1.02;
     letter-spacing: -0.025em;
-    color: var(--ink);
+    color: var(--ink) !important;
     margin-bottom: 32px;
     overflow: hidden;
     opacity: 0;
   }
   .xj-hero-headline em {
     font-style: italic;
-    color: var(--violet);
   }
-  .xj-hero-headline .char {
-    display: inline-block;
+  .xj-hero-headline em .char {
+    background: linear-gradient(135deg, #FF5A36, #8B5CF6, #00D4FF, #FF5A36) !important;
+    background-size: 200% 200% !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    animation: aurora-shift 6s ease infinite !important;
+  }
+  .xj-hero-headline .char:not(.aurora-text) {
+    display: inline-block !important;
     transform: translateY(110%);
+    color: #ffffff !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
   }
   .xj-hero-sub {
     font-size: 19px;
@@ -243,7 +255,13 @@ const STYLES = `
   }
   .xj-split-h2 em {
     font-style: italic;
-    color: var(--violet);
+    background: linear-gradient(135deg, #FF5A36, #8B5CF6, #00D4FF, #FF5A36);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: aurora-shift 6s ease infinite;
+    display: inline-block;
   }
   .xj-split-h2 .line { overflow: hidden; display: block; }
   .xj-split-h2 .inner { display: block; transform: translateY(100%); }
@@ -512,7 +530,6 @@ const STYLES = `
   .xj-builder-section .xj-section-label { color: var(--violet-light); }
   .xj-builder-section .xj-section-label::before { background: var(--violet-light); }
   .xj-builder-section .xj-split-h2 { color: #fff; }
-  .xj-builder-section .xj-split-h2 em { color: var(--violet-light); }
   .xj-builder-section p.xj-body-copy { color: rgba(255,255,255,0.55); }
 
   .xj-avatar-ring {
@@ -880,7 +897,7 @@ export default function TheStoryPage() {
                 hl.appendChild(spaceSpan);
               }
             });
-          } else if (node.nodeType === 1) {
+          } else if (node.nodeType === 1 && node.tagName === 'EM') {
             const emNode = node;
             const emText = emNode.textContent;
             emNode.innerHTML = '';
@@ -893,7 +910,7 @@ export default function TheStoryPage() {
 
               word.split('').forEach(ch => {
                 const s = document.createElement('span');
-                s.className = 'char';
+                s.className = 'char aurora-text';
                 s.style.display = 'inline-block';
                 s.style.transform = 'translateY(110%)';
                 s.textContent = ch;
@@ -909,6 +926,35 @@ export default function TheStoryPage() {
               }
             });
             hl.appendChild(emNode);
+          } else if (node.nodeType === 1) {
+            const otherNode = node;
+            const otherText = otherNode.textContent;
+            otherNode.innerHTML = '';
+
+            const words = otherText.split(' ');
+            words.forEach((word, wordIdx) => {
+              const wordSpan = document.createElement('span');
+              wordSpan.style.display = 'inline-block';
+              wordSpan.style.whiteSpace = 'nowrap';
+
+              word.split('').forEach(ch => {
+                const s = document.createElement('span');
+                s.className = 'char';
+                s.style.display = 'inline-block';
+                s.style.transform = 'translateY(110%)';
+                s.textContent = ch;
+                wordSpan.appendChild(s);
+              });
+              otherNode.appendChild(wordSpan);
+
+              if (wordIdx < words.length - 1) {
+                const spaceSpan = document.createElement('span');
+                spaceSpan.style.display = 'inline-block';
+                spaceSpan.innerHTML = '&nbsp;';
+                otherNode.appendChild(spaceSpan);
+              }
+            });
+            hl.appendChild(otherNode);
           }
         });
 
@@ -1154,10 +1200,10 @@ export default function TheStoryPage() {
     '--border': 'hsl(var(--border))',
     '--card-bg': 'hsl(var(--card))',
     '--violet': 'hsl(var(--primary))',
-    '--violet-light': isLightMode ? '#a78bfa' : '#c084fc',
+    '--violet-light': isLightMode ? '#ff8b73' : '#ff5a36',
     '--violet-faint': 'hsl(var(--primary) / 0.08)',
-    '--builder-bg': isLightMode ? '#0d0d14' : '#141220',
-    '--hscroll-bg1': isLightMode ? '#f0ebff' : '#161226',
+    '--builder-bg': isLightMode ? '#0a0a0d' : '#07070a',
+    '--hscroll-bg1': isLightMode ? '#ebfcff' : '#0d1a1c',
     '--hscroll-bg2': isLightMode ? '#fff8eb' : '#221a0f',
     '--hscroll-bg3': isLightMode ? '#ebf5ff' : '#101726',
     '--hscroll-bg4': isLightMode ? '#f0ffeb' : '#112211',
@@ -1170,7 +1216,7 @@ export default function TheStoryPage() {
   };
 
   return (
-    <div className="font-sans">
+    <div className="font-sans aurora-theme">
       <PublicNavbar />
       <div className="xj-story-container" style={themeVariables} ref={containerRef}>
       <style>{STYLES}</style>
@@ -1204,7 +1250,7 @@ export default function TheStoryPage() {
           Built by a trader · For gold traders
         </div>
         <h1 className="xj-hero-headline" id="xj-hero-headline">
-          Not just another<br /> startup.<br /><em> A necessary tool.</em>
+          Not just another startup. <em>A necessary tool.</em>
         </h1>
         <p className="xj-hero-sub font-medium">XAU Journal didn't come from a product roadmap. It came from years of watching gold traders, including myself, manage their edge inside spreadsheets that had no idea what XAUUSD actually was.</p>
 
@@ -1323,7 +1369,7 @@ export default function TheStoryPage() {
           <h2 className="xj-split-h2">
             <span className="line"><span className="inner">Generic tools try to serve</span></span>
             <span className="line"><span className="inner">everyone. That's precisely</span></span>
-            <span className="line"><span className="inner"><em>why they fail specialists.</em></span></span>
+            <span className="line"><span className="inner"><em className="aurora-text">why they fail specialists.</em></span></span>
           </h2>
           <p className="xj-body-copy reveal-up font-medium">Forex journals calculate pip value assuming a standard contract. Gold doesn't work that way. At 100 oz per lot, a 1-pip move on XAUUSD is worth $1,but the pip itself is a $0.01 price move, not a $0.0001 move like EUR/USD. Get that wrong and every drawdown curve, every expectancy calculation, every risk-reward ratio in your journal is lying to you.</p>
           <p className="xj-body-copy reveal-up font-medium">XAU Journal is calibrated specifically for this. It doesn't support EUR/USD because it doesn't need to. One instrument, done properly, is worth more than thirty instruments done badly.</p>
