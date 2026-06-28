@@ -2901,3 +2901,138 @@ aside.apple-glass-panel:active {
 .delay-500 {
   animation-delay: 500ms;
 }
+
+/* ══════════════════════════════════════════
+   AURORA LANDING PAGE UTILITIES
+   ══════════════════════════════════════════ */
+
+/* Animated gradient text — cycles magenta → purple → cyan */
+.aurora-text {
+  background: linear-gradient(135deg, #FF3CAC, #8B5CF6, #00D4FF, #FF3CAC);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: aurora-shift 6s ease infinite;
+}
+
+.aurora-text-static {
+  background: linear-gradient(135deg, #FF5A36, #8B5CF6, #00D4FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes aurora-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Film grain texture overlay */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px;
+}
+
+/* Perspective container for 3D card tilt */
+.perspective-container {
+  perspective: 1000px;
+}
+
+/* Aurora glow pulse */
+@keyframes aurora-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.aurora-glow {
+  animation: aurora-pulse 4s ease-in-out infinite;
+}
+
+/* CTA button — aurora gradient override for landing page */
+.aurora-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  background: linear-gradient(135deg, #00D4FF, #8B5CF6);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.aurora-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.aurora-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Ghost button variant */
+.aurora-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 15px;
+  color: hsl(var(--foreground));
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.aurora-ghost:hover {
+  border-color: #8B5CF6;
+  color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.05);
+}
+
+/* Floating orb shimmer */
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-30px) translateX(15px); }
+  50% { transform: translateY(-10px) translateX(-10px); }
+  75% { transform: translateY(-25px) translateX(5px); }
+}
+
+/* Smooth shimmer for loading bars in mockups */
+@keyframes shimmer-aurora {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* FAQ accordion caret */
+.faq-caret {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.faq-caret.open {
+  transform: rotate(180deg);
+}
+
+/* ── Aurora Theme CSS Variables Override ── */
+.aurora-theme {
+  --primary: 190 100% 50% !important; /* #00D4FF (cyan) */
+  --primary-to: 326 100% 62% !important; /* #FF3CAC (magenta) */
+  --accent: 326 100% 62% !important; /* #FF3CAC (magenta) */
+}
+
+.dark .aurora-theme {
+  --background: 240 40% 4% !important; /* #050510 */
+  --card: 240 35% 8% !important; /* #0d0d1a */
+  --border: 240 25% 12% !important;
+}

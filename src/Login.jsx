@@ -37,18 +37,18 @@ function Login() {
   function createGradient(lightMode) {
     const lightColors = [
       { color: '#ffffff', enabled: true },
-      { color: '#f6f7fb', enabled: true },
-      { color: '#A623F3', enabled: true },
-      { color: '#f6f7fb', enabled: true },
+      { color: '#00E5FF', enabled: true },
+      { color: '#FF5A36', enabled: true },
+      { color: '#06FFA5', enabled: true },
       { color: '#ffffff', enabled: true },
     ];
 
     const darkColors = [
-      { color: '#000000', enabled: true },
-      { color: '#000000', enabled: true },
-      { color: '#A623F3', enabled: true },
-      { color: '#000000', enabled: true },
-      { color: '#000000', enabled: true },
+      { color: '#050510', enabled: true },
+      { color: '#00E5FF', enabled: true },
+      { color: '#FF5A36', enabled: true },
+      { color: '#06FFA5', enabled: true },
+      { color: '#050510', enabled: true },
     ];
 
     return new NeatGradient({
@@ -63,10 +63,10 @@ function Login() {
       shadows: 2,
       highlights: 2,
       colorBrightness: lightMode ? 1.2 : 1,
-      colorSaturation: lightMode ? 0.2 : -1,
+      colorSaturation: lightMode ? 0.25 : 0.45,
       wireframe: false,
       colorBlending: 8,
-      backgroundColor: lightMode ? '#f8fafc' : '#010101',
+      backgroundColor: lightMode ? '#fafbfc' : '#050510',
       backgroundAlpha: 1,
       grainScale: 2,
       grainSparsity: 0,
@@ -302,7 +302,7 @@ function Login() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none bg-background text-foreground"
+      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none bg-background text-foreground aurora-theme"
     >
       {/* NeatGradient animated background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
