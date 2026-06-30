@@ -25,46 +25,27 @@ const STYLES = `
   }
 
 
-  /* ── NOISE GRAIN OVERLAY ── */
-  .xj-story-container::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-    background-size: 180px;
-    opacity: 0.028;
-    pointer-events: none;
-    z-index: 9000;
-  }
-
-  /* ── AMBIENT BLOBS ── */
+  /* ── AMBIENT BLOBS (Pre-softened, no expensive blur filters) ── */
   .xj-blob {
     position: fixed;
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
-    will-change: transform;
   }
   .xj-blob-1 {
     width: 700px; height: 700px;
-    background: radial-gradient(circle, #00E5FF 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.22) 0%, rgba(0, 229, 255, 0.08) 40%, transparent 70%);
     top: -200px; right: -200px;
-    filter: blur(80px);
-    opacity: 0.35;
   }
   .xj-blob-2 {
     width: 500px; height: 500px;
-    background: radial-gradient(circle, #FF5A36 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 90, 54, 0.18) 0%, rgba(255, 90, 54, 0.06) 40%, transparent 70%);
     bottom: 10%; left: -150px;
-    filter: blur(70px);
-    opacity: 0.3;
   }
   .xj-blob-3 {
     width: 400px; height: 400px;
-    background: radial-gradient(circle, #00E5FF 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.16) 0%, rgba(0, 229, 255, 0.05) 45%, transparent 70%);
     top: 40%; right: 8%;
-    filter: blur(90px);
-    opacity: 0.25;
   }
 
   /* ── PROGRESS BAR ── */
@@ -73,8 +54,9 @@ const STYLES = `
     top: 0; left: 0;
     height: 2.5px;
     background: linear-gradient(90deg, var(--violet), var(--gold));
-    width: 0%;
+    width: 100%;
     z-index: 1000;
+    transform: scaleX(0);
     transform-origin: left;
   }
 
@@ -121,21 +103,21 @@ const STYLES = `
     overflow: hidden;
     opacity: 0;
   }
-  .xj-hero-headline em {
+  .xj-hero-headline .char.aurora-text {
     font-style: italic;
-  }
-  .xj-hero-headline em .char {
-    background: linear-gradient(135deg, #FF5A36, #8B5CF6, #00D4FF, #FF5A36) !important;
-    background-size: 200% 200% !important;
+    display: inline-block;
+    background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%) !important;
+    background-size: 200% 100% !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    animation: aurora-shift 6s ease infinite !important;
+    color: transparent !important;
+    animation: aurora-shift 7s linear infinite !important;
   }
   .xj-hero-headline .char:not(.aurora-text) {
     display: inline-block !important;
     transform: translateY(110%);
-    color: #ffffff !important;
+    color: var(--ink) !important;
     background: none !important;
     -webkit-text-fill-color: initial !important;
     background-clip: border-box !important;
@@ -320,7 +302,6 @@ const STYLES = `
     border-radius: 20px;
     overflow: hidden;
     background: var(--card-bg);
-    backdrop-filter: blur(10px);
   }
   .xj-stat-item {
     flex: 1;
@@ -402,7 +383,6 @@ const STYLES = `
     border: 1px solid var(--hscroll-card-border);
     border-radius: 20px;
     padding: 60px 50px;
-    backdrop-filter: blur(24px);
     box-shadow: var(--hscroll-card-shadow);
     text-align: center;
     max-width: 640px;
@@ -470,7 +450,6 @@ const STYLES = `
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 36px 28px;
-    backdrop-filter: blur(12px);
     position: relative;
     overflow: hidden;
     transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease;
@@ -576,40 +555,7 @@ const STYLES = `
     margin-top: 10px;
   }
 
-  /* ── PARALLAX TEXT ── */
-  .xj-parallax-text-section {
-    overflow: hidden;
-    padding: 80px 0;
-    position: relative;
-    z-index: 1;
-  }
-  .xj-ptext-line {
-    display: flex;
-    gap: 40px;
-    white-space: nowrap;
-    will-change: transform;
-    margin-bottom: 10px;
-  }
-  .xj-ptext-line span {
-    font-family: 'Poppins', sans-serif;
-    font-size: clamp(60px, 8vw, 100px);
-    color: transparent;
-    -webkit-text-stroke: 1.5px var(--violet);
-    letter-spacing: -0.02em;
-    white-space: nowrap;
-    line-height: 1;
-    padding-right: 40px;
-    display: inline-block;
-    font-weight: 900;
-    text-shadow: 0 0 15px rgba(90, 169, 230, 0.4), 0 0 30px rgba(90, 169, 230, 0.2);
-    filter: drop-shadow(0 0 10px rgba(90, 169, 230, 0.25));
-  }
-  .xj-ptext-line.filled span {
-    -webkit-text-stroke: 0;
-    color: var(--violet);
-    opacity: 0.16;
-    text-shadow: 0 0 20px rgba(90, 169, 230, 0.8), 0 0 40px rgba(90, 169, 230, 0.4);
-  }
+
 
   /* ── CTA ── */
   .xj-cta-section {
@@ -768,18 +714,6 @@ export default function TheStoryPage() {
   const containerRef = useRef(null);
 
   const [isScrolled, setIsScrolled] = useState(false);
-  const [signals, setSignals] = useState([
-    { symbol: 'XAUUSD', change: 2.45 },
-    { symbol: 'XAGUSD', change: 1.85 },
-    { symbol: 'XPTUSD', change: -0.45 },
-    { symbol: 'XPDUSD', change: -0.92 },
-    { symbol: 'NAS100', change: 4.12 },
-    { symbol: 'SPX500', change: 1.25 },
-    { symbol: 'EURUSD', change: 0.68 },
-    { symbol: 'GBPUSD', change: 1.22 },
-    { symbol: 'USDJPY', change: -0.35 },
-    { symbol: 'BTCUSD', change: -1.12 },
-  ]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -790,79 +724,30 @@ export default function TheStoryPage() {
   }, []);
 
   useEffect(() => {
-    const fetchSignals = async () => {
-      const tickersToFetch = [
-        { key: 'XAUUSD', symbol: 'GC=F' },
-        { key: 'XAGUSD', symbol: 'SI=F' },
-        { key: 'XPTUSD', symbol: 'PL=F' },
-        { key: 'XPDUSD', symbol: 'PA=F' },
-        { key: 'NAS100', symbol: 'NQ=F' },
-        { key: 'SPX500', symbol: 'ES=F' },
-        { key: 'EURUSD', symbol: 'EURUSD=X' },
-        { key: 'GBPUSD', symbol: 'GBPUSD=X' },
-        { key: 'USDJPY', symbol: 'USDJPY=X' },
-        { key: 'BTCUSD', symbol: 'BTC-USD' }
-      ];
-
-      try {
-        const results = await Promise.all(
-          tickersToFetch.map(async (t) => {
-            try {
-              const res = await fetch(`/api/yahoo-chart/${t.symbol}?interval=1d&range=1d`);
-              if (res.ok) {
-                const data = await res.json();
-                const result = data.chart?.result?.[0];
-                if (result && result.meta) {
-                  const price = Number(result.meta.regularMarketPrice);
-                  const prevClose = Number(result.meta.chartPreviousClose);
-                  const change = prevClose ? Number((((price - prevClose) / prevClose) * 100).toFixed(2)) : 0;
-                  return { symbol: t.key, change };
-                }
-              }
-            } catch (err) {
-              console.error(`Failed to fetch marquee signal for ${t.key}:`, err);
-            }
-            return null;
-          })
-        );
-
-        const validResults = results.filter(r => r !== null);
-        if (validResults.length > 0) {
-          setSignals(validResults);
-        }
-      } catch (err) {
-        console.error('Failed to fetch marquee signals:', err);
-      }
-    };
-
-    fetchSignals();
-    const interval = setInterval(fetchSignals, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    // Initialize Lenis
+    // Initialize Lenis with smooth touch scrolling enabled
     const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smooth: true,
+      duration: 0.88,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
+      smoothWheel: true,
+      syncTouch: false,
+      wheelMultiplier: 1,
+      touchMultiplier: 1,
+      infinite: false,
     });
 
     window.scrollTo(0, 0);
 
     // GSAP animations linked to Lenis
     let ctx;
-    let updateLenis;
+    let frameId;
+    const syncScrollTrigger = () => ScrollTrigger.update();
 
-    // Sync ScrollTrigger with Lenis
-    lenis.on('scroll', ScrollTrigger.update);
-
-    // Drive GSAP ticker with Lenis scroll RAF
-    updateLenis = (time) => {
-      lenis.raf(time * 1000);
+    const raf = (time) => {
+      lenis.raf(time);
+      frameId = requestAnimationFrame(raf);
     };
-    gsap.ticker.add(updateLenis);
-    gsap.ticker.lagSmoothing(0);
+    frameId = requestAnimationFrame(raf);
+    lenis.on('scroll', syncScrollTrigger);
 
     ctx = gsap.context(() => {
 
@@ -959,13 +844,15 @@ export default function TheStoryPage() {
         });
 
         hl.style.opacity = 1;
-        gsap.to(hl.querySelectorAll('.char'), {
+        const allChars = hl.querySelectorAll('.char');
+        gsap.to(allChars, {
           y: 0,
           duration: 0.7,
           ease: 'expo.out',
           stagger: 0.018,
           delay: 0.3
         });
+
       }
 
       /* ── HERO BADGE & SUB ── */
@@ -1021,31 +908,7 @@ export default function TheStoryPage() {
         });
       });
 
-      /* ── PARALLAX TEXT LINES ── */
-      const p1 = document.getElementById('xj-pline1');
-      const p2 = document.getElementById('xj-pline2');
-      if (p1 && p2) {
-        gsap.to(p1, {
-          x: '-15%',
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '.xj-parallax-text-section',
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 1.5
-          }
-        });
-        gsap.to(p2, {
-          x: '5%',
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '.xj-parallax-text-section',
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 1.5
-          }
-        });
-      }
+
 
       /* ── HORIZONTAL SCROLL ── */
       const hpin = document.getElementById('xj-hpin');
@@ -1064,7 +927,7 @@ export default function TheStoryPage() {
           scrollTrigger: {
             trigger: hpin,
             pin: true,
-            scrub: 1,
+            scrub: 0.45,
             end: () => '+=' + scrollDist,
             onUpdate: (self) => {
               const activeIdx = Math.round(self.progress * (panels.length - 1));
@@ -1102,6 +965,16 @@ export default function TheStoryPage() {
         });
       });
 
+      /* ── PROGRESS BAR via ScrollTrigger — no raw scroll listener ── */
+      ScrollTrigger.create({
+        start: 0,
+        end: 'max',
+        onUpdate: (self) => {
+          const bar = document.getElementById('xj-progress-bar');
+          if (bar) bar.style.transform = `scaleX(${self.progress})`;
+        }
+      });
+
     }, containerRef);
 
     setTimeout(() => {
@@ -1111,25 +984,16 @@ export default function TheStoryPage() {
     }, 150);
 
     return () => {
+      cancelAnimationFrame(frameId);
+      lenis.off('scroll', syncScrollTrigger);
       lenis.destroy();
       if (ctx) ctx.revert();
-      if (updateLenis) {
-        gsap.ticker.remove(updateLenis);
-      }
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
   }, []);
 
-  /* ── PROGRESS BAR, INTERSECTION OBSERVER, & BLOB PARALLAX ── */
+  /* ── INTERSECTION OBSERVER & CARD MAGNETIC TILT ── */
   useEffect(() => {
-    // Progress Bar
-    const bar = document.getElementById('xj-progress-bar');
-    const handleScrollProgress = () => {
-      const p = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-      if (bar) bar.style.width = (p * 100) + '%';
-    };
-    window.addEventListener('scroll', handleScrollProgress);
-
     // Timeline dots Active observer
     const sections = document.querySelectorAll('[data-section]');
     const dots = document.querySelectorAll('.xj-story-dot');
@@ -1145,27 +1009,8 @@ export default function TheStoryPage() {
     }, { threshold: 0.4 });
     sections.forEach(s => dotObs.observe(s));
 
-    // Blob Parallax
-    const b1 = document.getElementById('xj-b1');
-    const b2 = document.getElementById('xj-b2');
-    const b3 = document.getElementById('xj-b3');
-    let lastY = 0;
-    let rafBlob;
-
-    function blobTick() {
-      const y = window.scrollY;
-      if (y !== lastY) {
-        if (b1) b1.style.transform = `translateY(${y * 0.1}px)`;
-        if (b2) b2.style.transform = `translateY(${-y * 0.07}px)`;
-        if (b3) b3.style.transform = `translateY(${y * 0.05}px)`;
-        lastY = y;
-      }
-      rafBlob = requestAnimationFrame(blobTick);
-    }
-    blobTick();
-
     // Card magnetic tilt
-    const cards = document.querySelectorAll('.xj-fcard');
+    const cards = window.innerWidth >= 1024 ? document.querySelectorAll('.xj-fcard') : [];
     const cardMoves = [];
     cards.forEach(card => {
       const mm = e => {
@@ -1183,9 +1028,7 @@ export default function TheStoryPage() {
     });
 
     return () => {
-      window.removeEventListener('scroll', handleScrollProgress);
       dotObs.disconnect();
-      cancelAnimationFrame(rafBlob);
       cardMoves.forEach(({ card, mm, ml }) => {
         card.removeEventListener('mousemove', mm);
         card.removeEventListener('mouseleave', ml);
@@ -1216,9 +1059,9 @@ export default function TheStoryPage() {
   };
 
   return (
-    <div className="font-sans aurora-theme">
+    <div className="font-sans">
       <PublicNavbar />
-      <div className="xj-story-container" style={themeVariables} ref={containerRef}>
+      <div className="xj-story-container aurora-theme" style={themeVariables} ref={containerRef}>
       <style>{STYLES}</style>
       {/* Progress Bar */}
       <div id="xj-progress-bar" />
@@ -1263,13 +1106,14 @@ export default function TheStoryPage() {
       {/* MARQUEE */}
       <div className="xj-marquee-wrap" aria-hidden="true">
         <div className="xj-marquee-track" id="xj-mtrack">
-          {signals.concat(signals).concat(signals).concat(signals).map((sig, i) => (
-            <div key={i} className="xj-marquee-item font-mono" style={{ fontFamily: "monospace" }}>
-              <span className="text-[#e0b034]">{sig.symbol}</span>
-              <span className={sig.change >= 0 ? 'text-[#14b8a6] ml-2' : 'text-[#f43f5e] ml-2'}>
-                {sig.change >= 0 ? '+' : ''}{sig.change.toFixed(2)}%
-              </span>
-            </div>
+          {["Sync trades", "Review sessions", "Track psychology", "Find your edge", "Build rules", "Trade cleaner"]
+            .concat(["Sync trades", "Review sessions", "Track psychology", "Find your edge", "Build rules", "Trade cleaner"])
+            .concat(["Sync trades", "Review sessions", "Track psychology", "Find your edge", "Build rules", "Trade cleaner"])
+            .map((item, i) => (
+              <div key={i} className="xj-marquee-item" style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+                <span>{item}</span>
+                <span className="xj-marquee-sep ml-8" />
+              </div>
           ))}
         </div>
       </div>
@@ -1309,19 +1153,7 @@ export default function TheStoryPage() {
 
       <div className="xj-chapter-strip reveal-up"><span>The Turning Point</span></div>
 
-      {/* PARALLAX TEXT BREAK */}
-      <div className="xj-parallax-text-section" aria-hidden="true">
-        <div className="xj-ptext-line" id="xj-pline1">
-          {["XAU/USD", "XAUUSD", "Gold", "XAU/USD", "XAUUSD", "Gold"].map((txt, i) => (
-            <span key={i}>{txt}</span>
-          ))}
-        </div>
-        <div className="xj-ptext-line filled" id="xj-pline2">
-          {["Journal", "Analyze", "Improve", "Journal", "Analyze", "Improve"].map((txt, i) => (
-            <span key={i}>{txt}</span>
-          ))}
-        </div>
-      </div>
+
 
       {/* ③ ORIGIN */}
       <section data-section="2">

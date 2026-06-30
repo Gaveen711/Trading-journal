@@ -58,11 +58,9 @@ export function PublicNavbar() {
                 <NavLink
                   to={to}
                   onClick={(e) => {
-                    if (to === '/') {
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
+                    if (to === location.pathname) {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else if (to.startsWith('/#')) {
                       const hash = to.split('#')[1];
                       if (location.pathname === '/') {
@@ -123,11 +121,9 @@ export function PublicNavbar() {
                 {navLinks.map(({ to, label }) => (
                   <NavLink key={to} to={to} onClick={(e) => {
                     setMobileMenuOpen(false);
-                    if (to === '/') {
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
+                    if (to === location.pathname) {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else if (to.startsWith('/#')) {
                       const hash = to.split('#')[1];
                       if (location.pathname === '/') {

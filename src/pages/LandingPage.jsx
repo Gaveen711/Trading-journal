@@ -1,1309 +1,1540 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion as Motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
-import { CloudArrowDownFill, LightningChargeFill, BarChartLineFill, Stars, Phone, HddNetwork, Display, GearWideConnected, DatabaseFill, WindowSidebar, TwitterX, Facebook, Instagram, Discord } from 'react-bootstrap-icons';
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
-}
+import { Discord, Facebook, Instagram, TwitterX } from 'react-bootstrap-icons';
+import {
+  Activity,
+  ArrowRight,
+  ArrowUp,
+  BarChart3,
+  CalendarDays,
+  CheckCircle2,
+  Cloud,
+  Database,
+  LineChart,
+  LockKeyhole,
+  NotebookPen,
+  PlugZap,
+  ShieldCheck,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 
 import Logo from '../components/Logo';
 import { PublicNavbar } from '../components/PublicNavbar';
-import { MagicTextReveal } from '../components/MagicTextReveal';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { LANDING_FAQ, buildFAQSchema, buildOrganizationSchema, buildSoftwareSchema, buildWebSiteSchema, injectJsonLd, removeJsonLd } from '../lib/seo';
+import {
+  LANDING_FAQ,
+  buildFAQSchema,
+  buildOrganizationSchema,
+  buildSoftwareSchema,
+  buildWebSiteSchema,
+  injectJsonLd,
+  removeJsonLd,
+} from '../lib/seo';
 
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+  ScrollTrigger.config({ ignoreMobileResize: true });
+}
 
-/* ═══════════════════════════════════════════
-   AURORA PALETTE
-   ═══════════════════════════════════════════ */
-const AURORA = {
-  cyan: '#00E5FF',
-  violet: '#FF5A36', // Sunset Coral
-  magenta: '#00FF87', // Volt Lime
-  mint: '#06FFA5',
-  dark: '#050510',
-  surface: '#0d0d1a',
-};
+const LANDING_STYLES = `
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
 
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
 
-/* ═══════════════════════════════════════════
-   DATA CONSTANTS
-   ═══════════════════════════════════════════ */
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  .lenis.lenis-scrolling iframe {
+    pointer-events: none;
+  }
+
+  .xau-landing {
+    background:
+      radial-gradient(circle at 12% 12%, var(--xau-aurora-a), transparent 32%),
+      radial-gradient(circle at 86% 8%, var(--xau-aurora-b), transparent 30%),
+      radial-gradient(circle at 50% 90%, var(--xau-aurora-c), transparent 36%),
+      var(--xau-bg);
+    color: var(--xau-ink);
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+    position: relative;
+    isolation: isolate;
+    transition: none;
+  }
+
+  .xau-landing > section,
+  .xau-landing > footer {
+    position: relative;
+    z-index: 1;
+  }
+
+  .xau-aurora {
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 12%, var(--xau-aurora-a), transparent 32%),
+      radial-gradient(circle at 86% 8%, var(--xau-aurora-b), transparent 30%),
+      radial-gradient(circle at 50% 90%, var(--xau-aurora-c), transparent 36%);
+    background-size: 160% 160%;
+    background-position: 20% 12%;
+    transition: none;
+  }
+
+  .xau-grid {
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--xau-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--xau-grid) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
+  }
+
+  .xau-glass {
+    background: var(--xau-glass);
+    border: 1px solid var(--xau-border);
+    box-shadow: var(--xau-shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .xau-word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding: 0 0.075em 0.08em 0;
+  }
+
+  .xau-word > span {
+    display: inline-block;
+    transform: translateY(112%) rotate(2deg);
+    will-change: transform;
+  }
+
+  .xau-hero-title {
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.065em;
+    text-wrap: balance;
+  }
+
+  .xau-hero-line {
+    display: block;
+  }
+
+  .xau-hero-line-accent {
+    font-style: italic;
+    letter-spacing: -0.055em;
+  }
+
+  .xau-hero-line-accent .xau-word {
+    padding-right: 0.13em;
+    padding-bottom: 0.1em;
+  }
+
+  .xau-hero-kicker,
+  .xau-hero-copy,
+  .xau-hero-actions,
+  .xau-hero-metrics,
+  .xau-hero-visual {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  .xau-gradient-word,
+  .xau-hero-line-accent .xau-word > span {
+    background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    animation: xauGradientText 7s linear infinite;
+  }
+
+  @keyframes xauGradientText {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  .xau-marquee {
+    display: flex;
+    width: max-content;
+    animation: xauMarquee 26s linear infinite;
+  }
+
+  @keyframes xauMarquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .xau-story-card {
+    opacity: 0.42;
+    transform: translateY(18px) scale(0.98);
+    transition: opacity 360ms ease, transform 360ms ease, border-color 360ms ease, background 360ms ease;
+    will-change: transform, opacity;
+  }
+
+  .xau-story-card.is-active {
+    opacity: 1;
+    border-color: rgba(17, 197, 217, 0.55);
+    background: var(--xau-active-glass);
+  }
+
+  .xau-story-card.is-active .xau-story-mobile-index {
+    color: #11c5d9;
+    border-color: rgba(17, 197, 217, 0.45);
+    background: rgba(17, 197, 217, 0.12);
+  }
+
+  .xau-story-card-stack {
+    position: relative;
+  }
+
+  .xau-card-motion {
+    position: absolute;
+    left: clamp(-5.25rem, -6vw, -3rem);
+    top: 4rem;
+    bottom: 4rem;
+    width: 128px;
+    height: calc(100% - 8rem);
+    overflow: visible;
+    color: var(--xau-path-muted);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .xau-card-motion-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.2;
+    stroke-dasharray: 8 12;
+  }
+
+  .xau-card-motion-progress {
+    fill: none;
+    stroke: url(#xauCardWaypointGradient);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  .xau-card-motion-marker {
+    filter: drop-shadow(0 0 18px rgba(6, 182, 212, 0.78));
+  }
+
+  .xau-story-card-stack .xau-story-card {
+    position: relative;
+    z-index: 1;
+  }
+
+  .xau-product-card {
+    transform-style: preserve-3d;
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .xau-cinema-pin {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .xau-cinema-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .xau-cinema-panel {
+    min-height: 100vh;
+    width: 100vw;
+    flex: 0 0 100vw;
+    display: grid;
+    place-items: center;
+    padding: 7rem max(1.25rem, 6vw);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .xau-cinema-card {
+    width: min(980px, 100%);
+    min-height: min(560px, 72vh);
+    display: grid;
+    grid-template-columns: minmax(0, 0.88fr) minmax(280px, 0.72fr);
+    align-items: center;
+    gap: clamp(1.5rem, 5vw, 4rem);
+    border-radius: 2rem;
+    padding: clamp(1.5rem, 4vw, 3.5rem);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .xau-cinema-visual {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 2rem;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 30% 24%, rgba(17, 197, 217, 0.34), transparent 34%),
+      radial-gradient(circle at 72% 76%, rgba(217, 70, 239, 0.24), transparent 36%),
+      var(--xau-soft);
+    border: 1px solid var(--xau-border);
+  }
+
+  .xau-cinema-visual::before,
+  .xau-cinema-visual::after {
+    content: '';
+    position: absolute;
+    border-radius: 999px;
+    inset: 20%;
+    border: 1px solid rgba(17, 197, 217, 0.26);
+    transform: rotate(var(--spin, 0deg));
+  }
+
+  .xau-cinema-visual::after {
+    inset: 34%;
+    border-color: rgba(16, 185, 129, 0.28);
+    transform: rotate(calc(var(--spin, 0deg) * -1));
+  }
+
+  .xau-cinema-orb {
+    position: absolute;
+    width: 36%;
+    aspect-ratio: 1;
+    border-radius: 999px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #11c5d9, #d946ef);
+    box-shadow: 0 24px 70px rgba(17, 197, 217, 0.35);
+  }
+
+  .xau-cinema-progress {
+    position: sticky;
+    bottom: 1.5rem;
+    left: 0;
+    z-index: 8;
+    width: min(520px, calc(100% - 2rem));
+    height: 4px;
+    margin: -4.5rem auto 4rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--xau-soft);
+  }
+
+  .xau-cinema-progress > span {
+    display: block;
+    height: 100%;
+    width: 25%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #11c5d9, #d946ef, #10b981);
+    transform-origin: left;
+    transform: scaleX(0.25);
+  }
+
+  @media (max-width: 1023px) {
+    .xau-aurora {
+      background-size: 120% 120%;
+      opacity: 0.78;
+    }
+
+    .xau-glass {
+      backdrop-filter: blur(12px) saturate(125%);
+      -webkit-backdrop-filter: blur(12px) saturate(125%);
+    }
+
+    .xau-hero-title {
+      letter-spacing: -0.045em;
+    }
+
+    .xau-story-card {
+      opacity: 1;
+      transform: none;
+    }
+
+    .xau-story-card.is-active {
+      box-shadow: 0 18px 55px rgba(17, 197, 217, 0.16);
+    }
+
+    .xau-cinema-pin {
+      overflow: visible;
+    }
+
+    .xau-cinema-track {
+      display: grid;
+      width: auto;
+      gap: 1rem;
+      padding: 0 1.25rem 3rem;
+    }
+
+    .xau-cinema-panel {
+      width: auto;
+      min-height: auto;
+      padding: 0;
+      display: block;
+      flex-basis: auto;
+    }
+
+    .xau-cinema-card {
+      min-height: auto;
+      grid-template-columns: 1fr;
+      border-radius: 1.5rem;
+    }
+
+    .xau-cinema-visual {
+      min-height: 220px;
+    }
+
+    .xau-cinema-progress {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .xau-marquee,
+    .xau-gradient-word,
+    .xau-hero-line-accent .xau-word > span {
+      animation: none;
+    }
+
+    .xau-word > span,
+    .xau-hero-kicker,
+    .xau-hero-copy,
+    .xau-hero-actions,
+    .xau-hero-metrics,
+    .xau-hero-visual,
+    .xau-story-card,
+    .scroll-reveal {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
+  /* ── Kinetic Neon Parallax Typography ── */
+  .xau-kinetic {
+    padding: 80px 0;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .xau-kinetic-left,
+  .xau-kinetic-right {
+    display: flex;
+    white-space: nowrap;
+    will-change: transform;
+  }
+  .xau-kinetic-left span,
+  .xau-kinetic-right span {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(60px, 8vw, 100px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    display: inline-block;
+    font-weight: 900;
+    margin-right: 60px;
+    text-transform: none;
+    flex-shrink: 0;
+  }
+  .xau-kinetic-left span {
+    color: transparent;
+    -webkit-text-stroke: 1.5px #FE5F00;
+    text-shadow: 0 0 15px rgba(254, 95, 0, 0.4), 0 0 30px rgba(254, 95, 0, 0.2);
+    filter: drop-shadow(0 0 10px rgba(254, 95, 0, 0.25));
+  }
+  .xau-kinetic-right span {
+    -webkit-text-stroke: 0;
+    color: #988F2A;
+    opacity: 0.18;
+    text-shadow: 0 0 20px rgba(152, 143, 42, 0.6), 0 0 40px rgba(152, 143, 42, 0.3);
+  }
+`;
+
 const FEATURES = [
   {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>,
-    title: 'Instant MT5 Sync',
-    body: 'Effortlessly capture your trade history and sync your performance data to the cloud. Eliminate manual logging and ensure 100% accuracy for every position closed.',
+    icon: PlugZap,
+    title: 'MT4 and MT5 trade sync',
+    body: 'Pull closed trades into your journal without typing entries by hand.',
   },
   {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>,
-    title: 'Deep Analytics',
-    body: 'Win-rate by session, drawdown clusters, streak analysis, and behavioural heatmaps — every metric purpose-built for clarity.',
+    icon: BarChart3,
+    title: 'Performance analytics',
+    body: 'Read profit factor, win rate, drawdown, streaks, and setup quality clearly.',
   },
   {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
-    title: 'Trade Calendar',
-    body: 'A month-view calendar shows your P&L heat at a glance. Identify your best and worst days in a single look.',
+    icon: CalendarDays,
+    title: 'P&L calendar',
+    body: 'Spot the days, sessions, and routines that are helping or hurting you.',
   },
   {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
-    title: 'Private & Secure Data',
-    body: 'Your trading data is yours alone. We use industry-standard encryption and isolated storage protocols to protect your history.',
+    icon: NotebookPen,
+    title: 'Trade notes',
+    body: 'Attach reasons, emotions, screenshots, and setup notes to each trade.',
   },
   {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>,
-    title: 'Trade Journal & Playbook',
-    body: 'Attach thoughts, emotions, and notes to each trade. Build an annotated playbook straight from your own history.',
+    icon: ShieldCheck,
+    title: 'Private data',
+    body: 'Keep account history inside a focused cloud workspace built for review.',
   },
   {
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
-    title: 'Session Intelligence',
-    body: 'London, New York, Tokyo, Sydney — see exactly which session your edge lives in and schedule your trading around it.',
+    icon: LineChart,
+    title: 'XAUUSD-first metrics',
+    body: 'A specialized journal for gold traders, not a generic tracker.',
   },
 ];
 
-const STEPS = [
-  { id: 1, icon: <CloudArrowDownFill className="w-6 h-6" />, title: 'Connect Your Broker', body: 'Link your MT4 or MT5 account in under a minute. No EA installation needed — we handle the connection securely in the cloud.' },
-  { id: 2, icon: <LightningChargeFill className="w-6 h-6" />, title: 'Real-time Trade Sync', body: 'Every closed position is captured instantly and enriched with session data, pip calculations, and risk metrics.' },
-  { id: 3, icon: <BarChartLineFill className="w-6 h-6" />, title: 'Optimize Your Strategy', body: 'Review your analytics, identify patterns, journal your thoughts, and systematically sharpen your edge.' },
+const STORY_STEPS = [
+  {
+    eyebrow: 'Before the trade',
+    title: 'Plan the setup before the chart gets loud.',
+    body: 'Write the session, bias, risk, and invalidation before the entry. XAU Journal makes discipline visible before the position is open.',
+    metric: 'Risk 0.8%',
+    highlight: 'Pre-trade plan',
+  },
+  {
+    eyebrow: 'After execution',
+    title: 'Every closed trade becomes clean data.',
+    body: 'Sync or log the result with size, entry, exit, fees, session, P&L, screenshots, and notes in one structured record.',
+    metric: '+$420',
+    highlight: 'Synced from MT5',
+  },
+  {
+    eyebrow: 'During review',
+    title: 'Patterns appear without spreadsheet archaeology.',
+    body: 'See the sessions, setups, and behaviors that repeat. The story of your trading becomes easier to read and easier to improve.',
+    metric: '68%',
+    highlight: 'London win rate',
+  },
+  {
+    eyebrow: 'Next session',
+    title: 'Trade from a playbook, not from memory.',
+    body: 'Turn your best evidence into rules. Keep what works, remove what leaks, and enter the next session with a sharper process.',
+    metric: '2.8 PF',
+    highlight: 'Playbook edge',
+  },
 ];
 
-const STATS = [
+const METRICS = [
   { value: 'Precision', label: 'Built specifically for traders' },
-  { value: '1s', label: 'MT5 sync latency' },
-  { value: '100%', label: 'Your data, your control' },
+  { value: '1', label: 'MT5 sync latency' },
+  { value: '100', label: 'Your data, your control' },
 ];
 
-const STORY_CHAPTERS = [
-  { chapter: '01', label: 'The Problem', headline: "You're trading blindly.", sub: 'Most gold traders rely on gut feeling, scattered spreadsheets, or fragmented notes. Without structured data, the same mistakes repeat endlessly.', accent: AURORA.magenta, glow: `${AURORA.magenta}30`, dotColor: AURORA.magenta },
-  { chapter: '02', label: 'The Pattern', headline: 'Your edge already exists.', sub: "It's buried in your own history — the sessions you win, the setups that consistently print. You just can't see it yet.", accent: AURORA.cyan, glow: `${AURORA.cyan}30`, dotColor: AURORA.cyan },
-  { chapter: '03', label: 'The Insight', headline: 'Data reveals what instinct misses.', sub: 'Session win-rates, drawdown clusters, streak analysis — structured analytics expose the truth behind every trade.', accent: AURORA.violet, glow: `${AURORA.violet}30`, dotColor: AURORA.violet },
-  { chapter: '04', label: 'The Solution', headline: 'Meet XAU Journal.', sub: 'A purpose-built intelligence terminal for gold traders. Auto-sync, deep analytics, and journaling — all in one place.', accent: AURORA.mint, glow: `${AURORA.mint}30`, dotColor: AURORA.mint },
+const MARQUEE = [
+  'Sync trades',
+  'Review sessions',
+  'Track psychology',
+  'Find your edge',
+  'Build rules',
+  'Trade cleaner',
 ];
 
-const TIMELINE_ITEMS = [
-  { label: 'Mobile Access', sub: 'Universal MT5 connectivity for traders on the move.', icon: <Phone className="w-5 h-5" />, side: 'left' },
-  { label: 'Broker Agnostic', sub: 'Seamlessly connects with any MT5 broker worldwide.', icon: <HddNetwork className="w-5 h-5" />, side: 'right' },
-  { label: 'Automated Sync', sub: 'Zero manual entry — your trades are recorded instantly.', icon: <Display className="w-5 h-5" />, side: 'left' },
-  { label: 'Cloud Processing', sub: 'Advanced logic layer handles all complex calculations.', icon: <GearWideConnected className="w-5 h-5" />, side: 'right' },
-  { label: 'Encrypted Vault', sub: 'Military-grade protection for your private trade data.', icon: <DatabaseFill className="w-5 h-5" />, side: 'left' },
-  { label: 'Intelligence Suite', sub: 'Professional dashboard for deep performance insights.', icon: <WindowSidebar className="w-5 h-5" />, side: 'right' },
+const HERO_LINES = [
+  { text: 'Every trade' },
+  { text: 'you make' },
+  { text: 'tells a story.', accent: true },
 ];
 
-
-/* ═══════════════════════════════════════════
-   UTILITY COMPONENTS
-   ═══════════════════════════════════════════ */
-
-/* ─── Film Grain Overlay ─── */
-function GrainOverlay() {
-  return <div className="grain-overlay" aria-hidden="true" />;
-}
-
-/* ─── Floating Aurora Orbs ─── */
-function AuroraOrbs() {
-  const orbs = [
-    { color: AURORA.violet, size: 600, x: '70%', y: '-10%', delay: 0, blur: 100 },
-    { color: AURORA.cyan, size: 450, x: '-5%', y: '30%', delay: 2, blur: 90 },
-    { color: AURORA.magenta, size: 400, x: '80%', y: '60%', delay: 4, blur: 110 },
-  ];
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-      {orbs.map((orb, i) => (
-        <Motion.div
-          key={i}
-          className="absolute rounded-full aurora-glow"
-          style={{
-            width: orb.size, height: orb.size,
-            left: orb.x, top: orb.y,
-            background: `radial-gradient(circle, ${orb.color}18 0%, transparent 70%)`,
-            filter: `blur(${orb.blur}px)`,
-          }}
-          animate={{ y: [0, -30, 0], x: [0, 15, 0] }}
-          transition={{ duration: 12 + i * 2, repeat: Infinity, ease: 'easeInOut', delay: orb.delay }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ─── Scroll Progress Bar ─── */
-function ScrollProgress() {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
-  return (
-    <Motion.div
-      className="fixed top-0 left-0 right-0 h-[2px] z-[200] origin-left"
-      style={{ scaleX, background: `linear-gradient(90deg, ${AURORA.cyan}, ${AURORA.violet}, ${AURORA.magenta})` }}
-    />
-  );
-}
-
-/* ─── Animated Number Counter ─── */
-function Counter({ value, suffix = '' }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-  const [display, setDisplay] = useState('0');
-  const isNumeric = !isNaN(parseInt(value));
-
+function useLandingMotion(rootRef, setActiveStory) {
   useEffect(() => {
-    if (!isInView || !isNumeric) { setDisplay(value); return; }
-    const target = parseInt(value);
-    const start = performance.now();
-    const duration = 1800;
-    function tick(now) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(eased * target).toString());
-      if (progress < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }, [isInView, value, isNumeric]);
+    if (typeof window === 'undefined') return undefined;
 
-  return <span ref={ref}>{display}{suffix}</span>;
-}
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isDesktopViewport = window.innerWidth >= 1024;
+    gsap.ticker.lagSmoothing(1000, 16);
 
-/* ─── Character-by-character Hero Headline ─── */
-function AnimatedHeadline({ text, delayOffset = 0, className = '' }) {
-  const words = text.split(' ');
-  return (
-    <span className={`inline-block ${className}`} aria-label={text}>
-      {words.map((word, wi) => (
-        <span key={wi} className="inline-block overflow-hidden mr-[0.3em]">
-          {word.split('').map((char, ci) => (
-            <Motion.span
-              key={ci}
-              className="inline-block"
-              initial={{ y: '110%', opacity: 0 }}
-              animate={{ y: '0%', opacity: 1 }}
-              transition={{ duration: 0.7, delay: delayOffset + wi * 0.12 + ci * 0.03, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {char}
-            </Motion.span>
-          ))}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-/* ─── Magnetic Button ─── */
-function MagneticButton({ children, onClick, className = '' }) {
-  const ref = useRef(null);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const handleMove = (e) => {
-    const rect = ref.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    setPos({ x: (e.clientX - cx) * 0.2, y: (e.clientY - cy) * 0.2 });
-  };
-  return (
-    <Motion.button
-      ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={() => setPos({ x: 0, y: 0 })}
-      animate={{ x: pos.x, y: pos.y }}
-      transition={{ type: 'spring', stiffness: 200, damping: 18 }}
-      onClick={onClick}
-      className={className}
-    >
-      {children}
-    </Motion.button>
-  );
-}
-
-
-/* ═══════════════════════════════════════════
-   HERO MOCK TRADING TERMINAL
-   ═══════════════════════════════════════════ */
-function MockTerminal() {
-  return (
-    <Motion.div
-      className="perspective-container w-full max-w-[540px]"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <Motion.div
-        className="relative rounded-2xl overflow-hidden border border-white/[0.06]"
-        style={{ background: 'linear-gradient(145deg, rgba(13,13,26,0.9), rgba(5,5,16,0.95))', backdropFilter: 'blur(20px)' }}
-        whileHover={{ rotateX: -2, rotateY: 3, scale: 1.01 }}
-        transition={{ type: 'spring', stiffness: 150, damping: 20 }}
-      >
-        {/* Ambient glow */}
-        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-20 blur-[80px]" style={{ background: AURORA.violet }} />
-        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full opacity-15 blur-[60px]" style={{ background: AURORA.cyan }} />
-
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05]">
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-          </div>
-          <div className="flex-1 text-center text-[10px] font-medium text-white/30 tracking-wider uppercase">XAU Journal Terminal</div>
-        </div>
-
-        {/* Content */}
-        <div className="p-5 space-y-4">
-          {/* Price ticker */}
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[11px] font-bold text-white/40 tracking-widest uppercase">XAUUSD</div>
-              <div className="text-2xl font-black text-white tabular-nums">2,847<span className="text-white/50">.35</span></div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs font-bold text-emerald-400">+12.40</div>
-              <div className="text-[10px] text-white/40">+0.44%</div>
-            </div>
-          </div>
-
-          {/* Mini chart */}
-          <div className="relative h-24 overflow-hidden rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
-            <svg viewBox="0 0 400 100" className="w-full h-full" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="aurora-chart-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={AURORA.cyan} stopOpacity="0.2" />
-                  <stop offset="100%" stopColor={AURORA.cyan} stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="aurora-chart-stroke" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor={AURORA.cyan} />
-                  <stop offset="50%" stopColor={AURORA.violet} />
-                  <stop offset="100%" stopColor={AURORA.magenta} />
-                </linearGradient>
-              </defs>
-              <path d="M0 70 Q30 65 60 55 T120 50 T180 35 T240 40 T300 25 T360 20 T400 15" fill="none" stroke="url(#aurora-chart-stroke)" strokeWidth="2" />
-              <path d="M0 70 Q30 65 60 55 T120 50 T180 35 T240 40 T300 25 T360 20 T400 15 V100 H0Z" fill="url(#aurora-chart-fill)" />
-              {/* Buy marker */}
-              <circle cx="180" cy="35" r="4" fill={AURORA.cyan} opacity="0.9" />
-              <circle cx="180" cy="35" r="7" fill={AURORA.cyan} opacity="0.2" />
-              {/* TP marker */}
-              <circle cx="360" cy="20" r="4" fill={AURORA.mint} opacity="0.9" />
-              <circle cx="360" cy="20" r="7" fill={AURORA.mint} opacity="0.2" />
-            </svg>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Net Profit', val: '+$4,280', color: AURORA.mint },
-              { label: 'Win Rate', val: '68.5%', color: AURORA.cyan },
-              { label: 'Trades', val: '142', color: AURORA.violet },
-            ].map((s, i) => (
-              <div key={i} className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                <div className="text-[9px] font-bold text-white/30 uppercase tracking-wider">{s.label}</div>
-                <div className="text-sm font-black mt-0.5" style={{ color: s.color }}>{s.val}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Floating tags */}
-          <div className="flex gap-2">
-            <span className="text-[9px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${AURORA.mint}15`, color: AURORA.mint, border: `1px solid ${AURORA.mint}25` }}>MT5 Live Synced</span>
-            <span className="text-[9px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${AURORA.violet}15`, color: AURORA.violet, border: `1px solid ${AURORA.violet}25` }}>Profit Factor 2.1</span>
-          </div>
-        </div>
-      </Motion.div>
-    </Motion.div>
-  );
-}
-
-
-/* ═══════════════════════════════════════════
-   STORY CHAPTER MOCKUPS
-   ═══════════════════════════════════════════ */
-function MockupDrawdown() {
-  return (
-    <div className="w-full max-w-[280px] rounded-xl p-4 border" style={{ background: `${AURORA.magenta}08`, borderColor: `${AURORA.magenta}20` }}>
-      <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: AURORA.magenta }}>Drawdown Alert</div>
-      <svg viewBox="0 0 200 60" className="w-full h-12">
-        <path d="M0 10 Q25 8 50 20 T100 35 T150 45 T200 55" fill="none" stroke={AURORA.magenta} strokeWidth="2" opacity="0.7" />
-        <path d="M0 10 Q25 8 50 20 T100 35 T150 45 T200 55 V60 H0Z" fill={AURORA.magenta} opacity="0.08" />
-      </svg>
-      <div className="flex justify-between mt-2 text-[9px] text-white/30">
-        <span>-$420</span><span>3 consecutive losses</span>
-      </div>
-    </div>
-  );
-}
-
-function MockupRadar() {
-  return (
-    <div className="w-full max-w-[280px] rounded-xl p-4 border" style={{ background: `${AURORA.cyan}08`, borderColor: `${AURORA.cyan}20` }}>
-      <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: AURORA.cyan }}>Pattern Scan</div>
-      <div className="relative w-20 h-20 mx-auto">
-        {[1, 2, 3].map(r => (
-          <div key={r} className="absolute inset-0 rounded-full border" style={{ borderColor: `${AURORA.cyan}${r === 1 ? '30' : r === 2 ? '20' : '10'}`, transform: `scale(${r * 0.33})` }} />
-        ))}
-        <Motion.div
-          className="absolute inset-0 origin-center"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-        >
-          <div className="w-0.5 h-1/2 mx-auto" style={{ background: `linear-gradient(to bottom, ${AURORA.cyan}60, transparent)` }} />
-        </Motion.div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style={{ background: AURORA.cyan, boxShadow: `0 0 8px ${AURORA.cyan}` }} />
-      </div>
-    </div>
-  );
-}
-
-function MockupHeatmap() {
-  const sessions = [{ name: 'London', pct: 78 }, { name: 'New York', pct: 52 }, { name: 'Tokyo', pct: 24 }];
-  return (
-    <div className="w-full max-w-[280px] rounded-xl p-4 border" style={{ background: `${AURORA.violet}08`, borderColor: `${AURORA.violet}20` }}>
-      <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: AURORA.violet }}>Session Efficiency</div>
-      <div className="space-y-2.5">
-        {sessions.map((s, i) => (
-          <div key={i}>
-            <div className="flex justify-between text-[10px] mb-1">
-              <span className="text-white/50">{s.name}</span>
-              <span style={{ color: AURORA.violet }}>{s.pct}%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
-              <Motion.div
-                className="h-full rounded-full"
-                style={{ background: `linear-gradient(90deg, ${AURORA.violet}, ${AURORA.cyan})` }}
-                initial={{ width: 0 }}
-                whileInView={{ width: `${s.pct}%` }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: i * 0.2, ease: [0.16, 1, 0.3, 1] }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MockupSync() {
-  return (
-    <div className="w-full max-w-[280px] rounded-xl p-4 border" style={{ background: `${AURORA.mint}08`, borderColor: `${AURORA.mint}20` }}>
-      <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: AURORA.mint }}>Live Sync</div>
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${AURORA.mint}15` }}>
-          <LightningChargeFill className="w-4 h-4" style={{ color: AURORA.mint }} />
-        </div>
-        <div className="flex-1">
-          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-            <div className="h-full w-full rounded-full relative overflow-hidden" style={{ background: `linear-gradient(90deg, ${AURORA.mint}40, ${AURORA.mint})` }}>
-              <div className="absolute inset-0 animate-[shimmer-aurora_2s_infinite]" style={{ background: `linear-gradient(90deg, transparent, ${AURORA.mint}50, transparent)` }} />
-            </div>
-          </div>
-        </div>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${AURORA.mint}15` }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={AURORA.mint} strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
-        </div>
-      </div>
-      <div className="text-[9px] text-white/30">MT5 → XAU Journal · 142 trades synced</div>
-    </div>
-  );
-}
-
-
-/* ─── Story Chapter Card ─── */
-function StoryChapter({ chapter, index }) {
-  return (
-    <Motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-      className="flex flex-col gap-4"
-    >
-      <div className="flex items-center gap-3">
-        <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3 py-1.5 rounded-full" style={{ background: `${chapter.accent}12`, color: chapter.accent, border: `1px solid ${chapter.accent}25` }}>
-          <span className="w-1.5 h-1.5 rounded-full inline-block mr-2" style={{ background: chapter.dotColor }} />
-          {chapter.label}
-        </span>
-      </div>
-      <h3 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-tight">{chapter.headline}</h3>
-      <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">{chapter.sub}</p>
-    </Motion.div>
-  );
-}
-
-
-/* ═══════════════════════════════════════════
-   SCROLL STORYTELLING (exported)
-   ═══════════════════════════════════════════ */
-export function ScrollStorytelling({ isLightMode }) {
-  const mockups = [<MockupDrawdown key="d" />, <MockupRadar key="r" />, <MockupHeatmap key="h" />, <MockupSync key="s" />];
-  return (
-    <section className="relative z-10 py-24 md:py-40 px-6 overflow-hidden">
-      <div className="max-w-6xl mx-auto">
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-16 md:mb-24"
-        >
-          <span className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4 inline-block px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground">The Story</span>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.08] tracking-tight mt-4">
-            Why XAU Journal <span className="aurora-text">exists.</span>
-          </h2>
-        </Motion.div>
-
-        <div className="space-y-24 md:space-y-40">
-          {STORY_CHAPTERS.map((chapter, idx) => {
-            const isEven = idx % 2 === 0;
-            return (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-16 items-center">
-                <div className={`md:col-span-7 ${isEven ? '' : 'md:order-2'}`}>
-                  <StoryChapter chapter={chapter} index={idx} />
-                </div>
-                <div className={`md:col-span-5 flex ${isEven ? 'justify-end' : 'justify-start md:order-1'}`}>
-                  <Motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                  >
-                    {mockups[idx]}
-                  </Motion.div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-/* ═══════════════════════════════════════════
-   BENTO FEATURES (exported)
-   ═══════════════════════════════════════════ */
-const FEATURE_ACCENTS = [AURORA.cyan, AURORA.magenta, AURORA.violet, AURORA.mint, AURORA.cyan, AURORA.violet];
-
-export function BentoFeatures({ isLightMode }) {
-  return (
-    <section id="features" className="relative z-10 py-28 md:py-40 px-6 overflow-hidden border-t border-border/10">
-      <div className="max-w-7xl mx-auto">
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="max-w-3xl mb-20 md:mb-28"
-        >
-          <span className="text-[11px] font-bold tracking-[0.2em] uppercase mb-5 inline-block px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground">The Platform</span>
-          <h2 className="text-[clamp(2rem,5.5vw,4rem)] font-black leading-[1.05] tracking-tight mb-6 mt-4">
-            Every tool you need.<br /><span className="aurora-text-static">Nothing you don't.</span>
-          </h2>
-          <p className="text-sm md:text-lg text-muted-foreground font-medium leading-relaxed">
-            Designed by traders, for traders. We've stripped away the noise to focus on the metrics that actually improve your edge.
-          </p>
-        </Motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 bento-grid">
-          {FEATURES.map((feat, i) => {
-            const accent = FEATURE_ACCENTS[i];
-            const spans = [2, 1, 1, 2, 1, 2];
-            return (
-              <Motion.div
-                key={i}
-                className={`md:col-span-${spans[i]} group relative overflow-hidden rounded-2xl border border-border/20 p-7 flex flex-col justify-between min-h-[300px] transition-all duration-500 cursor-default`}
-                style={{ background: isLightMode ? 'rgba(255,255,255,0.6)' : 'rgba(13,13,26,0.6)', backdropFilter: 'blur(12px)' }}
-                whileHover={{ y: -4, borderColor: `${accent}40` }}
-              >
-                {/* Hover glow */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 0%, ${accent}08, transparent 70%)` }} />
-
-                <div className="relative z-10 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style={{ background: `${accent}12`, color: accent }}>
-                      {feat.icon}
-                    </div>
-                    <h3 className="text-lg font-bold text-foreground mb-2.5">{feat.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{feat.body}</p>
-                  </div>
-
-                  {/* Feature Visualizations */}
-                  {i === 0 && (
-                    <div className="mt-6 flex items-center gap-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 w-full max-w-[340px] animate-in fade-in slide-in-from-bottom-2 duration-700">
-                      <div className="text-[10px] font-black text-foreground">Broker Server</div>
-                      <div className="flex-1 h-1.5 bg-white/[0.08] rounded-full relative overflow-hidden">
-                        <div className="absolute inset-y-0 w-12 rounded-full" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, animation: 'shimmer-aurora 2.5s infinite' }} />
-                      </div>
-                      <div className="text-[10px] font-black" style={{ color: accent }}>Terminal Sync</div>
-                    </div>
-                  )}
-
-                  {i === 1 && (
-                    <div className="mt-6 flex justify-center items-center h-20">
-                      <div className="w-14 h-14 rounded-full border flex items-center justify-center relative" style={{ borderColor: `${accent}30` }}>
-                        <div className="absolute top-1.5 bottom-1/2 w-0.5 origin-bottom rotate-[45deg]" style={{ backgroundColor: accent }} />
-                        <div className="absolute left-1.5 right-1/2 h-0.5 origin-right" style={{ backgroundColor: `${accent}60` }} />
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accent }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {i === 2 && (
-                    <div className="mt-6 grid grid-cols-5 gap-1 w-full max-w-[140px] mx-auto">
-                      {[...Array(15)].map((_, idx) => {
-                        const styles = [
-                          { bg: 'rgba(6,255,165,0.15)', border: 'rgba(6,255,165,0.3)' },
-                          { bg: 'rgba(6,255,165,0.35)', border: 'rgba(6,255,165,0.6)' },
-                          { bg: 'rgba(255,60,172,0.15)', border: 'rgba(255,60,172,0.3)' },
-                          { bg: 'rgba(255,255,255,0.02)', border: 'rgba(255,255,255,0.05)' }
-                        ];
-                        const colIdx = idx % styles.length;
-                        return <div key={idx} className="aspect-square rounded border" style={{ backgroundColor: styles[colIdx].bg, borderColor: styles[idx % 2 === 0 ? colIdx : 3].border }} />;
-                      })}
-                    </div>
-                  )}
-
-                  {i === 3 && (
-                    <div className="mt-6 flex gap-4 overflow-hidden max-w-[340px]">
-                      <div className="flex-1 h-14 bg-white/[0.02] border border-white/[0.05] rounded-xl p-2 flex items-end gap-1">
-                        <div className="flex-1 h-[30%] bg-amber-500/40 rounded-sm" />
-                        <div className="flex-1 h-[60%] bg-amber-500/60 rounded-sm" />
-                        <div className="flex-1 h-[45%] bg-amber-500/40 rounded-sm" />
-                        <div className="flex-1 h-[80%] bg-amber-500 rounded-sm" />
-                      </div>
-                      <div className="flex-1 h-14 bg-white/[0.02] border border-white/[0.05] rounded-xl p-2 flex items-end gap-1">
-                        <div className="flex-1 h-[70%] bg-cyan-500/60 rounded-sm" />
-                        <div className="flex-1 h-[40%] bg-cyan-500/40 rounded-sm" />
-                        <div className="flex-1 h-[55%] bg-cyan-500/60 rounded-sm" />
-                        <div className="flex-1 h-[90%] bg-cyan-500 rounded-sm" />
-                      </div>
-                    </div>
-                  )}
-
-                  {i === 4 && (
-                    <div className="mt-6 flex justify-center items-center h-14">
-                      <div className="w-10 h-10 rounded-full border flex items-center justify-center relative shadow-[0_0_15px_rgba(6,255,165,0.1)]" style={{ borderColor: `${accent}30`, color: accent }}>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-
-                  {i === 5 && (
-                    <div className="mt-6 flex flex-wrap gap-2">
-                      <span className="px-3 py-1 rounded text-[10px] font-bold" style={{ backgroundColor: `${AURORA.cyan}15`, color: AURORA.cyan, border: `1px solid ${AURORA.cyan}25` }}>Focused</span>
-                      <span className="px-3 py-1 rounded text-[10px] font-bold" style={{ backgroundColor: `${AURORA.magenta}15`, color: AURORA.magenta, border: `1px solid ${AURORA.magenta}25` }}>FOMO Avoided</span>
-                      <span className="px-3 py-1 rounded text-[10px] font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}>Setup: Breakout</span>
-                      <span className="px-3 py-1 rounded text-[10px] font-bold" style={{ backgroundColor: `${AURORA.violet}15`, color: AURORA.violet, border: `1px solid ${AURORA.violet}25` }}>Followed Plan</span>
-                    </div>
-                  )}
-                </div>
-              </Motion.div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-/* ═══════════════════════════════════════════
-   SCALE TIMELINE
-   ═══════════════════════════════════════════ */
-function ScaleTimeline() {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    let ctx;
-
-    function initScaleGSAP() {
-      if (ctx) ctx.revert();
-
-      const container = document.querySelector("#scale-timeline-container");
-      const startNode = document.querySelector("#timeline-start-node");
-      const cards = document.querySelectorAll("#scale-timeline-container .timeline-card");
-      const box = document.querySelector(".scale-box");
-
-      if (!container || cards.length === 0 || !box || !startNode) return;
-
-      const containerRect = container.getBoundingClientRect();
-      const startR = startNode.getBoundingClientRect();
-
-      const p0 = {
-        x: startR.left + startR.width / 2 - containerRect.left,
-        y: startR.top + startR.height / 2 - containerRect.top
-      };
-
-      const cardPoints = Array.from(cards).map((card) => {
-        const r = card.getBoundingClientRect();
-        return {
-          x: r.left + r.width / 2 - containerRect.left,
-          y: r.top + r.height / 2 - containerRect.top
-        };
+    const lenis = reduceMotion
+      ? null
+      : new Lenis({
+        duration: 1.12,
+        easing: (t) => 1 - Math.pow(1 - t, 3),
+        smoothWheel: true,
+        syncTouch: false,
+        wheelMultiplier: 1,
+        touchMultiplier: 1.08,
+        infinite: false,
       });
 
-      const lastPoint = cardPoints[cardPoints.length - 1];
-      const pFinal = { x: lastPoint.x, y: lastPoint.y + 150 };
-      const points = [p0, ...cardPoints, pFinal];
+    let frameId;
+    const syncScrollTrigger = () => ScrollTrigger.update();
+    if (lenis) {
+      const raf = (time) => {
+        lenis.raf(time);
+        frameId = requestAnimationFrame(raf);
+      };
+      frameId = requestAnimationFrame(raf);
+      lenis.on('scroll', syncScrollTrigger);
+    }
 
-      const segmentLengths = [];
-      let totalLength = 0;
-      for (let i = 0; i < points.length - 1; i++) {
-        const dx = points[i + 1].x - points[i].x;
-        const dy = points[i + 1].y - points[i].y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        segmentLengths.push(len);
-        totalLength += len;
+    const ctx = gsap.context(() => {
+      if (reduceMotion) {
+        gsap.set('.xau-word > span, .xau-hero-kicker, .xau-hero-copy, .xau-hero-actions, .xau-hero-metrics, .xau-hero-visual, .scroll-reveal', {
+          autoAlpha: 1,
+          y: 0,
+          clearProps: 'transform',
+        });
+        return;
       }
 
-      const cardProgresses = [];
-      let currentLen = 0;
-      for (let i = 0; i < cardPoints.length; i++) {
-        currentLen += segmentLengths[i];
-        cardProgresses.push(currentLen / totalLength);
-      }
+      const intro = gsap.timeline({ defaults: { ease: 'power4.out' } });
+      intro
+        .to('.xau-word > span', {
+          y: 0,
+          rotate: 0,
+          duration: 1.05,
+          stagger: 0.06,
+        })
+        .to(
+          '.xau-hero-kicker, .xau-hero-copy, .xau-hero-actions, .xau-hero-metrics, .xau-hero-visual',
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.08,
+          },
+          '-=0.72'
+        );
 
-      let d = "";
-      if (points.length > 0) {
-        d = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 0; i < points.length - 1; i++) {
-          const pStart = points[i];
-          const pEnd = points[i + 1];
-          const dy = pEnd.y - pStart.y;
-          const cp1x = pStart.x;
-          const cp1y = pStart.y + dy * 0.5;
-          const cp2x = pEnd.x;
-          const cp2y = pEnd.y - dy * 0.5;
-          d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${pEnd.x} ${pEnd.y}`;
+      gsap.utils.toArray('.scroll-reveal').forEach((item) => {
+        // Find elements to stagger inside this section (eyebrows, headings, bodies, buttons, grid elements)
+        const targets = item.querySelectorAll('p, h2, h3, button, .xau-story-mobile-index, .grid > div, .space-y-3 > div');
+
+        if (targets.length > 0) {
+          // Set initial state of targets to hidden and offset
+          gsap.set(targets, { autoAlpha: 0, y: 24 });
+
+          gsap.to(targets, {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.08,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: item,
+              start: 'top 85%',
+              toggleActions: 'play none none none',
+            },
+          });
+        } else {
+          // Fallback if no specific children: animate the item itself
+          gsap.fromTo(
+            item,
+            { autoAlpha: 0, y: 30 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.85,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: item,
+                start: 'top 85%',
+                toggleActions: 'play none none none',
+              },
+            }
+          );
         }
+      });
+
+      if (isDesktopViewport) {
+        gsap.to('.xau-aurora', {
+          backgroundPosition: '72% 44%',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: rootRef.current,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 1.4,
+          },
+        });
       }
 
-      const pathBg = document.querySelector("#scale-path");
-      const pathProgress = document.querySelector("#scale-path-progress");
-      if (pathBg) pathBg.setAttribute("d", d);
-      if (pathProgress) pathProgress.setAttribute("d", d);
+      if (isDesktopViewport) {
+        gsap.to('.xau-product-card', {
+          y: -36,
+          rotateX: 4,
+          rotateY: -2,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.xau-hero',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1,
+          },
+        });
+      }
 
-      ctx = gsap.context(() => {
-        cards.forEach((card, index) => {
-          const item = TIMELINE_ITEMS[index];
-          const isLeft = item ? item.side === 'left' : true;
-          gsap.set(card, { opacity: 0, scale: 0.95, y: 10, x: isLeft ? -30 : 30 });
+      const waypointPath = document.querySelector('#xau-card-motion-path');
+      const waypointMarker = document.querySelector('.xau-card-motion-marker');
+      const waypointProgress = document.querySelector('.xau-card-motion-progress');
+      if (isDesktopViewport && waypointPath && waypointMarker && waypointProgress) {
+        let pathLength = 1000;
+        try {
+          const totalLen = waypointProgress.getTotalLength();
+          if (totalLen > 0) pathLength = totalLen;
+        } catch (e) {
+          console.warn('Failed to query total path length:', e);
+        }
+
+        gsap.set(waypointProgress, {
+          strokeDasharray: pathLength,
+          strokeDashoffset: pathLength,
+        });
+
+        gsap.set(waypointMarker, {
+          motionPath: {
+            path: waypointPath,
+            align: waypointPath,
+            alignOrigin: [0.5, 0.5],
+            autoRotate: false,
+            start: 0,
+            end: 0,
+          }
         });
 
         const tl = gsap.timeline({
           scrollTrigger: {
-            trigger: "#scale-timeline-container",
-            start: "top 55%",
-            end: "bottom 45%",
-            scrub: 2,
+            trigger: '.xau-story-card-stack',
+            start: 'top 40%',
+            end: 'bottom 60%',
+            scrub: 0.9,
+            invalidateOnRefresh: true,
           }
         });
 
-        tl.fromTo(".scale-box", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.1, ease: "power1.out" });
-
-        tl.to(".scale-box", {
-          duration: 0.8,
-          ease: "none",
+        tl.to(waypointMarker, {
+          ease: 'none',
           motionPath: {
-            path: "#scale-path",
-            align: "#scale-path",
+            path: waypointPath,
+            align: waypointPath,
             alignOrigin: [0.5, 0.5],
-            autoRotate: true
-          }
+            autoRotate: false,
+          },
+          duration: 1,
         }, 0);
 
-        tl.to(".scale-box", {
-          keyframes: [
-            { backgroundColor: AURORA.cyan, boxShadow: `0 0 18px ${AURORA.cyan}cc`, duration: 0.16 },
-            { backgroundColor: AURORA.violet, boxShadow: `0 0 18px ${AURORA.violet}cc`, duration: 0.16 },
-            { backgroundColor: AURORA.magenta, boxShadow: `0 0 18px ${AURORA.magenta}cc`, duration: 0.16 },
-            { backgroundColor: AURORA.mint, boxShadow: `0 0 18px ${AURORA.mint}cc`, duration: 0.16 },
-            { backgroundColor: AURORA.cyan, boxShadow: `0 0 18px ${AURORA.cyan}cc`, duration: 0.16 }
-          ],
-          ease: "none",
-          duration: 0.8
+        tl.to(waypointProgress, {
+          strokeDashoffset: 0,
+          ease: 'none',
+          duration: 1,
         }, 0);
+      }
 
-        if (pathProgress) {
-          const length = pathProgress.getTotalLength();
-          gsap.set(pathProgress, { strokeDasharray: length, strokeDashoffset: length, opacity: 1 });
-          tl.to(pathProgress, { strokeDashoffset: 0, duration: 0.8, ease: "none" }, 0);
-        }
+      gsap.utils.toArray('.xau-story-card').forEach((card, index) => {
+        const isDesktop = window.innerWidth >= 1024;
+        const fromSide = index % 2 === 0 ? (isDesktop ? -120 : -22) : (isDesktop ? 120 : 22);
+        const fromY = isDesktop ? 34 : 32;
 
-        cards.forEach((card, index) => {
-          const progress = cardProgresses[index] || 0.5;
-          const t = progress * 0.8;
-          tl.to(card, {
-            opacity: 1,
-            scale: 1,
-            y: 0,
+        gsap.fromTo(
+          card,
+          {
+            autoAlpha: 0,
+            x: fromSide,
+            y: fromY,
+            scale: isDesktop ? 0.94 : 0.97,
+            rotateY: isDesktop ? (index % 2 === 0 ? -5 : 5) : 0,
+          },
+          {
+            autoAlpha: 1,
             x: 0,
-            duration: 0.04,
-            ease: "power3.out",
-            onStart: () => card.classList.add('aurora-card-active'),
-            onReverseComplete: () => card.classList.remove('aurora-card-active')
-          }, Math.max(0, t - 0.02));
+            y: 0,
+            scale: 1,
+            rotateY: 0,
+            duration: isDesktop ? 0.95 : 0.75,
+            ease: 'power4.out',
+            scrollTrigger: {
+              trigger: card,
+              start: isDesktop ? 'top 82%' : 'top 88%',
+              end: isDesktop ? 'top 48%' : 'top 62%',
+              scrub: isDesktop ? 0.85 : 0.65,
+            },
+          }
+        );
+
+        ScrollTrigger.create({
+          trigger: card,
+          start: 'top 58%',
+          end: 'bottom 42%',
+          onEnter: () => setActiveStory(index),
+          onEnterBack: () => setActiveStory(index),
+        });
+      });
+
+      const kineticLeft = document.querySelector('.xau-kinetic-left');
+      const kineticRight = document.querySelector('.xau-kinetic-right');
+      const kineticSection = document.querySelector('.xau-kinetic');
+      if (kineticLeft && kineticRight && kineticSection) {
+        gsap.to(kineticLeft, {
+          x: '-15%',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: kineticSection,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1.5,
+          },
+        });
+        gsap.to(kineticRight, {
+          x: '5%',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: kineticSection,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1.5,
+          },
+        });
+      }
+
+      const cinemaTrack = document.querySelector('.xau-cinema-track');
+      const cinemaPin = document.querySelector('.xau-cinema-pin');
+      const cinemaProgress = document.querySelector('.xau-cinema-progress > span');
+      if (cinemaTrack && cinemaPin && window.innerWidth >= 1024) {
+        const getDistance = () => cinemaTrack.scrollWidth - window.innerWidth;
+
+        gsap.fromTo(
+          '.xau-cinema-panel',
+          { autoAlpha: 0.35, scale: 0.92, rotateY: 7 },
+          {
+            autoAlpha: 1,
+            scale: 1,
+            rotateY: 0,
+            duration: 0.8,
+            ease: 'power3.out',
+            stagger: 0.12,
+            scrollTrigger: {
+              trigger: cinemaPin,
+              start: 'top 72%',
+            },
+          }
+        );
+
+        gsap.to(cinemaTrack, {
+          x: () => -getDistance(),
+          ease: 'none',
+          scrollTrigger: {
+            trigger: cinemaPin,
+            start: 'top top',
+            end: () => `+=${getDistance()}`,
+            pin: true,
+            scrub: 1.65,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
         });
 
-        tl.to(".scale-box", { opacity: 0, scale: 0.3, duration: 0.1, ease: "power1.in" });
-      });
-    }
+        gsap.to('.xau-cinema-visual', {
+          '--spin': '180deg',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: cinemaPin,
+            start: 'top top',
+            end: () => `+=${getDistance()}`,
+            scrub: 1.65,
+          },
+        });
 
-    const timer = setTimeout(initScaleGSAP, 600);
-    window.addEventListener("resize", initScaleGSAP);
+        if (cinemaProgress) {
+          gsap.to(cinemaProgress, {
+            scaleX: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: cinemaPin,
+              start: 'top top',
+              end: () => `+=${getDistance()}`,
+              scrub: 1.65,
+              invalidateOnRefresh: true,
+            },
+          });
+        }
+      }
+
+    }, rootRef);
+
+    const refreshTimers = [
+      window.setTimeout(() => ScrollTrigger.refresh(), 120),
+      window.setTimeout(() => ScrollTrigger.refresh(), 650),
+    ];
 
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", initScaleGSAP);
-      if (ctx) ctx.revert();
+      ctx.revert();
+      if (lenis) {
+        lenis.off('scroll', syncScrollTrigger);
+        lenis.destroy();
+      }
+      refreshTimers.forEach((timer) => window.clearTimeout(timer));
+      if (frameId) cancelAnimationFrame(frameId);
     };
-  }, []);
+  }, [rootRef, setActiveStory]);
+}
 
-  const accents = [AURORA.cyan, AURORA.violet, AURORA.magenta, AURORA.mint, AURORA.cyan, AURORA.violet];
-
+function PrimaryButton({ children, to = '/login?mode=signup' }) {
   return (
-    <section ref={containerRef} className="relative z-10 py-20 md:py-28 px-6 overflow-hidden">
-      <style>{`
-        @keyframes auroraCardGlow {
-          0%   { border-color: ${AURORA.cyan}60; box-shadow: 0 8px 24px ${AURORA.cyan}15; }
-          25%  { border-color: ${AURORA.violet}60; box-shadow: 0 8px 24px ${AURORA.violet}15; }
-          50%  { border-color: ${AURORA.magenta}60; box-shadow: 0 8px 24px ${AURORA.magenta}15; }
-          75%  { border-color: ${AURORA.mint}60; box-shadow: 0 8px 24px ${AURORA.mint}15; }
-          100% { border-color: ${AURORA.cyan}60; box-shadow: 0 8px 24px ${AURORA.cyan}15; }
-        }
-        .aurora-card-active {
-          animation: auroraCardGlow 5s linear infinite;
-        }
-      `}</style>
-
-      <div className="max-w-4xl mx-auto">
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, margin: '-60px' }}
-          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-14 md:mb-18 relative z-20"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground text-[10px] font-bold uppercase tracking-[0.15em] mb-5">
-            <Stars className="w-3 h-3" /> Architecture
-          </div>
-          <h2 className="text-[clamp(2rem,5.5vw,3.5rem)] font-black leading-tight tracking-tight mb-3 mt-3">
-            <span className="aurora-text-static">Built for Scale</span>
-          </h2>
-          <p className="text-sm md:text-base text-muted-foreground font-medium max-w-xl mx-auto leading-relaxed">
-            An institutional-grade pipeline ensures your data is always synced, secured, and ready for analysis.
-          </p>
-          <div id="timeline-start-node" className="absolute left-1/2 -bottom-2 w-1 h-1 bg-transparent" />
-        </Motion.div>
-
-        <div id="scale-timeline-container" className="relative">
-          <div className="absolute inset-0 pointer-events-none z-0">
-            <svg className="w-full h-full">
-              <path id="scale-path" fill="none" stroke="rgba(139,92,246,0.08)" strokeWidth="2" strokeDasharray="6 6" />
-              <path id="scale-path-progress" fill="none" stroke="url(#aurora-glow-gradient)" strokeWidth="3" strokeLinecap="round" className="opacity-0" />
-              <defs>
-                <linearGradient id="aurora-glow-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={AURORA.cyan} />
-                  <stop offset="33%" stopColor={AURORA.violet} />
-                  <stop offset="66%" stopColor={AURORA.magenta} />
-                  <stop offset="100%" stopColor={AURORA.mint} />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          <div
-            className="scale-box absolute w-4 h-4 rounded-md shadow-lg border border-white/80 flex items-center justify-center z-20 pointer-events-none opacity-0"
-            style={{ left: 0, top: 0, background: `linear-gradient(135deg, ${AURORA.cyan}, ${AURORA.violet})` }}
-          >
-            <div className="w-1 h-1 rounded-sm bg-white shadow-[0_0_3px_#fff]" />
-          </div>
-
-          <div className="flex flex-col gap-10 md:gap-20 relative z-10 py-10 md:py-20">
-            {TIMELINE_ITEMS.map((item, idx) => {
-              const isLeft = item.side === 'left';
-              return (
-                <div key={item.label} className={`flex w-full ${isLeft ? 'justify-start' : 'justify-end'}`}>
-                  <Motion.div className="timeline-card w-[85%] sm:w-[70%] md:w-[45%] flex items-center gap-4 bg-card/40 backdrop-blur-sm border border-border/30 p-5 rounded-2xl shadow-sm transition-all duration-500 cursor-default group">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                      style={{ backgroundColor: `${accents[idx]}15`, color: accents[idx] }}
-                    >
-                      {item.icon}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{item.label}</h3>
-                      <p className="text-[11px] text-muted-foreground leading-snug">{item.sub}</p>
-                    </div>
-                  </Motion.div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
+    <Link
+      to={to}
+      className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#11c5d9] px-6 text-sm font-bold text-[#061013] shadow-[0_18px_50px_rgba(17,197,217,0.28)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#42e6ef] active:scale-[0.98]"
+    >
+      {children}
+      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+    </Link>
   );
 }
 
+function SecondaryButton({ children, href }) {
+  return (
+    <a
+      href={href}
+      className="inline-flex min-h-12 items-center justify-center rounded-full border px-6 text-sm font-bold backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
+      style={{
+        borderColor: 'var(--xau-border)',
+        background: 'var(--xau-soft)',
+        color: 'var(--xau-ink)',
+      }}
+    >
+      {children}
+    </a>
+  );
+}
 
-/* ═══════════════════════════════════════════
-   MAIN LANDING PAGE COMPONENT
-   ═══════════════════════════════════════════ */
-function LandingPage() {
+function ProductMockup({ activeStory }) {
+  const step = STORY_STEPS[activeStory];
+
+  return (
+    <div className="xau-product-card relative mx-auto w-full max-w-[650px] [perspective:1200px]">
+      <div className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_25%_20%,rgba(17,197,217,0.30),transparent_34%),radial-gradient(circle_at_84%_55%,rgba(217,70,239,0.22),transparent_32%),radial-gradient(circle_at_55%_100%,rgba(16,185,129,0.20),transparent_34%)] blur-2xl" />
+      <div className="xau-glass relative overflow-hidden rounded-[1.75rem] p-4">
+        <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--xau-border)' }}>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-cyan-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-[11px] font-bold text-emerald-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            Live sync
+          </div>
+        </div>
+
+        <div className="grid gap-3 pt-4 md:grid-cols-[0.9fr_1.35fr]">
+          <div className="space-y-3">
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-panel)' }}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--xau-muted)' }}>Current signal</p>
+                <Activity className="h-4 w-4 text-cyan-300" />
+              </div>
+              <Motion.p
+                key={step.metric}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="mt-4 !text-3xl font-black"
+              >
+                {step.metric}
+              </Motion.p>
+              <Motion.p
+                key={step.highlight}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.05 }}
+                className="mt-1 text-xs font-semibold text-emerald-300"
+              >
+                {step.highlight}
+              </Motion.p>
+            </div>
+
+            <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-panel)' }}>
+              <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--xau-muted)' }}>Trade week</p>
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                {['Win', 'BE', 'Loss', 'Win', 'Win', 'Loss', 'Win', 'Win'].map((item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className={`aspect-square rounded-lg border transition duration-500 ${item === 'Loss'
+                      ? 'border-rose-400/35 bg-rose-400/15'
+                      : item === 'BE'
+                        ? 'border-current bg-current/5'
+                        : 'border-emerald-400/35 bg-emerald-400/15'
+                      }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-deep-panel)' }}>
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">Story engine</p>
+                <Motion.h3
+                  key={step.eyebrow}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="mt-2 !text-lg font-bold text-white"
+                >
+                  {step.eyebrow}
+                </Motion.h3>
+              </div>
+              <Zap className="h-5 w-5 text-fuchsia-300" />
+            </div>
+
+            <div className="space-y-4">
+              {['Plan quality', 'Session edge', 'Rule adherence'].map((name, index) => {
+                const widths = [
+                  [78, 52, 64, 88],
+                  [46, 68, 78, 72],
+                  [54, 58, 70, 84],
+                ];
+                const palette = ['bg-cyan-400', 'bg-fuchsia-400', 'bg-emerald-400'];
+                return (
+                  <div key={name}>
+                    <div className="mb-2 flex items-center justify-between text-xs font-semibold text-white/75">
+                      <span>{name}</span>
+                      <span>{widths[index][activeStory]}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                      <Motion.div
+                        className={`h-full rounded-full ${palette[index]}`}
+                        animate={{ width: `${widths[index][activeStory]}%` }}
+                        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.38 }}
+              className="mt-5 rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">{step.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-white/58">{step.body}</p>
+                </div>
+              </div>
+            </Motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeatureCard({ feature }) {
+  const Icon = feature.icon;
+
+  return (
+    <div className="xau-glass scroll-reveal rounded-2xl p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/50">
+      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-300">
+        <Icon className="h-5 w-5" />
+      </div>
+      <h3 className="!text-lg font-bold">{feature.title}</h3>
+      <p className="mt-3 text-sm leading-6" style={{ color: 'var(--xau-muted)' }}>{feature.body}</p>
+    </div>
+  );
+}
+
+function PlatformBadge({ src, label }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
+      <img src={src} alt="" className="h-8 w-8 object-contain" />
+      <div>
+        <p className="text-sm font-bold">{label}</p>
+        <p className="text-xs" style={{ color: 'var(--xau-muted)' }}>Broker sync ready</p>
+      </div>
+    </div>
+  );
+}
+
+export function LandingPage() {
+  const rootRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation();
   const { isLightMode } = useAppTheme();
+  const [activeStory, setActiveStory] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [openFaqIndex, setOpenFaqIndex] = useState(null);
-  const [isMobileLanding, setIsMobileLanding] = useState(false);
-  const [isHoveredButton, setIsHoveredButton] = useState(false);
-  const lenisRef = useRef(null);
 
-  const heroRef = useRef(null);
-  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroY = useTransform(heroProgress, [0, 1], ['0%', '25%']);
-  const heroOpacity = useTransform(heroProgress, [0, 0.7], [1, 0]);
-  const heroScale = useTransform(heroProgress, [0, 1], [1, 0.95]);
+  useLandingMotion(rootRef, setActiveStory);
 
   useEffect(() => {
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    return () => { if ('scrollRestoration' in history) history.scrollRestoration = 'auto'; };
+    const handleScroll = () => setIsScrolled(window.scrollY > 420);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobileLanding(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const [signals, setSignals] = useState([
+    { symbol: 'XAUUSD', change: 2.45 },
+    { symbol: 'XAGUSD', change: 1.85 },
+    { symbol: 'XPTUSD', change: -0.45 },
+    { symbol: 'XPDUSD', change: -0.92 },
+    { symbol: 'NAS100', change: 4.12 },
+    { symbol: 'SPX500', change: 1.25 },
+    { symbol: 'EURUSD', change: 0.68 },
+    { symbol: 'GBPUSD', change: 1.22 },
+    { symbol: 'USDJPY', change: -0.35 },
+    { symbol: 'BTCUSD', change: -1.12 },
+  ]);
 
   useEffect(() => {
-    if (!isMobileLanding) return;
-    const interval = setInterval(() => {
-      setIsHoveredButton(prev => !prev);
-    }, 2500);
+    const fetchSignals = async () => {
+      const tickersToFetch = [
+        { key: 'XAUUSD', symbol: 'GC=F' },
+        { key: 'XAGUSD', symbol: 'SI=F' },
+        { key: 'XPTUSD', symbol: 'PL=F' },
+        { key: 'XPDUSD', symbol: 'PA=F' },
+        { key: 'NAS100', symbol: 'NQ=F' },
+        { key: 'SPX500', symbol: 'ES=F' },
+        { key: 'EURUSD', symbol: 'EURUSD=X' },
+        { key: 'GBPUSD', symbol: 'GBPUSD=X' },
+        { key: 'USDJPY', symbol: 'USDJPY=X' },
+        { key: 'BTCUSD', symbol: 'BTC-USD' }
+      ];
+
+      try {
+        const results = await Promise.all(
+          tickersToFetch.map(async (t) => {
+            try {
+              const res = await fetch(`/api/yahoo-chart/${t.symbol}?interval=1d&range=1d`);
+              if (res.ok) {
+                const data = await res.json();
+                const result = data.chart?.result?.[0];
+                if (result && result.meta) {
+                  const price = Number(result.meta.regularMarketPrice);
+                  const prevClose = Number(result.meta.chartPreviousClose);
+                  const change = prevClose ? Number((((price - prevClose) / prevClose) * 100).toFixed(2)) : 0;
+                  return { symbol: t.key, change };
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to fetch marquee signal for ${t.key}:`, err);
+            }
+            return null;
+          })
+        );
+
+        const validResults = results.filter(r => r !== null);
+        if (validResults.length > 0) {
+          setSignals(validResults);
+        }
+      } catch (err) {
+        console.error('Failed to fetch marquee signals:', err);
+      }
+    };
+
+    fetchSignals();
+    const interval = setInterval(fetchSignals, 30000);
     return () => clearInterval(interval);
-  }, [isMobileLanding]);
+  }, []);
 
   useEffect(() => {
     injectJsonLd('ld-org', buildOrganizationSchema());
     injectJsonLd('ld-website', buildWebSiteSchema());
     injectJsonLd('ld-software', buildSoftwareSchema());
     injectJsonLd('ld-faq', buildFAQSchema(LANDING_FAQ));
-    return () => { ['ld-org', 'ld-website', 'ld-software', 'ld-faq'].forEach(removeJsonLd); };
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smooth: true,
-    });
-    lenisRef.current = lenis;
-
-    let updateLenis;
-
-    // Sync ScrollTrigger with Lenis
-    lenis.on('scroll', ScrollTrigger.update);
-
-    // Drive GSAP ticker with Lenis scroll RAF
-    updateLenis = (time) => {
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(updateLenis);
-    gsap.ticker.lagSmoothing(0);
-
-    if (location.hash) {
-      setTimeout(() => {
-        lenis.scrollTo(location.hash, { duration: 1.2, immediate: false });
-      }, 350);
-    } else {
-      window.scrollTo(0, 0);
-    }
-
-    // GSAP for Steps section
-    gsap.fromTo(".step-card",
-      { opacity: 0, y: 50 },
-      {
-        opacity: 1, y: 0, duration: 0.8, stagger: 0.2, ease: "power3.out",
-        scrollTrigger: { trigger: ".step-card", start: "top 80%" }
-      }
-    );
-
-    // GSAP for Bento features section
-    gsap.fromTo("#features .bento-grid > div",
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1, y: 0, duration: 0.7, stagger: 0.12, ease: "power2.out",
-        scrollTrigger: { trigger: "#features .bento-grid", start: "top 85%" }
-      }
-    );
-
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      lenis.destroy();
-      if (updateLenis) gsap.ticker.remove(updateLenis);
-      ScrollTrigger.getAll().forEach(t => t.kill());
-      lenisRef.current = null;
+      ['ld-org', 'ld-website', 'ld-software', 'ld-faq'].forEach(removeJsonLd);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (location.hash && lenisRef.current) {
-      lenisRef.current.scrollTo(location.hash, { duration: 1.2 });
-    }
-  }, [location.hash]);
-
+  const themeVars = {
+    '--xau-bg': isLightMode ? '#f5f8fb' : '#000000',
+    '--xau-ink': isLightMode ? '#071013' : '#f7fbff',
+    '--xau-muted': isLightMode ? 'rgba(7, 16, 19, 0.74)' : 'rgba(247, 251, 255, 0.70)',
+    '--xau-border': isLightMode ? 'rgba(7, 16, 19, 0.14)' : 'rgba(255, 255, 255, 0.10)',
+    '--xau-glass': isLightMode ? 'rgba(255, 255, 255, 0.66)' : 'rgba(255, 255, 255, 0.055)',
+    '--xau-active-glass': isLightMode ? 'rgba(255, 255, 255, 0.86)' : 'rgba(17, 197, 217, 0.10)',
+    '--xau-soft': isLightMode ? 'rgba(7, 16, 19, 0.045)' : 'rgba(255, 255, 255, 0.035)',
+    '--xau-panel': isLightMode ? 'rgba(255, 255, 255, 0.62)' : 'rgba(255, 255, 255, 0.045)',
+    '--xau-deep-panel': isLightMode ? '#ffffff' : '#020204',
+    '--xau-grid': isLightMode ? 'rgba(7, 16, 19, 0.045)' : 'rgba(255, 255, 255, 0.025)',
+    '--xau-shadow': isLightMode ? '0 24px 80px rgba(7, 16, 19, 0.10)' : '0 24px 80px rgba(0, 0, 0, 0.58)',
+    '--xau-path-muted': isLightMode ? 'rgba(7, 16, 19, 0.24)' : 'rgba(247, 251, 255, 0.32)',
+    '--xau-aurora-a': isLightMode ? 'rgba(17, 197, 217, 0.18)' : 'rgba(17, 197, 217, 0.11)',
+    '--xau-aurora-b': isLightMode ? 'rgba(217, 70, 239, 0.12)' : 'rgba(139, 92, 246, 0.10)',
+    '--xau-aurora-c': isLightMode ? 'rgba(16, 185, 129, 0.10)' : 'rgba(16, 185, 129, 0.055)',
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden relative aurora-theme">
-      <ScrollProgress />
-      <GrainOverlay />
-      <AuroraOrbs />
+    <main ref={rootRef} className="xau-landing min-h-screen overflow-hidden font-sans selection:bg-cyan-300/20" style={themeVars}>
+      <style>{LANDING_STYLES}</style>
       <PublicNavbar />
 
-      <main>
-        {/* ═══════ HERO ═══════ */}
-        <section ref={heroRef} className="relative min-h-[100dvh] flex items-center px-6 pt-24 pb-16 overflow-hidden">
-          {/* Ambient background */}
-          <div className="absolute inset-0 pointer-events-none" style={{
-            background: isLightMode
-              ? 'radial-gradient(ellipse at 70% 30%, rgba(139,92,246,0.06) 0%, transparent 50%), radial-gradient(ellipse at 30% 70%, rgba(0,212,255,0.04) 0%, transparent 50%)'
-              : 'radial-gradient(ellipse at 70% 30%, rgba(139,92,246,0.12) 0%, transparent 50%), radial-gradient(ellipse at 30% 70%, rgba(0,212,255,0.08) 0%, transparent 50%)'
-          }} />
+      <div className="xau-aurora fixed inset-0" aria-hidden="true" />
+      <div className="xau-grid fixed inset-0" aria-hidden="true" />
 
-          <Motion.div style={{ y: heroY, opacity: heroOpacity, scale: heroScale }} className="max-w-7xl mx-auto w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <section className="xau-hero relative px-5 pb-16 pt-32 md:px-8 md:pb-24 md:pt-40">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="max-w-3xl">
+            <div className="xau-hero-kicker inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-300 backdrop-blur-xl">
+              <Sparkles className="h-3.5 w-3.5" />
+              XAUUSD trading journal
+            </div>
 
-              {/* Left — Copy */}
-              <div className="relative z-10">
-                <Motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="mb-6"
-                >
-                  <span className="text-[10px] font-black tracking-[0.2em] uppercase px-3.5 py-1.5 rounded-full inline-flex items-center gap-2" style={{ background: `${AURORA.violet}12`, color: AURORA.violet, border: `1px solid ${AURORA.violet}25` }}>
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: AURORA.mint }} />
-                    Exclusively for Gold Traders
-                  </span>
-                </Motion.div>
-
-                <h1 className="text-[clamp(3rem,7.5vw,5.5rem)] font-black leading-[0.92] tracking-tighter mb-8 text-foreground flex flex-col items-start">
-                  <AnimatedHeadline text="Every trade" delayOffset={0} />
-                  <AnimatedHeadline text="you make" delayOffset={0.25} />
-                  <AnimatedHeadline text="tells a story." className="aurora-text italic" delayOffset={0.5} />
-                </h1>
-
-                <Motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 0.8 }}
-                  className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-lg mb-8"
-                >
-                  Every trade you make tells a story. XAU Journal captures it, analyses it, and turns raw execution into actionable intelligence.
-                </Motion.p>
-
-                <Motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, delay: 1.0 }}
-                  className="flex flex-wrap gap-6 items-center mb-10"
-                >
-                  <div
-                    onClick={() => navigate('/login')}
-                    onMouseEnter={() => setIsHoveredButton(true)}
-                    onMouseLeave={() => setIsHoveredButton(false)}
-                    onTouchStart={() => setIsHoveredButton(true)}
-                    onTouchEnd={() => setIsHoveredButton(false)}
-                    onTouchCancel={() => setIsHoveredButton(false)}
-                    className="group flex flex-col items-center lg:items-start justify-center rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden relative"
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      minWidth: '300px',
-                      padding: '14px 20px',
-                    }}
-                  >
-                    <MagicTextReveal
-                      text="Try 7-Day Free Trial"
-                      text2="CANCEL ANYTIME · NO CARD REQUIRED"
-                      fontSize={20}
-                      fontWeight={600}
-                      color={isLightMode ? "rgba(0, 0, 0, 1)" : "rgba(255, 255, 255, 1)"}
-                      color2={isLightMode ? "rgba(0, 0, 0, 0.5)" : "rgba(161, 161, 170, 0.7)"}
-                      forceHover={isHoveredButton}
-                      style={{
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        minHeight: '36px',
-                        backdropFilter: 'none',
-                      }}
-                    />
-                  </div>
-                  <button onClick={() => navigate('/#features')} className="aurora-ghost">
-                    See Features
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17l9.2-9.2M17 17V7H7" /></svg>
-                  </button>
-                </Motion.div>
-
-                {/* Stats */}
-                <Motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 1.3 }}
-                  className="flex gap-8 md:gap-12"
-                >
-                  {STATS.map((stat, i) => (
-                    <div key={i}>
-                      <div className="text-xl md:text-2xl font-black aurora-text-static">
-                        <Counter value={stat.value} />
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">{stat.label}</div>
-                    </div>
+            <h1 className="xau-hero-title mt-7 max-w-4xl !text-[clamp(3.25rem,8.5vw,7rem)] font-black !leading-[0.96]">
+              {HERO_LINES.map((line) => (
+                <span key={line.text} className={`xau-hero-line ${line.accent ? 'xau-hero-line-accent' : ''}`}>
+                  {line.text.split(' ').map((word, index) => (
+                    <span key={`${line.text}-${word}-${index}`} className="xau-word mr-[0.18em]">
+                      <span>{word}</span>
+                    </span>
                   ))}
-                </Motion.div>
-              </div>
+                </span>
+              ))}
+            </h1>
 
-              {/* Right — Mock Terminal */}
-              <div className="hidden lg:flex justify-end">
-                <MockTerminal />
-              </div>
+            <p className="xau-hero-copy mt-7 max-w-2xl text-base font-medium leading-8 md:text-lg" style={{ color: 'var(--xau-muted)' }}>
+              Every trade you make tells a story. XAU Journal captures it, analyses it, and turns raw execution into
+              actionable intelligence.
+            </p>
+
+            <div className="xau-hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
+              <PrimaryButton>Start journaling</PrimaryButton>
+              <SecondaryButton href="#features">See Features</SecondaryButton>
             </div>
-          </Motion.div>
-        </section>
 
+            <div className="xau-hero-metrics mt-9 grid max-w-2xl gap-3 sm:grid-cols-3">
+              {METRICS.map((item) => (
+                <div key={item.label} className="xau-glass rounded-2xl p-4">
+                  <p className="text-xl font-black">{item.value}</p>
+                  <p className="mt-1 text-xs font-medium" style={{ color: 'var(--xau-muted)' }}>{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        {/* ═══════ SCROLL STORYTELLING ═══════ */}
-        <ScrollStorytelling isLightMode={isLightMode} />
+          <div className="xau-hero-visual">
+            <ProductMockup activeStory={activeStory} />
+          </div>
+        </div>
+      </section>
 
+      <section className="border-y py-5" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }} aria-hidden="true">
+        <div className="xau-marquee">
+          {signals.concat(signals).concat(signals).map((sig, i) => (
+            <span key={i} className="mx-8 text-xs font-black uppercase tracking-[0.22em] inline-flex items-center" style={{ color: 'var(--xau-muted)' }}>
+              <span className="mr-2" style={{ color: 'var(--xau-ink)' }}>{sig.symbol}</span>
+              <span className={sig.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                {sig.change >= 0 ? '+' : ''}{sig.change.toFixed(2)}%
+              </span>
+            </span>
+          ))}
+        </div>
+      </section>
 
-        {/* ═══════ BENTO FEATURES ═══════ */}
-        <BentoFeatures isLightMode={isLightMode} />
-
-
-        {/* ═══════ HOW IT WORKS (STEPS) ═══════ */}
-        <section className="relative z-10 py-24 md:py-36 px-6 overflow-hidden border-t border-border/10">
-          <div className="max-w-5xl mx-auto">
-            <Motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16 md:mb-24"
-            >
-              <span className="text-[11px] font-bold tracking-[0.2em] uppercase mb-5 inline-block px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground">How It Works</span>
-              <h2 className="text-[clamp(2rem,5.5vw,3.5rem)] font-black leading-[1.08] tracking-tight mt-4 mb-4">
-                Three steps to <span className="aurora-text-static">mastery.</span>
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto">From connection to conviction — your journey to data-driven trading starts here.</p>
-            </Motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {STEPS.map((step, i) => {
-                const accents = [AURORA.cyan, AURORA.violet, AURORA.magenta];
-                const accent = accents[i];
-                return (
-                  <div key={step.id} className="step-card relative overflow-hidden rounded-2xl border border-border/20 p-7 transition-all duration-500 group cursor-default" style={{ background: isLightMode ? 'rgba(255,255,255,0.5)' : 'rgba(13,13,26,0.5)', backdropFilter: 'blur(12px)' }}>
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% 0%, ${accent}06, transparent 70%)` }} />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-4 mb-5">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${accent}12`, color: accent }}>
-                          {step.icon}
-                        </div>
-                        <span className="text-[40px] font-black leading-none" style={{ color: `${accent}15` }}>0{step.id}</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{step.body}</p>
-                    </div>
+      <section className="px-5 py-12 md:px-8 md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-[1.25fr_0.75fr]">
+          <div className="xau-glass scroll-reveal rounded-[1.75rem] p-6 md:p-8">
+            <div className="grid gap-7 md:grid-cols-[0.9fr_1.1fr] md:items-center">
+              <div>
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-fuchsia-400/10 text-fuchsia-400 ring-1 ring-fuchsia-300/20">
+                  <Database className="h-6 w-6" />
+                </div>
+                <h2 className="!text-3xl font-black !leading-tight md:!text-4xl">A tool, not a <span className="xau-gradient-word">template.</span></h2>
+                <p className="mt-4 text-sm font-medium leading-7" style={{ color: 'var(--xau-muted)' }}>
+                  Spreadsheets record what happened. XAU Journal turns your history into a review system:
+                  synced trades, structured notes, session stats, calendar heat, and decision patterns in one place.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {['Trade importer', 'Session breakdowns', 'Risk review', 'Private vault'].map((item) => (
+                  <div key={item} className="flex items-center gap-3 rounded-2xl border p-4" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                    <span className="text-sm font-semibold">{item}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </div>
-        </section>
 
+          <div className="xau-glass scroll-reveal rounded-[1.75rem] p-6 md:p-8">
+            <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--xau-muted)' }}>Connected platforms</p>
+            <div className="mt-5 space-y-3">
+              <PlatformBadge src="/mt4.svg" label="MetaTrader 4" />
+              <PlatformBadge src="/mt5.svg" label="MetaTrader 5" />
+            </div>
+          </div>
+        </div>
+      </section>
 
-        {/* ═══════ SCALE TIMELINE ═══════ */}
-        <ScaleTimeline />
-
-
-        {/* ═══════ FAQ ═══════ */}
-        <section className="relative z-10 py-24 md:py-36 px-6 overflow-hidden border-t border-border/10">
-          <div className="max-w-3xl mx-auto">
-            <Motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-14"
-            >
-              <span className="text-[11px] font-bold tracking-[0.2em] uppercase mb-5 inline-block px-3 py-1.5 rounded-full bg-foreground/[0.04] border border-border/30 text-muted-foreground">FAQ</span>
-              <h2 className="text-[clamp(2rem,5vw,3rem)] font-black leading-tight tracking-tight mt-4">
-                Questions <span className="aurora-text-static">answered.</span>
+      <section id="story" className="xau-story-section px-5 py-20 md:px-8 md:py-28">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)] lg:self-start">
+            <div className="scroll-reveal">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300"></p>
+              <h2 className="mt-4 !text-4xl font-black !leading-tight md:!text-6xl">
+                The review loop that turns noise into <span className="xau-gradient-word">edge.</span>
               </h2>
-            </Motion.div>
-
-            <div className="space-y-3">
-              {LANDING_FAQ.map((faq, i) => {
-                const isOpen = openFaqIndex === i;
-                return (
-                  <Motion.div
-                    key={i}
-                    className="rounded-xl border overflow-hidden transition-all duration-300"
-                    style={{ borderColor: isOpen ? `${AURORA.violet}30` : 'hsl(var(--border) / 0.2)', background: isLightMode ? 'rgba(255,255,255,0.4)' : 'rgba(13,13,26,0.4)' }}
-                    initial={false}
-                  >
-                    <button
-                      onClick={() => setOpenFaqIndex(isOpen ? null : i)}
-                      className="w-full flex items-center justify-between px-6 py-5 text-left"
-                    >
-                      <span className="text-sm font-semibold text-foreground pr-4">{faq.q}</span>
-                      <svg className={`faq-caret shrink-0 w-4 h-4 text-muted-foreground ${isOpen ? 'open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <Motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-6 pb-5 text-sm text-muted-foreground leading-relaxed">{faq.a}</div>
-                        </Motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Motion.div>
-                );
-              })}
+              <p className="mt-5 max-w-xl text-base font-medium leading-7" style={{ color: 'var(--xau-muted)' }}>
+                Scroll through the way a serious gold trader actually improves: plan, capture, analyze, repeat.
+              </p>
             </div>
           </div>
-        </section>
 
-
-        {/* ═══════ FINAL CTA ═══════ */}
-        <section className="relative z-10 py-32 md:py-44 px-6 overflow-hidden">
-          {/* Ambient glow */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <div className="w-[600px] h-[600px] rounded-full opacity-10 blur-[120px]" style={{ background: `radial-gradient(circle, ${AURORA.violet}, ${AURORA.cyan})` }} />
-          </div>
-
-          {/* Concentric rings */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
-            {[1, 2, 3].map((r) => (
-              <Motion.div
-                key={r}
-                className="absolute rounded-full border"
-                style={{ width: 200 + r * 120, height: 200 + r * 120, borderColor: `${AURORA.violet}${Math.round(15 / r).toString(16).padStart(2, '0')}` }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 3 + r, repeat: Infinity, ease: 'easeInOut', delay: r * 0.5 }}
+          <div className="xau-story-card-stack space-y-5 lg:space-y-[42vh]">
+            <svg className="xau-card-motion hidden lg:block" viewBox="0 0 128 1000" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="xauCardWaypointGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#a855f7" />
+                  <stop offset="46%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#06b6d4" />
+                </linearGradient>
+              </defs>
+              <path
+                id="xau-card-motion-path"
+                className="xau-card-motion-line"
+                pathLength="1"
+                d="M86 26 C24 128 112 218 56 330 C18 408 110 508 58 620 C20 704 72 816 98 974"
               />
+              <path
+                className="xau-card-motion-progress"
+                pathLength="1"
+                d="M86 26 C24 128 112 218 56 330 C18 408 110 508 58 620 C20 704 72 816 98 974"
+              />
+              <g className="xau-card-motion-marker">
+                <circle cx="0" cy="0" r="11" fill="var(--xau-bg)" stroke="#67e8f9" strokeWidth="2.5" />
+                <circle cx="0" cy="0" r="4.5" fill="#a855f7" />
+              </g>
+            </svg>
+
+            {STORY_STEPS.map((step, index) => (
+              <div
+                id={`story-step-${index}`}
+                key={step.eyebrow}
+                className={`xau-story-card xau-glass rounded-[1.75rem] p-6 md:p-8 ${activeStory === index ? 'is-active' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-6">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="xau-story-mobile-index inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-black transition duration-300 lg:hidden" style={{ borderColor: 'var(--xau-border)', color: 'var(--xau-muted)' }}>
+                        {index + 1}
+                      </span>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">{step.eyebrow}</p>
+                    </div>
+                    <h3 className="mt-5 !text-3xl font-black !leading-tight md:!text-4xl">{step.title}</h3>
+                    <p className="mt-5 max-w-2xl text-base font-medium leading-8" style={{ color: 'var(--xau-muted)' }}>{step.body}</p>
+                  </div>
+                  <span className="hidden text-6xl font-black text-current/10 md:block">0{index + 1}</span>
+                </div>
+              </div>
             ))}
           </div>
+        </div>
+      </section>
 
-          <div className="relative z-10 text-center max-w-2xl mx-auto">
-            <Motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-            >
-              <h2 className="text-[clamp(2rem,6vw,4rem)] font-black leading-[1.08] tracking-tight mb-6">
-                Stop guessing.<br /><span className="aurora-text">Start knowing.</span>
-              </h2>
-              <p className="text-muted-foreground text-base md:text-lg mb-10 max-w-md mx-auto">
-                Join the traders who've turned raw execution into a quantified edge.
-              </p>
-              <MagneticButton onClick={() => navigate('/login')} className="aurora-cta text-base px-10 py-4">
-                Start Your Free Trial
-                <svg width="15" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
-              </MagneticButton>
-            </Motion.div>
+      <section className="xau-cinema-section relative z-[1] py-16 md:py-24">
+        <div className="scroll-reveal mx-auto mb-10 max-w-7xl px-5 md:px-8">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-fuchsia-400"></p>
+          <h2 className="mt-4 max-w-3xl !text-4xl font-black !leading-tight md:!text-6xl">
+            Your trading review, told as a moving <span className="xau-gradient-word">system.</span>
+          </h2>
+        </div>
+
+        <div className="xau-cinema-pin">
+          <div className="xau-cinema-track">
+            {STORY_STEPS.map((step, index) => (
+              <article className="xau-cinema-panel" key={`cinema-${step.eyebrow}`}>
+                <div className="xau-cinema-card xau-glass">
+                  <div>
+                    <div className="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.2em]" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
+                      <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(17,197,217,0.8)]" />
+                      Chapter 0{index + 1}
+                    </div>
+                    <h3 className="mt-8 !text-4xl font-black !leading-tight md:!text-6xl">{step.title}</h3>
+                    <p className="mt-6 max-w-xl text-base font-medium leading-8 md:text-lg" style={{ color: 'var(--xau-muted)' }}>
+                      {step.body}
+                    </p>
+                    <div className="mt-8 flex flex-wrap gap-3">
+                      <span className="rounded-full bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-300">{step.metric}</span>
+                      <span className="rounded-full bg-emerald-300/10 px-4 py-2 text-sm font-bold text-emerald-400">{step.highlight}</span>
+                    </div>
+                  </div>
+
+                  <div className="xau-cinema-visual">
+                    <div className="xau-cinema-orb" />
+                    <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/12 bg-[#081013]/80 p-4 text-white shadow-2xl">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-white/45">{step.eyebrow}</p>
+                      <p className="mt-2 text-sm font-bold text-white">{step.highlight}</p>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
-        </section>
-      </main>
+          <div className="xau-cinema-progress"><span /></div>
+        </div>
+      </section>
 
+      <section className="xau-kinetic overflow-hidden" aria-hidden="true">
+        <div className="xau-kinetic-left whitespace-nowrap">
+          {["XAU/USD", "XAUUSD", "Gold", "XAU/USD", "XAUUSD", "Gold", "XAU/USD", "XAUUSD", "Gold", "XAU/USD", "XAUUSD", "Gold"].map((txt, i) => (
+            <span key={i}>{txt}</span>
+          ))}
+        </div>
+        <div className="xau-kinetic-right whitespace-nowrap mt-4">
+          {["Journal", "Analyze", "Improve", "Journal", "Analyze", "Improve", "Journal", "Analyze", "Improve", "Journal", "Analyze", "Improve"].map((txt, i) => (
+            <span key={i}>{txt}</span>
+          ))}
+        </div>
+      </section>
 
-      {/* ═══════ FOOTER ═══════ */}
-      <footer className="relative z-10 border-t border-border/10 px-6 py-16 md:py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
-            {/* Brand */}
-            <div className="md:col-span-2">
-              <Logo className="mb-4" />
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-                The intelligence terminal built exclusively for gold traders. Auto-sync your MT5 trades, analyse session performance, and sharpen your edge.
-              </p>
-            </div>
-            {/* Platform */}
-            <div>
-              <h4 className="text-xs font-bold tracking-[0.15em] uppercase text-muted-foreground mb-4">Platform</h4>
-              <ul className="space-y-2.5">
-                {[
-                  { to: '/pricing', label: 'Pricing' },
-                  { to: '/the-story', label: 'Our Story' },
-                  { to: '/contact', label: 'Contact' },
-                  { to: '/login', label: 'Login' },
-                ].map(l => (
-                  <li key={l.to}><Link to={l.to} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l.label}</Link></li>
-                ))}
-              </ul>
-            </div>
-            {/* Legal */}
-            <div>
-              <h4 className="text-xs font-bold tracking-[0.15em] uppercase text-muted-foreground mb-4">Legal</h4>
-              <ul className="space-y-2.5">
-                {[
-                  { to: '/privacy', label: 'Privacy Policy' },
-                  { to: '/terms-and-conditions', label: 'Terms of Service' },
-                  { to: '/refund-policy', label: 'Refund Policy' },
-                ].map(l => (
-                  <li key={l.to}><Link to={l.to} className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l.label}</Link></li>
-                ))}
-              </ul>
-            </div>
+      <section id="features" className="px-5 py-20 md:px-8 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="scroll-reveal max-w-2xl">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-fuchsia-400">What users understand fast</p>
+            <h2 className="mt-4 !text-4xl font-black !leading-tight md:!text-5xl">Everything needed for disciplined <span className="xau-gradient-word">review.</span></h2>
+            <p className="mt-5 text-base font-medium leading-7" style={{ color: 'var(--xau-muted)' }}>
+              Minimal on the surface, serious underneath. New users can tell what the tool does before they ever sign in.
+            </p>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between mt-14 pt-8 border-t border-border/10 gap-4">
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} XAU Journal. All rights reserved.</p>
-            <div className="flex items-center gap-4">
+          <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <FeatureCard key={feature.title} feature={feature} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-20 md:px-8 md:py-28">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_0.85fr] lg:items-center">
+          <div className="scroll-reveal">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">Security and clarity</p>
+            <h2 className="mt-4 !text-4xl font-black !leading-tight md:!text-5xl">Built for private, focused <span className="xau-gradient-word">review.</span></h2>
+            <p className="mt-5 max-w-2xl text-base font-medium leading-7" style={{ color: 'var(--xau-muted)' }}>
+              Your trading data is sensitive. XAU Journal keeps the experience calm and understandable while giving you the depth needed to inspect your decisions.
+            </p>
+          </div>
+
+          <div className="xau-glass scroll-reveal rounded-[1.75rem] p-6">
+            <div className="grid gap-3">
               {[
-                { Icon: Facebook, href: '#' },
-                { Icon: Instagram, href: '#' },
-                { Icon: TwitterX, href: '#' },
-                { Icon: Discord, href: '#' },
-              ].map(({ Icon, href }, i) => (
-                <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full border border-border/20 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border/40 transition-all duration-200">
-                  <Icon className="w-3.5 h-3.5" />
-                </a>
-              ))}
+                { icon: LockKeyhole, label: 'Private journal workspace' },
+                { icon: Cloud, label: 'Cloud-backed review history' },
+                { icon: ShieldCheck, label: 'Secure broker connection flow' },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="flex items-center gap-4 rounded-2xl border p-4" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-300/10 text-emerald-400">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-bold">{item.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-24 pt-12 md:px-8 md:pb-32">
+        <div className="xau-glass scroll-reveal mx-auto max-w-6xl rounded-[2rem] p-8 text-center md:p-12">
+          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-300/10 text-cyan-300 ring-1 ring-cyan-300/20">
+            <Logo onlyIcon iconSize="h-8 w-8" />
+          </div>
+          <h2 className="mx-auto max-w-3xl !text-4xl font-black !leading-tight md:!text-5xl">Start with your next <span className="xau-gradient-word">trade.</span></h2>
+          <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-7" style={{ color: 'var(--xau-muted)' }}>
+            Create a clear record, sync when you are ready, and let your review process show you what to keep, fix, and stop repeating.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <PrimaryButton>Open XAU Journal</PrimaryButton>
+            <button
+              type="button"
+              onClick={() => navigate('/pricing')}
+              className="inline-flex min-h-12 items-center justify-center rounded-full border px-6 text-sm font-bold backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
+              style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)', color: 'var(--xau-ink)' }}
+            >
+              View pricing
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t px-6 py-20 md:px-12" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
+            <Logo iconSize="w-7 h-7" />
+            <nav className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end" style={{ color: 'var(--xau-muted)' }} aria-label="Footer navigation">
+              <Link to="/privacy" className="transition hover:text-cyan-300">Privacy</Link>
+              <Link to="/terms-and-conditions" className="transition hover:text-cyan-300">Terms</Link>
+              <Link to="/refund-policy" className="transition hover:text-cyan-300">Refunds</Link>
+              <Link to="/the-story" className="transition hover:text-cyan-300">The Story</Link>
+              <Link to="/contact" className="transition hover:text-cyan-300">Contact</Link>
+            </nav>
+          </div>
+
+          <div className="mt-16 flex flex-col items-center justify-between gap-6 border-t pt-8 md:flex-row" style={{ borderColor: 'var(--xau-border)' }}>
+            <p className="order-2 text-center text-[9px] font-black uppercase tracking-[0.2em] md:order-1 md:text-left" style={{ color: 'var(--xau-muted)' }}>
+              Copyright 2026 Xau Journal. All Rights Reserved.
+            </p>
+
+            <div className="order-1 flex flex-col items-center gap-4 md:order-2 md:items-end">
+              <ul className="example-2">
+                <li className="icon-content">
+                  <a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
+                    <div className="filled" />
+                    <Facebook />
+                  </a>
+                </li>
+                <li className="icon-content">
+                  <a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
+                    <div className="filled" />
+                    <Instagram />
+                  </a>
+                </li>
+                <li className="icon-content">
+                  <a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer">
+                    <div className="filled" />
+                    <TwitterX />
+                  </a>
+                </li>
+                <li className="icon-content">
+                  <a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer">
+                    <div className="filled" />
+                    <Discord />
+                  </a>
+                </li>
+              </ul>
+              <p className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] md:justify-end" style={{ color: 'var(--xau-muted)' }}>
+                made for disciplined gold traders
+              </p>
             </div>
           </div>
         </div>
       </footer>
 
-
-      {/* ═══════ SCROLL TO TOP ═══════ */}
       <Motion.button
+        type="button"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        animate={{ opacity: isScrolled ? 1 : 0, y: isScrolled ? 0 : 30 }}
-        transition={{ duration: 0.3 }}
-        className={`fixed bottom-6 right-6 z-[90] p-3.5 rounded-2xl bg-background/80 backdrop-blur-md border border-border/20 text-muted-foreground hover:text-foreground shadow-lg hover:-translate-y-1 active:scale-90 transition-all duration-200 ${!isScrolled ? 'pointer-events-none' : ''}`}
+        animate={{ opacity: isScrolled ? 1 : 0, y: isScrolled ? 0 : 18, scale: isScrolled ? 1 : 0.96 }}
+        transition={{ duration: 0.24, ease: 'easeOut' }}
+        className={`fixed bottom-6 right-6 z-[90] inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-xl transition duration-300 hover:-translate-y-1 active:scale-95 ${isScrolled ? '' : 'pointer-events-none'}`}
+        style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-glass)', color: 'var(--xau-ink)', boxShadow: 'var(--xau-shadow)' }}
         aria-label="Scroll to top"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
+        <ArrowUp className="h-4 w-4" />
       </Motion.button>
-    </div>
+    </main>
   );
 }
-
-export { LandingPage };

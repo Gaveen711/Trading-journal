@@ -36,28 +36,28 @@
 
   .dark {
     color-scheme: dark;
-    --background: 206 50% 6%; /* Obsidian Void */
-    --surface: 206 45% 10%; /* Base Surface */
-    --surface-raised: 206 45% 14%; /* Elevated Surface */
-    --foreground: 203 91% 96%;
-    --card: 206 45% 10%;
+    --background: 0 0% 0%;
+    --surface: 240 24% 4%;
+    --surface-raised: 240 24% 7%;
+    --foreground: 203 91% 97%;
+    --card: 240 24% 5%;
     --card-foreground: 203 91% 96%;
-    --popover: 206 45% 10%;
+    --popover: 240 24% 5%;
     --popover-foreground: 203 91% 96%;
-    --primary: 206 74% 63%; /* Cool Sky */
-    --primary-to: 203 91% 73%; /* Sky Blue */
-    --primary-foreground: 206 50% 6%;
-    --secondary: 206 45% 14%;
+    --primary: 190 100% 50%;
+    --primary-to: 263 91% 66%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 240 24% 8%;
     --secondary-foreground: 203 91% 96%;
-    --muted: 206 45% 14%;
-    --muted-foreground: 206 20% 70%;
-    --accent: 342 100% 69%; /* Rose Kiss */
-    --accent-foreground: 206 50% 6%;
+    --muted: 240 20% 9%;
+    --muted-foreground: 220 18% 72%;
+    --accent: 326 100% 62%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 346.8 77.2% 49.8%;
     --destructive-foreground: 210 40% 98%;
-    --border: 206 30% 16%;
-    --input: 206 30% 16%;
-    --ring: 206 74% 63%;
+    --border: 240 16% 13%;
+    --input: 240 16% 13%;
+    --ring: 190 100% 50%;
 
     --win: 142.1 70.6% 45.3%;
     --loss: 346.8 77.2% 49.8%;
@@ -1497,12 +1497,7 @@ a[href*="neat.firecms.co"] {
 /* Instant theme switch — no transition delay */
 .theme-toggling,
 .theme-toggling * {
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    fill 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: none !important;
 }
 
 /* Screen Loader Styles */
@@ -2908,12 +2903,13 @@ aside.apple-glass-panel:active {
 
 /* Animated gradient text — cycles magenta → purple → cyan */
 .aurora-text {
-  background: linear-gradient(135deg, #FF3CAC, #8B5CF6, #00D4FF, #FF3CAC);
-  background-size: 200% 200%;
+  background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: aurora-shift 6s ease infinite;
+  color: transparent;
+  animation: aurora-shift 7s linear infinite;
 }
 
 .aurora-text-static {
@@ -2924,9 +2920,8 @@ aside.apple-glass-panel:active {
 }
 
 @keyframes aurora-shift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 
 /* Film grain texture overlay */
@@ -3026,13 +3021,44 @@ aside.apple-glass-panel:active {
 
 /* ── Aurora Theme CSS Variables Override ── */
 .aurora-theme {
-  --primary: 190 100% 50% !important; /* #00D4FF (cyan) */
-  --primary-to: 326 100% 62% !important; /* #FF3CAC (magenta) */
-  --accent: 326 100% 62% !important; /* #FF3CAC (magenta) */
+  --primary: 190 92% 34% !important;
+  --primary-to: 263 80% 54% !important;
+  --accent: 326 86% 45% !important;
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(circle at 14% 8%, hsl(var(--primary) / 0.12), transparent 28rem),
+    radial-gradient(circle at 88% 14%, hsl(var(--primary-to) / 0.10), transparent 30rem),
+    radial-gradient(circle at 50% 100%, hsl(var(--accent) / 0.06), transparent 32rem);
+  background-attachment: fixed;
+  transition: none;
 }
 
 .dark .aurora-theme {
-  --background: 240 40% 4% !important; /* #050510 */
-  --card: 240 35% 8% !important; /* #0d0d1a */
-  --border: 240 25% 12% !important;
+  --background: 0 0% 0% !important;
+  --surface: 240 24% 4% !important;
+  --surface-raised: 240 24% 7% !important;
+  --card: 240 24% 5% !important;
+  --popover: 240 24% 5% !important;
+  --muted: 240 20% 9% !important;
+  --border: 240 16% 13% !important;
+  --input: 240 16% 13% !important;
+  --primary: 190 100% 50% !important;
+  --primary-to: 263 91% 66% !important;
+  --accent: 326 100% 62% !important;
+  background-image:
+    radial-gradient(circle at 12% 6%, hsl(var(--primary) / 0.16), transparent 30rem),
+    radial-gradient(circle at 90% 12%, hsl(var(--primary-to) / 0.14), transparent 32rem),
+    radial-gradient(circle at 48% 100%, hsl(var(--accent) / 0.08), transparent 34rem);
+}
+
+/* ── Reset Navbar theme variables to default across all pages to preserve consistent backdrop blur ── */
+header {
+  --background: 0 0% 98% !important;
+  --border: 206 30% 88% !important;
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif !important;
+}
+
+.dark header {
+  --background: 206 50% 6% !important;
+  --border: 206 30% 16% !important;
 }
