@@ -243,6 +243,225 @@ const LANDING_STYLES = `
     z-index: 1;
   }
 
+  .xau-architecture-section {
+    position: relative;
+    overflow: clip;
+    padding: clamp(5rem, 9vw, 8rem) max(1rem, 4vw) clamp(7rem, 12vw, 10rem);
+    background:
+      radial-gradient(circle at 14% 28%, rgba(168, 85, 247, 0.08), transparent 14rem),
+      radial-gradient(circle at 88% 18%, rgba(34, 211, 238, 0.1), transparent 16rem);
+    color: var(--xau-ink);
+    isolation: isolate;
+  }
+
+  .xau-architecture-shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .xau-architecture-heading {
+    max-width: 620px;
+    margin: 0 auto clamp(2.5rem, 5vw, 4.25rem);
+    text-align: center;
+  }
+
+  .xau-architecture-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    background: var(--xau-soft);
+    padding: 0.45rem 0.75rem;
+    color: var(--xau-muted);
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    box-shadow: inset 0 0 0 1px var(--xau-border);
+  }
+
+  .xau-architecture-badge::before {
+    content: '';
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 999px;
+    background: #7c5cff;
+    box-shadow: 0 0 14px rgba(124, 92, 255, 0.55);
+  }
+
+  .xau-architecture-title {
+    margin-top: 1.2rem;
+    color: #f15aa5;
+    font-size: clamp(2rem, 4vw, 3.5rem) !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .xau-architecture-copy {
+    max-width: 560px;
+    margin: 1rem auto 0;
+    color: var(--xau-muted);
+    font-size: clamp(0.95rem, 1.5vw, 1.08rem);
+    font-weight: 700;
+    line-height: 1.55;
+  }
+
+  .xau-architecture-stage {
+    position: relative;
+    min-height: clamp(760px, 92vw, 1120px);
+  }
+
+  .xau-architecture-path {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .xau-architecture-track,
+  .xau-architecture-progress {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .xau-architecture-track {
+    stroke: rgba(146, 162, 198, 0.23);
+    stroke-width: 2;
+    stroke-dasharray: 7 13;
+  }
+
+  .xau-architecture-progress {
+    stroke: url(#xauArchitectureGradient);
+    stroke-width: 3.5;
+  }
+
+  .xau-architecture-marker {
+    filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.72));
+  }
+
+  .xau-architecture-card {
+    position: absolute;
+    z-index: 2;
+    width: min(360px, 36vw);
+    min-height: 88px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid rgba(39, 201, 231, 0.55);
+    border-radius: 0.85rem;
+    background: var(--xau-panel);
+    color: var(--xau-ink);
+    padding: 1rem 1.15rem;
+    box-shadow: 0 18px 50px rgba(61, 91, 124, 0.08);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    opacity: 0.2;
+    transform: translateY(18px) scale(0.985);
+    transition: border-color 260ms ease, box-shadow 260ms ease, opacity 260ms ease, background-color 260ms ease;
+    will-change: transform, opacity;
+  }
+
+  .xau-architecture-card.is-active {
+    opacity: 1;
+    background: var(--xau-active-glass);
+    border-color: rgba(34, 211, 238, 0.95);
+    box-shadow: 0 20px 60px rgba(20, 184, 221, 0.18);
+  }
+
+  .xau-architecture-card[data-tone='coral'] {
+    border-color: rgba(255, 132, 112, 0.48);
+  }
+
+  .xau-architecture-card[data-tone='coral'].is-active {
+    border-color: rgba(255, 132, 112, 0.92);
+    box-shadow: 0 20px 60px rgba(255, 132, 112, 0.18);
+  }
+
+  .xau-architecture-card[data-tone='green'] {
+    border-color: rgba(80, 224, 143, 0.52);
+  }
+
+  .xau-architecture-card[data-tone='green'].is-active {
+    border-color: rgba(80, 224, 143, 0.95);
+    box-shadow: 0 20px 60px rgba(80, 224, 143, 0.18);
+  }
+
+  .xau-architecture-card[data-tone='violet'] {
+    border-color: rgba(168, 85, 247, 0.38);
+  }
+
+  .xau-architecture-card[data-tone='violet'].is-active {
+    border-color: rgba(168, 85, 247, 0.82);
+    box-shadow: 0 20px 60px rgba(168, 85, 247, 0.16);
+  }
+
+  .xau-architecture-icon {
+    display: inline-flex;
+    width: 2.45rem;
+    height: 2.45rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.65rem;
+    background: rgba(34, 211, 238, 0.11);
+    color: #22b8cf;
+  }
+
+  .xau-architecture-card[data-tone='coral'] .xau-architecture-icon {
+    background: rgba(255, 132, 112, 0.12);
+    color: #ff7f67;
+  }
+
+  .xau-architecture-card[data-tone='green'] .xau-architecture-icon {
+    background: rgba(80, 224, 143, 0.12);
+    color: #20b968;
+  }
+
+  .xau-architecture-card[data-tone='violet'] .xau-architecture-icon {
+    background: rgba(168, 85, 247, 0.11);
+    color: #8b5cf6;
+  }
+
+  .xau-architecture-card h3 {
+    color: var(--xau-ink);
+    font-size: clamp(1.08rem, 1.8vw, 1.45rem) !important;
+    line-height: 1.08 !important;
+    font-weight: 900 !important;
+  }
+
+  .xau-architecture-card p {
+    margin-top: 0.28rem;
+    color: var(--xau-muted);
+    font-size: clamp(0.72rem, 1vw, 0.82rem);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .xau-architecture-card:nth-of-type(1) {
+    left: 6%;
+    top: 13%;
+  }
+
+  .xau-architecture-card:nth-of-type(2) {
+    right: 4%;
+    top: 33%;
+  }
+
+  .xau-architecture-card:nth-of-type(3) {
+    left: 6%;
+    top: 53%;
+  }
+
+  .xau-architecture-card:nth-of-type(4) {
+    right: 14%;
+    top: 76%;
+  }
   .xau-product-card {
     transform-style: preserve-3d;
     will-change: transform;
@@ -372,6 +591,135 @@ const LANDING_STYLES = `
       box-shadow: 0 18px 55px rgba(17, 197, 217, 0.16);
     }
 
+    .xau-architecture-section {
+      padding: 4.5rem 1rem 5.5rem;
+    }
+
+    .xau-architecture-section::before,
+    .xau-architecture-section::after {
+      display: none;
+    }
+
+    .xau-architecture-heading {
+      margin-bottom: 2rem;
+    }
+
+    .xau-architecture-stage {
+      display: grid;
+      min-height: auto;
+      gap: 2.5rem;
+    }
+
+    .xau-architecture-path {
+      display: none;
+    }
+
+    .xau-architecture-card,
+    .xau-architecture-card:nth-of-type(1),
+    .xau-architecture-card:nth-of-type(2),
+    .xau-architecture-card:nth-of-type(3),
+    .xau-architecture-card:nth-of-type(4) {
+      position: relative;
+      inset: auto;
+      left: auto;
+      right: auto;
+      top: auto;
+      bottom: auto;
+      width: min(100%, 420px);
+      margin: 0 auto;
+      opacity: 0.58 !important;
+      transform: none !important;
+      visibility: visible !important;
+      transition: opacity 300ms ease, border-color 300ms ease, box-shadow 300ms ease, background-color 300ms ease !important;
+    }
+
+    .xau-architecture-card.is-active {
+      opacity: 1 !important;
+      background: var(--xau-active-glass) !important;
+      border-color: rgba(34, 211, 238, 0.95) !important;
+      box-shadow: 0 12px 40px rgba(20, 184, 221, 0.22) !important;
+    }
+
+    .xau-architecture-card[data-tone='coral'].is-active {
+      border-color: rgba(255, 132, 112, 0.95) !important;
+      box-shadow: 0 12px 40px rgba(255, 132, 112, 0.22) !important;
+    }
+
+    .xau-architecture-card[data-tone='green'].is-active {
+      border-color: rgba(80, 224, 143, 0.95) !important;
+      box-shadow: 0 12px 40px rgba(80, 224, 143, 0.22) !important;
+    }
+
+    .xau-architecture-card[data-tone='violet'].is-active {
+      border-color: rgba(168, 85, 247, 0.95) !important;
+      box-shadow: 0 12px 40px rgba(168, 85, 247, 0.20) !important;
+    }
+
+    .xau-architecture-card::before {
+      content: '';
+      position: absolute;
+      left: 2.2rem;
+      top: -2.5rem;
+      height: 2.5rem;
+      border-left: 1px dashed rgba(146, 162, 198, 0.4);
+    }
+
+    .xau-architecture-card:first-of-type::before {
+      display: none;
+    }
+
+    .xau-waypoints-section {
+      padding: 4rem 1rem;
+    }
+
+    .xau-waypoint-pin {
+      min-height: auto;
+      overflow: visible;
+    }
+
+    .xau-waypoint-stage {
+      display: grid;
+      height: auto;
+      min-height: auto;
+      gap: 1rem;
+    }
+
+    .xau-waypoint-heading,
+    .xau-waypoint-map,
+    .xau-waypoint-card,
+    .xau-waypoint-card:nth-of-type(1),
+    .xau-waypoint-card:nth-of-type(2),
+    .xau-waypoint-card:nth-of-type(3),
+    .xau-waypoint-card:nth-of-type(4) {
+      position: relative;
+      inset: auto;
+      left: auto;
+      right: auto;
+      top: auto;
+      bottom: auto;
+      width: 100%;
+      transform: none;
+    }
+
+    .xau-waypoint-heading {
+      margin-bottom: 1rem;
+    }
+
+    .xau-waypoint-map {
+      display: grid;
+      gap: 1rem;
+      opacity: 1;
+    }
+
+    .xau-waypoint-path {
+      display: none;
+    }
+
+    .xau-waypoint-card {
+      min-height: auto;
+      opacity: 1;
+    }
+
     .xau-cinema-pin {
       overflow: visible;
     }
@@ -420,9 +768,80 @@ const LANDING_STYLES = `
     .xau-hero-metrics,
     .xau-hero-visual,
     .xau-story-card,
+    .xau-waypoint-heading,
+    .xau-waypoint-map,
+    .xau-waypoint-card,
     .scroll-reveal {
       opacity: 1 !important;
       transform: none !important;
+    }
+
+    .xau-architecture-stage {
+      min-height: auto;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .xau-architecture-path {
+      display: none;
+    }
+
+    .xau-architecture-card,
+    .xau-architecture-card:nth-of-type(1),
+    .xau-architecture-card:nth-of-type(2),
+    .xau-architecture-card:nth-of-type(3),
+    .xau-architecture-card:nth-of-type(4) {
+      position: relative;
+      inset: auto;
+      left: auto;
+      right: auto;
+      top: auto;
+      bottom: auto;
+      width: min(100%, 420px);
+      margin: 0 auto;
+      opacity: 1 !important;
+      transform: none !important;
+      visibility: visible !important;
+    }
+    .xau-waypoints-section {
+      padding: 4rem 1rem;
+    }
+
+    .xau-waypoint-pin {
+      min-height: auto;
+      overflow: visible;
+    }
+
+    .xau-waypoint-stage {
+      display: grid;
+      height: auto;
+      min-height: auto;
+      gap: 1rem;
+    }
+
+    .xau-waypoint-heading,
+    .xau-waypoint-map,
+    .xau-waypoint-card,
+    .xau-waypoint-card:nth-of-type(1),
+    .xau-waypoint-card:nth-of-type(2),
+    .xau-waypoint-card:nth-of-type(3),
+    .xau-waypoint-card:nth-of-type(4) {
+      position: relative;
+      inset: auto;
+      left: auto;
+      right: auto;
+      top: auto;
+      bottom: auto;
+      width: 100%;
+    }
+
+    .xau-waypoint-map {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .xau-waypoint-path {
+      display: none;
     }
   }
 
@@ -528,7 +947,32 @@ const STORY_STEPS = [
     highlight: 'Playbook edge',
   },
 ];
-
+const ARCHITECTURE_NODES = [
+  {
+    icon: Cloud,
+    title: 'Mobile Access',
+    body: 'Review your journal from any device with a responsive workspace built for fast daily check-ins.',
+    tone: 'cyan',
+  },
+  {
+    icon: PlugZap,
+    title: 'Broker Agnostic',
+    body: 'Connect the workflow around MT4 and MT5 activity without locking your process to one broker.',
+    tone: 'coral',
+  },
+  {
+    icon: Database,
+    title: 'Automated Sync',
+    body: 'Closed trades, session context, and notes flow into one structured record for analysis.',
+    tone: 'green',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Secure Review Layer',
+    body: 'Private cloud storage keeps trading history organized, searchable, and ready for deeper review.',
+    tone: 'violet',
+  },
+];
 const METRICS = [
   { value: 'Precision', label: 'Built specifically for traders' },
   { value: '1', label: 'MT5 sync latency' },
@@ -556,6 +1000,7 @@ function useLandingMotion(rootRef, setActiveStory) {
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isDesktopViewport = window.innerWidth >= 1024;
+    let mobileScrollCleanup = () => {};
     gsap.ticker.lagSmoothing(1000, 16);
 
     const lenis = reduceMotion
@@ -611,11 +1056,9 @@ function useLandingMotion(rootRef, setActiveStory) {
         );
 
       gsap.utils.toArray('.scroll-reveal').forEach((item) => {
-        // Find elements to stagger inside this section (eyebrows, headings, bodies, buttons, grid elements)
         const targets = item.querySelectorAll('p, h2, h3, button, .xau-story-mobile-index, .grid > div, .space-y-3 > div');
 
         if (targets.length > 0) {
-          // Set initial state of targets to hidden and offset
           gsap.set(targets, { autoAlpha: 0, y: 24 });
 
           gsap.to(targets, {
@@ -631,7 +1074,6 @@ function useLandingMotion(rootRef, setActiveStory) {
             },
           });
         } else {
-          // Fallback if no specific children: animate the item itself
           gsap.fromTo(
             item,
             { autoAlpha: 0, y: 30 },
@@ -678,60 +1120,128 @@ function useLandingMotion(rootRef, setActiveStory) {
         });
       }
 
-      const waypointPath = document.querySelector('#xau-card-motion-path');
-      const waypointMarker = document.querySelector('.xau-card-motion-marker');
-      const waypointProgress = document.querySelector('.xau-card-motion-progress');
-      if (isDesktopViewport && waypointPath && waypointMarker && waypointProgress) {
-        let pathLength = 1000;
-        try {
-          const totalLen = waypointProgress.getTotalLength();
-          if (totalLen > 0) pathLength = totalLen;
-        } catch (e) {
-          console.warn('Failed to query total path length:', e);
+      const architectureSection = document.querySelector('.xau-architecture-section');
+      const architecturePath = document.querySelector('#xau-architecture-motion-path');
+      const architectureMarker = document.querySelector('.xau-architecture-marker');
+      const architectureProgress = document.querySelector('.xau-architecture-progress');
+      const architectureCards = gsap.utils.toArray('[data-architecture-card]');
+
+      if (architectureSection && architectureCards.length) {
+        let activeArchitectureIndex = -1;
+        const setArchitectureActive = (activeIndex) => {
+          if (activeIndex === activeArchitectureIndex) return;
+          activeArchitectureIndex = activeIndex;
+          architectureCards.forEach((card, cardIndex) => {
+            card.classList.toggle('is-active', cardIndex === activeIndex);
+          });
+          setActiveStory(activeIndex);
+        };
+
+        if (!isDesktopViewport) {
+          const handleMobileScroll = () => {
+            const viewportCenter = window.innerHeight / 2;
+            let closestIndex = 0;
+            let minDistance = Infinity;
+
+            architectureCards.forEach((card, index) => {
+              const rect = card.getBoundingClientRect();
+              const cardCenter = rect.top + rect.height / 2;
+              const distance = Math.abs(cardCenter - viewportCenter);
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestIndex = index;
+              }
+            });
+            setArchitectureActive(closestIndex);
+          };
+
+          handleMobileScroll();
+          window.addEventListener('scroll', handleMobileScroll, { passive: true });
+          mobileScrollCleanup = () => {
+            window.removeEventListener('scroll', handleMobileScroll);
+          };
         }
 
-        gsap.set(waypointProgress, {
-          strokeDasharray: pathLength,
-          strokeDashoffset: pathLength,
-        });
-
-        gsap.set(waypointMarker, {
-          motionPath: {
-            path: waypointPath,
-            align: waypointPath,
-            alignOrigin: [0.5, 0.5],
-            autoRotate: false,
-            start: 0,
-            end: 0,
+        if (isDesktopViewport && architecturePath && architectureMarker && architectureProgress) {
+          let pathLength = 1000;
+          try {
+            const totalLen = architectureProgress.getTotalLength();
+            if (totalLen > 0) pathLength = totalLen;
+          } catch (e) {
+            console.warn('Failed to query architecture path length:', e);
           }
-        });
 
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: '.xau-story-card-stack',
-            start: 'top 40%',
-            end: 'bottom 60%',
-            scrub: 0.9,
-            invalidateOnRefresh: true,
-          }
-        });
+          gsap.set(architectureProgress, {
+            strokeDasharray: pathLength,
+            strokeDashoffset: pathLength,
+          });
+          gsap.set(architectureMarker, {
+            motionPath: {
+              path: architecturePath,
+              autoRotate: false,
+              start: 0,
+              end: 0,
+            },
+          });
+          setArchitectureActive(0);
 
-        tl.to(waypointMarker, {
-          ease: 'none',
-          motionPath: {
-            path: waypointPath,
-            align: waypointPath,
-            alignOrigin: [0.5, 0.5],
-            autoRotate: false,
-          },
-          duration: 1,
-        }, 0);
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: architectureSection,
+              start: 'top 50%',
+              end: 'bottom 50%',
+              scrub: 0.8,
+              invalidateOnRefresh: true,
+              onUpdate: (self) => {
+                const targetProgressMap = [0.17, 0.37, 0.57, 0.80];
+                const progress = self.progress;
+                let activeIndex = 0;
+                for (let i = 0; i < targetProgressMap.length; i++) {
+                  if (progress >= targetProgressMap[i] - 0.10) {
+                    activeIndex = i;
+                  }
+                }
+                setArchitectureActive(activeIndex);
+              },
+            },
+          });
 
-        tl.to(waypointProgress, {
-          strokeDashoffset: 0,
-          ease: 'none',
-          duration: 1,
-        }, 0);
+          tl.to(
+            architectureMarker,
+            {
+              ease: 'none',
+              motionPath: {
+                path: architecturePath,
+                autoRotate: false,
+              },
+              duration: 1,
+            },
+            0
+          )
+          .to(architectureProgress, { strokeDashoffset: 0, ease: 'none', duration: 1 }, 0);
+
+          architectureCards.forEach((card, index) => {
+            const targetProgressMap = [0.17, 0.37, 0.57, 0.80];
+            const targetProgress = targetProgressMap[index];
+            
+            const duration = 0.04;
+            const startProgress = index === 0 ? 0 : Math.max(0, targetProgress - 0.02);
+            
+            gsap.set(card, { autoAlpha: 0.2, scale: 0.94, y: 12 });
+            
+            tl.to(
+              card,
+              {
+                autoAlpha: 1,
+                scale: 1,
+                y: 0,
+                ease: 'power3.out',
+                duration: duration,
+              },
+              startProgress
+            );
+          });
+        }
       }
 
       gsap.utils.toArray('.xau-story-card').forEach((card, index) => {
@@ -774,31 +1284,33 @@ function useLandingMotion(rootRef, setActiveStory) {
         });
       });
 
-      const kineticLeft = document.querySelector('.xau-kinetic-left');
-      const kineticRight = document.querySelector('.xau-kinetic-right');
-      const kineticSection = document.querySelector('.xau-kinetic');
-      if (kineticLeft && kineticRight && kineticSection) {
-        gsap.to(kineticLeft, {
-          x: '-15%',
+      gsap.fromTo('.xau-kinetic-left',
+        { xPercent: 0 },
+        {
+          xPercent: -20,
           ease: 'none',
           scrollTrigger: {
-            trigger: kineticSection,
+            trigger: '.xau-kinetic',
             start: 'top bottom',
             end: 'bottom top',
-            scrub: 1.5,
+            scrub: 0.5,
           },
-        });
-        gsap.to(kineticRight, {
-          x: '5%',
+        }
+      );
+
+      gsap.fromTo('.xau-kinetic-right',
+        { xPercent: -20 },
+        {
+          xPercent: 0,
           ease: 'none',
           scrollTrigger: {
-            trigger: kineticSection,
+            trigger: '.xau-kinetic',
             start: 'top bottom',
             end: 'bottom top',
-            scrub: 1.5,
+            scrub: 0.5,
           },
-        });
-      }
+        }
+      );
 
       const cinemaTrack = document.querySelector('.xau-cinema-track');
       const cinemaPin = document.querySelector('.xau-cinema-pin');
@@ -871,6 +1383,7 @@ function useLandingMotion(rootRef, setActiveStory) {
     ];
 
     return () => {
+      mobileScrollCleanup();
       ctx.revert();
       if (lenis) {
         lenis.off('scroll', syncScrollTrigger);
@@ -1229,7 +1742,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y py-5" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }} aria-hidden="true">
+      <section className="py-5" style={{ background: 'var(--xau-soft)' }} aria-hidden="true">
         <div className="xau-marquee">
           {signals.concat(signals).concat(signals).map((sig, i) => (
             <span key={i} className="mx-8 text-xs font-black uppercase tracking-[0.22em] inline-flex items-center" style={{ color: 'var(--xau-muted)' }}>
@@ -1277,71 +1790,63 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="story" className="xau-story-section px-5 py-20 md:px-8 md:py-28">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr]">
-          <div className="lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)] lg:self-start">
-            <div className="scroll-reveal">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300"></p>
-              <h2 className="mt-4 !text-4xl font-black !leading-tight md:!text-6xl">
-                The review loop that turns noise into <span className="xau-gradient-word">edge.</span>
-              </h2>
-              <p className="mt-5 max-w-xl text-base font-medium leading-7" style={{ color: 'var(--xau-muted)' }}>
-                Scroll through the way a serious gold trader actually improves: plan, capture, analyze, repeat.
-              </p>
-            </div>
+      <section id="story" className="xau-architecture-section" aria-labelledby="architecture-heading">
+        <div className="xau-architecture-shell">
+          <div className="xau-architecture-heading">
+            <span className="xau-architecture-badge">Architecture</span>
+            <h2 id="architecture-heading" className="xau-architecture-title">Built for Scale</h2>
+            <p className="xau-architecture-copy">
+              An institutional-grade pipeline keeps every data layer synced, secured, and ready for analysis.
+            </p>
           </div>
 
-          <div className="xau-story-card-stack space-y-5 lg:space-y-[42vh]">
-            <svg className="xau-card-motion hidden lg:block" viewBox="0 0 128 1000" preserveAspectRatio="none" aria-hidden="true">
+          <div className="xau-architecture-stage" aria-label="XAU Journal architecture path">
+            <svg className="xau-architecture-path" viewBox="0 0 1000 1120" preserveAspectRatio="none" aria-hidden="true">
               <defs>
-                <linearGradient id="xauCardWaypointGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a855f7" />
-                  <stop offset="46%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#06b6d4" />
+                <linearGradient id="xauArchitectureGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c7d9" />
+                  <stop offset="38%" stopColor="#ff754f" />
+                  <stop offset="68%" stopColor="#52c75b" />
+                  <stop offset="100%" stopColor="#a855f7" />
                 </linearGradient>
               </defs>
               <path
-                id="xau-card-motion-path"
-                className="xau-card-motion-line"
-                pathLength="1"
-                d="M86 26 C24 128 112 218 56 330 C18 408 110 508 58 620 C20 704 72 816 98 974"
+                id="xau-architecture-motion-path"
+                className="xau-architecture-track"
+                d="M410 42 C310 82 255 118 246 192 C228 338 670 300 708 414 C752 548 254 506 232 636 C200 812 706 748 682 902 C668 994 608 1030 604 1100"
               />
               <path
-                className="xau-card-motion-progress"
-                pathLength="1"
-                d="M86 26 C24 128 112 218 56 330 C18 408 110 508 58 620 C20 704 72 816 98 974"
+                className="xau-architecture-progress"
+                d="M410 42 C310 82 255 118 246 192 C228 338 670 300 708 414 C752 548 254 506 232 636 C200 812 706 748 682 902 C668 994 608 1030 604 1100"
               />
-              <g className="xau-card-motion-marker">
-                <circle cx="0" cy="0" r="11" fill="var(--xau-bg)" stroke="#67e8f9" strokeWidth="2.5" />
-                <circle cx="0" cy="0" r="4.5" fill="#a855f7" />
+              <g className="xau-architecture-marker">
+                <circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#22c7d9" strokeWidth="3" />
+                <circle cx="0" cy="0" r="3.5" fill="#52c75b" />
               </g>
             </svg>
 
-            {STORY_STEPS.map((step, index) => (
-              <div
-                id={`story-step-${index}`}
-                key={step.eyebrow}
-                className={`xau-story-card xau-glass rounded-[1.75rem] p-6 md:p-8 ${activeStory === index ? 'is-active' : ''}`}
-              >
-                <div className="flex items-start justify-between gap-6">
+            {ARCHITECTURE_NODES.map((node, index) => {
+              const Icon = node.icon;
+              return (
+                <article
+                  key={node.title}
+                  data-architecture-card
+                  data-tone={node.tone}
+                  className={`xau-architecture-card ${activeStory === index ? 'is-active' : ''}`}
+                >
+                  <span className="xau-architecture-icon" aria-hidden="true">
+                    <Icon className="h-5 w-5" />
+                  </span>
                   <div>
-                    <div className="flex items-center gap-3">
-                      <span className="xau-story-mobile-index inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-black transition duration-300 lg:hidden" style={{ borderColor: 'var(--xau-border)', color: 'var(--xau-muted)' }}>
-                        {index + 1}
-                      </span>
-                      <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">{step.eyebrow}</p>
-                    </div>
-                    <h3 className="mt-5 !text-3xl font-black !leading-tight md:!text-4xl">{step.title}</h3>
-                    <p className="mt-5 max-w-2xl text-base font-medium leading-8" style={{ color: 'var(--xau-muted)' }}>{step.body}</p>
+                    <h3>{node.title}</h3>
+                    <p>{node.body}</p>
                   </div>
-                  <span className="hidden text-6xl font-black text-current/10 md:block">0{index + 1}</span>
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
-
       <section className="xau-cinema-section relative z-[1] py-16 md:py-24">
         <div className="scroll-reveal mx-auto mb-10 max-w-7xl px-5 md:px-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-fuchsia-400"></p>
@@ -1471,7 +1976,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t px-6 py-20 md:px-12" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
+      <footer className="relative z-10 px-6 py-20 md:px-12" style={{ background: 'var(--xau-soft)' }}>
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
             <Logo iconSize="w-7 h-7" />

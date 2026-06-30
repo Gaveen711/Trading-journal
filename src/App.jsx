@@ -14,7 +14,6 @@ import { ProFeatureUpsellModal } from './components/ProFeatureUpsellModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
-import CustomCursor from './components/CustomCursor';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -252,7 +251,6 @@ function App() {
   return (
     <ErrorBoundary>
       <PageSEO />
-      <CustomCursor />
       <Suspense fallback={<PageLoader />}>
         {authError ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
