@@ -273,12 +273,6 @@ const FINAL_STYLES = `
   .story-final-card h2 { max-width: 830px; color: white; font-size: clamp(2.4rem, 5.7vw, 5rem) !important; line-height: 1 !important; font-weight: 900 !important; }
   .story-final-card p { max-width: 680px; margin-top: 1rem; color: rgba(255,255,255,0.72); font-weight: 600; line-height: 1.7; }
   .story-footer { padding: 4.5rem 1.5rem; background: var(--story-soft); }
-  .story-footer-grid { width: min(1180px, 100%); margin: 0 auto; display: grid; grid-template-columns: 1.1fr 1fr 0.8fr 1fr; gap: 2rem; }
-  .story-footer h4 { margin-bottom: 1rem; color: var(--story-ink); font-size: 0.75rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; }
-  .story-footer a, .story-footer p { color: var(--story-muted); font-size: 0.9rem; font-weight: 650; line-height: 1.7; transition: color 200ms ease; }
-  .story-footer a:hover { color: var(--story-cyan); }
-  .story-socials { display: flex; gap: 0.6rem; justify-content: flex-end; }
-  .story-socials a { width: 2.5rem; height: 2.5rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--story-border); border-radius: 999px; background: var(--story-card); color: var(--story-ink); }
   .story-scroll-top { position: fixed; right: 1.4rem; bottom: 1.4rem; z-index: 90; width: 2.85rem; height: 2.85rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--story-border); border-radius: 999px; background: var(--story-card); color: var(--story-ink); box-shadow: var(--story-shadow); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); transition: transform 220ms ease, opacity 220ms ease; }
   .story-reveal { will-change: transform, opacity; }
 
