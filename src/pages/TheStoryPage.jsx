@@ -1,1317 +1,701 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate, Link } from 'react-router-dom';
-import { AnimatePresence, motion as Motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import Lenis from 'lenis';
-import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill, Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
-import Logo from '../components/Logo';
-import { PublicNavbar } from '../components/PublicNavbar';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
+import {
+  Activity,
+  ArrowRight,
+  ArrowUp,
+  BarChart3,
+  CalendarDays,
+  CheckCircle2,
+  Cloud,
+  Code2,
+  Database,
+  LineChart,
+  LockKeyhole,
+  NotebookPen,
+  PlugZap,
+  Target,
+  TrendingUp,
+} from 'lucide-react';
 
-gsap.registerPlugin(ScrollTrigger);
+import Logo from '../components/Logo';
+import { PublicNavbar } from '../components/PublicNavbar';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+  ScrollTrigger.config({ ignoreMobileResize: true });
+}
+
+const HERO_IMAGE = '/story-trader-builder.png';
+
+const PROOF_POINTS = [
+  { value: 'XAUUSD', label: 'Built around the way gold actually moves.' },
+  { value: 'MT4/MT5', label: 'Sync-first workflow instead of manual entry.' },
+  { value: 'Solo', label: 'Designed by the trader who needed it.' },
+];
+
+const PROBLEMS = [
+  {
+    icon: Target,
+    title: 'Generic journals got gold wrong',
+    body: 'Pip value, contract sizing, and P&L assumptions break quickly when a tool treats XAUUSD like another FX pair.',
+  },
+  {
+    icon: NotebookPen,
+    title: 'Manual logging killed the review habit',
+    body: 'After a live session, the last thing a trader wants is another hour of spreadsheet cleanup before the real learning starts.',
+  },
+  {
+    icon: Activity,
+    title: 'Useful patterns were buried',
+    body: 'Sessions, drawdown, psychology, and setup quality need to sit together before your process becomes readable.',
+  },
+];
+
+const TIMELINE = [
+  { title: 'Trader first', body: 'The app started from my own XAUUSD review problem, not a generic SaaS roadmap.' },
+  { title: 'Local workflow first', body: 'The first version was practical: capture the trade, preserve the context, and make review faster.' },
+  { title: 'Product second', body: 'Once the workflow proved useful, I turned it into a product other gold traders could use.' },
+];
+
+const PRODUCT_STEPS = [
+  {
+    key: 'Sync',
+    color: '#65ff57',
+    glow: 'rgba(101, 255, 87, 0.58)',
+    icon: PlugZap,
+    title: 'Sync the trade record',
+    body: 'Closed trades can flow into the journal so review starts from structured data instead of hand-entered rows.',
+    rows: [['Source', 'MT4 / MT5'], ['State', 'Closed trades'], ['Result', 'Less admin']],
+  },
+  {
+    key: 'Review',
+    color: '#5edfff',
+    glow: 'rgba(94, 223, 255, 0.58)',
+    icon: NotebookPen,
+    title: 'Add the trading context',
+    body: 'Notes, screenshots, session labels, and psychology sit beside the trade instead of living in scattered files.',
+    rows: [['Context', 'Setup + session'], ['Mindset', 'Pre-trade notes'], ['Evidence', 'Screenshots']],
+  },
+  {
+    key: 'Analyze',
+    color: '#ffb86b',
+    glow: 'rgba(255, 184, 107, 0.56)',
+    icon: BarChart3,
+    title: 'Read the patterns clearly',
+    body: 'Profit factor, drawdown, win rate, session behavior, and calendar rhythm become easier to compare.',
+    rows: [['Metrics', 'PF / win rate'], ['Risk', 'Drawdown'], ['Pattern', 'Session edge']],
+  },
+  {
+    key: 'Improve',
+    color: '#b58cff',
+    glow: 'rgba(181, 140, 255, 0.56)',
+    icon: TrendingUp,
+    title: 'Turn review into rules',
+    body: 'The final output is not another dashboard. It is a cleaner playbook for your next XAUUSD session.',
+    rows: [['Output', 'Playbook'], ['Action', 'Keep / fix / stop'], ['Goal', 'Cleaner execution']],
+  },
+];
+
+const FEATURES = [
+  { icon: Cloud, title: 'Cloud-backed review', body: 'Your history is available when you need it, not trapped in one local spreadsheet.' },
+  { icon: LockKeyhole, title: 'Private workspace', body: 'Trading data is sensitive, so the experience is designed around focus and control.' },
+  { icon: LineChart, title: 'XAU-first metrics', body: 'The product is intentionally specialized instead of trying to become a generic all-market tracker.' },
+  { icon: Code2, title: 'Builder-owned roadmap', body: 'Features are filtered by real trading utility, not investor pressure or demo-friendly noise.' },
+  { icon: Database, title: 'Structured records', body: 'Trades, notes, screenshots, sessions, and outcomes stay connected for review.' },
+  { icon: CalendarDays, title: 'Calendar rhythm', body: 'Daily performance becomes easier to inspect when the whole month is visible.' },
+];
+
+
+const PRINCIPLES = [
+  'One instrument done properly beats thirty instruments done badly.',
+  'Every feature should reduce review friction or expose a real trading pattern.',
+  'The product should feel like a quiet trading desk, not a noisy marketing dashboard.',
+  'I build it as the person who has to trust it after a live session.',
+];
 
 const STYLES = `
-  .xj-story-container {
-    --violet: #00E5FF;
-    --violet-light: #FF5A36;
-    --violet-faint: rgba(0, 229, 255, 0.08);
-    --gold: #FF5A36;
-    font-family: 'Poppins', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    position: relative;
-    overflow: hidden;
-  }
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  .lenis.lenis-stopped { overflow: hidden; }
 
-
-  /* ── AMBIENT BLOBS (Pre-softened, no expensive blur filters) ── */
-  .xj-blob {
-    position: fixed;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .xj-blob-1 {
-    width: 700px; height: 700px;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.22) 0%, rgba(0, 229, 255, 0.08) 40%, transparent 70%);
-    top: -200px; right: -200px;
-  }
-  .xj-blob-2 {
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(255, 90, 54, 0.18) 0%, rgba(255, 90, 54, 0.06) 40%, transparent 70%);
-    bottom: 10%; left: -150px;
-  }
-  .xj-blob-3 {
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.16) 0%, rgba(0, 229, 255, 0.05) 45%, transparent 70%);
-    top: 40%; right: 8%;
-  }
-
-  /* ── PROGRESS BAR ── */
-  #xj-progress-bar {
-    position: fixed;
-    top: 0; left: 0;
-    height: 2.5px;
-    background: linear-gradient(90deg, var(--violet), var(--gold));
-    width: 100%;
-    z-index: 1000;
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-
-  /* ── HERO ── */
-  .xj-hero {
+  .story-page {
+    --story-bg: #f8fbff;
+    --story-ink: #08111f;
+    --story-muted: #53647c;
+    --story-soft: rgba(8, 17, 31, 0.055);
+    --story-border: rgba(8, 17, 31, 0.1);
+    --story-card: rgba(255, 255, 255, 0.78);
+    --story-card-solid: #ffffff;
+    --story-shadow: 0 24px 80px rgba(15, 23, 42, 0.1);
+    --story-cyan: #00c8e8;
+    --story-orange: #ff6b43;
+    --story-green: #24c66d;
+    --story-violet: #8b5cf6;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 160px 40px 100px;
-    max-width: 1100px;
-    margin: 0 auto;
+    background:
+      radial-gradient(circle at 10% 8%, rgba(0, 200, 232, 0.16), transparent 32rem),
+      radial-gradient(circle at 90% 14%, rgba(255, 107, 67, 0.11), transparent 28rem),
+      linear-gradient(180deg, #ffffff 0%, var(--story-bg) 42%, #ffffff 100%);
+    color: var(--story-ink);
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
     position: relative;
-  }
-  .xj-hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--violet);
-    background: var(--violet-faint);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 7px 18px;
-    margin-bottom: 40px;
-    opacity: 0;
-    width: fit-content;
-  }
-  .xj-badge-dot {
-    width: 6px; height: 6px;
-    background: var(--violet);
-    border-radius: 50%;
-  }
-  .xj-hero-headline {
-    font-family: 'Poppins', sans-serif;
-    font-size: clamp(64px, 10vw, 130px);
-    line-height: 1.02;
-    letter-spacing: -0.025em;
-    color: var(--ink) !important;
-    margin-bottom: 32px;
-    overflow: hidden;
-    opacity: 0;
-  }
-  .xj-hero-headline .char.aurora-text {
-    font-style: italic;
-    display: inline-block;
-    background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%) !important;
-    background-size: 200% 100% !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    color: transparent !important;
-    animation: aurora-shift 7s linear infinite !important;
-  }
-  .xj-hero-headline .char:not(.aurora-text) {
-    display: inline-block !important;
-    transform: translateY(110%);
-    color: var(--ink) !important;
-    background: none !important;
-    -webkit-text-fill-color: initial !important;
-    background-clip: border-box !important;
-    -webkit-background-clip: border-box !important;
-  }
-  .xj-hero-sub {
-    font-size: 19px;
-    color: var(--muted);
-    line-height: 1.75;
-    max-width: 560px;
-    font-weight: 300;
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  .xj-hero-scroll-hint {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    opacity: 0;
-  }
-  .xj-hero-scroll-hint span {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #999;
-  }
-  .xj-scroll-arrow {
-    width: 1px;
-    height: 40px;
-    background: linear-gradient(to bottom, var(--violet), transparent);
-    animation: xjScrollArrow 1.6s ease infinite;
-  }
-  @keyframes xjScrollArrow {
-    0% { transform: scaleY(0); transform-origin: top; opacity: 0; }
-    40% { transform: scaleY(1); transform-origin: top; opacity: 1; }
-    70% { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
-    100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+    overflow: clip;
   }
 
-  /* ── MARQUEE ── */
-  .xj-marquee-wrap {
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    padding: 20px 0;
-    background: rgba(124,58,237,0.03);
-    position: relative;
-    z-index: 10;
-  }
-  .xj-marquee-track {
-    display: flex;
-    gap: 0;
-    white-space: nowrap;
-    animation: xjMarquee 22s linear infinite;
-  }
-  .xj-marquee-track:hover { animation-play-state: paused; }
-  @keyframes xjMarquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-  .xj-marquee-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 16px;
-    padding: 0 32px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .xj-marquee-sep {
-    width: 4px; height: 4px;
-    background: var(--violet);
-    border-radius: 50%;
-    flex-shrink: 0;
+  .dark .story-page {
+    --story-bg: #030507;
+    --story-ink: #f7fbff;
+    --story-muted: rgba(247, 251, 255, 0.68);
+    --story-soft: rgba(255, 255, 255, 0.055);
+    --story-border: rgba(255, 255, 255, 0.1);
+    --story-card: rgba(255, 255, 255, 0.055);
+    --story-card-solid: #070a0f;
+    --story-shadow: 0 24px 80px rgba(0, 0, 0, 0.58);
+    background:
+      radial-gradient(circle at 10% 8%, rgba(0, 200, 232, 0.14), transparent 30rem),
+      radial-gradient(circle at 90% 14%, rgba(139, 92, 246, 0.11), transparent 30rem),
+      linear-gradient(180deg, #000000 0%, var(--story-bg) 48%, #000000 100%);
   }
 
-  /* ── GENERIC CONTENT SECTION ── */
-  .xj-content-section {
-    max-width: 820px;
-    margin: 0 auto;
-    padding: 120px 40px;
+  .story-page > section, .story-page > footer { position: relative; z-index: 1; }
+  .story-grid-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(var(--story-soft) 1px, transparent 1px), linear-gradient(90deg, var(--story-soft) 1px, transparent 1px); background-size: 80px 80px; mask-image: linear-gradient(to bottom, black 0%, transparent 78%); }
+  .story-progress { position: fixed; inset: 0 auto auto 0; width: 100%; height: 3px; transform: scaleX(0); transform-origin: left; z-index: 1000; background: linear-gradient(90deg, var(--story-cyan), var(--story-orange), var(--story-violet)); }
+  .story-shell { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; }
+
+  .story-kicker, .story-section-kicker { display: inline-flex; align-items: center; gap: 0.6rem; width: fit-content; border: 1px solid var(--story-border); border-radius: 999px; background: var(--story-card); padding: 0.5rem 0.85rem; color: var(--story-cyan); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); }
+  .story-kicker::before, .story-section-kicker::before { content: ''; width: 0.45rem; height: 0.45rem; border-radius: 999px; background: currentColor; box-shadow: 0 0 16px currentColor; }
+
+  .story-hero { min-height: auto; display: grid; align-items: center; padding: clamp(8rem, 11vw, 10rem) 0 clamp(4.5rem, 8vw, 6.5rem); }
+  .story-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: clamp(2rem, 5vw, 3.5rem); }
+  .story-hero-copy-block { max-width: 960px; margin: 0 auto; display: grid; justify-items: center; text-align: center; }
+  .story-hero-title { margin-top: 1.35rem; max-width: 940px; color: var(--story-ink); font-size: clamp(2.55rem, 5.4vw, 5rem) !important; line-height: 1.02 !important; font-weight: 900 !important; letter-spacing: 0 !important; text-wrap: balance; }
+  .story-gradient-text, .story-aurora-word { background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; animation: storyGradientText 7s linear infinite; }
+  .story-aurora-word { display: inline-block; }
+  @keyframes storyGradientText {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .story-hero-copy, .story-section-copy { color: var(--story-muted); font-weight: 600; line-height: 1.75; }
+  .story-hero-copy { margin-top: 1.35rem; max-width: 720px; font-size: clamp(1rem, 1.35vw, 1.12rem); }
+  .story-hero-actions { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
+  .story-primary, .story-secondary { min-height: 3rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; border-radius: 999px; padding: 0 1.25rem; font-size: 0.86rem; font-weight: 900; transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease; }
+  .story-primary { border: 1px solid rgba(0, 200, 232, 0.42); background: linear-gradient(135deg, var(--story-cyan), var(--story-violet)); color: white; box-shadow: 0 18px 48px rgba(0, 200, 232, 0.22); }
+  .story-secondary { border: 1px solid var(--story-border); background: var(--story-card); color: var(--story-ink); }
+  .story-primary:hover, .story-secondary:hover { transform: translateY(-2px); }
+  .story-hero-proof { margin-top: 2rem; width: min(840px, 100%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+  .story-proof-card, .story-glass-card, .story-feature-card, .story-builder-card { border: 1px solid var(--story-border); background: var(--story-card); box-shadow: var(--story-shadow); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); }
+  .story-proof-card { border-radius: 1.1rem; padding: 1rem; }
+  .story-proof-card strong { display: block; color: var(--story-ink); font-size: 1.08rem; font-weight: 900; }
+  .story-proof-card span { display: block; margin-top: 0.25rem; color: var(--story-muted); font-size: 0.74rem; font-weight: 700; line-height: 1.35; }
+
+  .story-hero-visual { position: relative; width: min(1060px, 100%); min-height: auto; margin: 0 auto; }
+  .story-hero-frame { position: relative; top: auto; overflow: hidden; border: 1px solid var(--story-border); border-radius: 1.6rem; background: #070a0f; box-shadow: 0 30px 90px rgba(0, 0, 0, 0.26); transform-style: preserve-3d; }
+  .story-hero-frame img { display: block; width: 100%; min-height: clamp(320px, 38vw, 500px); object-fit: cover; opacity: 0.92; }
+  .story-hero-frame::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.82) 100%), radial-gradient(circle at 18% 20%, rgba(0, 200, 232, 0.28), transparent 24rem); pointer-events: none; }
+  .story-visual-caption { position: absolute; left: 1.2rem; right: 1.2rem; bottom: 1.2rem; z-index: 2; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 1.2rem; background: rgba(4, 8, 12, 0.74); padding: 1rem; color: white; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); }
+  .story-visual-caption p { margin-top: 0.35rem; color: rgba(255, 255, 255, 0.68); font-size: 0.78rem; line-height: 1.5; font-weight: 600; }
+
+  .story-section { padding: clamp(4.5rem, 9vw, 8rem) 0; }
+  .story-section-head { max-width: 720px; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .story-section-title { margin-top: 1rem; color: var(--story-ink); font-size: clamp(2.3rem, 5vw, 4.7rem) !important; line-height: 1.02 !important; font-weight: 900 !important; letter-spacing: 0 !important; }
+  .story-section-copy { margin-top: 1rem; font-size: clamp(1rem, 1.45vw, 1.12rem); }
+  .story-problem-grid, .story-builder-grid, .story-philosophy { display: grid; grid-template-columns: 0.92fr 1.08fr; gap: 1rem; align-items: stretch; }
+  .story-glass-card, .story-builder-card { border-radius: 1.5rem; padding: clamp(1.25rem, 3vw, 2rem); }
+  .story-quote { min-height: 100%; display: flex; flex-direction: column; justify-content: space-between; background: radial-gradient(circle at 0% 0%, rgba(0, 200, 232, 0.14), transparent 22rem), var(--story-card); }
+  .story-quote blockquote { color: var(--story-ink); font-size: clamp(1.45rem, 3vw, 2.4rem); line-height: 1.22; font-weight: 900; }
+  .story-quote p { margin-top: 1.4rem; color: var(--story-muted); font-weight: 600; line-height: 1.7; }
+  .story-problem-list, .story-timeline, .story-principles { display: grid; gap: 1rem; }
+  .story-mini-card { display: grid; grid-template-columns: auto 1fr; gap: 1rem; border-radius: 1.25rem; padding: 1.15rem; }
+  .story-icon { display: inline-flex; width: 2.55rem; height: 2.55rem; align-items: center; justify-content: center; border-radius: 0.9rem; background: rgba(0, 200, 232, 0.11); color: var(--story-cyan); }
+  .story-mini-card h3, .story-feature-card h3, .story-builder-card h3 { color: var(--story-ink); font-size: 1.08rem !important; line-height: 1.2 !important; font-weight: 900 !important; }
+  .story-mini-card p, .story-feature-card p, .story-builder-card p { margin-top: 0.45rem; color: var(--story-muted); font-size: 0.9rem; line-height: 1.62; font-weight: 600; }
+  .story-builder-grid { grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); align-items: start; }
+  .story-builder-card { position: sticky; top: 6.5rem; }
+  .story-avatar { width: 4.5rem; height: 4.5rem; display: grid; place-items: center; border-radius: 1.25rem; color: white; background: linear-gradient(135deg, var(--story-cyan), var(--story-violet)); font-size: 1.6rem; font-weight: 900; box-shadow: 0 16px 48px rgba(0, 200, 232, 0.22); }
+  .story-builder-card h3 { margin-top: 1.25rem; font-size: 1.55rem !important; }
+  .story-timeline-item { position: relative; border-left: 1px solid var(--story-border); padding-left: 1.25rem; }
+  .story-timeline-item::before { content: ''; position: absolute; left: -0.38rem; top: 0.3rem; width: 0.72rem; height: 0.72rem; border-radius: 999px; background: var(--story-cyan); box-shadow: 0 0 18px rgba(0, 200, 232, 0.56); }
+`;
+
+const SHOWCASE_STYLES = `
+  .story-showcase { padding: clamp(4rem, 8vw, 7rem) 0; }
+  .story-showcase-title { color: var(--story-ink); font-size: clamp(2.6rem, 7vw, 6rem) !important; line-height: 0.95 !important; font-weight: 900 !important; letter-spacing: 0 !important; }
+  .story-showcase-stage { --pin-progress: 0; --indicator-x: 0%; --card-shift: 0px; --step-color: #65ff57; --step-glow: rgba(101, 255, 87, 0.58); --pin-surface: #f6fbff; --pin-surface-2: #ffffff; --pin-text: #08111f; --pin-muted: rgba(8, 17, 31, 0.6); --pin-card: #ffffff; --pin-row: rgba(0, 200, 232, 0.08); position: relative; min-height: min(78vh, 760px); margin-top: 1.4rem; overflow: clip; border: 0; border-radius: 0; background: transparent; color: var(--pin-text); box-shadow: none; transition: color 260ms ease; }
+  .dark .story-showcase-stage { --pin-surface: #080c0d; --pin-surface-2: #091314; --pin-text: #fffceb; --pin-muted: rgba(255, 252, 235, 0.52); --pin-card: #081010; --pin-row: rgba(94, 223, 255, 0.08); border-color: transparent; box-shadow: none; }
+  .story-showcase-stage::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 72% 50%, var(--step-glow), transparent 24rem), linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 46%); opacity: 0.18; pointer-events: none; transition: background 260ms ease; }
+  .dark .story-showcase-stage::before { opacity: 0.24; background: radial-gradient(circle at 72% 50%, var(--step-glow), transparent 24rem), linear-gradient(90deg, rgba(36, 198, 109, 0.045), transparent 45%); }
+  .story-pin-grid { position: relative; z-index: 1; min-height: inherit; display: grid; grid-template-columns: minmax(240px, 0.72fr) minmax(320px, 1fr); align-items: center; gap: clamp(2rem, 8vw, 7rem); padding: clamp(2rem, 7vw, 5.5rem); }
+  .story-pin-copy { border-left: 2px solid var(--step-color); padding-left: 1rem; color: var(--pin-text); font-size: clamp(1.55rem, 3vw, 2.6rem); line-height: 1.32; font-weight: 700; transition: border-color 260ms ease, color 260ms ease; }
+  .story-pin-copy span { display: block; color: var(--pin-text); transition: color 260ms ease, text-shadow 260ms ease; }
+  .story-pin-copy .story-pin-step-name { color: var(--step-color); text-shadow: 0 0 18px var(--step-glow); }
+  .story-pin-eyebrow { margin-bottom: 0.75rem; color: var(--pin-muted); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; }
+  .story-pin-card-wrap { display: grid; justify-items: center; transform: translateX(var(--card-shift)); transition: transform 300ms ease; }
+  .story-pin-card { position: relative; width: min(360px, 80vw); min-height: 500px; display: flex; flex-direction: column; justify-content: space-between; border: 3px solid var(--step-color); border-radius: 1.1rem; background: var(--pin-card); color: var(--step-color); padding: 1.25rem; box-shadow: 0 0 0 1px var(--step-glow), 0 24px 80px var(--step-glow); transition: border-color 260ms ease, box-shadow 260ms ease, background 260ms ease, color 260ms ease; }
+  .story-pin-card::before, .story-pin-card::after { content: ''; position: absolute; width: 2rem; height: 2rem; background: var(--step-color); clip-path: polygon(50% 0, 64% 36%, 100% 50%, 64% 64%, 50% 100%, 36% 64%, 0 50%, 36% 36%); filter: drop-shadow(0 0 14px var(--step-glow)); transition: background 260ms ease, filter 260ms ease; }
+  .story-pin-card::before { left: 2.2rem; bottom: 5.2rem; }
+  .story-pin-card::after { right: 2.2rem; bottom: 5.2rem; }
+  .story-card-top, .story-card-bottom { display: flex; align-items: center; justify-content: center; color: var(--step-color); font-size: 1rem; font-weight: 900; text-align: center; transition: color 260ms ease; }
+  .story-card-bottom { transform: rotate(180deg); }
+  .story-card-number { display: grid; place-items: center; min-height: 190px; color: var(--step-color); font-size: clamp(5rem, 12vw, 8rem); line-height: 1; font-weight: 900; text-shadow: 0 0 28px var(--step-glow); transition: color 260ms ease, text-shadow 260ms ease; }
+  .story-card-star { position: absolute; top: 8rem; left: 50%; width: 2.2rem; height: 2.2rem; transform: translateX(-50%); background: var(--step-color); clip-path: polygon(50% 0, 64% 36%, 100% 50%, 64% 64%, 50% 100%, 36% 64%, 0 50%, 36% 36%); filter: drop-shadow(0 0 14px var(--step-glow)); transition: background 260ms ease, filter 260ms ease; }
+  .story-card-side { position: absolute; top: 50%; color: var(--step-color); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.04em; writing-mode: vertical-rl; transform: translateY(-50%); transition: color 260ms ease; }
+  .story-card-side.left { left: 0.55rem; }
+  .story-card-side.right { right: 0.55rem; }
+  .story-card-body { color: var(--pin-muted); font-weight: 750; line-height: 1.55; }
+  .story-card-rows { display: grid; gap: 0.55rem; margin-top: 0.75rem; }
+  .story-card-row { display: grid; grid-template-columns: 0.78fr 1fr; gap: 0.75rem; border-radius: 0.75rem; background: var(--pin-row); padding: 0.65rem 0.8rem; }
+  .story-card-row span { color: var(--pin-muted); font-size: 0.72rem; font-weight: 800; }
+  .story-card-row strong { color: var(--pin-text); font-size: 0.76rem; font-weight: 900; text-align: right; }
+  .story-pin-card > div:not([class]) { padding-inline: 1.35rem; }
+  .story-pin-scrollbar { position: absolute; top: 0; right: 0; width: 0.55rem; height: 100%; background: transparent; }
+  .story-pin-thumb { position: absolute; top: 0; left: 0; right: 0; height: 26%; border-radius: 999px; background: var(--step-color); box-shadow: 0 0 18px var(--step-glow); transform: translateY(calc(var(--pin-progress) * 285%)); transition: background 260ms ease, box-shadow 260ms ease; }
+  .story-lateral-indicator { position: absolute; left: clamp(2rem, 7vw, 5.5rem); right: clamp(2rem, 7vw, 5.5rem); bottom: 1.5rem; z-index: 2; }
+
+  .story-lateral-progress { position: absolute; left: 0; top: 0; bottom: 0; width: 25%; border-radius: 999px; background: var(--step-color); box-shadow: 0 0 20px var(--step-glow); opacity: 0.28; transform: translateX(var(--indicator-x)); transition: transform 260ms ease, background 260ms ease, box-shadow 260ms ease; }
+  .story-lateral-steps { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+  .story-lateral-step { min-height: 2.5rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--pin-muted); font-size: 0.76rem; font-weight: 900; transition: color 220ms ease, border-color 220ms ease, background 220ms ease; }
+  .story-lateral-step.is-active { color: var(--step-color); border-color: transparent; background: transparent; text-shadow: 0 0 14px var(--step-glow); }
+
+  .story-feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .story-feature-card { border-radius: 1.35rem; padding: 1.25rem; }
+  .story-principle { display: flex; gap: 0.8rem; align-items: flex-start; border-radius: 1rem; padding: 1rem; background: var(--story-soft); color: var(--story-muted); font-weight: 650; line-height: 1.55; }
+  .story-principle svg { color: var(--story-green); margin-top: 0.16rem; flex: 0 0 auto; }
+`;
+
+const FINAL_STYLES = `
+  .story-final { padding: clamp(5rem, 9vw, 8rem) 0; }
+  .story-final-card { overflow: hidden; border-radius: 2rem; background: radial-gradient(circle at 16% 20%, rgba(0, 200, 232, 0.26), transparent 26rem), radial-gradient(circle at 88% 20%, rgba(255, 107, 67, 0.2), transparent 24rem), #071013; color: white; padding: clamp(2rem, 6vw, 4rem); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3); }
+  .story-final-card h2 { max-width: 830px; color: white; font-size: clamp(2.4rem, 5.7vw, 5rem) !important; line-height: 1 !important; font-weight: 900 !important; }
+  .story-final-card p { max-width: 680px; margin-top: 1rem; color: rgba(255,255,255,0.72); font-weight: 600; line-height: 1.7; }
+  .story-footer { padding: 4.5rem 1.5rem; background: var(--story-soft); }
+  .story-footer-grid { width: min(1180px, 100%); margin: 0 auto; display: grid; grid-template-columns: 1.1fr 1fr 0.8fr 1fr; gap: 2rem; }
+  .story-footer h4 { margin-bottom: 1rem; color: var(--story-ink); font-size: 0.75rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; }
+  .story-footer a, .story-footer p { color: var(--story-muted); font-size: 0.9rem; font-weight: 650; line-height: 1.7; transition: color 200ms ease; }
+  .story-footer a:hover { color: var(--story-cyan); }
+  .story-socials { display: flex; gap: 0.6rem; justify-content: flex-end; }
+  .story-socials a { width: 2.5rem; height: 2.5rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--story-border); border-radius: 999px; background: var(--story-card); color: var(--story-ink); }
+  .story-scroll-top { position: fixed; right: 1.4rem; bottom: 1.4rem; z-index: 90; width: 2.85rem; height: 2.85rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--story-border); border-radius: 999px; background: var(--story-card); color: var(--story-ink); box-shadow: var(--story-shadow); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); transition: transform 220ms ease, opacity 220ms ease; }
+  .story-reveal { will-change: transform, opacity; }
+
+  @media (max-width: 1023px) {
+    .story-problem-grid, .story-builder-grid, .story-philosophy, .story-footer-grid { grid-template-columns: 1fr; }
+    .story-hero { min-height: auto; }
+    .story-hero-visual { min-height: auto; }
+    .story-hero-frame img { min-height: 380px; }
+    .story-builder-card { position: relative; top: auto; }
+    .story-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .story-showcase-stage { min-height: auto; }
+    .story-showcase { overflow: clip; }
+    .story-pin-grid { min-height: auto; grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem 1.5rem 7rem; }
+    .story-pin-card-wrap { justify-items: center; transform: none !important; }
+    .story-lateral-indicator { left: 1rem; right: 1rem; }
+    .story-lateral-step { font-size: 0.68rem; }
+    .story-socials { justify-content: flex-start; }
   }
 
-  .xj-section-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--violet);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    opacity: 0;
-  }
-  .xj-section-label::before {
-    content: '';
-    width: 28px;
-    height: 1px;
-    background: var(--violet);
-  }
-
-  .xj-split-h2 {
-    font-family: 'Poppins', sans-serif;
-    font-size: clamp(36px, 5vw, 56px);
-    line-height: 1.12;
-    color: var(--ink);
-    margin-bottom: 32px;
-    letter-spacing: -0.015em;
-  }
-  .xj-split-h2 em {
-    font-style: italic;
-    background: linear-gradient(135deg, #FF5A36, #8B5CF6, #00D4FF, #FF5A36);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: aurora-shift 6s ease infinite;
-    display: inline-block;
-  }
-  .xj-split-h2 .line { overflow: hidden; display: block; }
-  .xj-split-h2 .inner { display: block; transform: translateY(100%); }
-
-  p.xj-body-copy {
-    font-size: 17px;
-    color: var(--muted);
-    line-height: 1.85;
-    margin-bottom: 24px;
-    font-weight: 300;
+  @media (max-width: 640px) {
+    .story-shell { width: min(100% - 1.25rem, 1180px); }
+    .story-hero { padding-top: 6.8rem; }
+    .story-hero-title { font-size: clamp(2.15rem, 10.8vw, 3.15rem) !important; line-height: 1.04 !important; }
+    .story-hero-proof, .story-feature-grid { grid-template-columns: 1fr; }
+    .story-hero-actions { flex-direction: column; }
+    .story-primary, .story-secondary { width: 100%; }
+    .story-hero-frame img { min-height: 280px; }
+    .story-section, .story-showcase { padding: 4rem 0; }
+    .story-showcase-stage { border-radius: 0; margin-inline: 0; min-height: auto; }
+    .story-pin-grid { padding: 1.2rem 0 8.5rem; }
+    .story-pin-copy { font-size: 1.6rem; }
+    .story-pin-card { width: min(100%, 320px); min-height: 420px; padding: 1rem; }
+    .story-card-number { min-height: 140px; }
+    .story-glass-card, .story-builder-card, .story-feature-card { border-radius: 1.2rem; }
+    .story-lateral-indicator { left: 0; right: 0; bottom: 0.75rem; }
+    .story-lateral-progress { display: none; }
+    .story-lateral-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
+    .story-lateral-step { min-height: 2.35rem; background: rgba(255,255,255,0.04); }
+    .story-lateral-step svg { display: inline-flex; }
+    .story-footer { padding: 3rem 1rem; }
   }
 
-  .reveal-up {
-    opacity: 0;
-  }
-
-  /* ── PULL QUOTE ── */
-  .xj-pull-quote {
-    position: relative;
-    margin: 56px 0;
-    padding: 36px 40px 36px 48px;
-    border-left: 3px solid var(--violet);
-    background: linear-gradient(90deg, var(--violet-faint), transparent);
-    border-radius: 0 16px 16px 0;
-    overflow: hidden;
-  }
-  .xj-pull-quote::before {
-    content: '"';
-    position: absolute;
-    top: -20px;
-    left: 16px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 120px;
-    color: var(--violet);
-    opacity: 0.1;
-    line-height: 1;
-    pointer-events: none;
-  }
-  .xj-pull-quote p {
-    font-family: 'Poppins', sans-serif;
-    font-size: clamp(22px, 3vw, 30px);
-    font-style: italic;
-    color: var(--ink);
-    line-height: 1.45;
-    margin: 0;
-    position: relative;
-    z-index: 1;
-  }
-
-  /* ── STATS TICKER ── */
-  .xj-stats-row {
-    display: flex;
-    gap: 0;
-    margin: 60px 0;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    overflow: hidden;
-    background: var(--card-bg);
-  }
-  .xj-stat-item {
-    flex: 1;
-    padding: 36px 28px;
-    text-align: center;
-    border-right: 1px solid var(--border);
-  }
-  .xj-stat-item:last-child { border-right: none; }
-  .xj-stat-num {
-    font-family: 'Poppins', sans-serif;
-    font-size: 60px;
-    color: var(--violet);
-    line-height: 1;
-    display: block;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-    font-weight: 800;
-  }
-  .xj-stat-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #999;
-  }
-
-  /* ── HORIZONTAL SCROLL PANEL ── */
-  .xj-hscroll-outer {
-    position: relative;
-    z-index: 1;
-  }
-  .xj-hscroll-pin::before,
-  .xj-hscroll-pin::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 150px;
-    z-index: 10;
-    pointer-events: none;
-  }
-  .xj-hscroll-pin::before {
-    top: 0;
-    background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
-  }
-  .xj-hscroll-pin::after {
-    bottom: 0;
-    background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
-  }
-  .xj-hscroll-pin {
-    overflow: hidden;
-    position: relative;
-  }
-  .xj-hscroll-track {
-    display: flex;
-    width: max-content;
-  }
-  .xj-hscroll-panel {
-    width: 100vw;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 80px;
-    flex-shrink: 0;
-    background-image: 
-      linear-gradient(var(--hscroll-grid) 1px, transparent 1px), 
-      linear-gradient(90deg, var(--hscroll-grid) 1px, transparent 1px);
-    background-size: 60px 60px;
-    background-position: center;
-  }
-  .xj-hscroll-panel:nth-child(1) { background-color: var(--hscroll-bg1); }
-  .xj-hscroll-panel:nth-child(2) { background-color: var(--hscroll-bg2); }
-  .xj-hscroll-panel:nth-child(3) { background-color: var(--hscroll-bg3); }
-  .xj-hscroll-panel:nth-child(4) { background-color: var(--hscroll-bg4); }
-
-  .xj-panel-inner {
-    background: var(--hscroll-card-bg);
-    border: 1px solid var(--hscroll-card-border);
-    border-radius: 20px;
-    padding: 60px 50px;
-    box-shadow: var(--hscroll-card-shadow);
-    text-align: center;
-    max-width: 640px;
-    position: relative;
-  }
-  .xj-panel-number {
-    font-family: 'Poppins', sans-serif;
-    font-size: 140px;
-    line-height: 1;
-    margin-bottom: 24px;
-    letter-spacing: -0.04em;
-    font-weight: 900;
-  }
-  .xj-panel-inner h3 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 38px;
-    line-height: 1.15;
-    margin-bottom: 24px;
-    letter-spacing: -0.015em;
-    color: var(--hscroll-text-title);
-    font-weight: 800;
-  }
-  .xj-panel-inner p {
-    font-size: 16px;
-    color: var(--hscroll-text-body);
-    line-height: 1.8;
-    font-weight: 400;
-  }
-
-  .xj-hscroll-panel:nth-child(1) .xj-panel-number { color: #c4b5fd; text-shadow: 0 0 50px rgba(139,92,246,0.5); }
-  .xj-hscroll-panel:nth-child(2) .xj-panel-number { color: #fde68a; text-shadow: 0 0 50px rgba(245,158,11,0.5); }
-  .xj-hscroll-panel:nth-child(3) .xj-panel-number { color: #93c5fd; text-shadow: 0 0 50px rgba(59,130,246,0.5); }
-  .xj-hscroll-panel:nth-child(4) .xj-panel-number { color: #86efac; text-shadow: 0 0 50px rgba(34,197,94,0.5); }
-
-  /* progress pills for hscroll */
-  .xj-hscroll-nav {
-    position: sticky;
-    bottom: 40px;
-    z-index: 20;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    pointer-events: none;
-    margin-top: -60px;
-  }
-  .xj-hpill {
-    width: 24px; height: 4px;
-    background: rgba(124,58,237,0.2);
-    border-radius: 2px;
-    transition: width 0.4s ease, background 0.4s ease;
-  }
-  .xj-hpill.active { width: 40px; background: var(--violet); }
-
-  /* ── FEATURE CARDS ── */
-  .xj-features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 56px;
-  }
-  @media (max-width: 640px) { .xj-features-grid { grid-template-columns: 1fr; } }
-
-  .xj-fcard {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 36px 28px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease;
-    will-change: transform;
-  }
-  .xj-fcard::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(90, 169, 230, 0.06) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  .xj-fcard:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 24px 48px rgba(90, 169, 230, 0.14); }
-  .xj-fcard:hover::before { opacity: 1; }
-  .xj-fcard-icon { font-size: 30px; margin-bottom: 20px; display: block; }
-  .xj-fcard h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
-  .xj-fcard p { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
-  .xj-fcard-tag {
-    position: absolute;
-    top: 20px; right: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--violet);
-    background: var(--violet-faint);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 4px 10px;
-  }
-
-  /* ── BUILDER SECTION ── */
-  .xj-builder-section {
-    background: var(--builder-bg);
-    color: #fff;
-    padding: 140px 40px;
-    position: relative;
-    overflow: hidden;
-    border-radius: 32px;
-    margin: 40px 0;
-  }
-  .xj-builder-section::before {
-    content: '';
-    position: absolute;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(90, 169, 230, 0.3) 0%, transparent 70%);
-    top: -100px; right: -100px;
-    pointer-events: none;
-  }
-  .xj-builder-inner {
-    max-width: 820px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
-  }
-  .xj-builder-section .xj-section-label { color: var(--violet-light); }
-  .xj-builder-section .xj-section-label::before { background: var(--violet-light); }
-  .xj-builder-section .xj-split-h2 { color: #fff; }
-  .xj-builder-section p.xj-body-copy { color: rgba(255,255,255,0.55); }
-
-  .xj-avatar-ring {
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--violet), #7FC8F8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Poppins', sans-serif;
-    font-size: 36px;
-    color: #fff;
-    margin-bottom: 36px;
-    box-shadow: 0 0 0 12px rgba(90, 169, 230, 0.15);
-    animation: xjAvatarPulse 3s ease infinite;
-    font-weight: 700;
-  }
-  @keyframes xjAvatarPulse {
-    0%,100% { box-shadow: 0 0 0 12px rgba(90, 169, 230, 0.15); }
-    50% { box-shadow: 0 0 0 20px rgba(90, 169, 230, 0.08); }
-  }
-
-  .xj-manifesto-list {
-    list-style: none;
-    margin-top: 40px;
-  }
-  .xj-manifesto-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 20px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    font-size: 16px;
-    color: rgba(255,255,255,0.7);
-    font-weight: 300;
-    line-height: 1.7;
-  }
-  .xj-manifesto-list li::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--violet-light);
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-top: 10px;
-  }
-
-
-
-  /* ── CTA ── */
-  .xj-cta-section {
-    text-align: center;
-    padding: 160px 40px 180px;
-    position: relative;
-    z-index: 1;
-  }
-  .xj-cta-section .xj-split-h2 {
-    font-size: clamp(40px, 6vw, 70px);
-    margin-bottom: 20px;
-  }
-  .xj-cta-section p { font-size: 16px; color: var(--muted); margin-bottom: 48px; }
-
-  /* ── STAGGER REVEAL ── */
-  .reveal-up {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-
-  /* ── TIMELINE DOTS ── */
-  .xj-story-line {
-    position: fixed;
-    left: 28px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    z-index: 500;
-  }
-  .xj-story-line::before {
-    content: '';
-    position: absolute;
-    top: 6px; bottom: 6px;
-    left: 3px;
-    width: 1px;
-    background: #d0ebff;
-  }
-  .xj-story-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #ccc;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-    position: relative;
-  }
-  .xj-story-dot.active {
-    background: var(--violet);
-    transform: scale(2);
-    box-shadow: 0 0 12px rgba(90, 169, 230, 0.5);
-  }
-  @media (max-width: 900px) {
-    .xj-story-line { display: none; }
-  }
-
-  /* ── CHAPTER LABEL ── */
-  .xj-chapter-strip {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    max-width: 820px;
-    margin: 0 auto;
-    padding: 0 40px 0;
-  }
-  .xj-chapter-strip span {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #bbb;
-    white-space: nowrap;
-    font-weight: 700;
-  }
-  .xj-chapter-strip::before, .xj-chapter-strip::after {
-    content: '';
-    flex: 1;
-    background: linear-gradient(90deg, transparent, rgba(90, 169, 230, 0.3), transparent);
-  }
-
-  /* ── MOBILE MEDIA QUERIES ── */
-  @media (max-width: 768px) {
-    .xj-hero {
-      padding: 140px 24px 100px;
-      min-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .xj-hero-badge {
-      margin-bottom: 24px;
-    }
-    .xj-hero-headline {
-      font-size: 46px;
-      margin-bottom: 24px;
-    }
-    .xj-content-section {
-      padding: 60px 24px;
-    }
-    .xj-stats-row {
-      flex-direction: column;
-      margin: 40px 0;
-    }
-    .xj-stat-item {
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-      padding: 24px 20px;
-    }
-    .xj-stat-item:last-child {
-      border-bottom: none;
-    }
-    .xj-hscroll-panel {
-      padding: 40px 20px;
-    }
-    .xj-panel-inner {
-      padding: 40px 24px;
-    }
-    .xj-panel-number {
-      font-size: 80px;
-    }
-    .xj-ptext-line span {
-      font-size: 40px;
-    }
-    .xj-parallax-text-section {
-      padding: 40px 0;
-    }
+  @media (prefers-reduced-motion: reduce) {
+    .story-reveal, .story-hero-frame, .story-pin-card-wrap { opacity: 1 !important; transform: none !important; }
+    .story-gradient-text, .story-aurora-word { animation: none !important; }
   }
 `;
 
-
-
-const FEATURES = [
-  { icon: "⚡", tag: "Live Sync", title: "MT5 MetaApi Bridge", body: "Secure server-side connection via MetaApi. Your broker credentials never touch the client. Firebase Cloud Functions handle the sync pipeline end-to-end." },
-  { icon: "📊", tag: "Analytics", title: "Drawdown & Equity Curve", body: "Visual equity progression and max drawdown tracking built to gold's specs. Know exactly where your edge starts to break down before it costs you." },
-  { icon: "🗓", tag: "Patterns", title: "Day & Session Heatmap", body: "A full calendar view of daily P&L with session overlays. Spot the time windows where your strategy works and where it doesn't." },
-  { icon: "🧠", tag: "Psychology", title: "Pre-Trade Mindset Log", body: "Rate your focus, confidence, and emotional state before entering positions. Correlate mindset scores with trade outcomes over time. Pattern recognition for your head, not just your chart." },
-];
-
-const PANELS = [
-  { num: "01", title: "Automated Trade Sync", body: "XAU Journal captures your completed XAUUSD trades automatically and syncs them to your journal in real time. Every entry is recorded instantly with precision eliminating manual logging, spreadsheets, and missed data." },
-  { num: "02", title: "Gold-Native Calculations", body: "P&L, pip value, and drawdown calculated using gold's actual contract size of 100 oz, not a retrofitted forex formula. Every number in XAU Journal means exactly what it should." },
-  { num: "03", title: "Calendar Heatmap & Session Stats", body: "See your performance across London, New York, and Asian sessions. Identify the days you overtrade. Spot your highest probability setup windows at a glance." },
-  { num: "04", title: "Mindset & Risk Journal", body: "Log your psychological state alongside technical entries. Because in gold, where $10 a pip swings are routine, your mindset is part of your edge, not separate from it." },
-];
-
-const MANIFESTO = [
-  "One instrument. Studied properly rather than fifteen instruments handled carelessly.",
-  "Your data stays yours. No broker data-sharing. No third-party analytics on your trades.",
-  "Priced to be sustainable, not extractive. Free tier is genuinely functional.",
-  "Bugs get fixed. Features get shipped. Because the builder also uses the app every trading day.",
-];
-
-export default function TheStoryPage() {
-  const navigate = useNavigate();
-  const { isLightMode } = useAppTheme();
-
-  const containerRef = useRef(null);
-
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 200);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Initialize Lenis with smooth touch scrolling enabled
-    const lenis = new Lenis({
-      duration: 0.88,
-      easing: (t) => 1 - Math.pow(1 - t, 3),
-      smoothWheel: true,
-      syncTouch: false,
-      wheelMultiplier: 1,
-      touchMultiplier: 1,
-      infinite: false,
-    });
-
-    window.scrollTo(0, 0);
-
-    // GSAP animations linked to Lenis
-    let ctx;
-    let frameId;
-    const syncScrollTrigger = () => ScrollTrigger.update();
-
-    const raf = (time) => {
-      lenis.raf(time);
-      frameId = requestAnimationFrame(raf);
-    };
-    frameId = requestAnimationFrame(raf);
-    lenis.on('scroll', syncScrollTrigger);
-
-    ctx = gsap.context(() => {
-
-      /* ── HERO WORD-BASED CHAR SPLIT ANIMATION ── */
-      const hl = document.getElementById('xj-hero-headline');
-      if (hl) {
-        hl.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-        const nodes = Array.from(hl.childNodes);
-        hl.innerHTML = '';
-        nodes.forEach(node => {
-          if (node.nodeType === 3) {
-            const words = node.textContent.split(' ');
-            words.forEach((word, wordIdx) => {
-              const wordSpan = document.createElement('span');
-              wordSpan.style.display = 'inline-block';
-              wordSpan.style.whiteSpace = 'nowrap';
-
-              word.split('').forEach(ch => {
-                const s = document.createElement('span');
-                s.className = 'char';
-                s.style.display = 'inline-block';
-                s.style.transform = 'translateY(110%)';
-                s.textContent = ch;
-                wordSpan.appendChild(s);
-              });
-              hl.appendChild(wordSpan);
-
-              if (wordIdx < words.length - 1) {
-                const spaceSpan = document.createElement('span');
-                spaceSpan.style.display = 'inline-block';
-                spaceSpan.innerHTML = '&nbsp;';
-                hl.appendChild(spaceSpan);
-              }
-            });
-          } else if (node.nodeType === 1 && node.tagName === 'EM') {
-            const emNode = node;
-            const emText = emNode.textContent;
-            emNode.innerHTML = '';
-
-            const words = emText.split(' ');
-            words.forEach((word, wordIdx) => {
-              const wordSpan = document.createElement('span');
-              wordSpan.style.display = 'inline-block';
-              wordSpan.style.whiteSpace = 'nowrap';
-
-              word.split('').forEach(ch => {
-                const s = document.createElement('span');
-                s.className = 'char aurora-text';
-                s.style.display = 'inline-block';
-                s.style.transform = 'translateY(110%)';
-                s.textContent = ch;
-                wordSpan.appendChild(s);
-              });
-              emNode.appendChild(wordSpan);
-
-              if (wordIdx < words.length - 1) {
-                const spaceSpan = document.createElement('span');
-                spaceSpan.style.display = 'inline-block';
-                spaceSpan.innerHTML = '&nbsp;';
-                emNode.appendChild(spaceSpan);
-              }
-            });
-            hl.appendChild(emNode);
-          } else if (node.nodeType === 1) {
-            const otherNode = node;
-            const otherText = otherNode.textContent;
-            otherNode.innerHTML = '';
-
-            const words = otherText.split(' ');
-            words.forEach((word, wordIdx) => {
-              const wordSpan = document.createElement('span');
-              wordSpan.style.display = 'inline-block';
-              wordSpan.style.whiteSpace = 'nowrap';
-
-              word.split('').forEach(ch => {
-                const s = document.createElement('span');
-                s.className = 'char';
-                s.style.display = 'inline-block';
-                s.style.transform = 'translateY(110%)';
-                s.textContent = ch;
-                wordSpan.appendChild(s);
-              });
-              otherNode.appendChild(wordSpan);
-
-              if (wordIdx < words.length - 1) {
-                const spaceSpan = document.createElement('span');
-                spaceSpan.style.display = 'inline-block';
-                spaceSpan.innerHTML = '&nbsp;';
-                otherNode.appendChild(spaceSpan);
-              }
-            });
-            hl.appendChild(otherNode);
-          }
-        });
-
-        hl.style.opacity = 1;
-        const allChars = hl.querySelectorAll('.char');
-        gsap.to(allChars, {
-          y: 0,
-          duration: 0.7,
-          ease: 'expo.out',
-          stagger: 0.018,
-          delay: 0.3
-        });
-
-      }
-
-      /* ── HERO BADGE & SUB ── */
-      gsap.to('.xj-hero-badge', { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: 'expo.out' });
-      gsap.to('.xj-hero-sub', { opacity: 1, y: 0, duration: 0.9, delay: 0.9, ease: 'expo.out' });
-      gsap.to('#xj-scroll-hint', { opacity: 1, duration: 1, delay: 1.6 });
-
-      /* ── H2 LINE REVEALS ── */
-      document.querySelectorAll('.xj-split-h2').forEach(h2 => {
-        const inners = h2.querySelectorAll('.inner');
-        if (!inners.length) return;
-        gsap.fromTo(inners, { y: '100%' }, {
-          y: '0%',
-          duration: 0.85,
-          ease: 'expo.out',
-          stagger: 0.1,
-          scrollTrigger: {
-            trigger: h2,
-            start: 'top 85%',
-            toggleActions: 'play none none none'
-          }
-        });
-      });
-
-      /* ── REVEAL-UP ── */
-      document.querySelectorAll('.reveal-up').forEach(el => {
-        gsap.fromTo(el, { opacity: 0, y: 50 }, {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: 'expo.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 90%',
-            toggleActions: 'play none none none'
-          }
-        });
-      });
-
-      /* ── STATS COUNTER ANIMATION ── */
-      document.querySelectorAll('.xj-stat-num[data-target]').forEach(el => {
-        const target = parseInt(el.dataset.target);
-        if (isNaN(target)) return;
-        gsap.fromTo({ val: 0 }, { val: target }, {
-          duration: 1.6,
-          ease: 'power2.out',
-          onUpdate: function () { el.textContent = Math.round(this.targets()[0].val); },
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 85%',
-            toggleActions: 'play none none none'
-          }
-        });
-      });
-
-
-
-      /* ── HORIZONTAL SCROLL ── */
-      const hpin = document.getElementById('xj-hpin');
-      const htrack = document.getElementById('xj-htrack');
-      const pills = document.querySelectorAll('.xj-hpill');
-
-      if (hpin && htrack) {
-        const panels = htrack.querySelectorAll('.xj-hscroll-panel');
-        const scrollDist = (panels.length - 1) * window.innerWidth;
-
-        hpin.style.height = '100vh';
-
-        gsap.to(htrack, {
-          x: -scrollDist,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hpin,
-            pin: true,
-            scrub: 0.45,
-            end: () => '+=' + scrollDist,
-            onUpdate: (self) => {
-              const activeIdx = Math.round(self.progress * (panels.length - 1));
-              pills.forEach((p, i) => p.classList.toggle('active', i === activeIdx));
-            }
-          }
-        });
-      }
-
-      /* ── SECTION LABEL LINES ── */
-      gsap.utils.toArray('.xj-section-label').forEach(el => {
-        gsap.from(el, {
-          opacity: 0,
-          x: -20,
-          duration: 0.6,
-          ease: 'expo.out',
-          scrollTrigger: { trigger: el, start: 'top 88%' }
-        });
-      });
-
-      /* ── DARK SECTION MANIFESTO STAGGER ── */
-      const manifesto = document.querySelectorAll('.xj-manifesto-list li');
-      manifesto.forEach((li, i) => {
-        gsap.fromTo(li, { opacity: 0, x: -30 }, {
-          opacity: 1,
-          x: 0,
-          duration: 0.7,
-          delay: i * 0.12,
-          ease: 'expo.out',
-          scrollTrigger: {
-            trigger: li,
-            start: 'top 90%',
-            toggleActions: 'play none none none'
-          }
-        });
-      });
-
-      /* ── PROGRESS BAR via ScrollTrigger — no raw scroll listener ── */
-      ScrollTrigger.create({
-        start: 0,
-        end: 'max',
-        onUpdate: (self) => {
-          const bar = document.getElementById('xj-progress-bar');
-          if (bar) bar.style.transform = `scaleX(${self.progress})`;
-        }
-      });
-
-    }, containerRef);
-
-    setTimeout(() => {
-      if (window.ScrollTrigger) {
-        window.ScrollTrigger.refresh();
-      }
-    }, 150);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      lenis.off('scroll', syncScrollTrigger);
-      lenis.destroy();
-      if (ctx) ctx.revert();
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
-  }, []);
-
-  /* ── INTERSECTION OBSERVER & CARD MAGNETIC TILT ── */
-  useEffect(() => {
-    // Timeline dots Active observer
-    const sections = document.querySelectorAll('[data-section]');
-    const dots = document.querySelectorAll('.xj-story-dot');
-    const dotObs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const idx = e.target.dataset.section;
-          dots.forEach(d => d.classList.remove('active'));
-          const target = document.querySelector(`.xj-story-dot[data-idx="${idx}"]`);
-          if (target) target.classList.add('active');
-        }
-      });
-    }, { threshold: 0.4 });
-    sections.forEach(s => dotObs.observe(s));
-
-    // Card magnetic tilt
-    const cards = window.innerWidth >= 1024 ? document.querySelectorAll('.xj-fcard') : [];
-    const cardMoves = [];
-    cards.forEach(card => {
-      const mm = e => {
-        const r = card.getBoundingClientRect();
-        const cx = r.left + r.width / 2;
-        const cy = r.top + r.height / 2;
-        const dx = (e.clientX - cx) / (r.width / 2);
-        const dy = (e.clientY - cy) / (r.height / 2);
-        card.style.transform = `translateY(-8px) rotateX(${-dy * 4}deg) rotateY(${dx * 4}deg) scale(1.01)`;
-      };
-      const ml = () => { card.style.transform = ''; };
-      card.addEventListener('mousemove', mm);
-      card.addEventListener('mouseleave', ml);
-      cardMoves.push({ card, mm, ml });
-    });
-
-    return () => {
-      dotObs.disconnect();
-      cardMoves.forEach(({ card, mm, ml }) => {
-        card.removeEventListener('mousemove', mm);
-        card.removeEventListener('mouseleave', ml);
-      });
-    };
-  }, []);
-
-  const themeVariables = {
-    '--bg': 'hsl(var(--background))',
-    '--ink': 'hsl(var(--foreground))',
-    '--muted': 'hsl(var(--muted-foreground))',
-    '--border': 'hsl(var(--border))',
-    '--card-bg': 'hsl(var(--card))',
-    '--violet': 'hsl(var(--primary))',
-    '--violet-light': isLightMode ? '#ff8b73' : '#ff5a36',
-    '--violet-faint': 'hsl(var(--primary) / 0.08)',
-    '--builder-bg': isLightMode ? '#0a0a0d' : '#07070a',
-    '--hscroll-bg1': isLightMode ? '#ebfcff' : '#0d1a1c',
-    '--hscroll-bg2': isLightMode ? '#fff8eb' : '#221a0f',
-    '--hscroll-bg3': isLightMode ? '#ebf5ff' : '#101726',
-    '--hscroll-bg4': isLightMode ? '#f0ffeb' : '#112211',
-    '--hscroll-grid': isLightMode ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.02)',
-    '--hscroll-card-bg': isLightMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.02)',
-    '--hscroll-card-border': isLightMode ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.08)',
-    '--hscroll-text-title': isLightMode ? '#0f172a' : '#ffffff',
-    '--hscroll-text-body': isLightMode ? '#475569' : 'rgba(255, 255, 255, 0.7)',
-    '--hscroll-card-shadow': isLightMode ? '0 20px 40px rgba(0,0,0,0.06)' : '0 30px 60px rgba(0,0,0,0.5)',
-  };
-
+function StoryButton({ to, children, variant = 'primary' }) {
   return (
-    <div className="font-sans">
-      <PublicNavbar />
-      <div className="xj-story-container aurora-theme" style={themeVariables} ref={containerRef}>
-      <style>{STYLES}</style>
-      {/* Progress Bar */}
-      <div id="xj-progress-bar" />
+    <Link to={to} className={variant === 'primary' ? 'story-primary' : 'story-secondary'}>
+      {children}
+    </Link>
+  );
+}
 
-      {/* Blobs */}
-      <div className="xj-blob xj-blob-1" id="xj-b1" />
-      <div className="xj-blob xj-blob-2" id="xj-b2" />
-      <div className="xj-blob xj-blob-3" id="xj-b3" />
-
-      {/* Timeline Dots */}
-      <nav className="xj-story-line" aria-hidden="true">
-        {[0, 1, 2, 3, 4, 5].map(i => (
-          <div
-            key={i}
-            className={`xj-story-dot${i === 0 ? ' active' : ''}`}
-            data-idx={i}
-            onClick={() => {
-              const sec = document.querySelector(`[data-section="${i}"]`);
-              if (sec) sec.scrollIntoView({ behavior: 'smooth' });
-            }}
-          />
-        ))}
-      </nav>
-
-      {/* ① HERO */}
-      <section className="xj-hero" data-section="0">
-        <div className="xj-hero-badge">
-          <span className="xj-badge-dot" />
-          Built by a trader · For gold traders
-        </div>
-        <h1 className="xj-hero-headline" id="xj-hero-headline">
-          Not just another startup. <em>A necessary tool.</em>
-        </h1>
-        <p className="xj-hero-sub font-medium">XAU Journal didn't come from a product roadmap. It came from years of watching gold traders, including myself, manage their edge inside spreadsheets that had no idea what XAUUSD actually was.</p>
-
-        <div className="xj-hero-scroll-hint" id="xj-scroll-hint">
-          <span>Scroll</span>
-          <div className="xj-scroll-arrow" />
-        </div>
-      </section>
-
-      {/* MARQUEE */}
-      <div className="xj-marquee-wrap" aria-hidden="true">
-        <div className="xj-marquee-track" id="xj-mtrack">
-          {["Sync trades", "Review sessions", "Track psychology", "Find your edge", "Build rules", "Trade cleaner"]
-            .concat(["Sync trades", "Review sessions", "Track psychology", "Find your edge", "Build rules", "Trade cleaner"])
-            .concat(["Sync trades", "Review sessions", "Track psychology", "Find your edge", "Build rules", "Trade cleaner"])
-            .map((item, i) => (
-              <div key={i} className="xj-marquee-item" style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}>
-                <span>{item}</span>
-                <span className="xj-marquee-sep ml-8" />
-              </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ② THE FRUSTRATION */}
-      <section data-section="1">
-        <div className="xj-content-section">
-          <p className="xj-section-label reveal-up">The Frustration</p>
-          <h2 className="xj-split-h2">
-            <span className="line"><span className="inner">Every journal out there was</span></span>
-            <span className="line"><span className="inner">built for Forex. Gold was an</span></span>
-            <span className="line"><span className="inner"><em>afterthought.</em></span></span>
-          </h2>
-          <p className="xj-body-copy reveal-up font-medium">I remember the exact session that broke me. A choppy London open on XAUUSD, eight trades, and an afternoon of trying to make sense of it all. The journal I was using didn't know gold's pip value. It calculated my drawdown wrong. The P&L figures were completely off.</p>
-          <p className="xj-body-copy reveal-up font-medium">And the worst part I had to enter every single trade manually. After spending four hours watching the chart, I had to spend another hour doing data entry. That's not analysis. That's administration.</p>
-
-          <div className="xj-pull-quote reveal-up">
-            <p>I was spending more time logging trades than actually learning from them. Something was fundamentally broken.</p>
-          </div>
-
-          <div className="xj-stats-row reveal-up">
-            <div className="xj-stat-item">
-              <span className="xj-stat-num" data-target="100">0</span>
-              <div className="xj-stat-label">oz Contract Size</div>
-            </div>
-            <div className="xj-stat-item">
-              <span className="xj-stat-num" data-target="0">0</span>
-              <div className="xj-stat-label">Manual Entries</div>
-            </div>
-            <div className="xj-stat-item">
-              <span className="xj-stat-num" data-target="1">0</span>
-              <div className="xj-stat-label">Instrument Focus</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="xj-chapter-strip reveal-up"><span>The Turning Point</span></div>
-
-
-
-      {/* ③ ORIGIN */}
-      <section data-section="2">
-        <div className="xj-content-section">
-          <p className="xj-section-label reveal-up">Origin Story</p>
-          <h2 className="xj-split-h2">
-            <span className="line"><span className="inner">I didn't set out to build</span></span>
-            <span className="line"><span className="inner">software. I just wanted</span></span>
-            <span className="line"><span className="inner"><em>my weekends back.</em></span></span>
-          </h2>
-          <p className="xj-body-copy reveal-up font-medium">XAU Journal started as a local HTML file running on my own machine. I wrote a custom MT5 Expert Advisor that fired on every position close and pushed the trade data to a simple backend. No UI. No branding. Just raw, correct data.</p>
-          <p className="xj-body-copy reveal-up font-medium">Over months, it grew. I added a React frontend, real-time synchronization, advanced analytics, and visual performance tracking tools. Eventually other traders saw it and wanted in. That's when I realised this wasn't a personal tool anymore it was a product.</p>
-          <p className="xj-body-copy reveal-up font-medium">No investors. No VC pitch deck. No agency. Just one developer who also happens to trade gold, building on evenings and weekends until it was good enough to ship.</p>
-        </div>
-      </section>
-
-      {/* ④ HORIZONTAL SCROLL — FEATURE PANELS */}
-      <section className="xj-hscroll-outer" data-section="3">
-        <div className="xj-hscroll-pin" id="xj-hpin">
-          <div className="xj-hscroll-track" id="xj-htrack">
-            {PANELS.map((p, i) => (
-              <div key={i} className="xj-hscroll-panel">
-                <div className="xj-panel-inner">
-                  <div className="xj-panel-number">{p.num}</div>
-                  <h3>{p.title}</h3>
-                  <p className="font-medium">{p.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="xj-hscroll-nav" id="xj-hpills">
-          {PANELS.map((_, i) => (
-            <div key={i} className={`xj-hpill${i === 0 ? ' active' : ''}`} />
-          ))}
-        </div>
-      </section>
-
-      <div className="xj-chapter-strip reveal-up"><span>The Solution</span></div>
-
-      {/* ⑤ WHY SPECIALIZED */}
-      <section data-section="3">
-        <div className="xj-content-section">
-          <p className="xj-section-label reveal-up">Why Specialization Wins</p>
-          <h2 className="xj-split-h2">
-            <span className="line"><span className="inner">Generic tools try to serve</span></span>
-            <span className="line"><span className="inner">everyone. That's precisely</span></span>
-            <span className="line"><span className="inner"><em className="aurora-text">why they fail specialists.</em></span></span>
-          </h2>
-          <p className="xj-body-copy reveal-up font-medium">Forex journals calculate pip value assuming a standard contract. Gold doesn't work that way. At 100 oz per lot, a 1-pip move on XAUUSD is worth $1,but the pip itself is a $0.01 price move, not a $0.0001 move like EUR/USD. Get that wrong and every drawdown curve, every expectancy calculation, every risk-reward ratio in your journal is lying to you.</p>
-          <p className="xj-body-copy reveal-up font-medium">XAU Journal is calibrated specifically for this. It doesn't support EUR/USD because it doesn't need to. One instrument, done properly, is worth more than thirty instruments done badly.</p>
-
-          <div className="xj-features-grid">
-            {FEATURES.map((f, i) => (
-              <div key={i} className="xj-fcard reveal-up">
-                <span className="xj-fcard-icon">{f.icon}</span>
-                <span className="xj-fcard-tag">{f.tag}</span>
-                <h3>{f.title}</h3>
-                <p className="font-medium">{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ⑥ BUILDER — DARK SECTION */}
-      <section className="xj-builder-section" data-section="4">
-        <div className="xj-builder-inner">
-          <div className="xj-avatar-ring reveal-up">S</div>
-          <p className="xj-section-label reveal-up">The Builder</p>
-          <h2 className="xj-split-h2">
-            <span className="line"><span className="inner">Solo-built. No investors.</span></span>
-            <span className="line"><span className="inner"><em>No hidden agendas.</em></span></span>
-          </h2>
-          <p className="xj-body-copy reveal-up font-medium">XAU Journal is designed, tested, and maintained by a single developer who also trades gold. There's no corporate product team optimizing for retention metrics, no VC pressure to bloat the feature list, and zero broker affiliations influencing what gets built.</p>
-          <p className="xj-body-copy reveal-up font-medium">Every feature in this app exists because it solved a real problem I ran into while trading. That's the only filter. Not what looks impressive in a demo. Not what a roadmap committee approved.</p>
-          <ul className="xj-manifesto-list">
-            {MANIFESTO.map((m, i) => (
-              <li key={i} className="reveal-up font-medium">{m}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ⑦ CTA */}
-      <section className="xj-cta-section" data-section="5">
-        <h2 className="xj-split-h2 reveal-up">
-          <span className="line"><span className="inner">Ready to finally understand</span></span>
-          <span className="line"><span className="inner">your real edge in <em>gold?</em></span></span>
-        </h2>
-        <p className="reveal-up font-medium text-lg">Start journaling free. No credit card. No spreadsheet required.</p>
-        <div className="xj-cta-buttons reveal-up flex justify-center">
-          <button className="cta active:scale-95 transition-all duration-300" onClick={() => navigate('/login')}>
-            <span>Try 7-Day Free Trial</span>
-            <svg width="15px" height="10px" viewBox="0 0 13 10">
-              <path d="M1,5 L11,5" />
-              <polyline points="8 1 12 5 8 9" />
-            </svg>
-          </button>
-        </div>
-      </section>
-
-      {/* ─── FOOTER ─── */}
-      <footer className="py-20 px-6 md:px-12 bg-muted/5 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.8fr_1fr] gap-16 md:gap-10">
-            <div className="flex flex-col items-center md:items-start text-center md:text-left justify-center gap-3">
-              <Logo iconSize="w-7 h-7" />
-              <p className="text-[11px] font-medium text-muted-foreground max-w-[200px] leading-relaxed">
-                Precision performance terminal and automated MT5 synchronization designed exclusively for XAUUSD traders.
-              </p>
-            </div>
-            <div className="text-center md:text-left flex flex-col items-center md:items-start">
-              <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Platform</h4>
-              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center md:text-left">
-                <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
-                <li><Link to="/the-story" className="hover:text-primary transition-colors">The Story</Link></li>
-                <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-                <li><Link to="/login?mode=signin" className="hover:text-primary transition-colors">Login</Link></li>
-              </ul>
-            </div>
-            <div className="text-center md:text-left flex flex-col items-center md:items-start">
-              <h4 className="text-xs font-black uppercase tracking-widest text-foreground mb-8">Legal</h4>
-              <ul className="space-y-4 text-sm font-semibold text-muted-foreground text-center md:text-left">
-                <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                <li><Link to="/refund-policy" className="hover:text-primary transition-colors">Refund Policy</Link></li>
-              </ul>
-            </div>
-            <div className="flex flex-col items-center md:items-end text-center md:text-right justify-end">
-              <div className="mt-auto flex flex-col items-center md:items-end gap-5">
-                <ul className="example-2">
-                  <li className="icon-content"><a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><div className="filled" /><Facebook /></a></li>
-                  <li className="icon-content"><a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><div className="filled" /><Instagram /></a></li>
-                  <li className="icon-content"><a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer"><div className="filled" /><TwitterX /></a></li>
-                  <li className="icon-content"><a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer"><div className="filled" /><Discord /></a></li>
-                </ul>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-1.5 justify-center md:justify-end">
-                  made with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 shrink-0"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
-                </p>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center md:text-right">© Copyright 2026 Xau Journal. All Rights Reserved.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Scroll to top */}
-      <Motion.button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        animate={{ opacity: isScrolled ? 1 : 0, y: isScrolled ? 0 : 30 }}
-        transition={{ duration: 0.3 }}
-        className={`fixed bottom-6 right-6 z-[90] p-3.5 rounded-2xl bg-background/80 backdrop-blur-md border border-transparent text-muted-foreground hover:text-foreground shadow-lg hover:-translate-y-1 active:scale-90 transition-all duration-200 ${!isScrolled ? 'pointer-events-none' : ''}`}
-        aria-label="Scroll to top"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
-      </Motion.button>
-      </div>
+function SectionHeading({ kicker, title, children }) {
+  return (
+    <div className="story-section-head story-reveal">
+      <span className="story-section-kicker">{kicker}</span>
+      <h2 className="story-section-title">{title}</h2>
+      {children ? <p className="story-section-copy">{children}</p> : null}
     </div>
   );
 }
+
+function Footer() {
+  return (
+    <footer className="story-footer">
+      <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
+        <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
+          <Logo iconSize="w-7 h-7" />
+          <nav className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end" style={{ color: 'var(--story-muted)' }} aria-label="Footer navigation">
+            <Link to="/privacy" className="transition hover:text-cyan-300">Privacy</Link>
+            <Link to="/terms-and-conditions" className="transition hover:text-cyan-300">Terms</Link>
+            <Link to="/refund-policy" className="transition hover:text-cyan-300">Refunds</Link>
+            <Link to="/the-story" className="transition hover:text-cyan-300">The Story</Link>
+            <Link to="/contact" className="transition hover:text-cyan-300">Contact</Link>
+          </nav>
+        </div>
+
+        <div className="mt-16 flex flex-col items-center justify-between gap-6 pt-8 md:flex-row">
+          <p className="order-2 text-center text-[9px] font-black uppercase tracking-[0.2em] md:order-1 md:text-left" style={{ color: 'var(--story-muted)' }}>
+            Copyright 2026 Xau Journal. All Rights Reserved.
+          </p>
+
+          <div className="order-1 flex flex-col items-center gap-4 md:order-2 md:items-end">
+            <ul className="example-2">
+              <li className="icon-content">
+                <a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
+                  <div className="filled" />
+                  <Facebook />
+                </a>
+              </li>
+              <li className="icon-content">
+                <a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
+                  <div className="filled" />
+                  <Instagram />
+                </a>
+              </li>
+              <li className="icon-content">
+                <a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer">
+                  <div className="filled" />
+                  <TwitterX />
+                </a>
+              </li>
+              <li className="icon-content">
+                <a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer">
+                  <div className="filled" />
+                  <Discord />
+                </a>
+              </li>
+            </ul>
+            <p className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] md:justify-end" style={{ color: 'var(--story-muted)' }}>
+              made for disciplined gold traders
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}export default function TheStoryPage() {
+  const stageRef = useRef(null);
+  const cardRef = useRef(null);
+  const activeProductRef = useRef(0);
+  const [activeProduct, setActiveProduct] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
+    let rafId = 0;
+
+    lenis.on('scroll', ScrollTrigger.update);
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ctx = gsap.context(() => {
+      gsap.to('.story-progress', {
+        scaleX: 1,
+        ease: 'none',
+        scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 0.2 },
+      });
+
+      if (!reducedMotion) {
+        gsap.from('.story-reveal', {
+          y: 42,
+          opacity: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          stagger: 0.08,
+          scrollTrigger: { trigger: '.story-page', start: 'top 75%' },
+        });
+
+        gsap.to('.story-hero-frame', {
+          yPercent: 8,
+          rotateX: -2,
+          ease: 'none',
+          scrollTrigger: { trigger: '.story-hero', start: 'top top', end: 'bottom top', scrub: true },
+        });
+      }
+
+      const stage = stageRef.current;
+      const card = cardRef.current;
+      if (stage) {
+        ScrollTrigger.create({
+          trigger: stage,
+          start: 'top top+=80',
+          end: () => `+=${window.innerHeight * 3.2}`,
+          pin: true,
+          scrub: 0.75,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const rawStep = self.progress * (PRODUCT_STEPS.length - 1);
+            const nextStep = Math.min(PRODUCT_STEPS.length - 1, Math.round(rawStep));
+            stage.style.setProperty('--pin-progress', self.progress.toFixed(3));
+            stage.style.setProperty('--indicator-x', `${rawStep * 100}%`);
+            stage.style.setProperty('--card-shift', `${gsap.utils.interpolate(-28, 28, self.progress)}px`);
+            stage.style.setProperty('--step-color', PRODUCT_STEPS[nextStep].color);
+            stage.style.setProperty('--step-glow', PRODUCT_STEPS[nextStep].glow);
+
+            if (activeProductRef.current !== nextStep) {
+              activeProductRef.current = nextStep;
+              setActiveProduct(nextStep);
+              if (card && !reducedMotion) {
+                gsap.fromTo(card, { autoAlpha: 0.55, y: 20, rotate: -2 }, { autoAlpha: 1, y: 0, rotate: 0, duration: 0.32, ease: 'power2.out' });
+              }
+            }
+          },
+        });
+      }
+
+    });
+
+    const handleScroll = () => setIsScrolled(window.scrollY > 360);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+      ctx.revert();
+    };
+  }, []);
+
+  const activeStep = PRODUCT_STEPS[activeProduct];
+
+  return (
+    <>
+      <PublicNavbar />
+      <main className="story-page">
+        <style>{STYLES + SHOWCASE_STYLES + FINAL_STYLES}</style>
+        <div className="story-grid-bg" />
+        <div className="story-progress" />
+
+        <section className="story-hero">
+          <div className="story-shell story-hero-grid">
+            <div className="story-hero-copy-block story-reveal">
+              <span className="story-kicker">Trader built product</span>
+              <h1 className="story-hero-title">I built the journal I needed after every <span className="story-gradient-text">XAUUSD</span> session.</h1>
+              <p className="story-hero-copy">This is not a generic trading tracker with a gold label on it. XAU Journal is shaped around my own review pain: fast sync, honest context, and analytics that help the next session instead of decorating the last one.</p>
+              <div className="story-hero-actions">
+                <StoryButton to="/signup">Start journaling <ArrowRight size={17} /></StoryButton>
+                <StoryButton to="/contact" variant="secondary">Talk about the product</StoryButton>
+              </div>
+              <div className="story-hero-proof">
+                {PROOF_POINTS.map((point) => (
+                  <div className="story-proof-card" key={point.value}>
+                    <strong>{point.value}</strong>
+                    <span>{point.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="story-hero-visual story-reveal">
+              <figure className="story-hero-frame">
+                <img src={HERO_IMAGE} alt="Anonymous trader-builder workstation with XAUUSD charts, code, and a trading journal" />
+                <figcaption className="story-visual-caption">
+                  <strong>Built between trades and code.</strong>
+                  <p>The product comes from the same workflow it serves: review the trade, find the gap, improve the system.</p>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+        </section>
+
+        <section className="story-section">
+          <div className="story-shell">
+            <SectionHeading kicker="Why I rebuilt it" title={<>The usual journal flow was <span className="story-aurora-word">too slow</span> for a real trading routine.</>}>
+              The goal became simple: remove admin, keep context, and make review strong enough to change execution.
+            </SectionHeading>
+            <div className="story-problem-grid">
+              <article className="story-glass-card story-quote story-reveal">
+                <blockquote>When review takes longer than the session, the habit breaks.</blockquote>
+                <p>XAU Journal is my answer to that problem: a trading desk style workflow where the product supports the review instead of becoming the work.</p>
+              </article>
+              <div className="story-problem-list">
+                {PROBLEMS.map((problem) => {
+                  const Icon = problem.icon;
+                  return (
+                    <article className="story-glass-card story-mini-card story-reveal" key={problem.title}>
+                      <span className="story-icon"><Icon size={20} /></span>
+                      <div>
+                        <h3>{problem.title}</h3>
+                        <p>{problem.body}</p>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="story-section">
+          <div className="story-shell story-builder-grid">
+            <article className="story-builder-card story-reveal">
+              <div className="story-avatar">G.P</div>
+              <h3>Built by the trader using it.</h3>
+              <p>The story is not a founder myth. It is a product constraint. I care about speed, clarity, and trust because I have to use this after real sessions too.</p>
+            </article>
+            <div className="story-timeline">
+              {TIMELINE.map((item) => (
+                <article className="story-glass-card story-timeline-item story-reveal" key={item.title}>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="story-showcase" id="product-showcase">
+          <div className="story-shell">
+            <h2 className="story-showcase-title story-reveal">Product <span className="story-aurora-word">showcase</span></h2>
+            <div className="story-showcase-stage" ref={stageRef} style={{ '--step-color': activeStep.color, '--step-glow': activeStep.glow }}>
+              <div className="story-pin-grid">
+                <div className="story-pin-copy" aria-live="polite">
+                  <div className="story-pin-eyebrow"></div>
+                  <span className="story-pin-step-name">{activeStep.key}</span>
+                  <span>{activeProduct === 0 ? 'The Record' : activeProduct === 1 ? 'The Context' : activeProduct === 2 ? 'The Patterns' : 'The Rules'}</span>
+                  <span>With</span>
+                  <span>XAU Journal</span>
+                </div>
+
+                <div className="story-pin-card-wrap">
+                  <article className="story-pin-card" ref={cardRef}>
+                    <span className="story-card-side left">XAU</span>
+                    <span className="story-card-side right">XAU</span>
+                    <span className="story-card-star" />
+                    <div className="story-card-top">{activeStep.title}</div>
+                    <div className="story-card-number">{String(activeProduct + 1).padStart(2, '0')}</div>
+                    <div>
+                      <p className="story-card-body">{activeStep.body}</p>
+                      <div className="story-card-rows">
+                        {activeStep.rows.map(([label, value]) => (
+                          <div className="story-card-row" key={label}>
+                            <span>{label}</span>
+                            <strong>{value}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="story-card-bottom">{activeStep.title}</div>
+                  </article>
+                </div>
+              </div>
+
+              <div className="story-pin-scrollbar" aria-hidden="true"><span className="story-pin-thumb" /></div>
+              <div className="story-lateral-indicator" aria-label="Product showcase progress">
+                <div className="story-lateral-progress" />
+                <div className="story-lateral-steps">
+                  {PRODUCT_STEPS.map((step, index) => {
+                    const Icon = step.icon;
+                    return (
+                      <span className={`story-lateral-step ${activeProduct === index ? 'is-active' : ''}`} key={step.key}>
+                        <Icon size={14} /> {step.key}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="story-section">
+          <div className="story-shell">
+            <SectionHeading kicker="What the product keeps" title={<>A focused <span className="story-aurora-word">workflow</span> for traders who review seriously.</>}>
+              The app is built around the parts of journaling that actually change behavior after enough trades.
+            </SectionHeading>
+            <div className="story-feature-grid">
+              {FEATURES.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <article className="story-feature-card story-reveal" key={feature.title}>
+                    <span className="story-icon"><Icon size={20} /></span>
+                    <h3>{feature.title}</h3>
+                    <p>{feature.body}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+
+        <section className="story-section">
+          <div className="story-shell story-philosophy">
+            <SectionHeading kicker="Product principles" title={<>The <span className="story-aurora-word">roadmap</span> stays close to the trading desk.</>}>
+              This page is a story, but the story has to keep showing up in the product decisions.
+            </SectionHeading>
+            <div className="story-principles">
+              {PRINCIPLES.map((principle) => (
+                <div className="story-principle story-reveal" key={principle}>
+                  <CheckCircle2 size={19} />
+                  <span>{principle}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="story-final">
+          <div className="story-shell">
+            <div className="story-final-card story-reveal">
+              <h2>Built for traders who want review to become <span className="story-aurora-word">execution.</span></h2>
+              <p>Start with sync. Add the context. Read the patterns. Improve the next session. That is the product promise and the reason I built it.</p>
+              <div className="story-hero-actions">
+                <StoryButton to="/signup">Start now <ArrowRight size={17} /></StoryButton>
+                <StoryButton to="/pricing" variant="secondary">View pricing</StoryButton>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <Footer />
+
+        <button
+          type="button"
+          className="story-scroll-top"
+          aria-label="Scroll to top"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{ opacity: isScrolled ? 1 : 0, pointerEvents: isScrolled ? 'auto' : 'none', transform: isScrolled ? 'translateY(0)' : 'translateY(12px)' }}
+        >
+          <ArrowUp size={18} />
+        </button>
+      </main>
+    </>
+  );
+}
+
+
+
+
