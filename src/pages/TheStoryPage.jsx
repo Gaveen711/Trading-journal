@@ -387,7 +387,7 @@ function Footer() {
               </li>
             </ul>
             <p className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] md:justify-end" style={{ color: 'var(--story-muted)' }}>
-              made for disciplined gold traders
+              made with ❤️
             </p>
           </div>
         </div>
