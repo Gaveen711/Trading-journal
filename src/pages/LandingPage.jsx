@@ -1989,7 +1989,7 @@ export function LandingPage() {
             </nav>
           </div>
 
-          <div className="mt-16 flex flex-col items-center justify-between gap-6 border-t pt-8 md:flex-row" style={{ borderColor: 'var(--xau-border)' }}>
+          <div className="mt-16 flex flex-col items-center justify-between gap-6 pt-8 md:flex-row">
             <p className="order-2 text-center text-[9px] font-black uppercase tracking-[0.2em] md:order-1 md:text-left" style={{ color: 'var(--xau-muted)' }}>
               Copyright 2026 Xau Journal. All Rights Reserved.
             </p>
