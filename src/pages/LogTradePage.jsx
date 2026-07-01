@@ -337,8 +337,8 @@ export function LogTradePage() {
             onClick={() => setIsExpanded(!isExpanded)}
             className={`hidden md:flex py-1.5 px-2.5 sm:px-3 rounded-xl font-black uppercase tracking-wider text-[10px] md:text-xs transition-all duration-300 items-center justify-center gap-1.5 active:scale-[0.96] cursor-pointer select-none shrink-0 shadow-md ${
               isExpanded
-                ? 'bg-rose-500/10 border border-rose-500/30 text-rose-500 hover:bg-rose-500/20 shadow-rose-500/5'
-                : 'bg-[#FACC15] hover:bg-[#EAB308] text-black border border-transparent shadow-amber-400/10'
+                ? 'bg-[#D1495B]/10 border border-[#D1495B]/30 text-[#D1495B] hover:bg-[#D1495B]/20 shadow-[#D1495B]/5'
+                : 'bg-[#EDAE49] hover:bg-[#D99A32] text-[#003D5B] border border-transparent shadow-[#EDAE49]/10'
             }`}
             title={isExpanded ? 'Close Trade' : 'New Trade'}
           >
@@ -644,7 +644,7 @@ export function LogTradePage() {
               </table>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-foreground gap-4">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-muted-foreground gap-4">
               <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner">
                 <svg className="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

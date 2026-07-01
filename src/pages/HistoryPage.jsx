@@ -405,19 +405,19 @@ export function HistoryPage() {
           <div className="flex bg-muted/30 p-0.5 rounded-xl border border-border/30 self-stretch lg:self-auto overflow-x-auto">
             <button 
               onClick={() => handleDirPill('')} 
-              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer ${filterDir === '' ? 'bg-[#FACC15] text-black shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer ${filterDir === '' ? 'bg-[#EDAE49] text-[#003D5B] shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               All
             </button>
             <button 
               onClick={() => handleDirPill('BUY')} 
-              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${filterDir === 'BUY' ? 'bg-[#FACC15] text-black shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${filterDir === 'BUY' ? 'bg-[#EDAE49] text-[#003D5B] shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <ArrowUpRight className="w-2.5 h-2.5" /> Long
             </button>
             <button 
               onClick={() => handleDirPill('SELL')} 
-              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${filterDir === 'SELL' ? 'bg-[#FACC15] text-black shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${filterDir === 'SELL' ? 'bg-[#EDAE49] text-[#003D5B] shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               <ArrowDownRight className="w-2.5 h-2.5" /> Short
             </button>
@@ -594,7 +594,7 @@ export function HistoryPage() {
       {/* TRADE ROWS LIST */}
       <div className="space-y-4">
         {filteredAndSortedTrades.length === 0 ? (
-          <div className="apple-glass-panel p-12 text-center text-muted-foreground italic flex flex-col items-center gap-4 border border-border/10">
+          <div className="apple-glass-panel p-6 sm:p-12 text-center text-muted-foreground italic flex flex-col items-center gap-4 border border-border/10">
             <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center shadow-inner">
               <Search className="w-6 h-6 text-muted-foreground/40" />
             </div>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
-import { BarChartLine, ClockFill, LightningFill, ShieldExclamation, Share } from 'react-bootstrap-icons';
+import { BarChartLine, ClockFill, LightningFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { ShareTradeModal } from '../components/ShareTradeModal';
 import {
@@ -318,7 +318,15 @@ export function AnalyticsPage() {
       sub: 'Current Liquidity', 
       color: 'text-primary',
       isInteractive: true,
-      index: 0
+      index: 0,
+      Icon: Wallet2,
+      iconColor: 'text-primary',
+      iconBg: 'bg-primary/10',
+      iconBorder: 'border-primary/20',
+      glowBg: 'bg-primary/5',
+      glowHoverBg: 'group-hover:bg-primary/10',
+      subPrefix: '',
+      subPrefixColor: ''
     },
     { 
       label: 'Win Rate', 
@@ -326,7 +334,15 @@ export function AnalyticsPage() {
       sub: `${wins.length} successful`, 
       color: 'text-green-500',
       isInteractive: false,
-      index: 1
+      index: 1,
+      Icon: ArrowUpRight,
+      iconColor: 'text-green-500',
+      iconBg: 'bg-green-500/10',
+      iconBorder: 'border-green-500/20',
+      glowBg: 'bg-green-500/5',
+      glowHoverBg: 'group-hover:bg-green-500/10',
+      subPrefix: '▲',
+      subPrefixColor: 'text-green-500'
     },
     { 
       label: 'Expectancy', 
@@ -334,7 +350,15 @@ export function AnalyticsPage() {
       sub: trades.length ? 'Average per trade' : 'Average per trade', 
       color: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : '',
       isInteractive: trades.length > 0,
-      index: 2
+      index: 2,
+      Icon: trades.length ? (expectancy > 0 ? GraphUp : expectancy < 0 ? GraphDown : Activity) : Activity,
+      iconColor: trades.length ? (expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : 'text-muted-foreground') : 'text-muted-foreground',
+      iconBg: trades.length ? (expectancy > 0 ? 'bg-green-500/10' : expectancy < 0 ? 'bg-red-500/10' : 'bg-zinc-500/10') : 'bg-zinc-500/10',
+      iconBorder: trades.length ? (expectancy > 0 ? 'border-green-500/20' : expectancy < 0 ? 'border-red-500/20' : 'border-zinc-500/20') : 'border-zinc-500/20',
+      glowBg: trades.length ? (expectancy > 0 ? 'bg-green-500/5' : expectancy < 0 ? 'bg-red-500/5' : 'bg-zinc-500/5') : 'bg-zinc-500/5',
+      glowHoverBg: trades.length ? (expectancy > 0 ? 'group-hover:bg-green-500/10' : expectancy < 0 ? 'group-hover:bg-red-500/10' : 'group-hover:bg-zinc-500/10') : 'group-hover:bg-zinc-500/10',
+      subPrefix: trades.length ? (expectancy > 0 ? '▲' : expectancy < 0 ? '▼' : '') : '',
+      subPrefixColor: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : ''
     },
     { 
       label: 'Avg Win', 
@@ -342,7 +366,15 @@ export function AnalyticsPage() {
       sub: `${wins.length} winners`, 
       color: 'text-green-500',
       isInteractive: wins.length > 0,
-      index: 3
+      index: 3,
+      Icon: GraphUp,
+      iconColor: 'text-green-500',
+      iconBg: 'bg-green-500/10',
+      iconBorder: 'border-green-500/20',
+      glowBg: 'bg-green-500/5',
+      glowHoverBg: 'group-hover:bg-green-500/10',
+      subPrefix: wins.length ? '▲' : '',
+      subPrefixColor: 'text-green-500'
     },
     { 
       label: 'Avg Loss', 
@@ -350,7 +382,15 @@ export function AnalyticsPage() {
       sub: `${losses.length} losers`, 
       color: 'text-red-500',
       isInteractive: losses.length > 0,
-      index: 4
+      index: 4,
+      Icon: GraphDown,
+      iconColor: 'text-red-500',
+      iconBg: 'bg-red-500/10',
+      iconBorder: 'border-red-500/20',
+      glowBg: 'bg-red-500/5',
+      glowHoverBg: 'group-hover:bg-red-500/10',
+      subPrefix: losses.length ? '▼' : '',
+      subPrefixColor: 'text-red-500'
     },
     { 
       label: 'Profit Factor', 
@@ -358,7 +398,15 @@ export function AnalyticsPage() {
       sub: 'Gross Profit / Loss', 
       color: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : '',
       isInteractive: false,
-      index: 5
+      index: 5,
+      Icon: pf !== null ? (pf >= 1.5 ? Award : pf < 1 ? ShieldExclamation : Activity) : Activity,
+      iconColor: pf !== null ? (pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : 'text-amber-500') : 'text-muted-foreground',
+      iconBg: pf !== null ? (pf >= 1.5 ? 'bg-green-500/10' : pf < 1 ? 'bg-red-500/10' : 'bg-amber-500/10') : 'bg-zinc-500/10',
+      iconBorder: pf !== null ? (pf >= 1.5 ? 'border-green-500/20' : pf < 1 ? 'border-red-500/20' : 'border-amber-500/20') : 'border-zinc-500/20',
+      glowBg: pf !== null ? (pf >= 1.5 ? 'bg-green-500/5' : pf < 1 ? 'bg-red-500/5' : 'bg-amber-500/5') : 'bg-zinc-500/5',
+      glowHoverBg: pf !== null ? (pf >= 1.5 ? 'group-hover:bg-green-500/10' : pf < 1 ? 'group-hover:bg-red-500/10' : 'group-hover:bg-amber-500/10') : 'group-hover:bg-zinc-500/10',
+      subPrefix: pf !== null ? (pf >= 1.5 ? '▲' : pf < 1 ? '▼' : '▲') : '',
+      subPrefixColor: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : 'text-amber-500'
     },
   ];
 
@@ -375,16 +423,25 @@ export function AnalyticsPage() {
             key={i} 
             onMouseEnter={() => stat.isInteractive && setExact(stat.index, true)}
             onMouseLeave={() => stat.isInteractive && setExact(stat.index, false)}
-            className={`card-premium p-3 sm:p-5 flex flex-col justify-between h-32 group hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] animate-in zoom-in-90 fill-both ${
-              stat.isInteractive ? 'cursor-default select-none hover:border-primary/30' : ''
+            className={`apple-glass-panel p-4 sm:p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] border border-border/10 animate-in zoom-in-90 fill-both ${
+              stat.isInteractive ? 'cursor-default select-none' : ''
             }`}
             style={{ animationDelay: `${i * 75}ms` }}
           >
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/85 group-hover:text-primary transition-colors">{stat.label}</span>
-            <div className="space-y-1">
-              <div className={`text-xl sm:text-2xl font-black tracking-tighter ${stat.color}`}>{stat.value}</div>
-              <div className="text-[10px] text-foreground/90 font-black uppercase tracking-tighter truncate">{stat.sub}</div>
+            <div className="space-y-1 relative z-10 min-w-0 flex-1">
+              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground group-hover:text-primary transition-colors">{stat.label}</span>
+              <h2 className={`text-lg sm:text-2xl font-black tracking-tight mt-0.5 ${stat.color}`}>{stat.value}</h2>
+              <div className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground mt-0.5 flex items-center gap-1">
+                {stat.subPrefix && <span className={stat.subPrefixColor}>{stat.subPrefix}</span>}
+                <span className="truncate">{stat.sub}</span>
+              </div>
             </div>
+            
+            <div className={`w-8 h-8 sm:w-9 h-9 rounded-full ${stat.iconBg} ${stat.iconBorder} flex items-center justify-center ${stat.iconColor} relative z-10 shrink-0 ml-2`}>
+              <stat.Icon className="w-4 h-4 sm:w-5 h-5" />
+            </div>
+            
+            <div className={`absolute top-0 right-0 w-24 h-24 ${stat.glowBg} rounded-full blur-2xl pointer-events-none ${stat.glowHoverBg} transition-colors`} />
           </div>
         ))}
       </div>

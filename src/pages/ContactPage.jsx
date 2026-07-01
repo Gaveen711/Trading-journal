@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
+import { FooterNav } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 
 export function ContactPage() {
@@ -134,7 +134,7 @@ export function ContactPage() {
                                 <Motion.div
                                     key={item.label}
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 + (i * 0.1) }}
-                                    className="p-8 rounded-3xl border border-border/40 bg-muted/5 backdrop-blur-md group hover:bg-muted/10 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500"
+                                    className="p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/40 bg-muted/5 backdrop-blur-md group hover:bg-muted/10 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-all duration-500"
                                 >
                                     <p className="text-base font-bold mb-2 group-hover:text-primary transition-colors">{item.label}</p>
                                     <p className="text-sm text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
@@ -216,13 +216,10 @@ export function ContactPage() {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                         <Logo iconSize="w-7 h-7" />
-                        <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end text-muted-foreground">
-                            <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
-                            <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
-                            <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
-                            <NavLink to="/the-story" className="hover:text-primary transition-colors">The Story</NavLink>
-                            <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
-                        </div>
+                        <FooterNav
+                            className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end text-muted-foreground"
+                            linkClassName="hover:text-primary transition-colors"
+                        />
                     </div>
                     <div className="mt-16 pt-8 border-t border-border/20 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex flex-col items-center md:items-end gap-4 order-1 md:order-2">

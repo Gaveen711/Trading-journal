@@ -25,10 +25,10 @@ import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
 
 // ─── Tab IDs ────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'basic',    label: 'Log',      icon: ClipboardList, color: '#34d399' }, // Emerald-400
-  { id: 'risk',     label: 'Risk',     icon: Shield,        color: '#f43f5e' }, // Rose-500
-  { id: 'mood',     label: 'Mood',     icon: Brain,         color: '#c084fc' }, // Purple-400
-  { id: 'advanced', label: 'Advanced', icon: Cpu,           color: '#fbbf24' }, // Amber-400
+  { id: 'basic',    label: 'Log',      icon: ClipboardList, color: '#00798C' },
+  { id: 'risk',     label: 'Risk',     icon: Shield,        color: '#D1495B' },
+  { id: 'mood',     label: 'Mood',     icon: Brain,         color: '#30638E' },
+  { id: 'advanced', label: 'Advanced', icon: Cpu,           color: '#EDAE49' },
 ];
 
 // ─── Mood options (matching JournalPage icons) ───────────────────────────────
@@ -938,8 +938,8 @@ export function DashboardRightSidebar({
           {(riskFilled === 0 || moodFilled === 0) && !showLockTimer && (
             <p className="text-[9px] md:text-[10px] text-muted-foreground/40 text-center flex items-center justify-center gap-1">
               <Lightbulb 
-                className="w-2.5 h-2.5 text-amber-400 shrink-0" 
-                style={{ filter: 'drop-shadow(0 0 2px #fbbf24)' }}
+                className="w-2.5 h-2.5 text-[#EDAE49] shrink-0" 
+                style={{ filter: 'drop-shadow(0 0 2px #EDAE49)' }}
               />
               Fill <span className="text-primary/60">Risk</span> & <span className="text-primary/60">Mood</span> tabs for deeper insights
             </p>

@@ -21,6 +21,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx').then(m => ({ de
 const CalendarPage = lazy(() => import('./pages/CalendarPage.jsx').then(m => ({ default: m.CalendarPage })));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx').then(m => ({ default: m.AnalyticsPage })));
 const JournalPage = lazy(() => import('./pages/JournalPage.jsx').then(m => ({ default: m.JournalPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx').then(m => ({ default: m.SettingsPage })));
 const EASetup = lazy(() => import('./components/EASetup').then(m => ({ default: m.default })));
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess.jsx').then(m => ({ default: m.CheckoutSuccess })));
 const CheckoutCancel = lazy(() => import('./pages/CheckoutCancel.jsx').then(m => ({ default: m.CheckoutCancel })));
@@ -120,6 +121,7 @@ function AuthenticatedApp({ user }) {
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="journal" element={<JournalPage />} />
               <Route path="sync" element={<EASetup />} />
+              <Route path="settings" element={<SettingsPage />} />
               <Route path="checkout-success" element={<CheckoutSuccess />} />
               <Route path="checkout-cancel" element={<CheckoutCancel />} />
             </Route>

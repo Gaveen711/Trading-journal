@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 
 import Logo from '../components/Logo';
+import { FooterNav } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
@@ -481,9 +482,9 @@ const LANDING_STYLES = `
   }
 
   .xau-cinema-panel {
-    min-height: 100vh;
-    width: 100vw;
-    flex: 0 0 100vw;
+    min-height: 100dvh;
+    width: 100%;
+    flex: 0 0 100%;
     display: grid;
     place-items: center;
     padding: 7rem max(1.25rem, 6vw);
@@ -1704,7 +1705,7 @@ export function LandingPage() {
               XAUUSD trading journal
             </div>
 
-            <h1 className="xau-hero-title mt-7 max-w-4xl !text-[clamp(3.25rem,8.5vw,7rem)] font-black !leading-[0.96]">
+            <h1 className="xau-hero-title mt-7 max-w-4xl !text-[clamp(2.65rem,8.5vw,7rem)] font-black !leading-[0.98] sm:!leading-[0.96]">
               {HERO_LINES.map((line) => (
                 <span key={line.text} className={`xau-hero-line ${line.accent ? 'xau-hero-line-accent' : ''}`}>
                   {line.text.split(' ').map((word, index) => (
@@ -1980,13 +1981,11 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
             <Logo iconSize="w-7 h-7" />
-            <nav className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end" style={{ color: 'var(--xau-muted)' }} aria-label="Footer navigation">
-              <Link to="/privacy" className="transition hover:text-cyan-300">Privacy</Link>
-              <Link to="/terms-and-conditions" className="transition hover:text-cyan-300">Terms</Link>
-              <Link to="/refund-policy" className="transition hover:text-cyan-300">Refunds</Link>
-              <Link to="/the-story" className="transition hover:text-cyan-300">The Story</Link>
-              <Link to="/contact" className="transition hover:text-cyan-300">Contact</Link>
-            </nav>
+            <FooterNav
+              className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end"
+              linkClassName="transition hover:text-cyan-300"
+              style={{ color: 'var(--xau-muted)' }}
+            />
           </div>
 
           <div className="mt-16 flex flex-col items-center justify-between gap-6 pt-8 md:flex-row">

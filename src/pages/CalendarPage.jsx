@@ -310,8 +310,8 @@ export function CalendarPage() {
       {/* HEADER SECTION */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-black text-gradient uppercase tracking-tight">Consistency Terminal</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="text-xl sm:text-3xl font-black text-gradient uppercase tracking-tight">Consistency Terminal</h1>
             {plan === 'free' && (
               <span className="px-2 py-0.5 rounded-md bg-primary/5 border border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary shadow-sm">
                 Basic Edition
@@ -338,7 +338,7 @@ export function CalendarPage() {
             <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="px-4 py-2 text-[10px] font-black min-w-[100px] sm:min-w-[130px] text-center uppercase tracking-[0.2em] self-center text-foreground/90 select-none">
+            <span className="px-2 sm:px-4 py-2 text-[9px] sm:text-[10px] font-black min-w-[92px] sm:min-w-[130px] text-center uppercase tracking-[0.12em] sm:tracking-[0.2em] self-center text-foreground/90 select-none">
               {new Date(calYear, calMonth, 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
             </span>
             <button onClick={() => changeMonth(1)} className="p-2 hover:bg-background rounded-full transition-all active:scale-90 flex items-center justify-center">

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 import Logo from '../components/Logo';
+import { FooterNav } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 
 if (typeof window !== 'undefined') {
@@ -345,13 +346,11 @@ function Footer() {
       <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
         <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
           <Logo iconSize="w-7 h-7" />
-          <nav className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end" style={{ color: 'var(--story-muted)' }} aria-label="Footer navigation">
-            <Link to="/privacy" className="transition hover:text-cyan-300">Privacy</Link>
-            <Link to="/terms-and-conditions" className="transition hover:text-cyan-300">Terms</Link>
-            <Link to="/refund-policy" className="transition hover:text-cyan-300">Refunds</Link>
-            <Link to="/the-story" className="transition hover:text-cyan-300">The Story</Link>
-            <Link to="/contact" className="transition hover:text-cyan-300">Contact</Link>
-          </nav>
+          <FooterNav
+            className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end"
+            linkClassName="transition hover:text-cyan-300"
+            style={{ color: 'var(--story-muted)' }}
+          />
         </div>
 
         <div className="mt-16 flex flex-col items-center justify-between gap-6 pt-8 md:flex-row">
