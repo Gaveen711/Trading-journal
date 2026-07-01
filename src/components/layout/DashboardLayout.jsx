@@ -267,7 +267,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className={`group hidden md:flex flex-col fixed inset-y-0 left-0 h-dvh overflow-hidden bg-card/95 dark:bg-card/90 border-r border-border/40 z-30 p-5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[18px_0_55px_-35px_hsl(var(--primary)/0.35)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
+      <aside className={`group hidden md:flex flex-col fixed inset-y-0 left-0 h-dvh overflow-visible bg-card/95 dark:bg-card/90 border-r border-border/40 z-30 p-5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[18px_0_55px_-35px_hsl(var(--primary)/0.35)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
         {/* LOGO & TOGGLE */}
         <div className={`flex items-center w-full mb-7 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
           <div 
