@@ -443,13 +443,14 @@
   }
 
   .apple-glass-panel {
-    @apply border shadow-xl;
+    @apply border;
     background: rgba(255, 255, 255, 0.65);
     border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 18px 55px -30px rgba(15, 68, 72, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.72);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     transform: translateZ(0);
-    will-change: transform;
+    will-change: transform, border-color, box-shadow;
   }
 
   @media (min-width: 768px) {
@@ -479,13 +480,14 @@
   }
 
   .card-premium {
-    @apply rounded-2xl text-card-foreground shadow-xl transition-all duration-200 border;
+    @apply rounded-2xl text-card-foreground border;
     background: rgba(255, 255, 255, 0.65);
     border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 18px 55px -30px rgba(15, 68, 72, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.72);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
     transform: translateZ(0);
-    will-change: transform;
+    will-change: transform, border-color, box-shadow;
   }
 
   @media (min-width: 768px) {
@@ -556,6 +558,26 @@
 
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/10 rounded-full hover:bg-muted-foreground/30 transition-all;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.16) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
 /* Typography Enhancements */
@@ -2655,33 +2677,42 @@ a[href*="neat.firecms.co"] {
 /* ─── SURPRISE PREMIUM INTERACTIVE FEEDBACK (BORDERS, GLOWS, AND TRANSITIONS) ─── */
 .card-premium,
 .apple-glass-panel {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    background-color 0.24s ease !important;
 }
 
 /* Hover feedback */
 .card-premium:hover,
 .apple-glass-panel:hover {
-  border-color: hsl(var(--primary) / 0.45) !important;
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.3), 
-              0 0 15px hsl(var(--primary) / 0.08) !important;
-  transform: translateY(-2px) translateZ(0);
+  border-color: hsl(var(--primary) / 0.32) !important;
+  box-shadow:
+    0 20px 52px -32px rgba(15, 68, 72, 0.32),
+    0 0 0 1px hsl(var(--primary) / 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78) !important;
+  transform: translate3d(0, -1px, 0);
 }
 
 .dark .card-premium:hover,
 .dark .apple-glass-panel:hover {
   border-color: hsl(var(--primary) / 0.45) !important;
-  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 
-              0 0 20px hsl(var(--primary) / 0.12) !important;
-  transform: translateY(-2px) translateZ(0);
+  box-shadow:
+    0 18px 46px -16px rgba(0, 0, 0, 0.48),
+    0 0 20px hsl(var(--primary) / 0.12),
+    inset 0 1px 1px rgba(255,255,255,0.1) !important;
+  transform: translate3d(0, -1px, 0);
 }
 
 /* Touch & Click Feedback */
 .card-premium:active,
 .apple-glass-panel:active {
   border-color: hsl(var(--primary) / 0.7) !important;
-  box-shadow: 0 4px 12px -5px rgba(0, 0, 0, 0.2), 
-              0 0 8px hsl(var(--primary) / 0.2) !important;
-  transform: scale(0.99) translateZ(0);
+  box-shadow:
+    0 10px 28px -20px rgba(15, 68, 72, 0.22),
+    0 0 8px hsl(var(--primary) / 0.12) !important;
+  transform: scale(0.995) translateZ(0);
   transition-duration: 0.1s !important;
 }
 
@@ -2689,7 +2720,13 @@ a[href*="neat.firecms.co"] {
 button, 
 a.flex,
 .theme-switch-toggle {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    color 0.22s ease,
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    opacity 0.22s ease,
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Apply sleek border glows to CustomSelect elements and inputs on hover and focus */
@@ -2884,6 +2921,86 @@ aside.apple-glass-panel:active {
 .dark .desktop-profile-card:hover,
 .dark .desktop-profile-card:active {
   border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dashboard-shell {
+  isolation: isolate;
+}
+
+.dashboard-main-shell {
+  background:
+    linear-gradient(180deg, hsl(var(--background) / 0.02), hsl(var(--background) / 0.32)),
+    radial-gradient(circle at 18% 8%, hsl(var(--primary) / 0.08), transparent 28rem),
+    radial-gradient(circle at 90% 22%, hsl(var(--accent) / 0.045), transparent 26rem);
+}
+
+.dashboard-sidebar {
+  contain: layout;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.68)),
+    radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.10), transparent 18rem);
+  border-right: 1px solid hsl(var(--border) / 0.38);
+  box-shadow:
+    18px 0 58px -46px hsl(var(--primary) / 0.42),
+    inset -1px 0 0 rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  will-change: width;
+}
+
+.dark .dashboard-sidebar {
+  background:
+    linear-gradient(180deg, rgba(17, 19, 24, 0.88), rgba(9, 11, 15, 0.88)),
+    radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.13), transparent 18rem);
+  border-right-color: hsl(var(--border) / 0.7);
+  box-shadow:
+    18px 0 55px -38px rgba(0, 0, 0, 0.58),
+    inset -1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-nav-item {
+  border: 1px solid transparent;
+  transform: translateZ(0);
+}
+
+.dashboard-nav-item:hover {
+  transform: translate3d(0, -1px, 0);
+}
+
+.dashboard-nav-item-active {
+  border-color: hsl(var(--primary-to) / 0.18);
+  box-shadow:
+    0 14px 28px -18px hsl(var(--primary) / 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.desktop-profile-card,
+.desktop-profile-card:hover,
+.desktop-profile-card:active {
+  background:
+    linear-gradient(180deg, hsl(var(--background) / 0.66), hsl(var(--background) / 0.44)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48) !important;
+  border-color: hsl(var(--border) / 0.35) !important;
+  transition:
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease !important;
+}
+
+.dark .desktop-profile-card,
+.dark .desktop-profile-card:hover,
+.dark .desktop-profile-card:active {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-sidebar,
+  .dashboard-main-shell,
+  .dashboard-nav-item {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

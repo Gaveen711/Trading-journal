@@ -43,6 +43,7 @@ export function LogTradePage() {
 
   // Shared live tickers state from LiveMarketWidget
   const [liveTickers, setLiveTickers] = useState(null);
+  const [marketInterval, setMarketInterval] = useState('1m');
 
   // Gold Bias Gauge calculations using real-time market signals
   const biasPercentage = useMemo(() => {
@@ -442,7 +443,7 @@ export function LogTradePage() {
 
       {/* MIDDLE TIER: LIVE MARKET WIDGET */}
       <div className="shrink-0 w-full relative z-20">
-        <LiveMarketWidget onTickersUpdate={setLiveTickers} />
+        <LiveMarketWidget onTickersUpdate={setLiveTickers} onIntervalChange={setMarketInterval} />
       </div>
 
       {/* BOTTOM TIER: BIAS GAUGE & PERFORMANCE GRID */}
@@ -450,9 +451,14 @@ export function LogTradePage() {
 
         {/* GOLD BIAS GAUGE CARD */}
         <div className="apple-glass-panel rounded-3xl p-6 flex flex-col relative overflow-hidden border border-border/10 hover:border-primary/30 transition-colors">
-          <div className="flex items-center gap-2 mb-6 text-left relative z-10">
-            <div className="w-[4px] h-[16px] bg-[#facc15] rounded-full shrink-0" />
-            <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#9e9ea7]">GOLD BIAS GAUGE</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6 text-left relative z-10">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-[4px] h-[16px] bg-[#facc15] rounded-full shrink-0" />
+              <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#9e9ea7]">GOLD BIAS GAUGE</span>
+            </div>
+            <span className="rounded-lg border border-border/40 bg-muted/30 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              {marketInterval}
+            </span>
           </div>
 
           <div className="flex-1 flex flex-col justify-center items-center py-4 relative z-10">

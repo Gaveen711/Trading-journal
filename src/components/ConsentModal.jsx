@@ -18,7 +18,7 @@ export function ConsentModal({ onAgree }) {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-3xl font-black text-gradient uppercase tracking-tight">Access Protocol</h2>
+          <h2 className="text-3xl font-black text-foreground uppercase tracking-tight">Access Protocol</h2>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-[0.2em] leading-relaxed">
             By entering the xaujournal terminal, you acknowledge our privacy policy.
           </p>

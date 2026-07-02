@@ -160,13 +160,7 @@ const LANDING_STYLES = `
 
   .xau-gradient-word,
   .xau-hero-line-accent .xau-word > span {
-    background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%);
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: transparent;
-    animation: xauGradientText 7s linear infinite;
+    color: var(--xau-ink);
   }
 
   @keyframes xauGradientText {

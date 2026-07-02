@@ -10,6 +10,7 @@ export function ShareTradeModal({ trade, onClose }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const generateImage = async () => {
       if (!cardRef.current) return;
       try {
@@ -20,16 +21,22 @@ export function ShareTradeModal({ trade, onClose }) {
           backgroundColor: '#050505',
           logging: false
         });
-        setImageUrl(canvas.toDataURL('image/png'));
-        setIsGenerating(false);
+        if (!cancelled) {
+          setImageUrl(canvas.toDataURL('image/png'));
+          setIsGenerating(false);
+        }
       } catch (e) {
         console.error("Failed to generate share card", e);
-        setIsGenerating(false);
+        if (!cancelled) setIsGenerating(false);
       }
     };
 
     // Small timeout to ensure fonts and styles are loaded
-    setTimeout(generateImage, 500);
+    const timer = setTimeout(generateImage, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleDownload = () => {
@@ -65,17 +72,17 @@ export function ShareTradeModal({ trade, onClose }) {
         <TradeShareCard ref={cardRef} trade={trade} />
       </div>
 
-      <div className="w-full max-w-4xl apple-glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+      <div className="w-full max-w-4xl max-h-[calc(100dvh-2rem)] apple-glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between p-4 border-b border-border/10 bg-muted/20">
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground">Share Trade</h3>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onClose} aria-label="Close share trade modal" className="w-11 h-11 flex items-center justify-center rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
             <XLg className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 bg-black/40 flex items-center justify-center min-h-[400px]">
+        <div className="p-4 sm:p-6 bg-black/40 flex items-center justify-center min-h-[280px] sm:min-h-[400px] overflow-auto">
           {isGenerating ? (
             <div className="flex flex-col items-center space-y-4 animate-pulse">
               <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
@@ -88,15 +95,15 @@ export function ShareTradeModal({ trade, onClose }) {
           )}
         </div>
 
-        <div className="p-4 bg-muted/10 border-t border-border/10 flex items-center justify-end gap-3">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+        <div className="p-4 bg-muted/10 border-t border-border/10 flex flex-wrap items-center justify-end gap-3">
+          <button onClick={onClose} className="min-h-11 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
             Cancel
           </button>
 
           <button
             onClick={handleCopy}
             disabled={!imageUrl || copied}
-            className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${copied ? 'bg-green-500/20 text-green-500 border border-green-500/30' : 'bg-muted border border-border/40 hover:bg-muted/80 text-foreground'}`}
+            className={`min-h-11 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${copied ? 'bg-green-500/20 text-green-500 border border-green-500/30' : 'bg-muted border border-border/40 hover:bg-muted/80 text-foreground'}`}
           >
             {copied ? <><Check2 className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Image</>}
           </button>
@@ -104,7 +111,7 @@ export function ShareTradeModal({ trade, onClose }) {
           <button
             onClick={handleDownload}
             disabled={!imageUrl}
-            className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+            className="min-h-11 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
           >
             <Download className="w-4 h-4" /> Download HD
           </button>

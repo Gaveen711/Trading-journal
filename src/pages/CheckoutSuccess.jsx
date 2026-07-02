@@ -14,7 +14,7 @@ export function CheckoutSuccess() {
         </div>
         
         <div className="space-y-2">
-          <h1 className="text-3xl font-black text-gradient uppercase tracking-tight">
+          <h1 className="text-3xl font-black text-foreground uppercase tracking-tight">
             Upgrade Successful
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">

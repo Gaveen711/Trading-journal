@@ -169,8 +169,8 @@ export function CalendarPage() {
     for (let i = firstDayIndex - 1; i >= 0; i--) {
       const d = daysInPrevMonth - i;
       cells.push(
-        <div key={`prev-${d}`} className="relative aspect-square rounded-2xl bg-muted/2 border border-transparent p-2 sm:p-3 flex flex-col items-start justify-start opacity-20 cursor-default select-none">
-          <span className="text-[10px] sm:text-xs font-semibold text-foreground/45">{d}</span>
+        <div key={`prev-${d}`} className="relative min-h-[76px] sm:min-h-[104px] rounded-2xl bg-background/25 border border-border/10 p-2.5 sm:p-3 opacity-35 cursor-default select-none">
+          <span className="text-[10px] sm:text-xs font-black text-muted-foreground/60">{d}</span>
         </div>
       );
     }
@@ -186,83 +186,92 @@ export function CalendarPage() {
       const todayDate = new Date();
       const isToday = d === todayDate.getDate() && calMonth === todayDate.getMonth() && calYear === todayDate.getFullYear();
       const isSelected = d === selectedCalDay;
+      const dayTone = isWin
+        ? {
+            cell: 'border-emerald-500/35 bg-emerald-500/[0.055] hover:border-emerald-500/55',
+            accent: 'bg-emerald-500',
+            text: 'text-emerald-600 dark:text-emerald-400',
+            chip: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          }
+        : isLoss
+          ? {
+              cell: 'border-rose-500/35 bg-rose-500/[0.055] hover:border-rose-500/55',
+              accent: 'bg-rose-500',
+              text: 'text-rose-600 dark:text-rose-400',
+              chip: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+            }
+          : hasTrades
+            ? {
+                cell: 'border-amber-500/30 bg-amber-500/[0.045] hover:border-amber-500/45',
+                accent: 'bg-amber-500',
+                text: 'text-amber-600 dark:text-amber-400',
+                chip: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+              }
+            : {
+                cell: 'border-border/18 bg-background/35 hover:border-primary/20 hover:bg-primary/[0.025]',
+                accent: 'bg-muted-foreground/25',
+                text: 'text-muted-foreground',
+                chip: 'bg-muted/25 text-muted-foreground border-border/20',
+              };
       
       cells.push(
         <button 
           key={`day-${d}`} 
-          className={`relative aspect-square rounded-xl sm:rounded-2xl transition-all duration-300 flex flex-col justify-between p-1 sm:p-3 group overflow-hidden ${
+          className={`relative min-h-[76px] sm:min-h-[104px] rounded-2xl border transition-[border-color,background-color,box-shadow,transform] duration-200 flex flex-col justify-between p-2.5 sm:p-3 group overflow-hidden text-left ${
             isSelected 
-              ? 'border-2 border-primary ring-2 ring-primary/20 shadow-[0_0_25px_rgba(139,92,246,0.25)] bg-primary/5 scale-105 z-10' 
-              : hasTrades 
-                ? (isWin 
-                    ? `bg-green-500/[0.04] border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.03] to-transparent' : 'border-green-500/25'} hover:border-green-500/50 hover:bg-green-500/[0.08] hover:scale-[1.03] shadow-sm shadow-green-500/5` 
-                    : isLoss 
-                      ? `bg-red-500/[0.04] border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.03] to-transparent' : 'border-red-500/25'} hover:border-red-500/50 hover:bg-red-500/[0.08] hover:scale-[1.03] shadow-sm shadow-red-500/5` 
-                      : `bg-muted/10 border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.03] to-transparent' : 'border-border/80'} hover:bg-muted/20 hover:scale-[1.03]`) 
-                : `bg-muted/5 border ${isToday ? 'border-primary/50 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.15)] bg-gradient-to-b from-primary/[0.05] to-transparent' : 'border-border/10'} hover:bg-muted/10 hover:border-border/30 hover:scale-[1.03]`
+              ? 'border-primary/70 bg-primary/[0.06] shadow-[0_18px_42px_-28px_hsl(var(--primary)/0.65)] ring-2 ring-primary/15 z-10' 
+              : `${dayTone.cell} hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-28px_rgba(0,0,0,0.35)]`
           }`}
           onClick={() => setSelectedCalDay(d)}
         >
-          {/* Glowing neon top stripe for today */}
-          {isToday && (
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary via-purple-500 to-indigo-500 pointer-events-none animate-pulse" />
-          )}
+          <div className={`absolute inset-x-3 top-0 h-0.5 rounded-full ${isToday ? 'bg-primary' : hasTrades ? dayTone.accent : 'bg-transparent'}`} />
 
-          {/* Day Number (Top Left) */}
-          <div className="w-full flex justify-between items-center">
-            <span className={`text-[10px] sm:text-xs font-black transition-colors ${
+          <div className="w-full flex justify-between items-start gap-2">
+            <span className={`inline-flex min-w-6 h-6 items-center justify-center rounded-lg text-[10px] sm:text-xs font-black transition-colors ${
               isToday 
-                ? 'bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] shadow-sm' 
+                ? 'bg-primary text-primary-foreground shadow-sm' 
                 : isSelected 
                   ? 'text-primary' 
                   : 'text-foreground/60 group-hover:text-foreground'
             }`}>
               {d}
             </span>
-            {isToday && (
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(139,92,246,0.8)] relative flex shrink-0">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
-              </div>
+            {hasTrades && (
+              <span className={`rounded-full border px-1.5 py-0.5 text-[8px] sm:text-[9px] font-black tabular-nums ${dayTone.chip}`}>
+                {ts.length}
+              </span>
             )}
           </div>
 
-          {/* PNL Badge (Center) */}
-          <div className="w-full flex items-center justify-center py-1">
+          <div className="min-h-8 flex items-center">
             {hasTrades ? (
-              <div className={`hidden sm:block px-2 py-0.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-black tracking-tight border shadow-[0_2px_10px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-105 ${
-                isWin 
-                  ? 'bg-green-500/10 text-green-500 border-green-500/20' 
-                  : isLoss 
-                    ? 'bg-red-500/10 text-red-500 border-red-500/20' 
-                    : 'bg-muted text-muted-foreground border-border'
-              }`}>
+              <div className={`text-[10px] sm:text-sm font-black tabular-nums tracking-tight ${dayTone.text}`}>
                 {formatCurrency(pnl, true, 0)}
               </div>
             ) : (
-              <div className="h-5 sm:h-6" />
+              <div className="text-[9px] font-black uppercase tracking-wider text-muted-foreground/35 hidden sm:block">No trades</div>
             )}
           </div>
 
-          {/* Micro-signals: Trade dots (Bottom) */}
-          <div className="w-full h-1.5 flex items-center justify-center gap-0.5 overflow-hidden">
+          <div className="w-full h-2 flex items-center gap-1 overflow-hidden">
             {hasTrades && ts.slice(0, 4).map((t, idx) => (
               <div 
                 key={t.id || idx} 
-                className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-transform group-hover:scale-110 ${
+                className={`h-1.5 flex-1 rounded-full transition-opacity group-hover:opacity-100 ${
                   t.pnl > 0.01 
-                    ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.6)]' 
+                    ? 'bg-emerald-500/80' 
                     : t.pnl < -0.01 
-                      ? 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.6)]' 
-                      : 'bg-slate-400'
+                      ? 'bg-rose-500/80' 
+                      : 'bg-slate-400/70'
                 }`}
               />
             ))}
             {ts.length > 4 && (
-              <span className="text-[7px] font-bold text-muted-foreground/60 leading-none">+</span>
+              <span className="text-[8px] font-black text-muted-foreground/60 leading-none">+{ts.length - 4}</span>
             )}
           </div>
 
-          {isSelected && <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-ping" />}
+          {isSelected && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-primary animate-ping" />}
         </button>
       );
     }
@@ -272,8 +281,8 @@ export function CalendarPage() {
     const nextMonthPadding = 42 - totalCellsFilled;
     for (let i = 1; i <= nextMonthPadding; i++) {
       cells.push(
-        <div key={`next-${i}`} className="relative aspect-square rounded-2xl bg-muted/2 border border-transparent p-2 sm:p-3 flex flex-col items-start justify-start opacity-20 cursor-default select-none">
-          <span className="text-[10px] sm:text-xs font-semibold text-foreground/45">{i}</span>
+        <div key={`next-${i}`} className="relative min-h-[76px] sm:min-h-[104px] rounded-2xl bg-background/25 border border-border/10 p-2.5 sm:p-3 opacity-35 cursor-default select-none">
+          <span className="text-[10px] sm:text-xs font-black text-muted-foreground/60">{i}</span>
         </div>
       );
     }
@@ -311,7 +320,7 @@ export function CalendarPage() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-3xl font-black text-gradient uppercase tracking-tight">Consistency Terminal</h1>
+            <h1 className="text-xl sm:text-3xl font-black text-foreground uppercase tracking-tight">Consistency Terminal</h1>
             {plan === 'free' && (
               <span className="px-2 py-0.5 rounded-md bg-primary/5 border border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary shadow-sm">
                 Basic Edition
@@ -354,13 +363,27 @@ export function CalendarPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Calendar Grid Card */}
-        <div className="lg:col-span-2 card-premium p-3 sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="lg:col-span-2 card-premium p-3 sm:p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 rounded-2xl border border-border/15 bg-background/35 px-4 py-3">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Trading Calendar</p>
+              <h2 className="text-lg font-black uppercase tracking-tight text-foreground">
+                {new Date(calYear, calMonth, 1).toLocaleString('default', { month: 'long' })} Overview
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              <span>{activeDays} active days</span>
+              <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+              <span>{winDays} green</span>
+            </div>
+          </div>
+
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 gap-2 mb-4 border-b border-border/10 pb-3">
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2 px-1">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => {
               const mobileLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
               return (
-                <div key={d} className="text-center text-[10px] font-black uppercase tracking-[0.15em] text-foreground/50">
+                <div key={d} className="rounded-xl bg-muted/20 py-2 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-foreground/55">
                   <span className="hidden sm:inline">{d}</span>
                   <span className="sm:hidden">{mobileLabels[i]}</span>
                 </div>
@@ -369,15 +392,15 @@ export function CalendarPage() {
           </div>
           
           {/* Days Grid */}
-          <div key={`${calMonth}-${calYear}`} className="grid grid-cols-7 gap-1.5 sm:gap-2.5 animate-in fade-in duration-300">
+          <div key={`${calMonth}-${calYear}`} className="grid grid-cols-7 gap-1.5 sm:gap-2 animate-in fade-in duration-300">
             {renderCells()}
           </div>
           
           {/* Legend */}
-          <div className="mt-8 pt-6 border-t border-border/10 flex flex-wrap gap-x-6 gap-y-3 text-[9px] uppercase font-black tracking-widest text-muted-foreground/80">
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-green-500/10 border border-green-500/30"></div> Profit Day</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-red-500/10 border border-red-500/30"></div> Loss Day</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-muted/10 border border-border/10"></div> No Operations</div>
+          <div className="mt-5 flex flex-wrap gap-2 text-[9px] uppercase font-black tracking-widest text-muted-foreground/80">
+            <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-2"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Profit Day</div>
+            <div className="flex items-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/5 px-3 py-2"><div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div> Loss Day</div>
+            <div className="flex items-center gap-2 rounded-full border border-border/20 bg-muted/10 px-3 py-2"><div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30"></div> No Operations</div>
           </div>
         </div>
 

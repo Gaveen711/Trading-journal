@@ -23,7 +23,7 @@ export function OnboardingModal({ onClose, onComplete }) {
           <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-400 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-primary/20 rotate-3">
             XAU
           </div>
-          <h2 className="text-2xl font-black text-gradient pt-2">Welcome to XAU Journal</h2>
+          <h2 className="text-2xl font-black text-foreground pt-2">Welcome to XAU Journal</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Let's set a baseline for your equity curve calculation.
           </p>

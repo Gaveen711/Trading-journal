@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Bar, Line, Pie } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
-import { BarChartLine, ClockFill, LightningFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity } from 'react-bootstrap-icons';
+import { BarChartLine, ClockFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { ShareTradeModal } from '../components/ShareTradeModal';
 import {
@@ -34,9 +34,9 @@ export function AnalyticsPage() {
   const [showExact, setShowExact] = useState({});
   const [sharingTrade, setSharingTrade] = useState(null);
 
-  const setExact = (index, val) => {
+  const setExact = useCallback((index, val) => {
     setShowExact(prev => ({ ...prev, [index]: val }));
-  };
+  }, []);
   
   const stats = useMemo(() => {
     const tradesList = trades || [];
@@ -136,7 +136,8 @@ export function AnalyticsPage() {
     });
 
     const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthlyPnlLabels = monthsOrder.filter(m => monthlyPnlMap[m] !== undefined || Object.keys(monthlyPnlMap).includes(m));
+    const monthsWithTrades = new Set(Object.keys(monthlyPnlMap));
+    const monthlyPnlLabels = monthsOrder.filter(m => monthsWithTrades.has(m));
     const monthlyPnlValues = monthlyPnlLabels.map(m => monthlyPnlMap[m] || 0);
 
     const monthlyPnlChartData = {
@@ -267,15 +268,6 @@ export function AnalyticsPage() {
     };
   }, [trades, walletBalance]);
 
-  if (isLoadingTrades) return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-black text-gradient">Analytics</h1>
-      </header>
-      <AnalyticsSkeleton />
-    </div>
-  );
-
   const {
     wins,
     losses,
@@ -293,9 +285,11 @@ export function AnalyticsPage() {
     winRatePercent
   } = stats;
 
-  const chartOptions = {
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
+    resizeDelay: 120,
+    animation: { duration: 220 },
     plugins: { 
       legend: { display: false },
       tooltip: {
@@ -309,9 +303,32 @@ export function AnalyticsPage() {
       y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } },
       x: { grid: { display: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } }
     }
-  };
+  }), [isLightMode]);
 
-  const statCards = [
+  const monthlyPnlOptions = useMemo(() => ({
+    ...chartOptions,
+    scales: {
+      ...chartOptions.scales,
+      x: { ...chartOptions.scales.x, display: true }
+    }
+  }), [chartOptions]);
+
+  const sessionWeeklyOptions = useMemo(() => ({
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: { display: false }
+    },
+    scales: {
+      ...chartOptions.scales,
+      x: { ...chartOptions.scales.x, display: true }
+    }
+  }), [chartOptions]);
+
+  const performanceByStrategyOptions = monthlyPnlOptions;
+  const recentSignals = useMemo(() => sortedTrades.slice(-5).reverse(), [sortedTrades]);
+
+  const statCards = useMemo(() => [
     { 
       label: 'Wallet Balance', 
       value: showExact[0] ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance), 
@@ -408,12 +425,21 @@ export function AnalyticsPage() {
       subPrefix: pf !== null ? (pf >= 1.5 ? '▲' : pf < 1 ? '▼' : '▲') : '',
       subPrefixColor: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : 'text-amber-500'
     },
-  ];
+  ], [avgLoss, avgWin, currentWalletBalance, expectancy, losses.length, pf, showExact, trades.length, winRatePercent, wins.length]);
+
+  if (isLoadingTrades) return (
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-3xl font-black text-foreground">Analytics</h1>
+      </header>
+      <AnalyticsSkeleton />
+    </div>
+  );
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-black text-gradient uppercase tracking-tight">Performance Analytics</h1>
+        <h1 className="text-2xl sm:text-3xl font-black text-foreground uppercase tracking-tight">Performance Analytics</h1>
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest">Deep insights into your edge, consistency, and risk management.</p>
       </header>
       
@@ -423,21 +449,27 @@ export function AnalyticsPage() {
             key={i} 
             onMouseEnter={() => stat.isInteractive && setExact(stat.index, true)}
             onMouseLeave={() => stat.isInteractive && setExact(stat.index, false)}
-            className={`apple-glass-panel p-4 sm:p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 hover:scale-[1.03] active:scale-95 transition-all duration-500 ease-[var(--spring-bounce)] border border-border/10 animate-in zoom-in-90 fill-both ${
-              stat.isInteractive ? 'cursor-default select-none' : ''
+            onFocus={() => stat.isInteractive && setExact(stat.index, true)}
+            onBlur={() => stat.isInteractive && setExact(stat.index, false)}
+            onClick={() => stat.isInteractive && setExact(stat.index, !showExact[stat.index])}
+            role={stat.isInteractive ? 'button' : undefined}
+            tabIndex={stat.isInteractive ? 0 : undefined}
+            aria-label={stat.isInteractive ? `${stat.label}: toggle exact value` : stat.label}
+            className={`apple-glass-panel p-4 sm:p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 active:scale-[0.98] transition-colors duration-200 border border-border/10 animate-in zoom-in-90 fill-both ${
+              stat.isInteractive ? 'cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50' : ''
             }`}
             style={{ animationDelay: `${i * 75}ms` }}
           >
             <div className="space-y-1 relative z-10 min-w-0 flex-1">
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground group-hover:text-primary transition-colors">{stat.label}</span>
-              <h2 className={`text-lg sm:text-2xl font-black tracking-tight mt-0.5 ${stat.color}`}>{stat.value}</h2>
+              <span className="text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">{stat.label}</span>
+              <h2 className={`text-lg sm:text-2xl font-black tracking-tight mt-0.5 tabular-nums break-words ${stat.color}`}>{stat.value}</h2>
               <div className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground mt-0.5 flex items-center gap-1">
                 {stat.subPrefix && <span className={stat.subPrefixColor}>{stat.subPrefix}</span>}
-                <span className="truncate">{stat.sub}</span>
+                <span className="truncate min-w-0">{stat.sub}</span>
               </div>
             </div>
             
-            <div className={`w-8 h-8 sm:w-9 h-9 rounded-full ${stat.iconBg} ${stat.iconBorder} flex items-center justify-center ${stat.iconColor} relative z-10 shrink-0 ml-2`}>
+            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ${stat.iconBg} ${stat.iconBorder} flex items-center justify-center ${stat.iconColor} relative z-10 shrink-0 ml-2`}>
               <stat.Icon className="w-4 h-4 sm:w-5 h-5" />
             </div>
             
@@ -535,13 +567,7 @@ export function AnalyticsPage() {
           </h3>
           <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distribution across individual calendar months.</p>
           <div className="h-64">
-            <Bar data={monthlyPnlChartData} options={{
-              ...chartOptions,
-              scales: {
-                ...chartOptions.scales,
-                x: { ...chartOptions.scales.x, display: true }
-              }
-            }} />
+            <Bar data={monthlyPnlChartData} options={monthlyPnlOptions} />
           </div>
         </div>
 
@@ -582,17 +608,7 @@ export function AnalyticsPage() {
           <div className="h-64 mb-8">
             <Bar 
               data={sessionWeeklyChartData} 
-              options={{
-                ...chartOptions,
-                plugins: {
-                  ...chartOptions.plugins,
-                  legend: { display: false }
-                },
-                scales: {
-                  ...chartOptions.scales,
-                  x: { ...chartOptions.scales.x, display: true }
-                }
-              }} 
+              options={sessionWeeklyOptions} 
             />
           </div>
 
@@ -649,13 +665,7 @@ export function AnalyticsPage() {
           </h3>
           <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distributed across your custom strategies.</p>
           <div className="h-64">
-            <Bar data={performanceByStrategyChartData} options={{
-              ...chartOptions,
-              scales: {
-                ...chartOptions.scales,
-                x: { ...chartOptions.scales.x, display: true }
-              }
-            }} />
+            <Bar data={performanceByStrategyChartData} options={performanceByStrategyOptions} />
           </div>
         </div>
       </div>
@@ -668,28 +678,33 @@ export function AnalyticsPage() {
           </h3>
           <button 
             onClick={() => navigate('/app/history')} 
-            className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+            className="min-h-11 px-3 -mr-3 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             View All History →
           </button>
         </div>
         <div className="space-y-3">
-          {sortedTrades.slice(-5).reverse().map((t) => (
+          {recentSignals.map((t) => (
             <div key={t.id} className="flex justify-between items-center p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-2.5 sm:gap-4">
+              <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
                 <div className={`w-12 h-7 rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-widest ${t.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
                   {t.direction}
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col min-w-0">
                   <span className="text-xs font-black tracking-tight">{t.date}</span>
                   <span className="text-[9px] text-foreground/70 font-bold uppercase tracking-widest">{t.session} · {t.setup}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className={`text-sm font-black tracking-tighter ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div className={`text-sm font-black tracking-tighter tabular-nums ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   {formatCurrency(t.pnl, true)}
                 </div>
-                <button onClick={() => setSharingTrade(t)} className="w-7 h-7 rounded-lg bg-muted/50 hover:bg-primary/20 hover:text-primary text-muted-foreground flex items-center justify-center transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setSharingTrade(t)}
+                  aria-label={`Share trade from ${t.date}`}
+                  className="w-11 h-11 rounded-xl bg-muted/50 hover:bg-primary/20 hover:text-primary text-muted-foreground flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
                   <Share className="w-3.5 h-3.5" />
                 </button>
               </div>

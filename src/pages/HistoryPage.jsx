@@ -288,7 +288,7 @@ export function HistoryPage() {
       {/* HEADER SECTION */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gradient uppercase tracking-tight font-sans">Trade History</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground uppercase tracking-tight font-sans">Trade History</h1>
           <p className="text-muted-foreground text-xs font-semibold mt-1">A comprehensive log of your past performance.</p>
         </div>
         <div className="download-btn-wrapper shrink-0">

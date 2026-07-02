@@ -175,7 +175,7 @@ const STYLES = `
   .story-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: clamp(2rem, 5vw, 3.5rem); }
   .story-hero-copy-block { max-width: 960px; margin: 0 auto; display: grid; justify-items: center; text-align: center; }
   .story-hero-title { margin-top: 1.35rem; max-width: 940px; color: var(--story-ink); font-size: clamp(2.55rem, 5.4vw, 5rem) !important; line-height: 1.02 !important; font-weight: 900 !important; letter-spacing: 0 !important; text-wrap: balance; }
-  .story-gradient-text, .story-aurora-word { background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%); background-size: 200% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; animation: storyGradientText 7s linear infinite; }
+  .story-gradient-text, .story-aurora-word { color: var(--story-ink); }
   .story-aurora-word { display: inline-block; }
   @keyframes storyGradientText {
     0% { background-position: 0% 50%; }

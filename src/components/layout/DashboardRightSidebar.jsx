@@ -70,7 +70,6 @@ export function DashboardRightSidebar({
   toast,
   addTrade,
   isLoadingTrades,
-  isExpanded,
   setIsExpanded,
 }) {
   const [activeTab, setActiveTab] = useState('basic');
