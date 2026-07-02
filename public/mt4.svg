@@ -1,0 +1,10 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetaTrader 4">
+  <rect width="96" height="96" rx="22" fill="#0B1320"/>
+  <path d="M26 25C33.8 17.8 45.5 17 54.2 23.2C47.9 24.4 42.7 28.5 39.9 34.2C36.6 29.1 31.7 26 26 25Z" fill="#35A7FF"/>
+  <path d="M61.7 27.4C72.1 29.7 79.1 39.3 77.8 50C73.8 44.9 68 42.2 61.7 42.4C64.3 37 64.4 31.7 61.7 27.4Z" fill="#49D17D"/>
+  <path d="M75.2 58.3C70.8 68 60.2 73.1 50.1 70.3C56 67.6 59.9 62.2 60.7 56C64.8 60.3 69.9 61.3 75.2 58.3Z" fill="#F6C74B"/>
+  <path d="M39.8 70.9C29.3 69.6 21.4 60.9 21.7 50.1C26.3 54.7 32.4 56.6 38.6 55.5C35.4 60.7 35.8 66.1 39.8 70.9Z" fill="#FF6B57"/>
+  <path d="M22.8 42C25.8 31.8 35.5 25.2 46.1 27.1C40.8 30.8 37.7 36.3 37.6 42.6C32.4 39.8 27.1 39.6 22.8 42Z" fill="#7868FF"/>
+  <circle cx="48" cy="48" r="14" fill="#F8FBFF"/>
+  <text x="48" y="53.5" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="900" fill="#0B1320">MT4</text>
+</svg>

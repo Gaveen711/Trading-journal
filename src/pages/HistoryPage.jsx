@@ -648,34 +648,34 @@ export function HistoryPage() {
                     </div>
 
                     {/* Middle stats grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1 text-left sm:px-4">
-                      <div>
+                    <div className="grid grid-cols-2 md:grid-cols-[minmax(92px,1fr)_minmax(92px,1fr)_minmax(74px,0.68fr)_minmax(74px,0.68fr)] gap-x-5 gap-y-3 flex-1 text-left sm:px-3 xl:px-5">
+                      <div className="min-w-0">
                         <span className="text-[10px] md:text-xs font-black uppercase text-muted-foreground/60 tracking-wider block">Entry</span>
-                        <span className="text-xs font-bold text-foreground">{formatPrice(t.entry)}</span>
+                        <span className="text-xs font-bold text-foreground tabular-nums">{formatPrice(t.entry)}</span>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[10px] md:text-xs font-black uppercase text-muted-foreground/60 tracking-wider block">Exit</span>
-                        <span className="text-xs font-bold text-foreground">{t.exit ? formatPrice(t.exit) : '—'}</span>
+                        <span className="text-xs font-bold text-foreground tabular-nums">{t.exit ? formatPrice(t.exit) : '—'}</span>
                       </div>
-                      <div>
+                      <div className="min-w-[74px] md:justify-self-center md:text-center">
                         <span className="text-[10px] md:text-xs font-black uppercase text-muted-foreground/60 tracking-wider block">Pips</span>
-                        <span className={`text-xs font-black ${isWin ? 'text-green-500' : 'text-red-500'}`}>
+                        <span className={`text-xs font-black tabular-nums ${isWin ? 'text-green-500' : 'text-red-500'}`}>
                           {formattedPips}
                         </span>
                       </div>
-                      <div>
+                      <div className="min-w-[74px] md:justify-self-center md:text-center">
                         <span className="text-[10px] md:text-xs font-black uppercase text-muted-foreground/60 tracking-wider block">R:R</span>
-                        <span className="text-xs font-bold text-foreground">{t.rr ? `1:${t.rr}` : '—'}</span>
+                        <span className="text-xs font-bold text-foreground tabular-nums">{t.rr ? `1:${t.rr}` : '—'}</span>
                       </div>
                     </div>
 
                     {/* Right side: P&L, lots & Expand button */}
-                    <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 select-none">
+                    <div className="flex items-center justify-between sm:justify-end gap-5 shrink-0 select-none sm:min-w-[148px]">
                       <div className="flex flex-col items-start sm:items-end text-left sm:text-right">
-                        <span className={`text-base font-black tracking-tight ${isWin ? 'text-green-500' : 'text-red-500'}`}>
+                        <span className={`text-base font-black tracking-tight tabular-nums ${isWin ? 'text-green-500' : 'text-red-500'}`}>
                           {formattedPnL}
                         </span>
-                        <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{t.lots || 0.0} Lots</span>
+                        <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5 tabular-nums">{t.lots || 0.0} Lots</span>
                       </div>
                       <button 
                         className="w-7 h-7 rounded-lg border border-border/40 hover:bg-muted flex items-center justify-center text-muted-foreground cursor-pointer transition-colors active:scale-95"

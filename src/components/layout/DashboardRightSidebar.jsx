@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Bell, Settings, ChevronDown, Palette, ClipboardList, Shield, Brain, Cpu, Lightbulb } from 'lucide-react';
 import { auth, storage } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency } from '../../lib/tradeUtils';
-import { submitTrade, getRemainingFreeTrades } from '../../services/tradeService';
+import { submitTrade } from '../../services/tradeService';
 import { CurrencyConverter } from '../CurrencyConverter';
 import { CustomSelect } from '../ui/CustomSelect';
 
@@ -21,7 +21,6 @@ import { requireProFeature } from '../../services/featureGate';
 import { ImageViewerModal } from '../ImageViewerModal';
 import { AnimatePresence } from 'framer-motion';
 
-import { FREE_TRADE_LIMIT } from '../../config/tradeConfig';
 
 // ─── Tab IDs ────────────────────────────────────────────────────────────────
 const TABS = [
@@ -63,7 +62,6 @@ export function DashboardRightSidebar({
   plan,
   isTrial,
   isTrialActive,
-  renewCountdown,
   trialTimeLeft,
   trades,
   setShowPricingModal,
@@ -74,9 +72,7 @@ export function DashboardRightSidebar({
 }) {
   const [activeTab, setActiveTab] = useState('basic');
 
-  const isFree = plan === 'basic' && !isTrial;
-  const isPro  = plan === 'pro' || plan === 'grace';
-  const showLockTimer = !isPro && !!renewCountdown;
+  const isFree = (plan === 'basic' || plan === 'free') && !isTrial;
 
   // ── TAB 1: BASIC – Order Form State ────────────────────────────────────────
   const [direction, setDirection] = useState('LONG');
@@ -139,7 +135,6 @@ export function DashboardRightSidebar({
     return (reward / risk).toFixed(2);
   }, [entry, sl, tp]);
 
-  const remainingFreeTrades = getRemainingFreeTrades(trades);
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -288,10 +283,11 @@ export function DashboardRightSidebar({
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="w-full">
-            {/* ─── ORDER FORM (ACTION CENTER) ───────────────────────────────────── */}
+
+            {/* ORDER FORM (ACTION CENTER) */}
             <div className="apple-glass-panel flex flex-col rounded-3xl relative z-30 overflow-hidden">
 
-        {/* ── Panel Header ────────────────────────────────────────────────── */}
+        {/* Panel Header */}
         <div className="flex items-center justify-center px-4 pt-4 pb-3 border-b border-border/10 shrink-0 relative">
           <div className="flex items-center gap-2 mx-auto">
             <span className="w-2 h-2 rounded-full bg-[#E5B80B] shadow-[0_0_6px_rgba(229,184,11,0.6)]" />
@@ -299,7 +295,6 @@ export function DashboardRightSidebar({
             <span className="text-[10px] md:text-xs font-black uppercase bg-[#E5B80B]/15 text-[#E5B80B] px-1.5 py-0.5 rounded tracking-widest">XAU/USD</span>
           </div>
           <div className="absolute right-4 flex items-center gap-2">
-            {/* PnL live preview badge */}
             {(parseFloat(entry) > 0 && parseFloat(exit) > 0) && (
               <span className={`text-[10px] md:text-xs font-black px-2 py-0.5 rounded-lg ${(pnlData?.pnl || 0) >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>
                 {(pnlData?.pnl || 0) >= 0 ? '+' : ''}{formatCurrency(pnlData?.pnl || 0)}
@@ -308,12 +303,11 @@ export function DashboardRightSidebar({
           </div>
         </div>
 
-        {/* ── Buy / Sell Segmented Control ────────────────────────────────── */}
+        {/* Buy / Sell Segmented Control */}
         <div className="px-4 pt-3 shrink-0">
           <div className="flex bg-muted/60 p-0.5 rounded-xl">
             <button
-              disabled={showLockTimer}
-              className={`flex-1 py-1.5 text-xs md:text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'LONG' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-1.5 text-xs md:text-sm font-bold rounded-lg transition-all ${direction === 'LONG' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setDirection('LONG')}
             >
               <span className="flex items-center justify-center gap-1.5">
@@ -322,8 +316,7 @@ export function DashboardRightSidebar({
               </span>
             </button>
             <button
-              disabled={showLockTimer}
-              className={`flex-1 py-1.5 text-xs md:text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${direction === 'SHORT' ? 'bg-rose-500 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-1.5 text-xs md:text-sm font-bold rounded-lg transition-all ${direction === 'SHORT' ? 'bg-rose-500 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setDirection('SHORT')}
             >
               <span className="flex items-center justify-center gap-1.5">
@@ -334,9 +327,7 @@ export function DashboardRightSidebar({
           </div>
         </div>
 
-
-
-        {/* ── Feature Tabs ────────────────────────────────────────────────── */}
+        {/* Feature Tabs */}
         <div className="flex gap-0.5 border-b border-border/10 px-4 mt-1.5 shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap scroll-smooth">
           {TABS.map((tab) => {
             const badge = tab.id === 'risk' ? riskFilled : tab.id === 'mood' ? moodFilled : tab.id === 'advanced' ? advancedFilled : 0;
@@ -351,7 +342,7 @@ export function DashboardRightSidebar({
                     : 'text-muted-foreground hover:text-foreground/70 border-transparent'
                 }`}
               >
-                <IconComponent 
+                <IconComponent
                   className="w-3.5 h-3.5 transition-all duration-300 group-hover:scale-110"
                   style={activeTab === tab.id ? { color: tab.color, filter: `drop-shadow(0 0 3px ${tab.color})` } : {}}
                 />
@@ -366,86 +357,40 @@ export function DashboardRightSidebar({
           })}
         </div>
 
-        {/* ── Lock Timer Banner ───────────────────────────────────────────── */}
-        {showLockTimer && (
-          <div className="mx-4 mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center text-center gap-2 shrink-0 animate-in fade-in duration-300">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 animate-pulse">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-amber-500">Log Window Locked</span>
-            <div className="bg-amber-500/15 border border-amber-500/30 px-4 py-1.5 rounded-xl text-amber-500 text-sm font-black tracking-[0.15em] font-mono">
-              {renewCountdown}
-            </div>
-          </div>
-        )}
-
         {/* ── Trial / Free Tier Notice ─────────────────────────────────────── */}
         {isTrialActive && (
           <div className="mx-4 mt-3 p-3 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col gap-2 shrink-0">
             <div className="flex justify-between items-center">
               <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                Pro Trial Active
+                Pro access active
               </span>
               {trialTimeLeft && <span className="text-[10px] md:text-xs font-black text-foreground bg-background/50 px-2 py-0.5 rounded font-mono">{trialTimeLeft}</span>}
             </div>
             <button onClick={() => setShowPricingModal(true)} className="w-full py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] md:text-xs font-black uppercase tracking-[0.15em] rounded-xl transition-all">
-              Upgrade to Pro
+              Keep Pro access
             </button>
           </div>
         )}
 
         {isFree && (
-          <div className="mx-4 mt-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 overflow-hidden shrink-0">
-            {/* Header row */}
-            <div className="flex items-center justify-between px-3 pt-3 pb-1.5">
+          <div className="mx-4 mt-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3 shrink-0">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                Free Tier
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                Free manual journal
               </span>
-              <span className={`text-[10px] md:text-xs font-black tabular-nums ${
-                remainingFreeTrades === 0 ? 'text-rose-400' :
-                remainingFreeTrades <= 5  ? 'text-amber-400' :
-                'text-blue-400'
-              }`}>
-                {FREE_TRADE_LIMIT - remainingFreeTrades} / {FREE_TRADE_LIMIT} trades
-              </span>
+              <span className="text-[10px] md:text-xs font-black text-blue-400">Unlimited</span>
             </div>
-
-            {/* Progress bar */}
-            <div className="px-3 pb-2">
-              <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    remainingFreeTrades === 0 ? 'bg-rose-500' :
-                    remainingFreeTrades <= 5  ? 'bg-amber-500' :
-                    'bg-blue-500'
-                  }`}
-                  style={{ width: `${((FREE_TRADE_LIMIT - remainingFreeTrades) / FREE_TRADE_LIMIT) * 100}%` }}
-                />
-              </div>
-              {remainingFreeTrades > 0 ? (
-                <p className="text-[9px] md:text-[10.5px] text-muted-foreground/50 mt-1">
-                  {remainingFreeTrades} trade{remainingFreeTrades !== 1 ? 's' : ''} remaining — once limit is reached, resets after 1 hour
-                </p>
-              ) : (
-                <p className="text-[9px] md:text-[10.5px] text-rose-400/70 mt-1">
-                  Limit reached · Unlocks in: <strong className="text-rose-400 font-mono">{renewCountdown || '01:00:00'}</strong>
-                </p>
-              )}
-            </div>
-
-            {/* CTA */}
-            <div className="px-3 pb-3">
-              <button
-                onClick={() => setShowPricingModal(true)}
-                className="w-full py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.15em] rounded-xl transition-all"
-              >
-                Unlock Unlimited — Upgrade Pro
-              </button>
-            </div>
+            <p className="mt-2 text-[9px] md:text-[10.5px] text-muted-foreground/60 leading-relaxed">
+              Manual trade logging is unlimited. Upgrade only when you want MT4/MT5 sync and advanced analytics.
+            </p>
+            <button
+              onClick={() => setShowPricingModal(true)}
+              className="w-full mt-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.15em] rounded-xl transition-all"
+            >
+              Add broker sync
+            </button>
           </div>
         )}
 
@@ -464,7 +409,7 @@ export function DashboardRightSidebar({
                 <div className="relative">
                   <input
                     type="text" value={lots} onChange={handleNumericChange(setLots)} placeholder="0.10"
-                    disabled={showLockTimer}
+                   
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-muted-foreground">LOTS</span>
@@ -477,7 +422,7 @@ export function DashboardRightSidebar({
                 <div className="relative">
                   <input
                     type="text" value={entry} onChange={handleNumericChange(setEntry)} placeholder="2345.50"
-                    disabled={showLockTimer}
+                   
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-primary">USD</span>
@@ -490,7 +435,7 @@ export function DashboardRightSidebar({
                 <div className="relative">
                   <input
                     type="text" value={exit} onChange={handleNumericChange(setExit)} placeholder="2350.00"
-                    disabled={showLockTimer}
+                   
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-primary">USD</span>
@@ -501,12 +446,12 @@ export function DashboardRightSidebar({
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
                   <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Take Profit</label>
-                  <input type="text" value={tp} onChange={handleNumericChange(setTp)} placeholder="Optional" disabled={showLockTimer}
+                  <input type="text" value={tp} onChange={handleNumericChange(setTp)} placeholder="Optional"
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
                 </div>
                 <div className="space-y-0.5">
                   <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Stop Loss</label>
-                  <input type="text" value={sl} onChange={handleNumericChange(setSl)} placeholder="Optional" disabled={showLockTimer}
+                  <input type="text" value={sl} onChange={handleNumericChange(setSl)} placeholder="Optional"
                     className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" />
                 </div>
               </div>
@@ -515,7 +460,7 @@ export function DashboardRightSidebar({
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
                   <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Session</label>
-                  <CustomSelect value={session} onChange={setSession} placeholder="Session" disabled={showLockTimer} className="h-10 px-3.5" align="top"
+                  <CustomSelect value={session} onChange={setSession} placeholder="Session" className="h-10 px-3.5" align="top"
                     options={[
                       { value: 'London',   label: 'London'       },
                       { value: 'NewYork',  label: 'New York'     },
@@ -526,7 +471,7 @@ export function DashboardRightSidebar({
                 </div>
                 <div className="space-y-0.5">
                   <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
-                  <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" disabled={showLockTimer} className="h-10 px-3.5" align="top"
+                  <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" className="h-10 px-3.5" align="top"
                     options={[
                       { value: 'Breakout', label: 'Breakout'    },
                       { value: 'SMC',      label: 'SMC'         },
@@ -544,7 +489,7 @@ export function DashboardRightSidebar({
                 <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Trade Notes</label>
                 <textarea
                   value={note} onChange={(e) => setNote(e.target.value)}
-                  placeholder="Why did you take this trade?" rows={5} disabled={showLockTimer}
+                  placeholder="Why did you take this trade?" rows={5}
                   className="w-full bg-muted/30 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
@@ -564,7 +509,7 @@ export function DashboardRightSidebar({
                         multiple
                         accept="image/*"
                         onChange={handleImageUpload}
-                        disabled={uploading || showLockTimer}
+                        disabled={uploading}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                       />
                       <CloudArrowUp className="w-5 h-5 text-muted-foreground/60 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
@@ -681,7 +626,7 @@ export function DashboardRightSidebar({
                   type="range" min="0.1" max="10" step="0.1"
                   value={riskPercent}
                   onChange={(e) => setRiskPercent(e.target.value)}
-                  disabled={showLockTimer}
+                 
                   className="w-full h-1.5 appearance-none bg-muted/60 rounded-full accent-primary cursor-pointer disabled:opacity-50"
                 />
                 <div className="flex justify-between text-[10px] md:text-xs text-muted-foreground/50 font-bold uppercase px-0.5">
@@ -693,7 +638,7 @@ export function DashboardRightSidebar({
               <div className="relative">
                 <input
                   type="text" value={riskPercent} onChange={handleNumericChange(setRiskPercent)}
-                  placeholder="1.0" disabled={showLockTimer}
+                  placeholder="1.0"
                   className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50"
                 />
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-muted-foreground">% RISK</span>
@@ -714,7 +659,7 @@ export function DashboardRightSidebar({
                   <div className="relative animate-in fade-in duration-200">
                     <input
                       type="text" value={maxDailyLoss} onChange={handleNumericChange(setMaxDailyLoss)}
-                      placeholder="e.g. 50.00" disabled={showLockTimer}
+                      placeholder="e.g. 50.00"
                       className="w-full bg-muted/30 border border-border/20 rounded-xl px-3 py-2 text-sm font-bold text-foreground focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50"
                     />
                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] md:text-xs font-black uppercase text-muted-foreground">USD</span>
@@ -927,14 +872,14 @@ export function DashboardRightSidebar({
 
           <button
             onClick={handleLogTrade}
-            disabled={saving || isLoadingTrades || showLockTimer}
+            disabled={saving || isLoadingTrades}
             className={`w-full btn-save-glow ${direction === 'LONG' ? 'btn-save-glow-buy' : 'btn-save-glow-sell'}`}
           >
-            {saving ? 'Processing...' : showLockTimer ? `Locked (${renewCountdown})` : `${direction === 'LONG' ? '↑ Buy/Long' : '↓ Sell/Short'} — Save Trade`}
+            {saving ? 'Processing...' : `${direction === 'LONG' ? 'Buy/Long' : 'Sell/Short'} - Save Trade`}
           </button>
 
           {/* Tab completion hints */}
-          {(riskFilled === 0 || moodFilled === 0) && !showLockTimer && (
+          {(riskFilled === 0 || moodFilled === 0) && (
             <p className="text-[9px] md:text-[10px] text-muted-foreground/40 text-center flex items-center justify-center gap-1">
               <Lightbulb 
                 className="w-2.5 h-2.5 text-[#EDAE49] shrink-0" 
@@ -944,7 +889,7 @@ export function DashboardRightSidebar({
             </p>
           )}
         </div>
-      </div>
+            </div>
       </div>
 
       {/* ─── Currency Converter (Separate Box) ────────────────────────────── */}

@@ -1,5 +1,87 @@
 import React from 'react';
 
+const shellStyle = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px',
+  fontFamily: "'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  color: 'hsl(var(--foreground, 0 0% 100%))',
+  background: 'hsl(var(--background, 240 24% 3%))',
+  backgroundImage: [
+    'radial-gradient(circle at 18% 12%, hsl(var(--primary, 190 100% 50%) / 0.16), transparent 28rem)',
+    'radial-gradient(circle at 86% 18%, hsl(var(--primary-to, 263 91% 66%) / 0.14), transparent 30rem)',
+  ].join(', '),
+};
+
+const cardStyle = {
+  width: 'min(100%, 430px)',
+  borderRadius: '28px',
+  border: '1px solid hsl(var(--border, 240 16% 13%) / 0.9)',
+  background: 'hsl(var(--card, 240 24% 5%) / 0.88)',
+  backdropFilter: 'blur(24px)',
+  WebkitBackdropFilter: 'blur(24px)',
+  padding: '34px',
+  boxShadow: '0 28px 90px rgba(0,0,0,0.42)',
+};
+
+const eyebrowStyle = {
+  margin: '0 0 18px',
+  color: 'hsl(var(--primary, 190 100% 50%))',
+  fontSize: '11px',
+  fontWeight: 900,
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
+};
+
+const iconStyle = {
+  width: '54px',
+  height: '54px',
+  borderRadius: '18px',
+  background: 'rgba(239,68,68,0.11)',
+  border: '1px solid rgba(239,68,68,0.28)',
+  color: 'rgb(248,113,113)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: '24px',
+};
+
+const detailStyle = {
+  marginTop: '22px',
+  borderRadius: '16px',
+  border: '1px solid hsl(var(--border, 240 16% 13%) / 0.9)',
+  background: 'hsl(var(--muted, 240 20% 9%) / 0.56)',
+  padding: '14px 16px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  minHeight: '48px',
+  borderRadius: '16px',
+  border: 0,
+  background: 'hsl(var(--foreground, 0 0% 100%))',
+  color: 'hsl(var(--background, 240 24% 3%))',
+  fontSize: '13px',
+  fontWeight: 900,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+};
+
+const secondaryButtonStyle = {
+  width: '100%',
+  minHeight: '46px',
+  borderRadius: '16px',
+  border: '1px solid hsl(var(--border, 240 16% 13%) / 0.9)',
+  background: 'transparent',
+  color: 'hsl(var(--foreground, 0 0% 100%) / 0.72)',
+  fontSize: '13px',
+  fontWeight: 800,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+};
+
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -17,166 +99,85 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const msg = this.state.error?.message || 'Unknown error';
+      const shortMsg = msg.length > 96 ? `${msg.slice(0, 96)}...` : msg;
 
       return (
-        <div
-          style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            fontFamily: "'TT Norms Pro', 'Plus Jakarta Sans', 'Arimo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            background: 'hsl(224 71.4% 2%)',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '440px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '28px',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              padding: '40px 36px',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
-              textAlign: 'center',
-            }}
-          >
-            {/* Icon */}
-            <div
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '20px',
-                background: 'rgba(239,68,68,0.12)',
-                border: '1px solid rgba(239,68,68,0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 28px',
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: '-8px',
-                  borderRadius: '50%',
-                  background: 'rgba(239,68,68,0.08)',
-                  filter: 'blur(16px)',
-                  pointerEvents: 'none',
-                }}
-              />
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgb(239,68,68)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'relative', zIndex: 1 }}>
+        <div style={shellStyle}>
+          <section style={cardStyle} aria-labelledby="error-boundary-title" role="alert">
+            <p style={eyebrowStyle}>XAU Journal system message</p>
+
+            <div style={iconStyle} aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
 
-            {/* Title */}
             <h1
+              id="error-boundary-title"
               style={{
-                fontSize: '22px',
-                fontWeight: 700,
-                color: '#ffffff',
-                marginBottom: '10px',
-                letterSpacing: '-0.02em',
+                margin: 0,
+                maxWidth: '320px',
+                fontSize: 'clamp(2rem, 7vw, 2.75rem)',
+                lineHeight: 0.98,
+                letterSpacing: '-0.04em',
+                fontWeight: 900,
+                color: 'hsl(var(--foreground, 0 0% 100%))',
               }}
             >
-              Something went wrong
+              Something went wrong.
             </h1>
 
-            {/* Subtitle */}
             <p
               style={{
-                fontSize: '13px',
-                color: 'rgba(255,255,255,0.5)',
+                margin: '16px 0 0',
+                maxWidth: '330px',
+                color: 'hsl(var(--muted-foreground, 240 5% 65%) / 0.9)',
+                fontSize: '14px',
+                fontWeight: 650,
                 lineHeight: 1.65,
-                marginBottom: '28px',
-                fontWeight: 500,
               }}
             >
-              The app hit an unexpected error. Your data is saf, try refreshing to get back on track.
+              The app hit an unexpected error. Your data is safe. Refresh the page to get back on track.
             </p>
 
-            {/* Error detail pill */}
-            <div
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '12px',
-                padding: '12px 16px',
-                marginBottom: '28px',
-                textAlign: 'left',
-              }}
-            >
+            <div style={detailStyle}>
               <p
                 style={{
-                  fontSize: '11px',
-                  fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
-                  color: 'rgba(255,255,255,0.35)',
-                  wordBreak: 'break-all',
-                  lineHeight: 1.5,
                   margin: 0,
+                  color: 'hsl(var(--muted-foreground, 240 5% 65%) / 0.72)',
+                  fontFamily: "'SF Mono', 'Fira Code', Consolas, monospace",
+                  fontSize: '11px',
+                  lineHeight: 1.55,
+                  wordBreak: 'break-word',
                 }}
               >
-                {msg.length > 80 ? msg.slice(0, 80) + '…' : msg}
+                {shortMsg}
               </p>
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'grid', gap: '10px', marginTop: '26px' }}>
               <button
+                type="button"
                 onClick={() => window.location.reload()}
-                style={{
-                  width: '100%',
-                  height: '48px',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderTopColor: 'rgba(255,255,255,0.22)',
-                  background: 'linear-gradient(180deg, rgba(99,102,241,0.9) 0%, rgba(79,70,229,0.95) 100%)',
-                  backdropFilter: 'blur(12px)',
-                  color: '#ffffff',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                  cursor: 'pointer',
-                  boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.2), 0 8px 24px rgba(99,102,241,0.25)',
-                  transition: 'opacity 0.2s',
-                  fontFamily: 'inherit',
-                }}
-                onMouseOver={e => e.currentTarget.style.opacity = '0.88'}
-                onMouseOut={e => e.currentTarget.style.opacity = '1'}
+                style={primaryButtonStyle}
+                onMouseOver={(event) => { event.currentTarget.style.opacity = '0.9'; }}
+                onMouseOut={(event) => { event.currentTarget.style.opacity = '1'; }}
               >
                 Refresh page
               </button>
-
               <button
-                onClick={() => window.location.href = '/'}
-                style={{
-                  width: '100%',
-                  height: '44px',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  background: 'rgba(255,255,255,0.05)',
-                  backdropFilter: 'blur(12px)',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontFamily: 'inherit',
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                type="button"
+                onClick={() => { window.location.href = '/'; }}
+                style={secondaryButtonStyle}
+                onMouseOver={(event) => { event.currentTarget.style.color = 'hsl(var(--foreground, 0 0% 100%))'; }}
+                onMouseOut={(event) => { event.currentTarget.style.color = 'hsl(var(--foreground, 0 0% 100%) / 0.72)'; }}
               >
                 Go to home
               </button>
             </div>
-          </div>
+          </section>
         </div>
       );
     }

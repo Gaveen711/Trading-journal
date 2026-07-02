@@ -87,13 +87,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   };
 
   const [trialTimeLeft, setTrialTimeLeft] = useState('');
-  const [renewCountdown, setRenewCountdown] = useState('');
-
   const hasActivePaidAccess = plan === 'pro' || plan === 'grace';
-  const hasTrial = !hasActivePaidAccess && (isTrial || plan === 'free' || plan === 'basic');
-  const computedIsTrialActive = hasTrial && expiry && new Date(expiry) > new Date();
-  const computedIsTrialExpired = hasTrial && (!expiry || new Date(expiry) < new Date());
-  const planBadgeLabel = hasActivePaidAccess ? plan : (computedIsTrialActive ? 'Trial' : `${plan} tier`);
+  const hasLegacyTrial = !hasActivePaidAccess && isTrial;
+  const computedIsTrialActive = hasLegacyTrial && expiry && new Date(expiry) > new Date();
+  const computedIsTrialExpired = hasLegacyTrial && expiry && new Date(expiry) < new Date();
+  const planBadgeLabel = hasActivePaidAccess ? plan : `${plan} tier`;
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
@@ -127,49 +125,28 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
   useEffect(() => {
     const updateTimers = () => {
-      const now = new Date();
-      if (hasTrial && expiry) {
-        const exp = new Date(expiry);
-        const diff = exp - now;
-        if (diff > 0) {
-          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-          const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-          const m = Math.floor((diff / 1000 / 60) % 60);
-          setTrialTimeLeft(`${d}d ${h}h ${m}m`);
-        } else {
-          setTrialTimeLeft('Expired');
-        }
-      } else if (hasTrial && !expiry) {
-        // Fallback demo timer if no expiry is set in DB
-        setTrialTimeLeft('6d 23h 59m');
-      }
-
-      // 1-hour renewal countdown (starts only after user logs a trade)
-      let target = localStorage.getItem('xau-renew-target-v2');
-      if (!target) {
-        setRenewCountdown('');
+      if (!hasLegacyTrial || !expiry) {
+        setTrialTimeLeft('');
         return;
       }
 
-      const remaining = Number(target) - Date.now();
-      if (remaining <= 0) {
-        localStorage.removeItem('xau-renew-target-v2');
-        setRenewCountdown('');
+      const now = new Date();
+      const exp = new Date(expiry);
+      const diff = exp - now;
+      if (diff > 0) {
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        setTrialTimeLeft(`${d}d ${h}h ${m}m`);
       } else {
-        const rh = Math.floor(remaining / (1000 * 60 * 60));
-        const rm = Math.floor((remaining / (1000 * 60)) % 60);
-        const rs = Math.floor((remaining / 1000) % 60);
-        const hh = String(rh).padStart(2, '0');
-        const mm = String(rm).padStart(2, '0');
-        const ss = String(rs).padStart(2, '0');
-        setRenewCountdown(`${hh}:${mm}:${ss}`);
+        setTrialTimeLeft('Expired');
       }
     };
 
     updateTimers();
     const intervalId = setInterval(updateTimers, 1000);
     return () => clearInterval(intervalId);
-  }, [hasTrial, expiry]);
+  }, [hasLegacyTrial, expiry]);
 
   // Background sync on dashboard load / mount
   useEffect(() => {
@@ -422,7 +399,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         {/* SIDEBAR FOOTER SECTION */}
         <div className="mt-auto w-full flex flex-col gap-3">
           {/* TRIAL WARNING / EXPIRED CARD */}
-          {hasTrial && (
+          {hasLegacyTrial && (
             <div className="w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
               {isSidebarExpanded ? (
                 computedIsTrialActive ? (
@@ -430,11 +407,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                     <div className="flex gap-2">
                       <LightningFill className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <div className="text-[11px] font-black uppercase tracking-wider text-primary">
-                        Trial Active
+                        Pro Access Active
                       </div>
                     </div>
                     <p className="text-[11.5px] leading-relaxed font-semibold text-foreground/80 m-0">
-                      Your 7-day trial is active with sync option. Terminal locks in: <strong className="text-primary">{trialTimeLeft}</strong>
+                      Temporary Pro access is active. Access ends in: <strong className="text-primary">{trialTimeLeft}</strong>
                     </p>
                     <button
                       onClick={() => setShowPricingModal?.(true)}
@@ -448,17 +425,17 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                     <div className="flex gap-2">
                       <ExclamationTriangleFill className="w-4 h-4 text-[#EDAE49] shrink-0 mt-0.5" />
                       <div className="text-[11px] font-black uppercase tracking-wider text-[#D97706] dark:text-[#EDAE49]">
-                        Terminal Locked
+                        Pro Access Ended
                       </div>
                     </div>
                     <p className="text-[11.5px] leading-relaxed font-semibold text-[#8A520B] dark:text-[#F6D293] m-0">
-                      Your 7-day trial has expired. Upgrade to Premium or wait <strong className="text-[#D97706] dark:text-[#EDAE49]">{renewCountdown}</strong> for access to renew.
+                      Upgrade to Pro to keep broker sync, advanced analytics, and connected trade history.
                     </p>
                     <button
                       onClick={() => setShowPricingModal?.(true)}
                       className="w-full mt-1.5 py-1.5 bg-[#EDAE49] hover:bg-[#D99A32] text-[#003D5B] text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
                     >
-                      Upgrade to Premium
+                      Upgrade to Pro
                     </button>
                   </div>
                 )
@@ -470,7 +447,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                       ? 'bg-primary/10 border-primary/20 text-primary hover:bg-primary/20' 
                       : 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20'
                   }`}
-                  title={computedIsTrialActive ? `Trial Active - Locks in ${trialTimeLeft}` : `Terminal Locked - Renews in ${renewCountdown}`}
+                  title={computedIsTrialActive ? `Pro access active - ends in ${trialTimeLeft}` : 'Pro access ended'}
                 >
                   {computedIsTrialActive ? <LightningFill className="w-5 h-5" /> : <ExclamationTriangleFill className="w-5 h-5" />}
                 </button>
@@ -753,7 +730,6 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                   expiry={expiry}
                   isTrialExpired={computedIsTrialExpired}
                   isTrialActive={computedIsTrialActive}
-                  renewCountdown={renewCountdown}
                   trialTimeLeft={trialTimeLeft}
                   trades={displayedTrades}
                   journals={journals}

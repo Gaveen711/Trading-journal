@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getRemainingFreeTrades, submitTrade, isProPlan } from '../services/tradeService';
-import { FREE_TRADE_LIMIT } from '../config/tradeConfig';
 
 beforeEach(() => {
-  // reset localStorage mock
   globalThis.localStorage = {
     setItem: vi.fn(),
     getItem: vi.fn(),
@@ -12,9 +10,9 @@ beforeEach(() => {
 });
 
 describe('tradeService', () => {
-  it('calculates remaining free trades', () => {
-    expect(getRemainingFreeTrades([])).toBe(FREE_TRADE_LIMIT);
-    expect(getRemainingFreeTrades(new Array(5))).toBe(FREE_TRADE_LIMIT - 5);
+  it('allows unlimited manual trades for free users', () => {
+    expect(getRemainingFreeTrades([])).toBe(Number.POSITIVE_INFINITY);
+    expect(getRemainingFreeTrades(new Array(50))).toBe(Number.POSITIVE_INFINITY);
   });
 
   it('identifies pro plans', () => {
@@ -23,25 +21,23 @@ describe('tradeService', () => {
     expect(isProPlan('free')).toBe(false);
   });
 
-  it('submits trade and sets lock for free users when limit reached', async () => {
+  it('submits manual trades without setting a free-user lock', async () => {
     const addTrade = vi.fn().mockResolvedValue({ id: 't1' });
-    const trades = new Array(FREE_TRADE_LIMIT);
     const plan = 'free';
     const tradeData = { foo: 'bar' };
 
-    const res = await submitTrade({ addTrade, tradeData, plan, trades });
+    const res = await submitTrade({ addTrade, tradeData, plan, trades: new Array(100) });
     expect(addTrade).toHaveBeenCalledWith(tradeData);
-    expect(globalThis.localStorage.setItem).toHaveBeenCalled();
+    expect(globalThis.localStorage.setItem).not.toHaveBeenCalled();
     expect(res).toBeDefined();
   });
 
   it('does not set lock for pro users', async () => {
     const addTrade = vi.fn().mockResolvedValue({ id: 't2' });
-    const trades = new Array(FREE_TRADE_LIMIT + 1);
     const plan = 'pro';
     const tradeData = { foo: 'baz' };
 
-    const res = await submitTrade({ addTrade, tradeData, plan, trades });
+    const res = await submitTrade({ addTrade, tradeData, plan, trades: new Array(100) });
     expect(addTrade).toHaveBeenCalledWith(tradeData);
     expect(globalThis.localStorage.setItem).not.toHaveBeenCalled();
     expect(res).toBeDefined();

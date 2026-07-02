@@ -1,4 +1,4 @@
-import { PRO_MONTHLY_PRICE, PRO_YEARLY_PRICE } from './pricing';
+import { PRO_MONTHLY_PRICE, PRO_MONTHLY_DISPLAY, PRO_YEARLY_PRICE } from './pricing';
 
 export const SITE_URL = 'https://xaujournal.com';
 export const SITE_NAME = 'xaujournal';
@@ -22,7 +22,7 @@ export const ROUTE_SEO = {
   '/pricing': {
     title: `Pricing — ${SITE_NAME} XAU Gold Trading Journal`,
     description:
-      `Compare Free and Pro plans for the best XAUUSD trading journal. MT4/MT5 sync, analytics, and session intelligence from ${PRO_MONTHLY_PRICE}/month.`,
+      `Compare Free and Pro plans for the best XAUUSD trading journal. MT4/MT5 sync, analytics, and session intelligence from ${PRO_MONTHLY_DISPLAY}/month.`,
   },
   '/login': {
     title: `Sign In — ${SITE_NAME} XAU Trading Journal`,
@@ -34,6 +34,12 @@ export const ROUTE_SEO = {
     description:
       'Contact the xaujournal team for help with your XAU gold trading journal, MT4/MT5 broker sync, or billing.',
   },
+  '/the-story': {
+    title: `The Story - ${SITE_NAME} XAU Trading Journal`,
+    description:
+      'The founder story behind XAU Journal: a SaaS trading journal built by a developer and XAUUSD trader to turn trade review into better execution.',
+  },
+
   '/privacy': {
     title: `Privacy Policy — ${SITE_NAME}`,
     description: 'How xaujournal collects, stores, and protects your XAUUSD trading journal data.',
@@ -103,7 +109,7 @@ export const LANDING_FAQ = [
   },
   {
     q: 'Do I need Pro to start journaling gold trades?',
-    a: 'No. The free plan includes manual trade logging, calendar, and core P&L tracking. Pro adds unlimited trades, full analytics, MT4/MT5 broker sync, TradingView webhooks, and API access.',
+    a: 'No. The free plan includes unlimited manual trade logging, calendar, and core P&L tracking. Pro adds MT4/MT5 broker sync, full analytics, TradingView webhooks, and API access.',
   },
   {
     q: 'Does the journal work only for XAUUSD (gold)?',

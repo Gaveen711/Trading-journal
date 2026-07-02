@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Discord, Facebook, Instagram, TwitterX } from 'react-bootstrap-icons';
+import { Discord, TwitterX } from 'react-bootstrap-icons';
 import Logo from './Logo';
 
 const FOOTER_LINKS = [
@@ -8,6 +8,23 @@ const FOOTER_LINKS = [
   { to: '/refund-policy', label: 'Refunds' },
   { to: '/the-story', label: 'The Story' },
   { to: '/contact', label: 'Contact' },
+];
+
+const SOCIAL_LINKS = [
+  {
+    id: 'x',
+    label: 'X',
+    href: 'https://x.com/xau_journal',
+    description: 'Product updates and build notes',
+    Icon: TwitterX,
+  },
+  {
+    id: 'discord',
+    label: 'Discord',
+    href: 'https://discord.gg/smbNwBZC2',
+    description: 'Community support and trader feedback',
+    Icon: Discord,
+  },
 ];
 
 function normalizePath(pathname) {
@@ -36,30 +53,14 @@ export function FooterNav({ className, linkClassName, style }) {
 export function SocialLinks({ className = '' }) {
   return (
     <ul className={`example-2 ${className}`} aria-label="Social links">
-      <li className="icon-content">
-        <a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
-          <div className="filled" />
-          <Facebook />
-        </a>
-      </li>
-      <li className="icon-content">
-        <a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
-          <div className="filled" />
-          <Instagram />
-        </a>
-      </li>
-      <li className="icon-content">
-        <a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer">
-          <div className="filled" />
-          <TwitterX />
-        </a>
-      </li>
-      <li className="icon-content">
-        <a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer">
-          <div className="filled" />
-          <Discord />
-        </a>
-      </li>
+      {SOCIAL_LINKS.map(({ id, label, href, Icon }) => (
+        <li key={id} className="icon-content">
+          <a data-social={id} aria-label={label} href={href} target="_blank" rel="noopener noreferrer">
+            <div className="filled" />
+            <Icon />
+          </a>
+        </li>
+      ))}
     </ul>
   );
 }

@@ -2,6 +2,20 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  LockKeyhole,
+  NotebookPen,
+  PlugZap,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
+
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 import { auth } from '../firebase';
@@ -10,36 +24,115 @@ import { ProTermsModal } from '../components/ProTermsModal';
 import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
 
 const FREE_FEATURES = [
-  '25 trades / month',
-  'Basic P&L tracking',
-  'Trade calendar',
-  'Manual trade entry',
-  'Unlmited Journal Notes',
+  {
+    label: 'Unlimited manual trades',
+    detail: 'Build the journaling habit without a manual trade cap.'
+  },
+  {
+    label: 'Manual trade entry',
+    detail: 'Log XAUUSD trades yourself with entry, exit, session, notes, and result.',
+  },
+  {
+    label: 'Calendar and basic P&L',
+    detail: 'See the trading month, outcomes, and simple performance tracking.',
+  },
+  {
+    label: 'Journal notes',
+    detail: 'Keep written context beside the trades you review.',
+  },
+];
+
+const FREE_LIMITS = [
+  'No Meta API broker sync',
+  'No MT4/MT5 auto import',
+  'No TradingView webhooks or API access',
 ];
 
 const PRO_FEATURES = [
-  'Unlimited trades',
-  'Full analytics suite',
-  'Session intelligence',
-  'MT4/MT5 Access',
-  'Priority support',
-  'Early access to new features',
+  {
+    icon: PlugZap,
+    label: 'MT4/MT5 Meta API sync',
+    detail: 'Connect supported MetaTrader accounts and import closed trades without manual re-entry.',
+  },
+  {
+    icon: BarChart3,
+    label: 'Full analytics suite',
+    detail: 'Review win rate, profit factor, drawdown, sessions, setups, and performance trends.',
+  },
+  {
+    icon: CalendarDays,
+    label: 'Unlimited trade history',
+    detail: 'Keep logging as your sample size grows instead of cutting review short at the limit.',
+  },
+  {
+    icon: NotebookPen,
+    label: 'Deeper trade context',
+    detail: 'Use notes, screenshots, tags, setup quality, mood, and post-trade reflection together.',
+  },
+  {
+    icon: LockKeyhole,
+    label: 'Private cloud workspace',
+    detail: 'Keep sensitive trade history in a focused account built around your review workflow.',
+  },
+  {
+    icon: ShieldCheck,
+    label: 'Priority product access',
+    detail: 'Get priority support and early access to improvements built for serious XAUUSD traders.',
+  },
+];
+
+const COMPARISON_ROWS = [
+  ['Trades', 'Unlimited manual trades', 'Unlimited manual + synced trades'],
+  ['Logging', 'Manual only', 'Manual + MT4/MT5 sync'],
+  ['Broker sync', 'Not included', 'Meta API sync included'],
+  ['Analytics', 'Basic P&L and calendar', 'Full reports and session intelligence'],
+  ['Trade context', 'Notes', 'Notes, tags, screenshots, psychology, setup review'],
+  ['Support', 'Standard', 'Priority'],
 ];
 
 const FAQ = [
-  { q: 'Can I cancel anytime?', a: 'Yes. Cancel from the billing portal at any time. You keep Pro access until the end of your billing period no partial month charges.' },
-  { q: 'Is my trading data secure?', a: 'Your data is secured using industry standard encryption and isolated cloud storage. Only you have access to your trade history; we cannot read your private logs.' },
-  { q: 'How does broker sync work?', a: 'Broker Sync connects directly to your MT4 or MT5 broker server using your login credentials. Once connected, your closed trades are pulled into your journal automatically no extra software required.' },
-  { q: 'What payment methods do you accept?', a: 'All major credit and debit cards.' },
-  { q: 'Is there a free trial for Pro?', a: 'Yes! We offer a 7-day free trial for xaujournal Pro. You can test all features including MT4/MT5 auto-sync and full analytics risk-free before being charged.' },
+  {
+    q: 'What is included in the Free plan?',
+    a: 'Free includes unlimited manual trade logging, core P&L tracking, calendar review, and journal notes. Pro is for traders who want automation and deeper analytics.',
+  },
+  {
+    q: 'Does Free include Meta API, MT4, or MT5 sync?',
+    a: 'No. Free users log trades manually. Broker sync, Meta API import, and MT4/MT5 automation are Pro features.',
+  },
+  {
+    q: 'What does Pro unlock?',
+    a: 'Pro gives you synced trade history, MT4/MT5 Meta API sync, full analytics, deeper trade context, priority support, and early product access.',
+  },
+  {
+    q: 'Can I cancel anytime?',
+    a: 'Yes. You can cancel from the billing portal. Your Pro access remains available until the end of the paid billing period.',
+  },
+  {
+    q: 'Is my trading data private?',
+    a: 'Yes. Your journal is account-scoped and designed around private trade review. Broker sync is only available after you explicitly connect an account.',
+  },
+  {
+    q: 'What payment methods are supported?',
+    a: 'Checkout is handled through Lemon Squeezy and supports major credit and debit cards.',
+  },
 ];
+
+const pageVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.08 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+};
 
 export function PricingPage() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
-  const user = auth.currentUser;
-  const { startCheckout, recordProAcceptance, isTrialExpired } = useSubscription(user);
   const [showTerms, setShowTerms] = useState(false);
+  const user = auth.currentUser;
+  const { startCheckout, recordProAcceptance } = useSubscription(user);
 
   const handleUpgradeClick = () => {
     if (!user) {
@@ -58,177 +151,184 @@ export function PricingPage() {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
 
+    let rafId = 0;
     function raf(time) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      rafId = requestAnimationFrame(raf);
     }
-    requestAnimationFrame(raf);
 
+    rafId = requestAnimationFrame(raf);
     document.body.style.overflow = '';
-
     window.scrollTo(0, 0);
+    handleScroll();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
+      cancelAnimationFrame(rafId);
       document.body.style.overflow = '';
     };
   }, []);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
-  };
-
-
-
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased aurora-theme">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased aurora-theme public-aurora-page">
       <div className="grain-overlay" aria-hidden="true" />
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute rounded-full w-[600px] h-[600px] left-[65%] top-[-15%] opacity-45 blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 75%)' }} />
-        <div className="absolute rounded-full w-[450px] h-[450px] left-[-5%] top-[40%] opacity-40 blur-[90px]" style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 75%)' }} />
-      </div>
-
       <PublicNavbar />
 
-      <main className="relative z-10 px-6 pt-32 pb-24 md:pt-40 md:pb-40 max-w-7xl mx-auto">
-        <Motion.div
-          variants={containerVariants}
+      <main className="relative z-10 px-5 sm:px-6 pt-32 pb-24 md:pt-40 md:pb-36 max-w-7xl mx-auto">
+        <Motion.section
+          variants={pageVariants}
           initial="hidden"
           animate="visible"
-          className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
+          className="mx-auto max-w-4xl text-center"
         >
-
-          <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
-            XAU journal <span className="aurora-text">pricing</span>
-          </Motion.h1>
-          <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
-            Plans for the best gold (XAUUSD) trading journal free manual logging or Pro with MT5 auto-sync and full analytics.
+          <Motion.p variants={itemVariants} className="mb-5 text-xs font-black uppercase tracking-[0.24em] text-primary">
+            XAU Journal Pricing
           </Motion.p>
-        </Motion.div>
+          <Motion.h1 variants={itemVariants} className="text-[clamp(2.7rem,7vw,6.4rem)] font-black leading-[0.98] tracking-tight text-balance">
+            One upgrade for traders ready to <span className="aurora-text">review seriously.</span>
+          </Motion.h1>
+          <Motion.p variants={itemVariants} className="mx-auto mt-7 max-w-2xl text-base md:text-lg text-muted-foreground font-semibold leading-relaxed">
+            Start free with unlimited manual journaling. Upgrade when you want MT4/MT5 sync, deeper analytics, and a faster XAUUSD review workflow.
+          </Motion.p>
+        </Motion.section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto mb-32 md:mb-48">
-          <Motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="p-10 md:p-12 rounded-[3rem] border border-border bg-card/40 backdrop-blur-sm flex flex-col hover:border-primary/50 transition-all duration-300 shadow-sm"
+        <section className="mt-14 md:mt-20 grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-5 md:gap-6 max-w-6xl mx-auto" aria-label="Pricing plans">
+          <PlanCard
+            title="Free"
+            label="Manual journal"
+            price="$0"
+            period="/mo"
+            description="For traders who want unlimited manual journaling before connecting automation."
+            cta="Get started free"
+            onClick={() => navigate('/login')}
           >
-            <div className="mb-10">
-              <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-6">Standard</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black tracking-tighter leading-none">$0</span>
-                <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">/mo</span>
-              </div>
-              <p className="text-base text-muted-foreground mt-6 leading-relaxed font-medium">Everything you need to master the habit of journaling.</p>
+            <FeatureList items={FREE_FEATURES} tone="muted" />
+            <div className="mt-8 border-t border-border/70 pt-6">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground mb-4">Not included</p>
+              <ul className="space-y-3">
+                {FREE_LIMITS.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
+                    <span className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                      <X size={13} strokeWidth={3} />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </PlanCard>
+
+          <PlanCard
+            featured
+            title="Pro"
+            label="Complete trading review"
+            price={PRO_MONTHLY_DISPLAY}
+            period="/mo"
+            description="For active XAUUSD traders who want sync, structure, and enough data to actually improve execution."
+            cta="Upgrade to Pro"
+            onClick={handleUpgradeClick}
+          >
+            <FeatureList items={PRO_FEATURES} />
+          </PlanCard>
+        </section>
+
+        <section className="mt-20 md:mt-28 max-w-6xl mx-auto" aria-labelledby="pro-includes-heading">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.82fr_1.18fr] gap-8 lg:gap-12 items-start">
+            <div className="lg:sticky lg:top-28">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-primary mb-4">What Pro gives you</p>
+              <h2 id="pro-includes-heading" className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-balance">
+                Built for the trader who needs more than a <span className="aurora-text">spreadsheet.</span>
+              </h2>
+              <p className="mt-5 text-muted-foreground font-semibold leading-relaxed max-w-xl">
+                Pro is positioned around the features that change review quality: automatic imports, unlimited sample size, clean analytics, and context around every trade.
+              </p>
             </div>
 
-            <ul className="flex-1 space-y-5 mb-10">
-              {FREE_FEATURES.map(f => (
-                <li key={f} className="flex items-center gap-4 text-sm font-semibold text-foreground/80">
-                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                  </div>
-                  {f}
+            <ul className="border-y border-border divide-y divide-border">
+              {PRO_FEATURES.map((feature) => (
+                <Motion.li
+                  key={feature.label}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex gap-4 py-5"
+                >
+                  <span className="mt-2 h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
+                  <span>
+                    <h3 className="text-base font-black tracking-tight">{feature.label}</h3>
+                    <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed font-medium">{feature.detail}</p>
+                  </span>
+                </Motion.li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="mt-20 md:mt-28 max-w-6xl mx-auto" aria-labelledby="compare-heading">
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary mb-4">Compare</p>
+            <h2 id="compare-heading" className="text-3xl md:text-5xl font-black tracking-tight">Free vs <span className="aurora-text">Pro</span></h2>
+            <p className="mt-4 text-muted-foreground font-semibold leading-relaxed">
+              Free keeps manual journaling open. Pro removes the admin work when review becomes part of your trading process.
+            </p>
+          </div>
+
+          <div className="border-y border-border">
+            <div className="grid grid-cols-[1fr] sm:grid-cols-[0.9fr_1fr_1fr] py-4 text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="px-1 py-1">Feature</div>
+              <div className="px-1 py-1">Free</div>
+              <div className="px-1 py-1 text-primary">Pro</div>
+            </div>
+            <ul className="divide-y divide-border">
+              {COMPARISON_ROWS.map(([feature, free, pro]) => (
+                <li key={feature} className="grid grid-cols-1 sm:grid-cols-[0.9fr_1fr_1fr] gap-2 sm:gap-0 py-4 text-sm md:text-base">
+                  <div className="px-1 font-black">{feature}</div>
+                  <div className="px-1 text-muted-foreground font-semibold">{free}</div>
+                  <div className="px-1 font-bold text-foreground">{pro}</div>
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
 
-            <button
-              onClick={() => navigate('/login')}
-              className="btn-pricing-custom mt-auto"
-            >
-              Get started free
-            </button>
-          </Motion.div>
-
+        <section className="mt-20 md:mt-28 max-w-3xl mx-auto" aria-labelledby="faq-heading">
           <Motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="relative p-6 sm:p-8 md:p-12 rounded-[2rem] sm:rounded-[3rem] border-2 border-border bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+            transition={{ duration: 0.5 }}
+            className="text-center mb-10"
           >
-            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-            <div className="mb-10 relative z-10">
-              <div className="flex justify-between items-start mb-6">
-                <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">Institutional</p>
-                <span className="text-[10px] font-black tracking-[0.1em] uppercase px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  Best Value
-                </span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black tracking-tighter leading-none text-primary">{PRO_MONTHLY_DISPLAY}</span>
-                <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">/mo</span>
-              </div>
-              <p className="text-sm text-primary font-bold mt-3">{isTrialExpired ? 'Cancel anytime' : '7-Day Free Trial · Cancel anytime'}</p>
-              <p className="text-base text-muted-foreground mt-6 leading-relaxed font-medium">The complete professional suite for high-performance gold traders.</p>
+            <div className="mx-auto mb-5 h-11 w-11 rounded-2xl border border-border bg-card flex items-center justify-center text-primary">
+              <CircleHelp size={21} />
             </div>
-
-            <ul className="flex-1 space-y-5 mb-10 relative z-10">
-              {PRO_FEATURES.map(f => (
-                <li key={f} className="flex items-center gap-4 text-sm font-bold text-foreground">
-                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                  </div>
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={handleUpgradeClick}
-              className="btn-pricing-custom mt-auto"
-            >
-              {isTrialExpired ? 'Upgrade to Pro' : 'Start 7-Day Free Trial'}
-            </button>
-          </Motion.div>
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <Motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Common questions</h2>
-            <p className="text-muted-foreground font-medium">Everything you need to know about xaujournal Pro.</p>
+            <h2 id="faq-heading" className="text-3xl md:text-4xl font-black tracking-tight">Common <span className="aurora-text">questions</span></h2>
+            <p className="mt-3 text-muted-foreground font-semibold">Clear answers before you upgrade.</p>
           </Motion.div>
 
           <FAQAccordion />
-        </div>
+        </section>
       </main>
+
       <PublicFooter />
 
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`fixed bottom-8 right-8 z-[90] p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-transparent text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-          }`}
+        className={`fixed bottom-6 right-6 z-[90] h-12 w-12 rounded-2xl bg-background/90 backdrop-blur-md border border-border text-primary shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6 pointer-events-none'}`}
         aria-label="Scroll to top"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
+        <ChevronDown size={20} className="mx-auto rotate-180" />
       </button>
 
       {showTerms && (
@@ -241,62 +341,108 @@ export function PricingPage() {
   );
 }
 
+function PlanCard({ title, label, price, period, description, cta, onClick, featured = false, children }) {
+  return (
+    <Motion.article
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      className={`relative flex flex-col border-y border-border/80 py-8 sm:py-9 md:py-10 ${featured ? 'lg:border-l lg:border-primary/50 lg:pl-10' : 'lg:pr-10'}`}
+    >
+      {featured ? (
+        <p className="mb-4 text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+          Best for active traders
+        </p>
+      ) : null}
+
+      <div className="mb-8 max-w-lg">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
+        <h2 className="mt-3 text-2xl md:text-3xl font-black tracking-tight">{title}</h2>
+        <div className="mt-7 flex items-end gap-2">
+          <span className={`text-[clamp(3.4rem,8vw,5.6rem)] font-black leading-none tracking-tight ${featured ? 'text-primary' : 'text-foreground'}`}>
+            {price}
+          </span>
+          <span className="pb-2 text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">{period}</span>
+        </div>
+        <p className="mt-5 text-sm md:text-base text-muted-foreground font-semibold leading-relaxed">{description}</p>
+      </div>
+
+      <div className="flex-1">{children}</div>
+
+      <button
+        type="button"
+        onClick={onClick}
+        className={`mt-9 min-h-12 w-full rounded-2xl px-5 text-sm font-black transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background flex items-center justify-center gap-2 ${featured ? 'bg-foreground text-background hover:bg-foreground/90' : 'border border-border bg-background hover:border-primary/40 hover:text-primary'}`}
+      >
+        {cta}
+        {featured ? <ArrowRight size={17} /> : null}
+      </button>
+    </Motion.article>
+  );
+}
+
+function FeatureList({ items, tone = 'default' }) {
+  return (
+    <ul className="space-y-4">
+      {items.map((item) => (
+        <li key={item.label} className="flex gap-3">
+          <span className={`mt-0.5 h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${tone === 'muted' ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'}`}>
+            <Check size={13} strokeWidth={4} />
+          </span>
+          <span>
+            <span className="block text-sm font-black text-foreground">{item.label}</span>
+            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground font-medium">{item.detail}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function FAQAccordion() {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <div className="space-y-1">
-      {FAQ.map((item, i) => {
-        const isOpen = openIndex === i;
+    <div className="divide-y divide-border border-y border-border">
+      {FAQ.map((item, index) => {
+        const isOpen = openIndex === index;
+        const panelId = `pricing-faq-${index}`;
+
         return (
-          <Motion.div
-            key={item.q}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.45, delay: i * 0.06 }}
-            layout
-            className="overflow-hidden rounded-2xl border-0 bg-transparent"
-          >
+          <div key={item.q}>
             <button
               type="button"
-              onClick={() => setOpenIndex(isOpen ? null : i)}
-              className="w-full py-5 md:py-6 px-1 bg-transparent border-0 outline-none text-left cursor-pointer flex items-center justify-between gap-6 group focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl"
+              onClick={() => setOpenIndex(isOpen ? null : index)}
+              className="w-full min-h-[64px] py-4 text-left flex items-center justify-between gap-5 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-expanded={isOpen}
+              aria-controls={panelId}
             >
-              <span className="text-base md:text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
-                {item.q}
-              </span>
-              <Motion.div
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${isOpen ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-              </Motion.div>
+              <span className="text-base md:text-lg font-black tracking-tight">{item.q}</span>
+              <ChevronDown
+                size={19}
+                className={`shrink-0 text-primary transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+              />
             </button>
             <AnimatePresence initial={false}>
               {isOpen && (
                 <Motion.div
-                  key="content"
+                  id={panelId}
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
-                  <p className="pb-5 md:pb-6 px-1 text-muted-foreground leading-relaxed font-medium text-sm md:text-base">
+                  <p className="pb-5 md:pb-6 text-sm md:text-base text-muted-foreground leading-relaxed font-semibold">
                     {item.a}
                   </p>
                 </Motion.div>
               )}
             </AnimatePresence>
-          </Motion.div>
+          </div>
         );
       })}
     </div>
   );
 }
-
-
-

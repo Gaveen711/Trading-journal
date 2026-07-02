@@ -1563,14 +1563,21 @@ function FeatureCard({ feature }) {
 
 const getPlatformIconUrl = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=96`;
 
-function PlatformBadge({ src, label, status = 'Broker sync ready', comingSoon = false }) {
+function PlatformBadge({ src, label, status = 'Broker sync ready', comingSoon = false, tag }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
-      <img src={src} alt="" className="h-8 w-8 object-contain" />
+      <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+        <img src={src} alt="" className="h-7 w-7 object-contain" />
+      </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold">{label}</p>
         <p className="text-xs" style={{ color: 'var(--xau-muted)' }}>{status}</p>
       </div>
+      {tag && (
+        <span className="hidden rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-300 sm:inline-flex">
+          {tag}
+        </span>
+      )}
       {comingSoon && (
         <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-amber-300">
           Soon
@@ -1786,8 +1793,8 @@ export function LandingPage() {
           <div className="xau-glass scroll-reveal rounded-[1.75rem] p-6 md:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--xau-muted)' }}>Connected platforms</p>
             <div className="mt-5 space-y-3">
-              <PlatformBadge src="/mt4.svg" label="MetaTrader 4" status="Live sync ready" />
-              <PlatformBadge src="/mt5.svg" label="MetaTrader 5" status="Live sync ready" />
+              <PlatformBadge src="/mt4.svg" label="MetaTrader 4" status="Meta API sync ready" tag="MT4" />
+              <PlatformBadge src="/mt5.svg" label="MetaTrader 5" status="Meta API sync ready" tag="MT5" />
               <PlatformBadge src={getPlatformIconUrl('binance.com')} label="Binance" status="Coming soon" comingSoon />
               <PlatformBadge src={getPlatformIconUrl('bybit.com')} label="Bybit" status="Coming soon" comingSoon />
             </div>

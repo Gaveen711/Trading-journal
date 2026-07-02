@@ -628,26 +628,23 @@ app.post('/init-user', async (c) => {
       }
     }
 
-    // New user signup, provision the 7-day Pro trial securely on the server
-    const trialExpiry = new Date()
-    trialExpiry.setDate(trialExpiry.getDate() + 7)
-
+    // New user signup, initialize on Free with unlimited manual logging.
     const initData = {
-      plan: 'pro',
-      isTrial: true,
-      planExpiry: trialExpiry.toISOString(),
+      plan: 'free',
+      isTrial: false,
+      planExpiry: null,
       createdAt: now(),
       updatedAt: now(),
     }
 
     await userDocRef.set(initData, { merge: true })
-    console.log(`[init-user] Created initial Pro trial for new user uid=${uid}`)
+    console.log(`[init-user] Created initial Free plan for new user uid=${uid}`)
 
     return c.json({
       success: true,
-      plan: 'pro',
-      isTrial: true,
-      planExpiry: trialExpiry.toISOString(),
+      plan: 'free',
+      isTrial: false,
+      planExpiry: null,
     })
   } catch (err: any) {
     return handleRouteError('init-user', err, c)

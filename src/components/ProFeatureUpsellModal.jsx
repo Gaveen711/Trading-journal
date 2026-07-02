@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { XLg, ArrowClockwise, CheckCircleFill } from 'react-bootstrap-icons';
 import { ProTermsModal } from './ProTermsModal';
-import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY } from '../lib/pricing';
+import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
 
 const FEATURE_COPY = {
   'broker-sync': {
     title: 'Broker sync is a Pro feature',
     description:
-      'Upgrade to Pro to pull trades from your MT5 broker into your journal with one tap.',
-    highlights: ['One-tap broker sync', 'MT4 & MT5 integration', 'Unlimited trades'],
+      'Upgrade to Pro to pull trades from your MT4/MT5 broker into your journal with one tap.',
+    highlights: ['One-tap broker sync', 'MT4 & MT5 integration', 'Advanced analytics'],
   },
 };
 
@@ -65,11 +65,7 @@ export function ProFeatureUpsellModal({
               <span className="text-4xl font-black text-primary">{PRO_MONTHLY_DISPLAY}</span>
               <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              or <span className="text-foreground font-bold">{PRO_YEARLY_DISPLAY}/year</span>
-              {' '}
-              <span className="text-primary font-black">save over 40%</span>
-            </p>
+            <p className="text-[10px] text-muted-foreground">Cancel anytime from billing.</p>
           </div>
 
           <ul className="w-full space-y-2 text-left">

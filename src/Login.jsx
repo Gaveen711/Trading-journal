@@ -277,7 +277,7 @@ function Login() {
           }
         });
 
-        // Initialize user subscription (7-day trial) securely on the server
+        // Initialize user subscription securely on the server
         const initResponse = await fetch('/api/init-user', {
           method: 'POST',
           headers: {
@@ -442,13 +442,22 @@ function Login() {
 
           {/* Error & Success Messages */}
           {error && (
-            <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl text-red-500 text-xs font-bold uppercase tracking-tight text-center">
-              {error}
+            <div
+              className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-left text-sm font-semibold leading-relaxed text-red-600 dark:text-red-300"
+              role="alert"
+              aria-live="polite"
+            >
+              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 7v6" />
+                <path d="M12 17h.01" />
+              </svg>
+              <span>{error}</span>
             </div>
           )}
 
           {message && (
-            <div className="p-3 bg-green-500/5 border border-green-500/10 rounded-xl text-green-600 text-xs font-bold uppercase tracking-tight text-center">
+            <div className="rounded-2xl border border-green-500/15 bg-green-500/10 px-4 py-3 text-left text-sm font-semibold leading-relaxed text-green-600 dark:text-green-300" role="status" aria-live="polite">
               {message}
             </div>
           )}

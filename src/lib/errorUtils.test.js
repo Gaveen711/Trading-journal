@@ -15,10 +15,11 @@ describe('getFriendlyErrorMessage', () => {
     });
 
     it('handles credentials and user-not-found errors', () => {
-      const expected = 'The email or password you entered was not found. Please try again.';
+      const expected = 'Incorrect email or password. Please try again.';
       expect(getFriendlyErrorMessage('auth/user-not-found')).toBe(expected);
       expect(getFriendlyErrorMessage('auth/wrong-password')).toBe(expected);
       expect(getFriendlyErrorMessage('auth/invalid-credential')).toBe(expected);
+      expect(getFriendlyErrorMessage({ code: 'auth/invalid-credential', message: 'Firebase: Error.' })).toBe(expected);
     });
 
     it('handles email-already-in-use error', () => {

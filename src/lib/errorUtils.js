@@ -4,12 +4,14 @@
  */
 export const getFriendlyErrorMessage = (error) => {
   if (!error) return "";
-  const msg = typeof error === 'string' ? error : error.message || String(error);
+  const code = typeof error === 'object' && error?.code ? String(error.code) : '';
+  const message = typeof error === 'string' ? error : error.message || String(error);
+  const msg = `${code} ${message}`.trim();
   
   // Authentication Errors
   if (msg.includes('auth/invalid-email')) return "Please enter a valid email address.";
   if (msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) {
-    return "The email or password you entered was not found. Please try again.";
+    return "Incorrect email or password. Please try again.";
   }
   if (msg.includes('auth/email-already-in-use')) return "This email is already registered.";
   if (msg.includes('auth/weak-password')) return "Password must be at least 6 characters.";

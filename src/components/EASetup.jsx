@@ -724,6 +724,15 @@ function BrokerLogo({ preset, className = 'w-10 h-10 rounded-2xl', imageClassNam
   );
 }
 
+function FieldError({ id, children }) {
+  return (
+    <div id={id} className="flex items-start gap-2 text-[11px] font-bold leading-relaxed text-red-500">
+      <ExclamationCircleFill className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
 export default function EASetup() {
   const { 
     plan = 'free', 
@@ -752,6 +761,7 @@ export default function EASetup() {
   const [connecting, setConnecting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [brokerSearch, setBrokerSearch] = useState('');
+  const [connectErrors, setConnectErrors] = useState({});
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogFilter, setCatalogFilter] = useState('all');
   const [showAllBrokers, setShowAllBrokers] = useState(false);
@@ -899,16 +909,32 @@ export default function EASetup() {
     setServerName(resolveDefaultServer(preset, nextPlatform));
     setLogin('');
     setPassword('');
+    setConnectErrors({});
     setShowPassword(false);
     setIsConnectModalOpen(true);
   };
 
+  const clearConnectError = (field) => {
+    setConnectErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const validateConnectForm = () => {
+    const nextErrors = {};
+    if (!serverName.trim()) nextErrors.serverName = 'Choose a server preset or enter your broker server name.';
+    if (!login.trim()) nextErrors.login = 'Enter your broker login account number.';
+    if (!password) nextErrors.password = 'Enter your broker password or investor password.';
+    setConnectErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
   async function handleConnect(e) {
     e.preventDefault();
-    if (!serverName.trim() || !login.trim() || !password) {
-      toast('Please fill in all fields.', 'error');
-      return;
-    }
+    if (!validateConnectForm()) return;
     setConnecting(true);
     try {
       // Disconnect existing if any
@@ -932,6 +958,7 @@ export default function EASetup() {
       setLogin('');
       setPassword('');
       setServerName('');
+      setConnectErrors({});
     } catch (err) {
       toast(getFriendlyErrorMessage(err), 'error');
     } finally {
@@ -1402,7 +1429,7 @@ export default function EASetup() {
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="relative mt-6 sm:mt-0 w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-border/40 bg-card/95 dark:bg-[#0b0c10]/95 p-5 sm:p-7 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
+              className="relative mt-6 sm:mt-0 w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] border border-border/40 bg-card/95 dark:bg-[#0b0c10]/95 p-5 sm:p-7 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
             >
               {/* Close Button */}
               <button
@@ -1435,7 +1462,7 @@ export default function EASetup() {
                   </div>
                 )}
 
-                <form onSubmit={handleConnect} className="space-y-4">
+                <form onSubmit={handleConnect} noValidate className="space-y-5">
                   {/* Platform selection (MT4/5 toggle) */}
                   {(connectingPreset.platforms?.length > 1 || connectingPreset.id === 'custom') && (
                     <div className="space-y-2">
@@ -1476,10 +1503,12 @@ export default function EASetup() {
                         onChange={(e) => {
                           setServerName(e.target.value);
                           setDropdownOpen(true);
+                          clearConnectError('serverName');
                         }}
                         onFocus={() => setDropdownOpen(true)}
-                        className="input-premium h-11 w-full text-sm font-bold pr-10 border-primary/20 focus:border-primary"
-                        required
+                        className={`input-premium h-11 w-full text-sm font-bold pr-10 ${connectErrors.serverName ? 'border-red-500/50 focus:border-red-500' : 'border-primary/20 focus:border-primary'}`}
+                        aria-invalid={Boolean(connectErrors.serverName)}
+                        aria-describedby={connectErrors.serverName ? 'connect-server-error' : undefined}
                       />
                       <button
                         type="button"
@@ -1537,6 +1566,7 @@ export default function EASetup() {
                         </Motion.div>
                       )}
                     </AnimatePresence>
+                    {connectErrors.serverName && <FieldError id="connect-server-error">{connectErrors.serverName}</FieldError>}
                   </div>
 
                   {/* Account Login */}
@@ -1546,10 +1576,15 @@ export default function EASetup() {
                       type="text"
                       placeholder="Your broker login account number"
                       value={login}
-                      onChange={(e) => setLogin(e.target.value)}
-                      className="input-premium h-11 w-full text-sm font-bold border-primary/20 focus:border-primary"
-                      required
+                      onChange={(e) => {
+                        setLogin(e.target.value);
+                        clearConnectError('login');
+                      }}
+                      className={`input-premium h-11 w-full text-sm font-bold ${connectErrors.login ? 'border-red-500/50 focus:border-red-500' : 'border-primary/20 focus:border-primary'}`}
+                      aria-invalid={Boolean(connectErrors.login)}
+                      aria-describedby={connectErrors.login ? 'connect-login-error' : undefined}
                     />
+                    {connectErrors.login && <FieldError id="connect-login-error">{connectErrors.login}</FieldError>}
                   </div>
 
                   {/* Password */}
@@ -1560,9 +1595,13 @@ export default function EASetup() {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Your broker password (investor works)"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="input-premium h-11 w-full text-sm font-bold pr-11 border-primary/20 focus:border-primary"
-                        required
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          clearConnectError('password');
+                        }}
+                        className={`input-premium h-11 w-full text-sm font-bold pr-11 ${connectErrors.password ? 'border-red-500/50 focus:border-red-500' : 'border-primary/20 focus:border-primary'}`}
+                        aria-invalid={Boolean(connectErrors.password)}
+                        aria-describedby={connectErrors.password ? 'connect-password-error' : undefined}
                       />
                       <button
                         type="button"
@@ -1573,7 +1612,15 @@ export default function EASetup() {
                         {showPassword ? <EyeSlashFill className="w-4 h-4" /> : <EyeFill className="w-4 h-4" />}
                       </button>
                     </div>
+                    {connectErrors.password && <FieldError id="connect-password-error">{connectErrors.password}</FieldError>}
                   </div>
+
+                  {Object.keys(connectErrors).length > 0 && (
+                    <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-semibold leading-relaxed text-red-500" role="alert">
+                      <ExclamationCircleFill className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>Please complete the highlighted fields before connecting.</span>
+                    </div>
+                  )}
 
                   {/* Submit Button */}
                   <button

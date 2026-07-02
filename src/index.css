@@ -1676,14 +1676,13 @@ a[href*="neat.firecms.co"] {
   }
 }
 
+
 .site-footer {
   position: relative;
   z-index: 2;
   padding: clamp(3rem, 7vw, 5.5rem) 1rem calc(clamp(2rem, 5vw, 4rem) + env(safe-area-inset-bottom));
-  border-top: 1px solid hsl(var(--border) / 0.18);
-  background:
-    radial-gradient(circle at 16% 0%, hsl(var(--primary) / 0.10), transparent 26rem),
-    linear-gradient(180deg, hsl(var(--background) / 0.42), hsl(var(--background) / 0.86));
+  border-top: 0;
+  background: transparent;
 }
 
 .site-footer__inner {
@@ -1705,7 +1704,7 @@ a[href*="neat.firecms.co"] {
 .site-footer__brand p {
   margin: 0;
   max-width: 34rem;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground) / 0.72);
   font-size: clamp(0.95rem, 1.4vw, 1.08rem);
   font-weight: 650;
   line-height: 1.75;
@@ -1723,7 +1722,7 @@ a[href*="neat.firecms.co"] {
   align-items: center;
   justify-content: flex-end;
   gap: 0.55rem 1rem;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground) / 0.78);
   font-size: 0.74rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -1731,10 +1730,12 @@ a[href*="neat.firecms.co"] {
 }
 
 .site-footer__link {
+  color: inherit;
   transition: color 180ms ease, opacity 180ms ease;
 }
 
-.site-footer__link:hover {
+.site-footer__link:hover,
+.site-footer__link:focus-visible {
   color: hsl(var(--primary));
 }
 
@@ -1744,14 +1745,14 @@ a[href*="neat.firecms.co"] {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-top: 1px solid hsl(var(--border) / 0.16);
-  padding-top: 1.1rem;
+  border-top: 0;
+  padding-top: 0.25rem;
 }
 
 .site-footer__meta p,
 .site-footer__meta span {
   margin: 0;
-  color: hsl(var(--muted-foreground) / 0.72);
+  color: hsl(var(--foreground) / 0.58);
   font-size: 0.62rem;
   font-weight: 900;
   line-height: 1.35;
@@ -1781,7 +1782,7 @@ a[href*="neat.firecms.co"] {
   }
 }
 
-/* Social Tooltips Footer Component */
+/* Social links */
 .example-2 {
   display: flex;
   justify-content: center;
@@ -1797,6 +1798,10 @@ a[href*="neat.firecms.co"] {
   }
 }
 
+.example-2.contact-social-links {
+  justify-content: flex-start;
+}
+
 .example-2 .icon-content {
   margin: 0 3px;
   position: relative;
@@ -1808,64 +1813,59 @@ a[href*="neat.firecms.co"] {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  color: hsl(var(--muted-foreground));
-  background-color: hsl(var(--muted) / 0.18);
-  border: 1px solid hsl(var(--border) / 0.22);
-  transition: color 0.18s ease-in-out, border-color 0.18s ease-in-out, background-color 0.18s ease-in-out, box-shadow 0.18s ease-in-out, transform 0.18s ease-in-out;
+  color: hsl(var(--foreground) / 0.78);
+  background-color: transparent;
+  border: 0;
+  transition: color 0.18s ease-in-out, background-color 0.18s ease-in-out, transform 0.18s ease-in-out;
 }
 
-.example-2 .icon-content a:hover {
-  color: hsl(var(--foreground)) !important;
-  border-color: hsl(var(--primary) / 0.36);
+.example-2 .icon-content a:hover,
+.example-2 .icon-content a:focus-visible {
+  color: hsl(var(--primary)) !important;
   background-color: hsl(var(--primary) / 0.08);
-  box-shadow: 0 10px 26px hsl(var(--primary) / 0.10);
   transform: translateY(-1px);
+  outline: none;
 }
 
 .example-2 .icon-content a svg {
   position: relative;
   z-index: 2;
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   transition: color 0.2s ease-in-out;
 }
 
-.example-2 .icon-content a .filled {
-  display: none;
-}
-
+.example-2 .icon-content a .filled,
 .example-2 .icon-content a:hover .filled {
   display: none;
 }
 
-.example-2 .icon-content a[data-social="facebook"] .filled {
-  background-color: #3b5998;
+.contact-field {
+  width: 100%;
+  min-height: 3.25rem;
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border) / 0.42);
+  background: hsl(var(--background) / 0.52);
+  padding: 0.95rem 1rem;
+  color: hsl(var(--foreground));
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
-.example-2 .icon-content a[data-social="instagram"] .filled {
-  background: linear-gradient(45deg,
-      #405de6,
-      #5b51db,
-      #b33ab4,
-      #c135b4,
-      #e1306c,
-      #fd1f1f);
+.contact-field::placeholder {
+  color: hsl(var(--muted-foreground) / 0.62);
 }
 
-.example-2 .icon-content a[data-social="x"] .filled {
-  background-color: #000000;
-}
-
-.dark .example-2 .icon-content a[data-social="x"] .filled {
-  background-color: #1e1e1e;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.example-2 .icon-content a[data-social="discord"] .filled {
-  background-color: #5865F2;
+.contact-field:focus {
+  border-color: hsl(var(--primary) / 0.72);
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
+  background: hsl(var(--background) / 0.74);
 }
 
 /* Custom Expanding Logout Button Styles */
@@ -3349,6 +3349,30 @@ aside.apple-glass-panel:active {
     radial-gradient(circle at 12% 6%, hsl(var(--primary) / 0.16), transparent 30rem),
     radial-gradient(circle at 90% 12%, hsl(var(--primary-to) / 0.14), transparent 32rem),
     radial-gradient(circle at 48% 100%, hsl(var(--accent) / 0.08), transparent 34rem);
+}
+
+.public-aurora-page {
+  background-color: hsl(var(--background));
+  background-image:
+    linear-gradient(90deg, hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 12% 10%, hsl(187 91% 48% / 0.16), transparent 30rem),
+    radial-gradient(circle at 88% 14%, hsl(159 72% 46% / 0.10), transparent 32rem),
+    radial-gradient(circle at 52% 102%, hsl(38 92% 54% / 0.08), transparent 36rem),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(175 16% 8% / 0.96) 52%, hsl(var(--background)) 100%);
+  background-size: 88px 88px, 88px 88px, auto, auto, auto, auto;
+  background-attachment: fixed;
+}
+
+.dark .public-aurora-page {
+  background-image:
+    linear-gradient(90deg, rgba(247, 251, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(247, 251, 255, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 12% 8%, rgba(34, 211, 238, 0.15), transparent 31rem),
+    radial-gradient(circle at 88% 12%, rgba(52, 211, 153, 0.09), transparent 33rem),
+    radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.075), transparent 36rem),
+    linear-gradient(180deg, #05070a 0%, #070b0a 50%, #080605 100%);
+  background-size: 88px 88px, 88px 88px, auto, auto, auto, auto;
 }
 
 /* ── Reset Navbar theme variables to default across all pages to preserve consistent backdrop blur ── */
