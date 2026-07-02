@@ -53,7 +53,7 @@ export function ProFeatureUpsellModal({
 
           <div className="space-y-2">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Pro required</p>
-            <h2 className="text-xl sm:text-2xl font-black text-gradient leading-tight">{copy.title}</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-foreground leading-tight">{copy.title}</h2>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
               {copy.description}
             </p>

@@ -53,7 +53,7 @@ export function PricingModal({ plan, expiry, isTrial = false, isTrialExpired = f
         </button>
 
         <header className="text-center space-y-2 mb-8 sm:mb-10">
-          <h2 className="text-2xl sm:text-3xl font-black text-gradient">Upgrade to Pro</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-foreground">Upgrade to Pro</h2>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-4">
             Unlock unlimited trades, the full analytics suite, and automated MT5 sync.
           </p>

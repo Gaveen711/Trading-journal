@@ -13,9 +13,31 @@ const TIMEFRAMES = [
   { id: 'W', label: '1W' }
 ];
 
-export function LiveMarketWidget({ onTickersUpdate }) {
+const TIMEFRAME_UPDATE_MS = {
+  '1': 60 * 1000,
+  '5': 5 * 60 * 1000,
+  '15': 15 * 60 * 1000,
+  '30': 30 * 60 * 1000,
+  '60': 60 * 60 * 1000,
+  '240': 4 * 60 * 60 * 1000,
+  D: 24 * 60 * 60 * 1000,
+  W: 7 * 24 * 60 * 60 * 1000,
+};
+
+const YAHOO_INTERVALS = {
+  '1': '1m',
+  '5': '5m',
+  '15': '15m',
+  '30': '30m',
+  '60': '1h',
+  '240': '1h',
+  D: '1d',
+  W: '1wk',
+};
+
+export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
   const { isLightMode } = useAppTheme();
-  const [interval, setIntervalState] = useState('5'); // default '5m'
+  const [interval, setIntervalState] = useState('1');
   const [activeAsset, setActiveAsset] = useState('xauusd');
 
   // Real-time Simulated Tickers state
@@ -80,10 +102,14 @@ export function LiveMarketWidget({ onTickersUpdate }) {
 
         return next;
       });
-    }, 1000);
+    }, TIMEFRAME_UPDATE_MS[interval] || TIMEFRAME_UPDATE_MS['1']);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [interval]);
+
+  useEffect(() => {
+    onIntervalChange?.(TIMEFRAMES.find(t => t.id === interval)?.label || '1m');
+  }, [interval, onIntervalChange]);
 
   // Fetch actual prices on mount to sync simulated prices with TradingView charts
   useEffect(() => {
@@ -104,7 +130,9 @@ export function LiveMarketWidget({ onTickersUpdate }) {
                 .catch(() => null);
 
               // Fetch yahoo chart change via proxy (if it fails/404s, we fall back gracefully)
-              const yahooPromise = fetch(`/api/yahoo-chart/${asset.yahooSymbol}?interval=1m&range=1d`)
+              const yahooInterval = YAHOO_INTERVALS[interval] || YAHOO_INTERVALS['1'];
+              const yahooRange = interval === 'D' ? '1mo' : interval === 'W' ? '6mo' : ['60', '240'].includes(interval) ? '5d' : '1d';
+              const yahooPromise = fetch(`/api/yahoo-chart/${asset.yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`)
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null);
 
@@ -166,9 +194,9 @@ export function LiveMarketWidget({ onTickersUpdate }) {
     };
 
     fetchRealPrices();
-    const intervalId = window.setInterval(fetchRealPrices, 15000);
+    const intervalId = window.setInterval(fetchRealPrices, TIMEFRAME_UPDATE_MS[interval] || TIMEFRAME_UPDATE_MS['1']);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [interval]);
 
   useEffect(() => {
     if (typeof onTickersUpdate === 'function') {
@@ -256,7 +284,7 @@ export function LiveMarketWidget({ onTickersUpdate }) {
                 {activeAsset !== 'us10y' ? '$' : ''}{activeData.price.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
               </span>
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1 select-none">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Real-time
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> {TIMEFRAMES.find(t => t.id === interval)?.label || '1m'}
               </span>
             </div>
 
@@ -281,7 +309,7 @@ export function LiveMarketWidget({ onTickersUpdate }) {
         {/* Embedded Live Chart */}
         <div className="flex-1 w-full min-h-[460px] rounded-2xl overflow-hidden border border-border/30 bg-card/10 relative z-10 [transform:translateZ(0)] [mask-image:-webkit-radial-gradient(white,black)]">
           <iframe
-            key={activeAsset}
+            key={`${activeAsset}-${interval}`}
             src={iframeSrc}
             title="XAUUSD Live Market Candlestick Chart"
             className="w-full h-full border-0 absolute inset-0"

@@ -19,7 +19,8 @@ import {
   LockFill,
   Palette,
   ExclamationTriangleFill,
-  Bell
+  Bell,
+  X
 } from 'react-bootstrap-icons';
 import { auth } from '../../firebase';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -54,8 +55,28 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
   const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
   const formattedTime = new Date(currentTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-  
-  // Profile picture is a simple Apple emoji
+  const userInitial = displayName?.trim()?.charAt(0)?.toUpperCase() || 'T';
+  const notificationItems = [
+    {
+      id: 'welcome',
+      icon: Stars,
+      title: 'Welcome to XauJournal',
+      body: 'Your premium trading journey begins now.',
+      tone: 'bg-primary/10 text-primary'
+    },
+    {
+      id: 'setup',
+      icon: ExclamationTriangleFill,
+      title: 'Complete Setup',
+      body: 'Connect your MT4/MT5 account to auto-sync trades.',
+      tone: 'bg-amber-500/10 text-amber-500'
+    }
+  ];
+  const [dismissedNotifications, setDismissedNotifications] = useState([]);
+  const visibleNotifications = notificationItems.filter(item => !dismissedNotifications.includes(item.id));
+  const dismissNotification = (id) => {
+    setDismissedNotifications(prev => prev.includes(id) ? prev : [...prev, id]);
+  };
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(prev => {
@@ -68,9 +89,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const [trialTimeLeft, setTrialTimeLeft] = useState('');
   const [renewCountdown, setRenewCountdown] = useState('');
 
-  const hasTrial = isTrial || plan === 'free';
+  const hasActivePaidAccess = plan === 'pro' || plan === 'grace';
+  const hasTrial = !hasActivePaidAccess && (isTrial || plan === 'free' || plan === 'basic');
   const computedIsTrialActive = hasTrial && expiry && new Date(expiry) > new Date();
   const computedIsTrialExpired = hasTrial && (!expiry || new Date(expiry) < new Date());
+  const planBadgeLabel = hasActivePaidAccess ? plan : (computedIsTrialActive ? 'Trial' : `${plan} tier`);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
@@ -253,11 +276,12 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     { id: 'calendar', name: 'Calendar', icon: Calendar3, iconSolid: Calendar3Fill },
     { id: 'analytics', name: 'Analytics', icon: BarChartLine, iconSolid: BarChartLineFill },
     { id: 'journal', name: 'Journal', icon: Book, iconSolid: BookFill },
-    { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill }
+    { id: 'sync', name: 'Sync', icon: Lightning, iconSolid: LightningFill },
+    { id: 'settings', name: 'Settings', icon: Gear, iconSolid: GearFill }
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative">
+    <div className="dashboard-shell min-h-screen flex flex-col md:flex-row bg-background selection:bg-primary/20 relative">
 
       {/* GLASSMORPHIC BACKGROUND MESH */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden transform-gpu will-change-transform">
@@ -266,44 +290,46 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </div>
 
       {/* DESKTOP SIDEBAR */}
-      <aside className={`group hidden md:flex flex-col sticky top-0 h-screen apple-glass-panel border-r-0 z-30 p-5.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
-        {/* LOGO & TOGGLE */}
-        <div className={`flex items-center w-full mb-7 relative ${isSidebarExpanded ? 'justify-between' : 'justify-center'}`}>
+      <aside className={`dashboard-sidebar group hidden md:flex flex-col fixed inset-y-0 left-0 h-dvh overflow-visible z-30 p-5 transition-[width,box-shadow,background-color,border-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${isSidebarExpanded ? 'w-64' : 'w-24 items-center'}`}>
+        {/* LOGO */}
+        <div className={`flex items-center w-full mb-3 relative transition-[justify-content] duration-300 ${isSidebarExpanded ? 'justify-start' : 'justify-center'}`}>
           <div 
-            className={`flex items-center cursor-pointer transition-all duration-500 ${isSidebarExpanded ? 'gap-2.5' : 'gap-0'}`} 
+            className={`flex items-center cursor-pointer transition-[gap] duration-300 ${isSidebarExpanded ? 'gap-2.5' : 'gap-0'}`} 
             onClick={() => navigate('/app')}
           >
             <Logo onlyIcon={!isSidebarExpanded} iconSize="w-7.5 h-7.5" />
-            <div className={`flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            <div className={`flex flex-col transition-[opacity,max-width,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isSidebarExpanded 
                 ? 'opacity-100 max-w-[110px] translate-x-0' 
                 : 'opacity-0 max-w-0 overflow-hidden pointer-events-none -translate-x-2'
             }`}>
               <span className="text-[9px] font-black uppercase text-primary tracking-widest whitespace-nowrap">
-                {plan === 'pro' && isTrial ? 'Pro (Trial)' : `${plan} tier`}
+                {planBadgeLabel}
               </span>
             </div>
           </div>
-          {/* Collapse/Expand Toggle button */}
-          <button
-            onClick={toggleSidebar}
-            className={`w-6 h-6 rounded-lg bg-muted border border-border/40 flex items-center justify-center text-foreground hover:bg-muted/80 transition-all duration-300 absolute top-1/2 -translate-y-1/2 z-10 ${isSidebarExpanded ? 'right-0' : '-right-2'} opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus:opacity-100 focus:pointer-events-auto active:opacity-100 active:pointer-events-auto`}
-            title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
-          >
-            <svg
-              className={`w-3.5 h-3.5 transform transition-transform duration-300 ${isSidebarExpanded ? '' : 'rotate-180'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </button>
         </div>
 
+        {/* Collapse/Expand Toggle */}
+        <button
+          onClick={toggleSidebar}
+          className="mb-6 w-12 min-h-10 rounded-2xl bg-card/70 border border-border/35 flex items-center justify-center text-foreground hover:bg-primary/10 hover:border-primary/25 active:scale-95 transition-[background-color,border-color,box-shadow,transform] duration-300 shadow-sm"
+          title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+          aria-label={isSidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <svg
+            className={`w-3.5 h-3.5 shrink-0 transform transition-transform duration-300 ${isSidebarExpanded ? '' : 'rotate-180'}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+
         {/* NAVIGATION LINKS */}
-        <nav className="w-full flex-1 flex flex-col gap-3">
+        <nav className="w-full flex-1 flex flex-col gap-3.5">
           {navigation.map((item) => {
             const isActive = item.id === ''
               ? (location.pathname === '/app' || location.pathname === '/app/') && !location.search.includes('tab=log')
@@ -315,20 +341,20 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               <NavLink
                 key={item.name}
                 to={`/app/${item.id}`}
-                className={`flex items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`dashboard-nav-item flex items-center outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 transition-[background-color,color,box-shadow,border-color,transform,width,padding,gap] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSidebarExpanded 
-                    ? 'px-4 w-full h-12 gap-3 rounded-xl' 
+                    ? 'px-4 w-full min-h-12 gap-3 rounded-[1.45rem] min-w-0' 
                     : 'px-0 w-12 h-12 justify-center gap-0 rounded-full'
                 } ${isActive
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/15'
-                  : 'text-foreground/75 hover:bg-muted hover:text-foreground'
+                  ? 'dashboard-nav-item-active bg-primary text-primary-foreground'
+                  : 'text-primary-to/90 hover:bg-primary/8 hover:text-primary'
                 }`}
                 title={!isSidebarExpanded ? item.name : undefined}
               >
                 <Icon className="w-[1.25rem] h-[1.25rem] shrink-0" />
-                <span className={`text-[12px] font-black uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                <span className={`text-[12px] font-black uppercase tracking-widest truncate transition-[opacity,max-width,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSidebarExpanded 
-                    ? 'opacity-100 max-w-[150px] ml-0' 
+                    ? 'opacity-100 max-w-[150px] ml-0 min-w-0' 
                     : 'opacity-0 max-w-0 ml-0 overflow-hidden pointer-events-none'
                 }`}>
                   {item.name}
@@ -418,19 +444,19 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                     </button>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex flex-col gap-2 relative overflow-hidden shadow-sm">
+                  <div className="p-4 rounded-[1.75rem] bg-[#EDAE49]/15 border border-[#EDAE49]/45 text-[#003D5B] dark:text-[#EDAE49] flex flex-col gap-2 relative overflow-hidden shadow-sm shadow-[#EDAE49]/10">
                     <div className="flex gap-2">
-                      <ExclamationTriangleFill className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      <ExclamationTriangleFill className="w-4 h-4 text-[#EDAE49] shrink-0 mt-0.5" />
+                      <div className="text-[11px] font-black uppercase tracking-wider text-[#D97706] dark:text-[#EDAE49]">
                         Terminal Locked
                       </div>
                     </div>
-                    <p className="text-[11.5px] leading-relaxed font-semibold text-amber-700/95 dark:text-amber-200/90 m-0">
-                      Your 7-day trial has expired. Upgrade to Premium or wait <strong className="text-amber-600 dark:text-amber-400">{renewCountdown}</strong> for access to renew.
+                    <p className="text-[11.5px] leading-relaxed font-semibold text-[#8A520B] dark:text-[#F6D293] m-0">
+                      Your 7-day trial has expired. Upgrade to Premium or wait <strong className="text-[#D97706] dark:text-[#EDAE49]">{renewCountdown}</strong> for access to renew.
                     </p>
                     <button
                       onClick={() => setShowPricingModal?.(true)}
-                      className="w-full mt-1.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                      className="w-full mt-1.5 py-1.5 bg-[#EDAE49] hover:bg-[#D99A32] text-[#003D5B] text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
                     >
                       Upgrade to Premium
                     </button>
@@ -453,8 +479,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
           )}
 
           {/* DESKTOP PROFILE & NOTIFICATIONS CARD */}
-          <div className={`w-full relative z-40 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? '' : 'flex flex-col items-center'}`}>
-            <div className={`desktop-profile-card flex items-center justify-between bg-card/45 backdrop-blur-md border border-border/20 rounded-2xl w-full p-2 ${
+          <div className={`w-full relative z-40 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSidebarExpanded ? '' : 'flex flex-col items-center'}`}>
+            <div className={`desktop-profile-card flex items-center justify-between bg-background/55 backdrop-blur-md border border-border/20 rounded-[1.6rem] w-full p-2 ${
               isSidebarExpanded ? 'flex-row' : 'flex-col gap-3'
             }`}>
               {/* Profile Identity */}
@@ -463,7 +489,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                   onClick={() => setShowDesktopProfile(!showDesktopProfile)}
                   className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 transition-all cursor-pointer shadow-sm overflow-hidden select-none"
                 >
-                  <span className="text-base">🍎</span>
+                  <span className="text-sm font-black text-primary">{userInitial}</span>
                 </div>
                 
                 {isSidebarExpanded && (
@@ -481,10 +507,10 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 )}
 
                 {showDesktopProfile && (
-                  <div className="absolute z-50 w-60 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in zoom-in-95 bottom-0 left-[calc(100%+12px)]">
+                  <div className="absolute z-[120] w-60 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in zoom-in-95 bottom-0 left-[calc(100%+12px)]">
                     <div className="flex items-center gap-3 pb-3 border-b border-border/10">
                       <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden select-none">
-                        <span className="text-xl">🍎</span>
+                        <span className="text-base font-black text-primary">{userInitial}</span>
                       </div>
                       <div className="flex flex-col text-left min-w-0">
                         <span className="text-xs font-bold text-foreground truncate capitalize">{displayName}</span>
@@ -493,41 +519,6 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => { setShowDesktopProfile(false); setShowThemeSelector?.(true); }}
-                        className="flex items-center justify-between w-full p-2 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-[10px] font-black uppercase tracking-wider text-left"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Palette className="w-3.5 h-3.5 text-primary" />
-                          Color Accent
-                        </span>
-                        <span className="text-[8px] font-black uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Change</span>
-                      </button>
-
-                      <div className="flex items-center justify-between w-full p-2 rounded-xl hover:bg-muted/50 text-foreground transition-colors text-[10px] font-black uppercase tracking-wider">
-                        <span className="flex items-center gap-2">
-                          {isLightMode ? (
-                            <SunFill className="w-3.5 h-3.5 text-primary" />
-                          ) : (
-                            <MoonStarsFill className="w-3.5 h-3.5 text-primary" />
-                          )}
-                          Dark Theme
-                        </span>
-                        <label htmlFor="check-desktop-profile" className="theme-switch-toggle" title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}>
-                          <input id="check-desktop-profile" type="checkbox" className="theme-switch-input" checked={!isLightMode} onChange={toggleTheme} />
-                          <div className="theme-switch-icon theme-switch-icon--moon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={12} height={12}>
-                              <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="theme-switch-icon theme-switch-icon--sun">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width={12} height={12}>
-                              <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-                            </svg>
-                          </div>
-                        </label>
-                      </div>
-
                       <button
                         onClick={() => {
                           setShowDesktopProfile(false);
@@ -551,41 +542,79 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                 )}
               </div>
 
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-muted/50 border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all relative shadow-sm"
+                aria-label={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
+                title={isLightMode ? 'Dark mode' : 'Light mode'}
+              >
+                {isLightMode ? (
+                  <MoonStarsFill className="w-4 h-4" />
+                ) : (
+                  <SunFill className="w-4 h-4" />
+                )}
+              </button>
+
               {/* Notification Bell */}
               <div className="relative" ref={desktopNotifRef}>
                 <button
                   onClick={() => setShowDesktopNotifications(!showDesktopNotifications)}
                   className="w-9 h-9 flex items-center justify-center rounded-xl bg-muted/50 border border-border/40 hover:bg-muted text-muted-foreground transition-all relative shadow-sm"
+                  aria-label="Open notifications"
                 >
                   <Bell size={15} />
-                  <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-rose-500 border border-card"></span>
+                  {visibleNotifications.length > 0 && (
+                    <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-rose-500 border border-card"></span>
+                  )}
                 </button>
 
                 {showDesktopNotifications && (
-                  <div className="absolute z-50 w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95 bottom-0 left-[calc(100%+12px)]">
+                  <div className="absolute z-[120] w-64 bg-card/95 backdrop-blur-xl border border-border/50 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 animate-in fade-in zoom-in-95 bottom-0 left-[calc(100%+12px)]">
                     <div className="flex items-center justify-between border-b border-border/10 pb-2">
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notifications</span>
-                      <span className="text-[9px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded">2 New</span>
+                      <div className="flex items-center gap-2">
+                        {visibleNotifications.length > 0 && (
+                          <span className="text-[9px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded">{visibleNotifications.length} New</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowDesktopNotifications(false)}
+                          className="w-8 h-8 rounded-lg bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex items-center justify-center"
+                          aria-label="Close notifications"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto custom-scrollbar">
-                      <div className="flex gap-2.5 items-start p-1.5 hover:bg-muted/50 rounded-xl transition-colors cursor-pointer">
-                        <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                          <span className="text-blue-500 text-xs">🚀</span>
+                      {visibleNotifications.length > 0 ? visibleNotifications.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={item.id} className="flex gap-2.5 items-start p-2 hover:bg-muted/50 rounded-xl transition-colors">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${item.tone}`}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                              <p className="text-[10px] font-bold text-foreground">{item.title}</p>
+                              <p className="text-[9px] text-muted-foreground leading-snug">{item.body}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => dismissNotification(item.id)}
+                              className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex items-center justify-center"
+                              aria-label={`Dismiss ${item.title}`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      }) : (
+                        <div className="rounded-xl border border-border/20 bg-muted/20 p-4 text-center">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-foreground">All clear</p>
+                          <p className="mt-1 text-[9px] font-medium leading-snug text-muted-foreground">No active notifications.</p>
                         </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-foreground">Welcome to XauJournal</p>
-                          <p className="text-[9px] text-muted-foreground leading-snug">Your premium trading journey begins now.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2.5 items-start p-1.5 hover:bg-muted/50 rounded-xl transition-colors cursor-pointer">
-                        <div className="w-7 h-7 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                          <span className="text-amber-500 text-xs">⚠️</span>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-foreground">Complete Setup</p>
-                          <p className="text-[9px] text-muted-foreground leading-snug">Connect your MT4/MT5 account to auto-sync trades.</p>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -596,7 +625,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       </aside>
 
       {/* MAIN CONTAINER */}
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] min-h-screen">
+      <div className={`dashboard-main-shell flex-1 flex flex-col min-w-0 w-full overflow-x-hidden transition-[margin-left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] min-h-dvh ${isSidebarExpanded ? 'md:ml-64' : 'md:ml-24'}`}>
         {/* MOBILE HEADER (only visible on mobile/tablet) */}
         <header className={`md:hidden fixed top-3 left-3 right-3 z-40 apple-glass-panel rounded-2xl transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-[calc(100%+20px)] opacity-0'}`}>
           <div className="h-14 px-4 flex items-center justify-between">
@@ -629,9 +658,9 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer overflow-hidden select-none"
+                className="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 active:scale-95 transition-all shadow-sm cursor-pointer overflow-hidden select-none"
               >
-                <span className="text-base">🍎</span>
+                <span className="text-sm font-black text-primary">{userInitial}</span>
               </button>
             </div>
           </div>
@@ -642,7 +671,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               {/* User Info Header Section */}
               <div className="flex items-center gap-3 pb-3 border-b border-border/10">
                 <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden select-none">
-                  <span className="text-xl">🍎</span>
+                  <span className="text-base font-black text-primary">{userInitial}</span>
                 </div>
                 <div className="flex flex-col text-left min-w-0">
                   <span className="text-xs font-bold text-foreground truncate capitalize">{displayName}</span>
@@ -652,35 +681,33 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
  
               {/* Settings list */}
               <div className="flex flex-col gap-1.5">
-                {/* Accent Theme Selection */}
-                <button
-                  onClick={() => { setShowProfileMenu(false); setShowThemeSelector?.(true); }}
-                  className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-left"
-                >
-                  <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
-                    <Palette className="w-3.5 h-3.5 text-primary" />
-                    Color Accent
-                  </span>
-                  <span className="text-[8px] font-black uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Change</span>
-                </button>
- 
- 
                 {/* Manage Sub Button (Lemon Squeezy billing portal link) */}
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);
                     openPortal();
                   }}
-                  className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-left"
+                  className="flex items-center gap-2.5 w-full min-h-11 p-2.5 rounded-xl hover:bg-primary/10 text-primary transition-colors cursor-pointer text-left"
                 >
                   <CreditCard className="w-3.5 h-3.5 shrink-0" />
-                  <span className="text-[10px] font-black uppercase tracking-wider">Manage Subscription</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider truncate">Manage Subscription</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/app/settings');
+                  }}
+                  className="flex items-center gap-2.5 w-full min-h-11 p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-left"
+                >
+                  <Gear className="w-3.5 h-3.5 shrink-0 text-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-wider truncate">Settings</span>
                 </button>
  
                 {/* Logout Button */}
                 <button
                   onClick={() => { setShowProfileMenu(false); localStorage.removeItem('xau-auth-hint'); auth.signOut(); }}
-                  className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-left mt-1 border-t border-border/10 pt-2"
+                  className="flex items-center gap-2.5 w-full min-h-11 p-2.5 rounded-xl hover:bg-red-500/10 text-red-500 transition-colors cursor-pointer text-left mt-1 border-t border-border/10 pt-2"
                 >
                   <BoxArrowRight className="w-3.5 h-3.5 shrink-0" />
                   <span className="text-[10px] font-black uppercase tracking-wider">Logout</span>
@@ -691,13 +718,13 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
         </header>
 
         {/* 3-COLUMN INNER GRID ON DESKTOP */}
-        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1850px] w-full mx-auto pt-20 px-6 pb-32 md:py-6 md:px-6 lg:px-8 md:pb-8">
+        <div className="flex-1 flex flex-col-reverse lg:flex-row max-w-[1850px] w-full min-w-0 mx-auto pt-20 px-3 pb-32 sm:px-4 md:py-6 md:px-6 lg:px-8 md:pb-8 overflow-x-hidden">
 
           {/* MIDDLE COLUMN - OUTLET CONTENT */}
-          <main className="flex-1 min-w-0 relative">
+          <main className="flex-1 min-w-0 w-full relative overflow-x-hidden">
             {/* Ambient Background Glows for Apple Glass Effect */}
-            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
-            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
+            <div className="hidden sm:block absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
+            <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
 
             <Outlet context={{
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
@@ -705,7 +732,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
               walletBalance: displayedWalletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
               isExpanded: isRightSidebarExpanded,
-              setIsExpanded: setIsRightSidebarExpanded
+              setIsExpanded: setIsRightSidebarExpanded,
+              setShowThemeSelector
             }} />
           </main>
 
@@ -765,8 +793,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
             isVisible ? 'bottom-24' : 'bottom-6'
           } ${
             isRightSidebarExpanded
-              ? 'bg-rose-500 text-white shadow-rose-500/40 hover:bg-rose-600'
-              : 'bg-[#FACC15] text-black shadow-amber-400/40 hover:bg-[#EAB308]'
+              ? 'bg-[#D1495B] text-white shadow-[#D1495B]/40 hover:bg-[#B83D4E]'
+              : 'bg-[#EDAE49] text-[#003D5B] shadow-[#EDAE49]/40 hover:bg-[#D99A32]'
           }`}
           title={isRightSidebarExpanded ? 'Close Trade' : 'New Trade'}
         >
@@ -785,7 +813,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
       {/* MOBILE NAV */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-safe pt-2 transition-[transform,opacity] duration-300 ease-[var(--apple-ease)] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
         <div className="apple-glass-panel rounded-[2rem] h-16 flex items-center justify-between px-2 safe-bottom mb-4">
-          {navigation.map((item) => {
+          {navigation.filter((item) => item.id !== 'settings').map((item) => {
             const isActive = item.id === '' ? (location.pathname === '/app' || location.pathname === '/app/') : location.pathname.startsWith(`/app/${item.id}`);
             const Icon = isActive ? item.iconSolid : item.icon;
 
@@ -793,9 +821,9 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
               <NavLink
                 key={item.name}
                 to={`/app/${item.id}`}
-                className={`group relative flex items-center justify-center h-12 rounded-2xl transition-all duration-500 ease-[var(--apple-ease)] ${isActive
-                  ? 'bg-primary text-primary-foreground px-3 sm:px-4 flex-grow mx-0.5 sm:mx-1 shadow-lg shadow-primary/25'
-                  : 'text-foreground/60 w-10 sm:w-12 hover:bg-muted mx-0.5'
+                className={`group relative flex items-center justify-center h-12 rounded-2xl outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 transition-all duration-500 ease-[var(--apple-ease)] ${isActive
+                  ? 'bg-primary text-primary-foreground px-2.5 sm:px-4 flex-1 min-w-0 mx-0.5 sm:mx-1 shadow-lg shadow-primary/25'
+                  : 'text-foreground/60 w-11 sm:w-12 hover:bg-muted mx-0.5'
                   }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'group-hover:scale-110'}`} />
@@ -808,7 +836,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                       animate={{ width: 'auto', opacity: 1, marginLeft: 8 }}
                       exit={{ width: 0, opacity: 0, marginLeft: 0 }}
                       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                      className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden mobile-nav-label"
+                      className="text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap overflow-hidden text-ellipsis max-w-[68px] sm:max-w-[96px] mobile-nav-label"
                     >
                       {item.name}
                     </Motion.span>
@@ -854,7 +882,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
               <div className="space-y-3">
                 {[
-                  { id: 'sage-modern', name: 'Sage Modern', desc: 'Minimalist sage green & lavender' },
+                  { id: 'sage-modern', name: 'Honey Teal', desc: 'Bronze, teal & deep blue' },
                   { id: 'obsidian-teal', name: 'Obsidian Teal', desc: 'Sleek dark teal & platinum' },
                   { id: 'nordic-slate', name: 'Nordic Slate', desc: 'Ice blue & frost white' },
                   { id: 'crimson-rust', name: 'Crimson Rust', desc: 'Deep terracotta & copper gold' },

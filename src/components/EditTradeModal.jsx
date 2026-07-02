@@ -146,7 +146,7 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
       <div className="relative w-full max-w-2xl my-8 card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700 z-10">
         <div className="flex justify-between items-center text-left">
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-gradient uppercase tracking-tight">Modify Operation</h2>
+            <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Modify Operation</h2>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-all active:scale-90">
             <XLg className="w-4 h-4" />

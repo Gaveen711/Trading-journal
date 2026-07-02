@@ -20,7 +20,7 @@ export function ProTermsModal({ onAccept, onClose }) {
             <ShieldCheck className="w-8 h-8 text-primary relative z-10" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-gradient uppercase tracking-tight">Institutional Agreement</h2>
+            <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Institutional Agreement</h2>
             <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] leading-relaxed">
               Required for Pro Terminal Access
             </p>

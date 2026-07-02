@@ -14,7 +14,6 @@ import { ProFeatureUpsellModal } from './components/ProFeatureUpsellModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
-import CustomCursor from './components/CustomCursor';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -22,6 +21,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx').then(m => ({ de
 const CalendarPage = lazy(() => import('./pages/CalendarPage.jsx').then(m => ({ default: m.CalendarPage })));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx').then(m => ({ default: m.AnalyticsPage })));
 const JournalPage = lazy(() => import('./pages/JournalPage.jsx').then(m => ({ default: m.JournalPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx').then(m => ({ default: m.SettingsPage })));
 const EASetup = lazy(() => import('./components/EASetup').then(m => ({ default: m.default })));
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess.jsx').then(m => ({ default: m.CheckoutSuccess })));
 const CheckoutCancel = lazy(() => import('./pages/CheckoutCancel.jsx').then(m => ({ default: m.CheckoutCancel })));
@@ -121,6 +121,7 @@ function AuthenticatedApp({ user }) {
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="journal" element={<JournalPage />} />
               <Route path="sync" element={<EASetup />} />
+              <Route path="settings" element={<SettingsPage />} />
               <Route path="checkout-success" element={<CheckoutSuccess />} />
               <Route path="checkout-cancel" element={<CheckoutCancel />} />
             </Route>
@@ -252,7 +253,6 @@ function App() {
   return (
     <ErrorBoundary>
       <PageSEO />
-      <CustomCursor />
       <Suspense fallback={<PageLoader />}>
         {authError ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">

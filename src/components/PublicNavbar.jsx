@@ -58,11 +58,9 @@ export function PublicNavbar() {
                 <NavLink
                   to={to}
                   onClick={(e) => {
-                    if (to === '/') {
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
+                    if (to === location.pathname) {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else if (to.startsWith('/#')) {
                       const hash = to.split('#')[1];
                       if (location.pathname === '/') {
@@ -95,8 +93,14 @@ export function PublicNavbar() {
             </button>
             <div className="hidden lg:block">
               <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300">
-                <span>Get Started</span>
-                <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
+                <svg viewBox="0 0 24 24" className="arr-2" aria-hidden="true">
+                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                </svg>
+                <span className="text">Get Started</span>
+                <span className="circle" aria-hidden="true" />
+                <svg viewBox="0 0 24 24" className="arr-1" aria-hidden="true">
+                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                </svg>
               </button>
             </div>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-full border border-border/30 hover:bg-foreground/5 transition-all duration-200 text-muted-foreground hover:text-foreground" aria-label="Toggle menu">
@@ -123,11 +127,9 @@ export function PublicNavbar() {
                 {navLinks.map(({ to, label }) => (
                   <NavLink key={to} to={to} onClick={(e) => {
                     setMobileMenuOpen(false);
-                    if (to === '/') {
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
+                    if (to === location.pathname) {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else if (to.startsWith('/#')) {
                       const hash = to.split('#')[1];
                       if (location.pathname === '/') {
@@ -143,9 +145,15 @@ export function PublicNavbar() {
                     {label}
                   </NavLink>
                 ))}
-                <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300 w-full max-w-[280px]">
-                  <span>Get started</span>
-                  <svg width="15px" height="10px" viewBox="0 0 13 10"><path d="M1,5 L11,5" /><polyline points="8 1 12 5 8 9" /></svg>
+                <button onClick={() => navigate('/login')} className="cta cta-mobile active:scale-95 transition-all duration-300">
+                  <svg viewBox="0 0 24 24" className="arr-2" aria-hidden="true">
+                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                  </svg>
+                  <span className="text">Get Started</span>
+                  <span className="circle" aria-hidden="true" />
+                  <svg viewBox="0 0 24 24" className="arr-1" aria-hidden="true">
+                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+                  </svg>
                 </button>
               </div>
             </Motion.div>

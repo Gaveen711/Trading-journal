@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link, NavLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import Logo from '../components/Logo';
+import { FooterNav } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 import { auth } from '../firebase';
 import { useSubscription } from '../hooks/useSubscription';
@@ -167,7 +168,7 @@ export function PricingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="relative p-10 md:p-12 rounded-[3rem] border-2 border-border bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+            className="relative p-6 sm:p-8 md:p-12 rounded-[2rem] sm:rounded-[3rem] border-2 border-border bg-card flex flex-col shadow-2xl shadow-primary/10 hover:border-primary hover:shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:-translate-y-2 transition-all duration-500 overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
@@ -226,13 +227,10 @@ export function PricingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10">
             <Logo iconSize="w-7 h-7" />
-            <div className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end text-muted-foreground">
-              <NavLink to="/privacy" className="hover:text-primary transition-colors">Privacy</NavLink>
-              <NavLink to="/terms-and-conditions" className="hover:text-primary transition-colors">Terms</NavLink>
-              <NavLink to="/refund-policy" className="hover:text-primary transition-colors">Refunds</NavLink>
-              <NavLink to="/the-story" className="hover:text-primary transition-colors">The Story</NavLink>
-              <NavLink to="/contact" className="hover:text-primary transition-colors">Contact</NavLink>
-            </div>
+            <FooterNav
+              className="flex items-center gap-8 text-sm font-semibold flex-wrap justify-center md:justify-end text-muted-foreground"
+              linkClassName="hover:text-primary transition-colors"
+            />
           </div>
           <div className="mt-16 pt-8 border-t border-border/20 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col items-center md:items-end gap-4 order-1 md:order-2">
