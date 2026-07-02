@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Facebook, Instagram, TwitterX, Discord } from 'react-bootstrap-icons';
 import {
   Activity,
   ArrowRight,
@@ -22,8 +21,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-import Logo from '../components/Logo';
-import { FooterNav } from '../components/FooterNav';
+import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 
 if (typeof window !== 'undefined') {
@@ -175,8 +173,16 @@ const STYLES = `
   .story-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: clamp(2rem, 5vw, 3.5rem); }
   .story-hero-copy-block { max-width: 960px; margin: 0 auto; display: grid; justify-items: center; text-align: center; }
   .story-hero-title { margin-top: 1.35rem; max-width: 940px; color: var(--story-ink); font-size: clamp(2.55rem, 5.4vw, 5rem) !important; line-height: 1.02 !important; font-weight: 900 !important; letter-spacing: 0 !important; text-wrap: balance; }
-  .story-gradient-text, .story-aurora-word { color: var(--story-ink); }
-  .story-aurora-word { display: inline-block; }
+  .story-gradient-text, .story-aurora-word {
+    display: inline-block;
+    background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    animation: storyGradientText 7s linear infinite;
+  }
   @keyframes storyGradientText {
     0% { background-position: 0% 50%; }
     100% { background-position: 200% 50%; }
@@ -342,58 +348,10 @@ function SectionHeading({ kicker, title, children }) {
 
 function Footer() {
   return (
-    <footer className="story-footer">
-      <div style={{ maxWidth: '1180px', margin: '0 auto' }}>
-        <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
-          <Logo iconSize="w-7 h-7" />
-          <FooterNav
-            className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end"
-            linkClassName="transition hover:text-cyan-300"
-            style={{ color: 'var(--story-muted)' }}
-          />
-        </div>
-
-        <div className="mt-16 flex flex-col items-center justify-between gap-6 pt-8 md:flex-row">
-          <p className="order-2 text-center text-[9px] font-black uppercase tracking-[0.2em] md:order-1 md:text-left" style={{ color: 'var(--story-muted)' }}>
-            Copyright 2026 Xau Journal. All Rights Reserved.
-          </p>
-
-          <div className="order-1 flex flex-col items-center gap-4 md:order-2 md:items-end">
-            <ul className="example-2">
-              <li className="icon-content">
-                <a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
-                  <div className="filled" />
-                  <Facebook />
-                </a>
-              </li>
-              <li className="icon-content">
-                <a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
-                  <div className="filled" />
-                  <Instagram />
-                </a>
-              </li>
-              <li className="icon-content">
-                <a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer">
-                  <div className="filled" />
-                  <TwitterX />
-                </a>
-              </li>
-              <li className="icon-content">
-                <a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer">
-                  <div className="filled" />
-                  <Discord />
-                </a>
-              </li>
-            </ul>
-            <p className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] md:justify-end" style={{ color: 'var(--story-muted)' }}>
-              made with ❤️
-            </p>
-          </div>
-        </div>
-      </div>
-    </footer>
+    <PublicFooter />
   );
-}export default function TheStoryPage() {
+}
+export default function TheStoryPage() {
   const stageRef = useRef(null);
   const cardRef = useRef(null);
   const activeProductRef = useRef(0);
@@ -688,6 +646,7 @@ function Footer() {
     </>
   );
 }
+
 
 
 

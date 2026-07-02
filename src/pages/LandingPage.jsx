@@ -5,7 +5,6 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
-import { Discord, Facebook, Instagram, TwitterX } from 'react-bootstrap-icons';
 import {
   Activity,
   ArrowRight,
@@ -25,7 +24,7 @@ import {
 } from 'lucide-react';
 
 import Logo from '../components/Logo';
-import { FooterNav } from '../components/FooterNav';
+import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 import { useAppTheme } from '../hooks/useAppTheme';
 import {
@@ -159,8 +158,15 @@ const LANDING_STYLES = `
   }
 
   .xau-gradient-word,
-  .xau-hero-line-accent .xau-word > span {
-    color: var(--xau-ink);
+  .xau-word-accent > span {
+    display: inline-block;
+    background: linear-gradient(90deg, #FF3CAC 0%, #8B5CF6 25%, #00D4FF 50%, #8B5CF6 75%, #FF3CAC 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    animation: xauGradientText 7s linear infinite;
   }
 
   @keyframes xauGradientText {
@@ -465,6 +471,7 @@ const LANDING_STYLES = `
 
   .xau-cinema-pin {
     position: relative;
+    min-height: clamp(560px, calc(100dvh - 5rem), 720px);
     overflow: hidden;
   }
 
@@ -476,19 +483,19 @@ const LANDING_STYLES = `
   }
 
   .xau-cinema-panel {
-    min-height: 100dvh;
-    width: 100%;
-    flex: 0 0 100%;
+    min-height: clamp(560px, calc(100dvh - 5rem), 720px);
+    width: 100vw;
+    flex: 0 0 100vw;
     display: grid;
     place-items: center;
-    padding: 7rem max(1.25rem, 6vw);
+    padding: clamp(5.5rem, 9vh, 7rem) clamp(1rem, 2vw, 1.5rem) clamp(2rem, 4vh, 3.25rem);
     transform: translateZ(0);
     backface-visibility: hidden;
   }
 
   .xau-cinema-card {
-    width: min(980px, 100%);
-    min-height: min(560px, 72vh);
+    width: min(860px, calc(100vw - 3rem));
+    min-height: min(410px, 52vh);
     display: grid;
     grid-template-columns: minmax(0, 0.88fr) minmax(280px, 0.72fr);
     align-items: center;
@@ -539,27 +546,9 @@ const LANDING_STYLES = `
     box-shadow: 0 24px 70px rgba(17, 197, 217, 0.35);
   }
 
-  .xau-cinema-progress {
-    position: sticky;
-    bottom: 1.5rem;
-    left: 0;
-    z-index: 8;
-    width: min(520px, calc(100% - 2rem));
-    height: 4px;
-    margin: -4.5rem auto 4rem;
-    overflow: hidden;
-    border-radius: 999px;
-    background: var(--xau-soft);
-  }
-
-  .xau-cinema-progress > span {
-    display: block;
-    height: 100%;
-    width: 25%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #11c5d9, #d946ef, #10b981);
-    transform-origin: left;
-    transform: scaleX(0.25);
+  .xau-cinema-markup {
+    will-change: transform;
+    backface-visibility: hidden;
   }
 
   @media (max-width: 1023px) {
@@ -744,15 +733,12 @@ const LANDING_STYLES = `
       min-height: 220px;
     }
 
-    .xau-cinema-progress {
-      display: none;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .xau-marquee,
     .xau-gradient-word,
-    .xau-hero-line-accent .xau-word > span {
+    .xau-word-accent > span {
       animation: none;
     }
 
@@ -986,7 +972,7 @@ const MARQUEE = [
 const HERO_LINES = [
   { text: 'Every trade' },
   { text: 'you make' },
-  { text: 'tells a story.', accent: true },
+  { text: 'tells a story.', accent: true, accentWords: ['story.'] },
 ];
 
 function useLandingMotion(rootRef, setActiveStory) {
@@ -1309,23 +1295,25 @@ function useLandingMotion(rootRef, setActiveStory) {
 
       const cinemaTrack = document.querySelector('.xau-cinema-track');
       const cinemaPin = document.querySelector('.xau-cinema-pin');
-      const cinemaProgress = document.querySelector('.xau-cinema-progress > span');
       if (cinemaTrack && cinemaPin && window.innerWidth >= 1024) {
-        const getDistance = () => cinemaTrack.scrollWidth - window.innerWidth;
+        const getDistance = () => {
+          const panelCount = cinemaTrack.querySelectorAll('.xau-cinema-panel').length;
+          return Math.max(0, window.innerWidth * Math.max(0, panelCount - 1));
+        };
+        const getScrollDistance = () => getDistance() * 1.35;
 
         gsap.fromTo(
-          '.xau-cinema-panel',
-          { autoAlpha: 0.35, scale: 0.92, rotateY: 7 },
+          '.xau-cinema-card',
+          { autoAlpha: 0.96, scale: 0.985 },
           {
             autoAlpha: 1,
             scale: 1,
-            rotateY: 0,
-            duration: 0.8,
+            duration: 0.6,
             ease: 'power3.out',
-            stagger: 0.12,
             scrollTrigger: {
               trigger: cinemaPin,
-              start: 'top 72%',
+              start: 'top 78%',
+              once: true,
             },
           }
         );
@@ -1335,11 +1323,11 @@ function useLandingMotion(rootRef, setActiveStory) {
           ease: 'none',
           scrollTrigger: {
             trigger: cinemaPin,
-            start: 'top top',
-            end: () => `+=${getDistance()}`,
+            start: 'top 88px',
+            end: () => `+=${getScrollDistance()}`,
             pin: true,
-            scrub: 1.65,
-            anticipatePin: 1,
+            scrub: 2.25,
+            anticipatePin: 0,
             invalidateOnRefresh: true,
           },
         });
@@ -1349,25 +1337,35 @@ function useLandingMotion(rootRef, setActiveStory) {
           ease: 'none',
           scrollTrigger: {
             trigger: cinemaPin,
-            start: 'top top',
-            end: () => `+=${getDistance()}`,
-            scrub: 1.65,
+            start: 'top 88px',
+            end: () => `+=${getScrollDistance()}`,
+            scrub: 2.25,
           },
         });
 
-        if (cinemaProgress) {
-          gsap.to(cinemaProgress, {
-            scaleX: 1,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: cinemaPin,
-              start: 'top top',
-              end: () => `+=${getDistance()}`,
-              scrub: 1.65,
-              invalidateOnRefresh: true,
-            },
-          });
-        }
+        gsap.to('.xau-cinema-orb', {
+          x: 72,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: cinemaPin,
+            start: 'top 88px',
+            end: () => `+=${getScrollDistance()}`,
+            scrub: 2.25,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        gsap.to('.xau-cinema-markup', {
+          x: -44,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: cinemaPin,
+            start: 'top 88px',
+            end: () => `+=${getScrollDistance()}`,
+            scrub: 2.25,
+            invalidateOnRefresh: true,
+          },
+        });
       }
 
     }, rootRef);
@@ -1563,14 +1561,21 @@ function FeatureCard({ feature }) {
   );
 }
 
-function PlatformBadge({ src, label }) {
+const getPlatformIconUrl = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=96`;
+
+function PlatformBadge({ src, label, status = 'Broker sync ready', comingSoon = false }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-xl" style={{ borderColor: 'var(--xau-border)', background: 'var(--xau-soft)' }}>
       <img src={src} alt="" className="h-8 w-8 object-contain" />
-      <div>
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-bold">{label}</p>
-        <p className="text-xs" style={{ color: 'var(--xau-muted)' }}>Broker sync ready</p>
+        <p className="text-xs" style={{ color: 'var(--xau-muted)' }}>{status}</p>
       </div>
+      {comingSoon && (
+        <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-amber-300">
+          Soon
+        </span>
+      )}
     </div>
   );
 }
@@ -1703,7 +1708,10 @@ export function LandingPage() {
               {HERO_LINES.map((line) => (
                 <span key={line.text} className={`xau-hero-line ${line.accent ? 'xau-hero-line-accent' : ''}`}>
                   {line.text.split(' ').map((word, index) => (
-                    <span key={`${line.text}-${word}-${index}`} className="xau-word mr-[0.18em]">
+                    <span
+                      key={`${line.text}-${word}-${index}`}
+                      className={`xau-word mr-[0.18em] ${line.accentWords?.includes(word) ? 'xau-word-accent' : ''}`}
+                    >
                       <span>{word}</span>
                     </span>
                   ))}
@@ -1778,8 +1786,10 @@ export function LandingPage() {
           <div className="xau-glass scroll-reveal rounded-[1.75rem] p-6 md:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--xau-muted)' }}>Connected platforms</p>
             <div className="mt-5 space-y-3">
-              <PlatformBadge src="/mt4.svg" label="MetaTrader 4" />
-              <PlatformBadge src="/mt5.svg" label="MetaTrader 5" />
+              <PlatformBadge src="/mt4.svg" label="MetaTrader 4" status="Live sync ready" />
+              <PlatformBadge src="/mt5.svg" label="MetaTrader 5" status="Live sync ready" />
+              <PlatformBadge src={getPlatformIconUrl('binance.com')} label="Binance" status="Coming soon" comingSoon />
+              <PlatformBadge src={getPlatformIconUrl('bybit.com')} label="Bybit" status="Coming soon" comingSoon />
             </div>
           </div>
         </div>
@@ -1789,7 +1799,7 @@ export function LandingPage() {
         <div className="xau-architecture-shell">
           <div className="xau-architecture-heading">
             <span className="xau-architecture-badge">Architecture</span>
-            <h2 id="architecture-heading" className="xau-architecture-title">Built for Scale</h2>
+            <h2 id="architecture-heading" className="xau-architecture-title">Built for <span className="xau-gradient-word">Scale</span></h2>
             <p className="xau-architecture-copy">
               An institutional-grade pipeline keeps every data layer synced, secured, and ready for analysis.
             </p>
@@ -1971,56 +1981,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 px-6 py-20 md:px-12" style={{ background: 'var(--xau-soft)' }}>
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
-            <Logo iconSize="w-7 h-7" />
-            <FooterNav
-              className="flex flex-wrap items-center justify-center gap-8 text-sm font-semibold md:justify-end"
-              linkClassName="transition hover:text-cyan-300"
-              style={{ color: 'var(--xau-muted)' }}
-            />
-          </div>
-
-          <div className="mt-16 flex flex-col items-center justify-between gap-6 pt-8 md:flex-row">
-            <p className="order-2 text-center text-[9px] font-black uppercase tracking-[0.2em] md:order-1 md:text-left" style={{ color: 'var(--xau-muted)' }}>
-              Copyright 2026 Xau Journal. All Rights Reserved.
-            </p>
-
-            <div className="order-1 flex flex-col items-center gap-4 md:order-2 md:items-end">
-              <ul className="example-2">
-                <li className="icon-content">
-                  <a data-social="facebook" aria-label="Facebook" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
-                    <div className="filled" />
-                    <Facebook />
-                  </a>
-                </li>
-                <li className="icon-content">
-                  <a data-social="instagram" aria-label="Instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
-                    <div className="filled" />
-                    <Instagram />
-                  </a>
-                </li>
-                <li className="icon-content">
-                  <a data-social="x" aria-label="X" href="https://x.com/xau_journal" target="_blank" rel="noopener noreferrer">
-                    <div className="filled" />
-                    <TwitterX />
-                  </a>
-                </li>
-                <li className="icon-content">
-                  <a data-social="discord" aria-label="Discord" href="https://discord.gg/smbNwBZC2" target="_blank" rel="noopener noreferrer">
-                    <div className="filled" />
-                    <Discord />
-                  </a>
-                </li>
-              </ul>
-              <p className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] md:justify-end" style={{ color: 'var(--xau-muted)' }}>
-                made with ❤️
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       <Motion.button
         type="button"
