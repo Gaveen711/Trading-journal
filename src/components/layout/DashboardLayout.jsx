@@ -692,6 +692,17 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                   <CreditCard className="w-3.5 h-3.5 shrink-0" />
                   <span className="text-[10px] font-black uppercase tracking-wider truncate">Manage Subscription</span>
                 </button>
+
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/app/settings');
+                  }}
+                  className="flex items-center gap-2.5 w-full min-h-11 p-2.5 rounded-xl hover:bg-muted/50 text-foreground transition-colors cursor-pointer text-left"
+                >
+                  <Gear className="w-3.5 h-3.5 shrink-0 text-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-wider truncate">Settings</span>
+                </button>
  
                 {/* Logout Button */}
                 <button
