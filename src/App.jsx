@@ -14,6 +14,7 @@ import { ProFeatureUpsellModal } from './components/ProFeatureUpsellModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
+import { PublicNavbar } from './components/PublicNavbar';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -33,6 +34,8 @@ const ContactPage = lazy(() => import('./pages/ContactPage.jsx').then(m => ({ de
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
 const TheStoryPage = lazy(() => import('./pages/TheStoryPage.jsx'));
 const Login = lazy(() => import('./Login.jsx'));
+
+const PUBLIC_NAVBAR_PATHS = new Set(['/', '/home', '/pricing', '/contact', '/privacy', '/terms-and-conditions', '/refund-policy', '/the-story']);
 
 const PageLoader = ({ text = "Syncing Terminal" }) => (
   <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6">
@@ -144,33 +147,269 @@ function AuthenticatedApp({ user }) {
   );
 }
 
+function useScrollProgress(pathname) {
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
+
+    let frameId = 0;
+    const updateProgress = () => {
+      frameId = 0;
+      const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      const progress = Math.min(1, Math.max(0, window.scrollY / scrollable));
+      setScrollProgress(progress);
+    };
+    const requestUpdate = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(updateProgress);
+    };
+
+    updateProgress();
+    const settleId = window.setTimeout(updateProgress, 260);
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate);
+
+    return () => {
+      window.clearTimeout(settleId);
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', requestUpdate);
+      window.removeEventListener('resize', requestUpdate);
+    };
+  }, [pathname]);
+
+  return scrollProgress;
+}
+
+function useGlobalInteractions(pathname) {
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
+
+    let observer;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const skipSelector = 'header, footer, [role="dialog"], .Toastify, .dashboard-sidebar, .xau-scroll-top, .site-scroll-top, [data-ux-skip="true"]';
+    const shouldSkip = (element) => Boolean(
+      element.closest(skipSelector) ||
+      element.closest('[aria-hidden="true"]') ||
+      element.closest('svg')
+    );
+    const clearUxState = (element) => {
+      delete element.dataset.uxCard;
+      delete element.dataset.uxRow;
+      delete element.dataset.uxReveal;
+      element.style.removeProperty('--ux-index');
+    };
+
+    const frameId = window.requestAnimationFrame(() => {
+      const main = document.querySelector('main, [role="main"]');
+      if (main) {
+        main.setAttribute('tabindex', '-1');
+        main.classList.remove('ux-route-enter');
+        void main.offsetWidth;
+        main.classList.add('ux-route-enter');
+
+        if (document.body.dataset.uxHasMounted === 'true') {
+          main.focus({ preventScroll: true });
+        }
+        document.body.dataset.uxHasMounted = 'true';
+      }
+
+      const controlSelector = 'button, a[href], summary, [role="button"], input[type="checkbox"], input[type="radio"]';
+      document.querySelectorAll(controlSelector).forEach((control) => {
+        if (control.matches('[disabled], [aria-disabled="true"]')) return;
+        control.dataset.uxControl = 'true';
+      });
+
+      const cardSelector = [
+        'main .card-premium',
+        'main .apple-glass-panel',
+        'main .xau-card',
+        'main .xau-panel',
+        'main .xau-soft',
+        'main .story-product-panel',
+        'main .story-stage-step',
+        'main article',
+        'main form'
+      ].join(',');
+
+      document.querySelectorAll(cardSelector).forEach((card) => {
+        if (shouldSkip(card)) {
+          clearUxState(card);
+          return;
+        }
+        card.dataset.uxCard = 'true';
+      });
+
+      const rowSelector = 'main tbody tr, main .xau-row, main ul.divide-y > li, main ol.divide-y > li';
+      document.querySelectorAll(rowSelector).forEach((row) => {
+        if (shouldSkip(row)) {
+          clearUxState(row);
+          return;
+        }
+        row.dataset.uxRow = 'true';
+      });
+
+      const revealSelector = [
+        'main section',
+        'main article',
+        'main form',
+        'main .card-premium',
+        'main .apple-glass-panel',
+        'main .xau-card',
+        'main .xau-panel',
+        'main .xau-soft',
+        'main .story-reveal',
+        'main .story-product-panel',
+        'main tbody tr',
+        'main ul.divide-y > li',
+        'main ol.divide-y > li'
+      ].join(',');
+
+      const revealItems = [...new Set(Array.from(document.querySelectorAll(revealSelector)))]
+        .filter((item) => {
+          if (shouldSkip(item)) {
+            clearUxState(item);
+            return false;
+          }
+          return true;
+        });
+
+      revealItems.forEach((item, index) => {
+        item.style.setProperty('--ux-index', String(Math.min(index % 8, 7)));
+        item.dataset.uxReveal = reducedMotion ? 'visible' : 'pending';
+      });
+
+      if (reducedMotion || typeof IntersectionObserver === 'undefined') {
+        revealItems.forEach((item) => {
+          item.dataset.uxReveal = 'visible';
+        });
+        return;
+      }
+
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.dataset.uxReveal = 'visible';
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -8% 0px' });
+
+      revealItems.forEach((item) => observer.observe(item));
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      if (observer) observer.disconnect();
+    };
+  }, [pathname]);
+}
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
   const location = useLocation();
+  const scrollProgress = useScrollProgress(location.pathname);
+  const showPublicNavbarDuringLoad = PUBLIC_NAVBAR_PATHS.has(location.pathname);
+  const publicPageLoader = (text) => (
+    <>
+      <PublicNavbar />
+      <PageLoader text={text} />
+    </>
+  );
+  useGlobalInteractions(location.pathname);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
 
-    const styleId = 'global-scroll-reveal-styles';
+    const styleId = 'global-heading-reveal-styles';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
       style.innerHTML = `
-        .scroll-reveal-text {
+        .heading-text-reveal {
+          --heading-reveal-step: 34ms;
           opacity: 0;
-          transform: translateY(20px);
-          transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-          will-change: transform, opacity;
+          transform: translateY(18px);
+          filter: blur(7px);
+          transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1), transform 680ms cubic-bezier(0.16, 1, 0.3, 1), filter 680ms cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: transform, opacity, filter;
         }
-        .scroll-reveal-text.revealed {
+        .heading-text-reveal .heading-reveal-word {
+          display: inline-block;
+          opacity: 0;
+          transform: translateY(0.72em) rotateX(18deg);
+          transform-origin: 50% 100%;
+          filter: blur(5px);
+          transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 660ms cubic-bezier(0.16, 1, 0.3, 1), filter 660ms cubic-bezier(0.16, 1, 0.3, 1);
+          transition-delay: calc(var(--word-index, 0) * var(--heading-reveal-step));
+          will-change: transform, opacity, filter;
+        }
+        .heading-text-reveal.revealed {
           opacity: 1;
           transform: translateY(0);
+          filter: blur(0);
+        }
+        .heading-text-reveal.revealed .heading-reveal-word {
+          opacity: 1;
+          transform: translateY(0) rotateX(0deg);
+          filter: blur(0);
+        }
+        :is(.aurora-text, .xau-gradient, .xau-ink-highlight, .xau-heading-gooey, .story-gradient-word, .text-gradient) .heading-reveal-word {
+          background: inherit;
+          background-size: inherit;
+          background-position: inherit;
+          background-repeat: inherit;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .heading-text-reveal,
+          .heading-text-reveal .heading-reveal-word {
+            opacity: 1 !important;
+            transform: none !important;
+            filter: none !important;
+            transition: none !important;
+          }
         }
       `;
       document.head.appendChild(style);
     }
+
+    const splitHeadingText = (heading) => {
+      if (heading.dataset.headingRevealReady === 'true') return;
+
+      let wordIndex = 0;
+      const splitNode = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const fragment = document.createDocumentFragment();
+          const parts = node.textContent.split(/(\s+)/);
+          parts.forEach((part) => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) {
+              fragment.appendChild(document.createTextNode(part));
+              return;
+            }
+            const word = document.createElement('span');
+            word.className = 'heading-reveal-word';
+            word.style.setProperty('--word-index', wordIndex);
+            word.textContent = part;
+            wordIndex += 1;
+            fragment.appendChild(word);
+          });
+          node.replaceWith(fragment);
+          return;
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        if (node.matches('script, style, svg, img, input, textarea, button, .aurora-text, .xau-gradient, .xau-ink-highlight, .xau-heading-gooey, .story-gradient-word, .text-gradient')) return;
+        Array.from(node.childNodes).forEach(splitNode);
+      };
+
+      Array.from(heading.childNodes).forEach(splitNode);
+      heading.dataset.headingRevealReady = 'true';
+    };
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -180,38 +419,32 @@ function App() {
         }
       });
     }, {
-      threshold: 0.05,
-      rootMargin: '0px 0px -20px 0px'
+      threshold: 0.12,
+      rootMargin: '0px 0px -10% 0px'
     });
 
-    const isPublicPage = ['/', '/home', '/pricing', '/contact', '/privacy', '/terms-and-conditions', '/refund-policy', '/the-story'].includes(location.pathname);
-    if (!isPublicPage) return;
-
     const timer = setTimeout(() => {
-      const elements = document.querySelectorAll('h1, h2, h3, p, .prose p');
-      elements.forEach(el => {
+      const headings = document.querySelectorAll('main h1, main h2, [role="main"] h1, [role="main"] h2');
+      headings.forEach(heading => {
         if (
-          el.closest('.framer-motion') || 
-          el.closest('#features') ||
-          el.closest('.step-card') ||
-          el.closest('#scale-timeline-container') ||
-          el.closest('.reveal-up') ||
-          el.closest('.xj-split-h2') ||
-          el.closest('.xj-manifesto-list') ||
-          el.closest('.xj-section-label') ||
-          el.closest('.xj-stat-num') ||
-          el.classList.contains('char') || 
-          el.classList.contains('scroll-reveal-text') ||
-          el.closest('footer') ||
-          el.closest('header') ||
-          el.tagName === 'A'
+          heading.dataset.headingRevealSkip === 'true' ||
+          heading.classList.contains('heading-text-reveal') ||
+          heading.closest('header') ||
+          heading.closest('footer') ||
+          heading.closest('[role="dialog"]') ||
+          heading.closest('.Toastify') ||
+          heading.closest('.xau-metric') ||
+          heading.closest('.xau-row') ||
+          heading.closest('[aria-hidden="true"]')
         ) {
           return;
         }
-        el.classList.add('scroll-reveal-text');
-        observer.observe(el);
+
+        splitHeadingText(heading);
+        heading.classList.add('heading-text-reveal');
+        observer.observe(heading);
       });
-    }, 450);
+    }, 120);
 
     return () => {
       clearTimeout(timer);
@@ -253,7 +486,8 @@ function App() {
   return (
     <ErrorBoundary>
       <PageSEO />
-      <Suspense fallback={<PageLoader />}>
+      <div className="ux-scroll-progress" style={{ '--ux-scroll-progress': scrollProgress }} aria-hidden="true" />
+      <Suspense fallback={showPublicNavbarDuringLoad ? publicPageLoader() : <PageLoader />}>
         {authError ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
             <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
@@ -274,9 +508,9 @@ function App() {
           </div>
         ) : loading ? (
           localStorage.getItem('xau-auth-hint') === 'true' ? (
-            <PageLoader text="Restoring Secure Session" />
+            showPublicNavbarDuringLoad ? publicPageLoader("Restoring Secure Session") : <PageLoader text="Restoring Secure Session" />
           ) : (
-            <PageLoader />
+            showPublicNavbarDuringLoad ? publicPageLoader() : <PageLoader />
           )
         ) : (
           <Routes>

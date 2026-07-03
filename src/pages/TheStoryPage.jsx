@@ -135,16 +135,16 @@ const STYLES = `
   html.lenis, html.lenis body { height: auto; }
   .lenis.lenis-smooth { scroll-behavior: auto !important; }
   .lenis.lenis-stopped { overflow: hidden; }
-  .story-page { --story-bg:#f7faf8; --story-surface:#ffffff; --story-surface-2:#eef7f4; --story-ink:#111418; --story-muted:#56616d; --story-border:rgba(17,20,24,.13); --story-strong:rgba(17,20,24,.26); --story-accent:#06b6d4; --story-teal:#10b981; --story-blue:#2563eb; --story-rust:#f59e0b; --story-shadow:0 24px 70px rgba(17,20,24,.10); min-height:100vh; background:linear-gradient(90deg,rgba(17,20,24,.032) 1px,transparent 1px),linear-gradient(180deg,rgba(17,20,24,.032) 1px,transparent 1px),linear-gradient(180deg,#f7fbff 0%,var(--story-bg) 42%,#fffaf1 100%); background-size:88px 88px,88px 88px,auto; color:var(--story-ink); font-family:'Inter','Poppins',system-ui,sans-serif; overflow:clip; isolation:isolate; }
-  .dark .story-page { --story-bg:#07090b; --story-surface:#101417; --story-surface-2:#121d1b; --story-ink:#f4fbfa; --story-muted:#afbabd; --story-border:rgba(244,251,250,.13); --story-strong:rgba(244,251,250,.24); --story-accent:#22d3ee; --story-teal:#34d399; --story-blue:#60a5fa; --story-rust:#fbbf24; --story-shadow:0 24px 80px rgba(0,0,0,.38); background:linear-gradient(90deg,rgba(244,251,250,.045) 1px,transparent 1px),linear-gradient(180deg,rgba(244,251,250,.045) 1px,transparent 1px),linear-gradient(180deg,#05070a 0%,var(--story-bg) 50%,#080605 100%); background-size:88px 88px,88px 88px,auto; }
+  .story-page { --story-bg:#f7faf8; --story-surface:#ffffff; --story-surface-2:#eef7f4; --story-ink:#111418; --story-muted:#56616d; --story-border:rgba(17,20,24,.13); --story-strong:rgba(17,20,24,.26); --story-accent:#0f9f8a; --story-teal:#14b8a6; --story-copper:#c95b3c; --story-rust:#d49224; --story-shadow:0 24px 70px rgba(17,20,24,.10); min-height:100vh; background:linear-gradient(90deg,rgba(17,20,24,.032) 1px,transparent 1px),linear-gradient(180deg,rgba(17,20,24,.032) 1px,transparent 1px),linear-gradient(180deg,#fffaf1 0%,var(--story-bg) 42%,#f7faf8 100%); background-size:88px 88px,88px 88px,auto; color:var(--story-ink); font-family:'Inter','Poppins',system-ui,sans-serif; overflow:clip; isolation:isolate; }
+  .dark .story-page { --story-bg:#07090b; --story-surface:#101417; --story-surface-2:#121d1b; --story-ink:#f4fbfa; --story-muted:#afbabd; --story-border:rgba(244,251,250,.13); --story-strong:rgba(244,251,250,.24); --story-accent:#5eead4; --story-teal:#2dd4bf; --story-copper:#ff7a59; --story-rust:#f5b544; --story-shadow:0 24px 80px rgba(0,0,0,.38); background:linear-gradient(90deg,rgba(244,251,250,.045) 1px,transparent 1px),linear-gradient(180deg,rgba(244,251,250,.045) 1px,transparent 1px),linear-gradient(180deg,#05070a 0%,var(--story-bg) 50%,#080605 100%); background-size:88px 88px,88px 88px,auto; }
   .story-page .scroll-reveal-text { opacity:1 !important; transform:none !important; }
   .story-page > section, .story-page > footer { position:relative; z-index:1; }
-  .story-progress { position:fixed; inset:0 auto auto 0; width:100%; height:3px; transform:scaleX(0); transform-origin:left; z-index:1000; background:linear-gradient(90deg,var(--story-accent),var(--story-teal),var(--story-blue),var(--story-rust)); }
+  .story-progress { position:fixed; inset:0 auto auto 0; width:100%; height:3px; transform:scaleX(0); transform-origin:left; z-index:1000; background:linear-gradient(90deg,var(--story-rust),var(--story-copper),var(--story-teal),var(--story-accent)); }
   .story-shell { width:min(1180px,calc(100% - 2rem)); margin:0 auto; }
   .story-eyebrow { display:inline-flex; align-items:center; gap:.55rem; color:var(--story-accent); font-size:.78rem; font-weight:800; line-height:1.2; letter-spacing:0; text-transform:uppercase; }
-  .story-eyebrow::before { content:''; width:2.1rem; height:1px; background:currentColor; }
-  .story-gradient-word { display:inline-block; background:linear-gradient(90deg,#06b6d4 0%,#10b981 32%,#f59e0b 66%,#2563eb 100%); background-size:220% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; animation:storyGradientText 7s linear infinite; }
-  .dark .story-gradient-word { background-image:linear-gradient(90deg,#67e8f9 0%,#34d399 32%,#fbbf24 66%,#60a5fa 100%); }
+  .story-eyebrow::before { content:none; }
+  .story-gradient-word { display:inline-block; background:linear-gradient(90deg,#B08A5A 0%,#D49224 22%,#C95B3C 44%,#14B8A6 72%,#B08A5A 100%); background-size:220% 100%; background-repeat:repeat; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; text-decoration:none; animation:storyGradientText 8s linear infinite; }
+  .dark .story-gradient-word { background-image:linear-gradient(90deg,#D4A76A 0%,#F5B544 22%,#FF7A59 44%,#2DD4BF 72%,#D4A76A 100%); }
   @keyframes storyGradientText { 0% { background-position:0% 50%; } 100% { background-position:220% 50%; } }
   .story-title-xl { margin-top:1.2rem; color:var(--story-ink); font-size:clamp(3rem,7.3vw,7.6rem) !important; line-height:.96 !important; font-weight:800 !important; letter-spacing:0 !important; text-wrap:balance; }
   .story-title-lg { margin-top:1rem; color:var(--story-ink); font-size:clamp(2.2rem,5vw,5.2rem) !important; line-height:1.02 !important; font-weight:800 !important; letter-spacing:0 !important; text-wrap:balance; }
@@ -188,7 +188,7 @@ const STYLES = `
   .story-market-bars { height:164px; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); align-items:end; gap:.52rem; margin-top:1rem; padding:1rem; border:1px solid var(--story-border); border-radius:8px; background:linear-gradient(180deg,transparent 24%,var(--story-border) 24%,transparent 25%,transparent 49%,var(--story-border) 49%,transparent 50%,transparent 74%,var(--story-border) 74%,transparent 75%); }
   .story-market-bar { min-height:18px; border-radius:3px 3px 0 0; background:var(--story-teal); opacity:.82; }
   .story-market-bar:nth-child(3n + 1) { background:var(--story-accent); }
-  .story-market-bar:nth-child(4n) { background:var(--story-blue); }
+  .story-market-bar:nth-child(4n) { background:var(--story-copper); }
   .story-code-line { display:flex; align-items:center; gap:.6rem; margin-top:1rem; border-top:1px solid var(--story-border); padding-top:1rem; color:var(--story-muted); font-family:'Roboto Mono',Consolas,monospace; font-size:.78rem; line-height:1.6; }
   .story-section { padding:clamp(4.5rem,9vw,8rem) 0; }
   .story-section-head { max-width:820px; margin:0 auto clamp(2rem,5vw,3.5rem); display:grid; justify-items:center; text-align:center; }
@@ -312,23 +312,21 @@ export default function TheStoryPage() {
   const cardRef = useRef(null);
   const activeProductRef = useRef(0);
   const [activeProduct, setActiveProduct] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let lenis = null;
-    let rafId = 0;
+    let tickerCallback = null;
 
     if (!reducedMotion) {
       lenis = new Lenis({ lerp: 0.075, smoothWheel: true });
       lenis.on('scroll', ScrollTrigger.update);
 
-      const raf = (time) => {
-        lenis.raf(time);
-        rafId = requestAnimationFrame(raf);
+      tickerCallback = (time) => {
+        lenis.raf(time * 1000);
       };
-
-      rafId = requestAnimationFrame(raf);
+      gsap.ticker.add(tickerCallback);
+      gsap.ticker.lagSmoothing(0);
     }
 
     const ctx = gsap.context(() => {
@@ -361,49 +359,51 @@ export default function TheStoryPage() {
 
         const stage = stageRef.current;
         const card = cardRef.current;
-        const pinStage = window.matchMedia('(min-width: 900px)').matches;
 
-        if (stage) {
-          ScrollTrigger.create({
-            trigger: stage,
-            start: pinStage ? 'top top+=88' : 'top 72%',
-            end: pinStage ? () => `+=${window.innerHeight * 3}` : 'bottom 28%',
-            pin: pinStage,
-            scrub: 0.7,
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              const rawStep = self.progress * (PRODUCT_STEPS.length - 1);
-              const nextStep = Math.min(PRODUCT_STEPS.length - 1, Math.round(rawStep));
-              const next = PRODUCT_STEPS[nextStep];
+        const mm = gsap.matchMedia();
+        mm.add({
+          isDesktop: '(min-width: 900px)',
+          isMobile: '(max-width: 899px)'
+        }, (context) => {
+          const { isDesktop } = context.conditions;
 
-              stage.style.setProperty('--stage-progress', self.progress.toFixed(3));
-              stage.style.setProperty('--stage-shift', `${gsap.utils.interpolate(-18, 18, self.progress)}px`);
-              stage.style.setProperty('--stage-accent', next.accent);
-              stage.style.setProperty('--stage-accent-soft', next.soft);
+          if (stage) {
+            ScrollTrigger.create({
+              trigger: '.story-showcase-pin-wrapper',
+              start: isDesktop ? 'top top+=88' : 'top 72%',
+              end: isDesktop ? () => `+=${window.innerHeight * 3}` : 'bottom 28%',
+              pin: isDesktop ? '.story-showcase-pin-wrapper' : false,
+              scrub: 0.7,
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+              onUpdate: (self) => {
+                const rawStep = self.progress * (PRODUCT_STEPS.length - 1);
+                const nextStep = Math.min(PRODUCT_STEPS.length - 1, Math.round(rawStep));
+                const next = PRODUCT_STEPS[nextStep];
 
-              if (activeProductRef.current !== nextStep) {
-                activeProductRef.current = nextStep;
-                setActiveProduct(nextStep);
+                stage.style.setProperty('--stage-progress', self.progress.toFixed(3));
+                stage.style.setProperty('--stage-shift', isDesktop ? `${gsap.utils.interpolate(-18, 18, self.progress)}px` : '0px');
+                stage.style.setProperty('--stage-accent', next.accent);
+                stage.style.setProperty('--stage-accent-soft', next.soft);
 
-                if (card) {
-                  gsap.fromTo(card, { autoAlpha: 0.58, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+                if (activeProductRef.current !== nextStep) {
+                  activeProductRef.current = nextStep;
+                  setActiveProduct(nextStep);
+
+                  if (card) {
+                    gsap.fromTo(card, { autoAlpha: 0.58, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+                  }
                 }
-              }
-            },
-          });
-        }
+              },
+            });
+          }
+        });
       }
     });
-
-    const handleScroll = () => setIsScrolled(window.scrollY > 420);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
     ScrollTrigger.refresh();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (rafId) cancelAnimationFrame(rafId);
+      if (tickerCallback) gsap.ticker.remove(tickerCallback);
       if (lenis) lenis.destroy();
       ctx.revert();
     };
@@ -521,52 +521,54 @@ export default function TheStoryPage() {
               pattern, then scale the discipline through software.
             </SectionHeading>
 
-            <div
-              className='story-showcase-stage'
-              ref={stageRef}
-              style={{ '--stage-accent': activeStep.accent, '--stage-accent-soft': activeStep.soft }}
-            >
-              <div className='story-reveal'>
-                <span className='story-stage-label'><ActiveIcon size={18} />{activeStep.key}</span>
-                <h2 className='story-title-lg'><Highlight>{activeStep.key}</Highlight>: {activeStep.outcome}</h2>
-                <p className='story-copy'>{activeStep.body}</p>
+            <div className='story-showcase-pin-wrapper w-full'>
+              <div
+                className='story-showcase-stage'
+                ref={stageRef}
+                style={{ '--stage-accent': activeStep.accent, '--stage-accent-soft': activeStep.soft }}
+              >
+                <div className='story-reveal'>
+                  <span className='story-stage-label'><ActiveIcon size={18} />{activeStep.key}</span>
+                  <h2 className='story-title-lg'><Highlight>{activeStep.key}</Highlight>: {activeStep.outcome}</h2>
+                  <p className='story-copy'>{activeStep.body}</p>
 
-                <div className='story-stage-progress' aria-label='Product creation progress'>
-                  {PRODUCT_STEPS.map((step, index) => (
-                    <span className={`story-stage-step ${activeProduct === index ? 'is-active' : ''}`} key={step.key}>
-                      {step.label} {step.key}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className='story-product-shell story-reveal'>
-                <article className='story-product-panel' ref={cardRef} aria-live='polite'>
-                  <div className='story-product-head'>
-                    <span>XAU Journal system</span>
-                    <strong>{activeStep.title}</strong>
+                  <div className='story-stage-progress' aria-label='Product creation progress'>
+                    {PRODUCT_STEPS.map((step, index) => (
+                      <span className={`story-stage-step ${activeProduct === index ? 'is-active' : ''}`} key={step.key}>
+                        {step.label} {step.key}
+                      </span>
+                    ))}
                   </div>
+                </div>
 
-                  <div className='story-product-body'>
-                    <div className='story-product-main'>
-                      <div className='story-product-number' aria-hidden='true'>{activeStep.label}</div>
-                      <div className='story-product-detail'>
-                        <h3 className='story-title-md'><Highlight>{activeStep.title}</Highlight></h3>
-                        <p className='story-product-outcome'>{activeStep.outcome}</p>
-                        <p>{activeStep.body}</p>
+                <div className='story-product-shell story-reveal'>
+                  <article className='story-product-panel' ref={cardRef} aria-live='polite'>
+                    <div className='story-product-head'>
+                      <span>XAU Journal system</span>
+                      <strong>{activeStep.title}</strong>
+                    </div>
 
-                        <div className='story-product-rows'>
-                          {activeStep.rows.map(([label, value]) => (
-                            <div className='story-product-row' key={label}>
-                              <span>{label}</span>
-                              <strong>{value}</strong>
-                            </div>
-                          ))}
+                    <div className='story-product-body'>
+                      <div className='story-product-main'>
+                        <div className='story-product-number' aria-hidden='true'>{activeStep.label}</div>
+                        <div className='story-product-detail'>
+                          <h3 className='story-title-md'><Highlight>{activeStep.title}</Highlight></h3>
+                          <p className='story-product-outcome'>{activeStep.outcome}</p>
+                          <p>{activeStep.body}</p>
+
+                          <div className='story-product-rows'>
+                            {activeStep.rows.map(([label, value]) => (
+                              <div className='story-product-row' key={label}>
+                                <span>{label}</span>
+                                <strong>{value}</strong>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </article>
+                  </article>
+                </div>
               </div>
             </div>
           </div>
@@ -639,19 +641,6 @@ export default function TheStoryPage() {
 
         <PublicFooter />
 
-        <button
-          type='button'
-          className='story-scroll-top'
-          aria-label='Scroll to top'
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          style={{
-            opacity: isScrolled ? 1 : 0,
-            pointerEvents: isScrolled ? 'auto' : 'none',
-            transform: isScrolled ? 'translateY(0)' : 'translateY(12px)',
-          }}
-        >
-          <ArrowUp size={18} />
-        </button>
       </main>
     </>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Lenis from 'lenis';
 import { PublicFooter } from '../components/FooterNav';
@@ -121,7 +121,6 @@ If you have a dispute or complaint, please contact us first at info@xaujournal.c
 ];
 
 export function TermsOfServicePage() {
-  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     // SEO meta tags
@@ -146,9 +145,6 @@ export function TermsOfServicePage() {
     if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
     canonical.setAttribute('href', SEO.canonical);
 
-    const handleScroll = () => { setIsScrolled(window.scrollY > 20); };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -161,7 +157,6 @@ export function TermsOfServicePage() {
     window.scrollTo(0, 0);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
       document.body.style.overflow = '';
     };
@@ -264,17 +259,6 @@ export function TermsOfServicePage() {
       </main>
       <PublicFooter />
 
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`fixed bottom-5 right-5 sm:bottom-8 sm:right-8 z-[90] p-3 sm:p-4 rounded-2xl bg-background/80 backdrop-blur-md border border-transparent text-primary shadow-xl transition-all duration-500 hover:-translate-y-2 active:scale-90 ${
-          isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
-        aria-label="Scroll to top"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 15l-6-6-6 6" />
-        </svg>
-      </button>
     </div>
   );
 }

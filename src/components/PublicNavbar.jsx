@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion as Motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion, useReducedMotion } from 'framer-motion';
 
 import Logo from './Logo';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
-export function PublicNavbar() {
+export function PublicNavbar({ showScrollTopButton = true } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+      setShowScrollTop(window.scrollY > Math.max(300, window.innerHeight * 0.65));
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
@@ -39,15 +44,16 @@ export function PublicNavbar() {
     <>
       <header>
         <nav
+          data-public-nav
           style={{ transform: 'translateX(-50%)' }}
-          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-6xl z-[100] h-14 md:h-16 flex items-center justify-between px-5 md:px-8 backdrop-blur-xl border rounded-2xl md:rounded-full shadow-lg transition-all duration-500 ${isScrolled
+          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-6xl z-[150] h-14 md:h-16 flex items-center justify-between px-5 md:px-8 backdrop-blur-xl border rounded-2xl md:rounded-full shadow-lg transition-all duration-300 will-change-transform ${isScrolled
             ? 'bg-background/90 border-border/40 shadow-xl'
             : 'bg-background/60 border-border/20 shadow-md'
             }`}
         >
           <button
             onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); navigate('/', { replace: true }); }}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[101]"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[151]"
           >
             <Logo iconSize="w-6 h-6" />
           </button>
@@ -83,7 +89,7 @@ export function PublicNavbar() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-2.5 z-[101]">
+          <div className="flex items-center gap-2.5 z-[151]">
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-full hover:bg-foreground/5 text-muted-foreground hover:text-foreground transition-all duration-200"
@@ -117,12 +123,9 @@ export function PublicNavbar() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center gap-8"
+              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[140] flex flex-col items-center justify-center gap-8"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <button onClick={() => setMobileMenuOpen(false)} className="absolute top-6 right-6 p-2 text-foreground/80 hover:text-foreground transition-colors z-[102]" aria-label="Close menu">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
               <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
                 {navLinks.map(({ to, label }) => (
                   <NavLink key={to} to={to} onClick={(e) => {
@@ -160,6 +163,29 @@ export function PublicNavbar() {
           )}
         </AnimatePresence>
       </header>
+
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTopButton && showScrollTop && (
+          <Motion.button
+            type="button"
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.94 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
+            whileHover={reduceMotion ? undefined : { y: -3 }}
+            whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            onClick={() => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })}
+            className="site-scroll-top"
+            aria-label="Scroll to top"
+            data-ux-skip="true"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+          </Motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 }

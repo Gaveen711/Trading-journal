@@ -129,7 +129,6 @@ const itemVariants = {
 
 export function PricingPage() {
   const navigate = useNavigate();
-  const [isScrolled, setIsScrolled] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const user = auth.currentUser;
   const { startCheckout, recordProAcceptance } = useSubscription(user);
@@ -151,8 +150,6 @@ export function PricingPage() {
   };
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll, { passive: true });
 
     const lenis = new Lenis({
       duration: 1.1,
@@ -169,10 +166,8 @@ export function PricingPage() {
     rafId = requestAnimationFrame(raf);
     document.body.style.overflow = '';
     window.scrollTo(0, 0);
-    handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       lenis.destroy();
       cancelAnimationFrame(rafId);
       document.body.style.overflow = '';
@@ -323,13 +318,6 @@ export function PricingPage() {
 
       <PublicFooter />
 
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`fixed bottom-6 right-6 z-[90] h-12 w-12 rounded-2xl bg-background/90 backdrop-blur-md border border-border text-primary shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6 pointer-events-none'}`}
-        aria-label="Scroll to top"
-      >
-        <ChevronDown size={20} className="mx-auto rotate-180" />
-      </button>
 
       {showTerms && (
         <ProTermsModal

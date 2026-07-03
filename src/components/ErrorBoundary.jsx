@@ -10,8 +10,8 @@ const shellStyle = {
   color: 'hsl(var(--foreground, 0 0% 100%))',
   background: 'hsl(var(--background, 240 24% 3%))',
   backgroundImage: [
-    'radial-gradient(circle at 18% 12%, hsl(var(--primary, 190 100% 50%) / 0.16), transparent 28rem)',
-    'radial-gradient(circle at 86% 18%, hsl(var(--primary-to, 263 91% 66%) / 0.14), transparent 30rem)',
+    'radial-gradient(circle at 18% 12%, hsl(var(--primary, 35 62% 62%) / 0.16), transparent 28rem)',
+    'radial-gradient(circle at 86% 18%, hsl(var(--primary-to, 12 86% 67%) / 0.14), transparent 30rem)',
   ].join(', '),
 };
 
@@ -28,7 +28,7 @@ const cardStyle = {
 
 const eyebrowStyle = {
   margin: '0 0 18px',
-  color: 'hsl(var(--primary, 190 100% 50%))',
+  color: 'hsl(var(--primary, 35 62% 62%))',
   fontSize: '11px',
   fontWeight: 900,
   letterSpacing: '0.22em',
