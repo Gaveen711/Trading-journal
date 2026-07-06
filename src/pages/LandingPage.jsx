@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion as Motion, useReducedMotion } from 'framer-motion';
 import gsap from 'gsap';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
 import { Activity, ArrowRight, Award, BarChart3, BookOpen, CalendarDays, CheckCircle2, Clock3, DollarSign, Gauge, House, LineChart, NotebookPen, Plus, PlugZap, Settings, ShieldCheck, TrendingUp } from 'lucide-react';
 
 import Logo from '../components/Logo';
@@ -21,7 +20,7 @@ if (typeof window !== 'undefined') {
 
 const STYLES = `
 .xau-page{min-height:100vh;position:relative;isolation:isolate;overflow-x:hidden;background:linear-gradient(125deg,color-mix(in srgb,var(--xau-warm) 10%,transparent),transparent 24%),linear-gradient(220deg,color-mix(in srgb,var(--xau-accent) 9%,transparent),transparent 30%),linear-gradient(180deg,var(--xau-bg) 0%,var(--xau-bg-2) 54%,var(--xau-bg) 100%);color:var(--xau-ink);font-family:'Poppins','Inter',system-ui,sans-serif}
-.xau-page:before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;background-image:linear-gradient(var(--xau-grid) 1px,transparent 1px),linear-gradient(90deg,var(--xau-grid) 1px,transparent 1px);background-size:88px 88px;mask-image:linear-gradient(to bottom,black 0%,transparent 84%)}
+.xau-page.ux-route-enter{animation:none!important;transform:none!important;filter:none!important}.xau-page:before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;background-image:linear-gradient(var(--xau-grid) 1px,transparent 1px),linear-gradient(90deg,var(--xau-grid) 1px,transparent 1px);background-size:88px 88px;mask-image:linear-gradient(to bottom,black 0%,transparent 84%)}
 .xau-page:after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--xau-bg) 70%,transparent) 72%,var(--xau-bg) 100%)}
 .xau-page [data-public-nav]{position:fixed!important;top:max(16px,env(safe-area-inset-top))!important}
 .xau-shell{width:min(1160px,calc(100% - 32px));margin:0 auto}.xau-section{position:relative;z-index:1;padding:104px 0}.xau-hero{position:relative;z-index:1;padding:138px 0 72px}.xau-eyebrow{display:inline-flex;align-items:center;gap:10px;color:var(--xau-muted-strong);font-size:12px;font-weight:800;line-height:1.2;letter-spacing:0;text-transform:uppercase}.xau-eyebrow:before{content:'';width:34px;height:1px;background:linear-gradient(90deg,var(--xau-warm),var(--xau-accent))}
@@ -37,10 +36,10 @@ const STYLES = `
 .xau-grid{display:grid;gap:12px;margin-top:34px}.xau-workflow{grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--xau-border);border-bottom:1px solid var(--xau-border);gap:0}.xau-step{padding:24px 20px;border-right:1px solid var(--xau-border)}.xau-step:last-child{border-right:0}.xau-num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--xau-border-strong);border-radius:8px;color:var(--xau-warm);font-size:12px;font-weight:900}.xau-step h3{margin-top:16px;color:var(--xau-ink);font-size:17px!important;font-weight:880!important;line-height:1.2!important;letter-spacing:0!important}.xau-step p{margin-top:10px;color:var(--xau-muted);font-size:14px;line-height:1.65;font-weight:540}
 .xau-debrief{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:stretch}.xau-debrief-board{padding:24px;display:flex;flex-direction:column;justify-content:space-between;min-height:430px;background:linear-gradient(160deg,color-mix(in srgb,var(--xau-warm) 12%,var(--xau-surface-solid)),var(--xau-surface-solid) 46%,color-mix(in srgb,var(--xau-accent) 9%,var(--xau-surface-solid)))}.xau-debrief-board strong{display:block;margin-top:14px;color:var(--xau-ink);font-size:clamp(2rem,4vw,4.2rem);line-height:.95;font-weight:950;letter-spacing:0}.xau-debrief-board p{margin-top:18px;color:var(--xau-muted);font-size:15px;line-height:1.7}.xau-debrief-list{display:grid;gap:10px}.xau-debrief-item{display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;align-items:start;padding:18px;border-radius:8px;border:1px solid var(--xau-border);background:var(--xau-surface-solid)}.xau-debrief-item span{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--xau-border-strong);color:var(--xau-accent);background:color-mix(in srgb,var(--xau-accent) 10%,var(--xau-surface-solid))}.xau-debrief-item h3{color:var(--xau-ink);font-size:17px!important;font-weight:900!important;line-height:1.2!important;letter-spacing:0!important}.xau-debrief-item p{margin-top:8px;color:var(--xau-muted);font-size:14px;line-height:1.6}
 .xau-compare{grid-template-columns:repeat(3,minmax(0,1fr))}.xau-platforms,.xau-faq{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-card{min-height:100%;padding:20px}.xau-card h3{margin-top:16px;color:var(--xau-ink);font-size:17px!important;font-weight:880!important;line-height:1.2!important;letter-spacing:0!important}.xau-card p{margin-top:10px;color:var(--xau-muted);font-size:14px;line-height:1.65;font-weight:540}.xau-compare-label{color:var(--xau-warm);font-size:12px;font-weight:860;line-height:1.4;text-transform:uppercase}.xau-highlight{border-color:color-mix(in srgb,var(--xau-warm) 48%,var(--xau-border));background:color-mix(in srgb,var(--xau-warm) 10%,var(--xau-surface-solid))}.xau-platform-head{display:flex;align-items:center;gap:14px}.xau-platform-head img{width:42px;height:42px;border-radius:8px;border:1px solid var(--xau-border);background:var(--xau-bg);padding:8px}.xau-cta{padding:44px;text-align:center;background:linear-gradient(135deg,color-mix(in srgb,var(--xau-warm) 14%,var(--xau-surface-solid)),var(--xau-surface-solid) 58%,color-mix(in srgb,var(--xau-accent) 10%,var(--xau-surface-solid)))}.xau-cta p{max-width:700px;margin:16px auto 0;color:var(--xau-muted);font-size:16px;line-height:1.75}
-.xau-spiral-section{position:relative;z-index:1;padding:40px 0 120px;overflow:clip}.xau-spiral-shell{width:min(1180px,calc(100% - 32px));margin:0 auto;display:grid;grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr);gap:36px;align-items:start;min-height:calc(100dvh - 72px)}.xau-spiral-copy{position:sticky;top:104px;padding-top:54px}.xau-spiral-stage{min-height:720px;display:grid;place-items:center}.xau-spiral-canvas{position:relative;width:min(660px,100%);aspect-ratio:1;display:grid;place-items:center}.xau-spiral-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.xau-spiral-track,.xau-spiral-progress{fill:none;stroke-linecap:round;stroke-linejoin:round}.xau-spiral-track{stroke:var(--xau-border-strong);stroke-width:2;stroke-dasharray:9 13}.xau-spiral-progress{stroke:url(#xauSpiralGradient);stroke-width:4;filter:drop-shadow(0 0 14px color-mix(in srgb,var(--xau-warm) 28%,transparent))}.xau-spiral-marker{filter:drop-shadow(0 0 18px color-mix(in srgb,var(--xau-warm) 52%,transparent))}.xau-spiral-core{position:relative;z-index:2;width:min(340px,58%);padding:22px}.xau-spiral-core h3{margin-top:10px;color:var(--xau-ink);font-size:22px!important;line-height:1.12!important;font-weight:900!important;letter-spacing:0!important}.xau-spiral-core p{margin-top:12px;color:var(--xau-muted);font-size:13px;line-height:1.65}.xau-spiral-core-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:18px}.xau-spiral-core-grid span{border-top:1px solid var(--xau-border);padding-top:10px;color:var(--xau-muted);font-size:11px;font-weight:780;text-transform:uppercase}.xau-spiral-core-grid strong{display:block;margin-top:4px;color:var(--xau-ink);font-size:15px}.xau-spiral-chapter{position:absolute;z-index:3;width:230px;padding:16px;opacity:.42;transform:translateY(18px) scale(.96);will-change:transform,opacity}.xau-spiral-chapter:nth-of-type(1){left:4%;top:4%}.xau-spiral-chapter:nth-of-type(2){right:-2%;top:25%}.xau-spiral-chapter:nth-of-type(3){left:-3%;bottom:22%}.xau-spiral-chapter:nth-of-type(4){right:7%;bottom:3%}.xau-spiral-chapter span{color:var(--xau-warm);font-size:12px;font-weight:900}.xau-spiral-chapter h3{margin-top:8px;color:var(--xau-ink);font-size:16px!important;line-height:1.18!important;font-weight:900!important;letter-spacing:0!important}.xau-spiral-chapter p{margin-top:8px;color:var(--xau-muted);font-size:13px;line-height:1.55}.xau-spiral-kicker{display:inline-flex;align-items:center;gap:8px;margin-top:18px;color:var(--xau-muted);font-size:12px;font-weight:850;text-transform:uppercase}.xau-spiral-kicker:before{content:'';width:8px;height:8px;border-radius:999px;background:var(--xau-warm)}
+.xau-spiral-section{position:relative;z-index:1;padding:0;overflow:visible}.xau-spiral-pin-wrapper{position:relative;z-index:1}.xau-spiral-shell{width:min(1180px,calc(100% - 32px));margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;min-height:100vh;padding-top:80px;box-sizing:border-box;text-align:center}.xau-spiral-copy{max-width:800px;margin:0 auto}.xau-spiral-kicker{display:inline-flex;align-items:center;gap:8px;margin-top:18px;color:var(--xau-muted);font-size:12px;font-weight:850;text-transform:uppercase}.xau-spiral-kicker:before{content:'';width:8px;height:8px;border-radius:999px;background:var(--xau-warm)}.xau-waypoint-layout{display:flex;align-items:stretch;gap:40px;max-width:580px;width:100%;margin:32px auto 0;position:relative}.xau-waypoint-track-wrapper{position:relative;width:16px;display:flex;justify-content:center}.xau-waypoint-track{position:absolute;top:0;bottom:0;width:2px;background:var(--xau-border-strong);border-radius:9px}.xau-waypoint-progress{position:absolute;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--xau-accent),var(--xau-warm),var(--xau-coral));border-radius:9px;transform-origin:top;transform:scaleY(0)}.xau-waypoint-marker{position:absolute;top:0;width:16px;height:16px;border-radius:50%;background:var(--xau-surface-solid);border:3px solid var(--xau-accent);box-shadow:0 0 12px var(--xau-warm);transform:translateY(-50%) translateX(-6px)}.xau-waypoint-cards{display:flex;flex-direction:column;gap:24px;flex:1;text-align:left}.xau-waypoint-card{padding:18px;border-radius:12px;opacity:0.36;transform:translateX(12px) scale(0.98);will-change:transform,opacity}.xau-waypoint-card span{color:var(--xau-warm);font-size:12px;font-weight:900}.xau-waypoint-card h3{margin-top:8px;color:var(--xau-ink);font-size:16px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:0!important}.xau-waypoint-card p{margin-top:8px;color:var(--xau-muted);font-size:13px;line-height:1.6}
 .xau-scroll-top{position:fixed;right:max(22px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));z-index:120;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--xau-border-strong);border-radius:8px;background:var(--xau-surface-solid);color:var(--xau-ink);box-shadow:0 18px 48px color-mix(in srgb,var(--xau-warm) 18%,transparent);cursor:pointer;touch-action:manipulation;transition:background .22s ease,border-color .22s ease,color .22s ease,box-shadow .22s ease}.xau-scroll-top:hover{border-color:color-mix(in srgb,var(--xau-warm) 48%,var(--xau-border-strong));background:color-mix(in srgb,var(--xau-warm) 12%,var(--xau-surface-solid));color:var(--xau-warm);box-shadow:0 24px 60px color-mix(in srgb,var(--xau-warm) 24%,transparent)}.xau-scroll-top:focus-visible{outline:2px solid var(--xau-accent);outline-offset:4px}.xau-page .site-footer{position:relative;z-index:1;border-top:0!important;background:transparent!important;box-shadow:none!important}.xau-page .site-footer__inner{border-top:0!important}.xau-page .site-footer__brand p,.xau-page .site-footer__meta p,.xau-page .site-footer__meta span,.xau-page .site-footer__link{color:var(--xau-muted)!important}.xau-page .site-footer__link:hover,.xau-page .site-footer__link:focus-visible{color:var(--xau-ink)!important}
 @media (prefers-reduced-motion:reduce){.xau-ink-highlight,.xau-heading-gooey-text{animation:none}.xau-button,.xau-tab,.xau-hero-morph:after,.xau-scroll-top,.xau-dash-stat,.xau-dashboard-nav-item{transition:none}}
-@media (max-width:980px){.xau-dashboard-shell{grid-template-columns:1fr;min-height:auto}.xau-dashboard-sidebar{border-right:0;border-bottom:1px solid var(--xau-border);padding:14px}.xau-dashboard-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.xau-dashboard-grid,.xau-dashboard-bottom{grid-template-columns:1fr}.xau-dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-spiral-shell{grid-template-columns:1fr;min-height:0}.xau-spiral-copy{position:relative;top:auto;padding-top:0}.xau-spiral-stage{min-height:auto}.xau-spiral-canvas{width:min(560px,100%)}.xau-spiral-chapter{position:relative;inset:auto!important;width:auto;opacity:1!important;transform:none!important;margin-top:10px}.xau-spiral-core{width:min(330px,64%)}.xau-preview,.xau-review,.xau-debrief{grid-template-columns:1fr}.xau-side{border-right:0;border-bottom:1px solid var(--xau-border)}.xau-tabs,.xau-compare,.xau-platforms,.xau-faq,.xau-workflow{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-step:nth-child(2){border-right:0}.xau-step:nth-child(1),.xau-step:nth-child(2){border-bottom:1px solid var(--xau-border)}}
+@media (max-width:980px){.xau-dashboard-shell{grid-template-columns:1fr;min-height:auto}.xau-dashboard-sidebar{border-right:0;border-bottom:1px solid var(--xau-border);padding:14px}.xau-dashboard-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.xau-dashboard-grid,.xau-dashboard-bottom{grid-template-columns:1fr}.xau-dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-spiral-shell{flex-direction:column;min-height:0;gap:24px}.xau-spiral-copy{position:relative;padding-top:0}.xau-waypoint-track-wrapper{display:none}.xau-waypoint-card{opacity:1!important;transform:none!important}.xau-preview,.xau-review,.xau-debrief{grid-template-columns:1fr}.xau-side{border-right:0;border-bottom:1px solid var(--xau-border)}.xau-tabs,.xau-compare,.xau-platforms,.xau-faq,.xau-workflow{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-step:nth-child(2){border-right:0}.xau-step:nth-child(1),.xau-step:nth-child(2){border-bottom:1px solid var(--xau-border)}}
 @media (max-width:720px){.xau-dashboard-topbar,.xau-dashboard-header{align-items:flex-start;flex-direction:column}.xau-dashboard-main{padding:14px}.xau-dashboard-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-dashboard-stats{grid-template-columns:1fr}.xau-market-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.xau-market-cell:nth-child(2){border-right:0}.xau-market-cell:nth-child(-n+2){border-bottom:1px solid var(--xau-border)}.xau-signal-row{grid-template-columns:1fr auto}.xau-signal-direction{width:max-content}.xau-spiral-section{padding:20px 0 74px}.xau-spiral-shell{width:min(100% - 24px,1180px)}.xau-spiral-canvas{aspect-ratio:auto;display:block}.xau-spiral-svg{position:relative;aspect-ratio:1}.xau-spiral-core{position:absolute;left:50%;top:50%;width:min(280px,74%);transform:translate(-50%,-50%);padding:16px}.xau-spiral-core h3{font-size:18px!important}.xau-spiral-core-grid{display:none}.xau-page [data-public-nav]{position:fixed!important;top:max(16px,env(safe-area-inset-top))!important}
 .xau-shell{width:min(100% - 24px,1160px)}.xau-section{padding:74px 0}.xau-hero{padding:112px 0 56px}.xau-hero-title{font-size:clamp(3rem,15.8vw,5rem)!important}.xau-hero-morph{height:1.16em;margin-top:.04em}.xau-hero-morph:after{width:88%;bottom:.04em}.xau-heading-gooey{height:1.14em}.xau-scroll-top{right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));width:46px;height:46px}.xau-copy{font-size:16px}.xau-proof,.xau-metrics,.xau-compare,.xau-platforms,.xau-faq,.xau-workflow{grid-template-columns:1fr}.xau-proof div,.xau-proof div:first-child,.xau-proof div:last-child{border-right:0;border-bottom:1px solid var(--xau-border);padding:16px 0}.xau-proof div:last-child{border-bottom:0}.xau-screenbar,.xau-head{align-items:flex-start;flex-direction:column}.xau-sources{justify-content:flex-start}.xau-row{grid-template-columns:1fr 1fr;min-height:auto;padding:14px}.xau-step,.xau-step:nth-child(1),.xau-step:nth-child(2){border-right:0;border-bottom:1px solid var(--xau-border)}.xau-step:last-child{border-bottom:0}.xau-cta{padding:28px 18px}.xau-debrief-board{min-height:320px;padding:18px}.xau-debrief-item{grid-template-columns:42px minmax(0,1fr);padding:16px}.xau-debrief-item span{width:36px;height:36px}}
 `;
@@ -96,123 +95,90 @@ const spiralChapters = [
 ];
 
 function useSpiralStory(rootRef) {
-  useEffect(() => {
-    if (!rootRef.current || typeof window === 'undefined') return undefined;
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof window === 'undefined') return undefined;
 
-    let ctx;
+    let mm;
+    let refreshFrame;
     let refreshTimer;
-    const initTimer = window.setTimeout(() => {
-      if (!rootRef.current) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const mm = gsap.matchMedia(rootRef.current);
-      ctx = mm;
+    const ctx = gsap.context(() => {
+      mm = gsap.matchMedia(root);
 
-      mm.add("(min-width: 980px)", () => {
-        const section = rootRef.current.querySelector('.xau-spiral-section');
-        const wrapper = rootRef.current.querySelector('.xau-spiral-pin-wrapper');
-        const path = rootRef.current.querySelector('#xau-spiral-path');
-        const progress = rootRef.current.querySelector('.xau-spiral-progress');
-        const marker = rootRef.current.querySelector('.xau-spiral-marker');
-        const core = rootRef.current.querySelector('.xau-spiral-core');
-        const cards = gsap.utils.toArray('[data-spiral-card]');
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      mm.add('(min-width: 980px)', () => {
+        const section = root.querySelector('.xau-spiral-section');
+        const wrapper = root.querySelector('.xau-spiral-pin-wrapper');
+        const progress = root.querySelector('.xau-waypoint-progress');
+        const marker = root.querySelector('.xau-waypoint-marker');
+        const cards = gsap.utils.toArray('[data-waypoint-card]', root);
 
-        if (!section || !wrapper || !path || !progress || !marker || !core) return;
-        if (reduced) return;
+        if (!section || !wrapper || !progress || !marker || !cards.length || reduced) return undefined;
 
-        const pathLength = path.getTotalLength();
-
-        // Initial setup
-        gsap.set(progress, { strokeDasharray: pathLength, strokeDashoffset: pathLength });
-        gsap.set(marker, { autoAlpha: 1, motionPath: { path, start: 0, end: 0 } });
-        gsap.set(core, { y: 0, rotate: 0, scale: 1 });
-        gsap.set(cards, { autoAlpha: 0.36, y: 20, scale: 0.96 });
-        gsap.set(cards[0], { autoAlpha: 1, y: 0, scale: 1 });
+        gsap.set(wrapper, { clearProps: 'transform' });
+        gsap.set(progress, { scaleY: 0, transformOrigin: 'top center' });
+        gsap.set(marker, { top: '0%' });
+        gsap.set(cards, { autoAlpha: 0.36, x: 12, scale: 0.98 });
+        gsap.set(cards[0], { autoAlpha: 1, x: 0, scale: 1 });
 
         const tl = gsap.timeline({
           defaults: { overwrite: 'auto' },
           scrollTrigger: {
             trigger: section,
-            start: 'top top',
-            end: () => `+=${Math.max(window.innerHeight * 2.6, 2200)}`,
-            scrub: 0.9,
+            start: 'top top+=80',
+            end: () => '+=' + Math.max(window.innerHeight * 2.1, 1600),
+            scrub: 0.85,
             pin: wrapper,
             pinSpacing: true,
+            pinType: 'fixed',
             anticipatePin: 1,
             invalidateOnRefresh: true,
-            refreshPriority: 1,
           },
         });
 
-        tl.to(progress, { strokeDashoffset: 0, duration: 1, ease: 'none' }, 0)
-          .to(marker, { motionPath: { path }, duration: 1, ease: 'none' }, 0)
-          .to(core, { y: -12, rotate: 1.6, scale: 1.04, duration: 1, ease: 'none' }, 0);
+        tl.to(progress, { scaleY: 1, duration: 1, ease: 'none' }, 0)
+          .to(marker, { top: '100%', duration: 1, ease: 'none' }, 0);
 
         cards.forEach((card, index) => {
           const at = index / Math.max(cards.length - 1, 1);
           if (index > 0) {
-            tl.to(cards[index - 1], { autoAlpha: 0.36, y: -16, scale: 0.96, duration: 0.12, ease: 'power2.out' }, at);
+            tl.to(cards[index - 1], { autoAlpha: 0.36, x: -6, scale: 0.98, duration: 0.15, ease: 'power1.out' }, at);
           }
-          tl.to(card, { autoAlpha: 1, y: 0, scale: 1, duration: 0.12, ease: 'power2.out' }, at);
+          tl.to(card, { autoAlpha: 1, x: 0, scale: 1, duration: 0.15, ease: 'power1.out' }, at);
         });
 
-        ScrollTrigger.refresh();
+        return () => {
+          if (tl.scrollTrigger) tl.scrollTrigger.kill();
+          tl.kill();
+          gsap.set([wrapper, progress, marker, ...cards], { clearProps: 'all' });
+        };
       });
 
-      mm.add("(max-width: 979px)", () => {
-        const path = rootRef.current.querySelector('#xau-spiral-path');
-        const progress = rootRef.current.querySelector('.xau-spiral-progress');
-        const marker = rootRef.current.querySelector('.xau-spiral-marker');
-        const core = rootRef.current.querySelector('.xau-spiral-core');
-        const cards = gsap.utils.toArray('[data-spiral-card]');
+      mm.add('(max-width: 979px)', () => {
+        const progress = root.querySelector('.xau-waypoint-progress');
+        const marker = root.querySelector('.xau-waypoint-marker');
+        const cards = gsap.utils.toArray('[data-waypoint-card]', root);
 
-        // Reset properties to default styling on mobile
-        if (progress) gsap.set(progress, { clearProps: 'strokeDasharray,strokeDashoffset' });
-        if (core) gsap.set(core, { clearProps: 'all' });
+        if (progress) gsap.set(progress, { clearProps: 'all' });
+        if (marker) gsap.set(marker, { clearProps: 'all' });
         if (cards.length) gsap.set(cards, { clearProps: 'all' });
 
-        if (marker && path) {
-          gsap.set(marker, { autoAlpha: 1, motionPath: { path, start: 0, end: 0 } });
-        }
-
-        ScrollTrigger.refresh();
+        return undefined;
       });
+    }, root);
 
-      refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 120);
-    }, 420);
+    refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+    refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 450);
 
     return () => {
-      window.clearTimeout(initTimer);
+      window.cancelAnimationFrame(refreshFrame);
       window.clearTimeout(refreshTimer);
-      if (ctx) ctx.revert();
+      if (mm) mm.revert();
+      ctx.revert();
     };
   }, [rootRef]);
 }
-
-function useSmoothScroll() {
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const lenis = new Lenis({
-      lerp: 0.08,
-      smoothWheel: true,
-    });
-
-    lenis.on('scroll', ScrollTrigger.update);
-
-    const updateLenis = (time) => {
-      lenis.raf(time * 1000);
-    };
-
-    gsap.ticker.add(updateLenis);
-    gsap.ticker.lagSmoothing(0);
-
-    return () => {
-      gsap.ticker.remove(updateLenis);
-      lenis.destroy();
-    };
-  }, []);
-}
-
 
 function useLandingPageAssets() {
   useEffect(() => {
@@ -461,7 +427,8 @@ function Hero() {
 function SpiralStory() {
   return (
     <section className="xau-spiral-section" aria-labelledby="spiral-story-heading">
-      <div className="xau-spiral-shell">
+      <div className="xau-spiral-pin-wrapper w-full">
+        <div className="xau-spiral-shell">
         <div className="xau-spiral-copy">
           <span className="xau-eyebrow">The review loop</span>
           <h2 id="spiral-story-heading" className={sectionTitle}>One gold trade becomes a <span className="xau-ink-highlight">repeatable review loop.</span></h2>
@@ -469,41 +436,22 @@ function SpiralStory() {
           <span className="xau-spiral-kicker">Scroll the trade inward</span>
         </div>
 
-        <div className="xau-spiral-stage">
-          <div className="xau-spiral-canvas" aria-label="XAU Journal spiral review story">
-            <svg className="xau-spiral-svg" viewBox="0 0 600 600" aria-hidden="true">
-              <defs>
-                <linearGradient id="xauSpiralGradient" x1="80" y1="90" x2="520" y2="520" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="var(--xau-accent)" />
-                  <stop offset="55%" stopColor="var(--xau-warm)" />
-                  <stop offset="100%" stopColor="var(--xau-coral)" />
-                </linearGradient>
-              </defs>
-              <path id="xau-spiral-path" className="xau-spiral-track" d="M300 68 C434 68 532 166 532 300 C532 452 410 554 300 554 C160 554 70 446 70 316 C70 190 166 100 286 100 C402 100 490 186 490 300 C490 416 400 500 300 500 C190 500 126 420 126 316 C126 220 196 156 290 156 C376 156 446 220 446 306 C446 386 380 446 300 446 C226 446 176 390 176 318 C176 250 226 206 292 206 C352 206 398 248 398 308 C398 360 356 398 304 398 C256 398 226 366 226 320 C226 280 256 252 294 252 C328 252 352 276 352 310 C352 336 332 354 306 354" />
-              <path className="xau-spiral-progress" d="M300 68 C434 68 532 166 532 300 C532 452 410 554 300 554 C160 554 70 446 70 316 C70 190 166 100 286 100 C402 100 490 186 490 300 C490 416 400 500 300 500 C190 500 126 420 126 316 C126 220 196 156 290 156 C376 156 446 220 446 306 C446 386 380 446 300 446 C226 446 176 390 176 318 C176 250 226 206 292 206 C352 206 398 248 398 308 C398 360 356 398 304 398 C256 398 226 366 226 320 C226 280 256 252 294 252 C328 252 352 276 352 310 C352 336 332 354 306 354" />
-              <g className="xau-spiral-marker">
-                <circle r="13" fill="var(--xau-surface-solid)" stroke="var(--xau-accent)" strokeWidth="3" />
-                <circle r="5" fill="var(--xau-warm)" />
-              </g>
-            </svg>
-
-            <div className="xau-spiral-core xau-panel">
-              <span className="xau-label">After-session engine</span>
-              <h3>The trade becomes a rule.</h3>
-              <p>Manual notes, Pro sync, session reads, and screenshots all orbit one habit: review before the next entry.</p>
-              <div className="xau-spiral-core-grid">
-                <span>Input<strong>XAUUSD</strong></span>
-                <span>Output<strong>Next rule</strong></span>
-              </div>
+          <div className="xau-waypoint-layout">
+            <div className="xau-waypoint-track-wrapper">
+              <div className="xau-waypoint-track" />
+              <div className="xau-waypoint-progress" />
+              <div className="xau-waypoint-marker" />
             </div>
 
-            {spiralChapters.map(([number, title, body]) => (
-              <article className="xau-spiral-chapter xau-soft" data-spiral-card key={number}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-            ))}
+            <div className="xau-waypoint-cards">
+              {spiralChapters.map(([number, title, body]) => (
+                <article className="xau-waypoint-card xau-soft" data-waypoint-card key={number}>
+                  <span>{number}</span>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -641,7 +589,6 @@ export function LandingPage() {
   const rootRef = useRef(null);
 
   useLandingPageAssets();
-  useSmoothScroll();
   useSpiralStory(rootRef);
 
   return (

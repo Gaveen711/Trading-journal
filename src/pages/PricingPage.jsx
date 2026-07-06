@@ -23,62 +23,18 @@ import { useSubscription } from '../hooks/useSubscription';
 import { ProTermsModal } from '../components/ProTermsModal';
 import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
 
-const FREE_FEATURES = [
-  {
-    label: 'Unlimited manual trades',
-    detail: 'Build the journaling habit without a manual trade cap.'
-  },
-  {
-    label: 'Manual trade entry',
-    detail: 'Log XAUUSD trades yourself with entry, exit, session, notes, and result.',
-  },
-  {
-    label: 'Calendar and basic P&L',
-    detail: 'See the trading month, outcomes, and simple performance tracking.',
-  },
-  {
-    label: 'Journal notes',
-    detail: 'Keep written context beside the trades you review.',
-  },
-];
-
-const FREE_LIMITS = [
-  'No Meta API broker sync',
-  'No MT4/MT5 auto import',
-  'No TradingView webhooks or API access',
-];
-
-const PRO_FEATURES = [
-  {
-    icon: PlugZap,
-    label: 'MT4/MT5 Meta API sync',
-    detail: 'Connect supported MetaTrader accounts and import closed trades without manual re-entry.',
-  },
-  {
-    icon: BarChart3,
-    label: 'Full analytics suite',
-    detail: 'Review win rate, profit factor, drawdown, sessions, setups, and performance trends.',
-  },
-  {
-    icon: CalendarDays,
-    label: 'Unlimited trade history',
-    detail: 'Keep logging as your sample size grows instead of cutting review short at the limit.',
-  },
-  {
-    icon: NotebookPen,
-    label: 'Deeper trade context',
-    detail: 'Use notes, screenshots, tags, setup quality, mood, and post-trade reflection together.',
-  },
-  {
-    icon: LockKeyhole,
-    label: 'Private cloud workspace',
-    detail: 'Keep sensitive trade history in a focused account built around your review workflow.',
-  },
-  {
-    icon: ShieldCheck,
-    label: 'Priority product access',
-    detail: 'Get priority support and early access to improvements built for serious XAUUSD traders.',
-  },
+const ALL_PRODUCT_FEATURES = [
+  { label: 'Unlimited manual trades', free: true, pro: true },
+  { label: 'Manual trade entry', free: true, pro: true },
+  { label: 'Calendar and core P&L', free: true, pro: true },
+  { label: 'Journal notes & context', free: true, pro: true },
+  { label: 'MT4/MT5 auto import (Meta API sync)', free: false, pro: true },
+  { label: 'Full analytics suite', free: false, pro: true },
+  { label: 'Unlimited trade history', free: false, pro: true },
+  { label: 'Deeper trade context (mood, tags, quality)', free: false, pro: true },
+  { label: 'TradingView webhooks & API access', free: false, pro: true },
+  { label: 'Private cloud workspace', free: false, pro: true },
+  { label: 'Priority product access & support', free: false, pro: true },
 ];
 
 const COMPARISON_ROWS = [
@@ -197,7 +153,7 @@ export function PricingPage() {
           </Motion.p>
         </Motion.section>
 
-        <section className="mt-14 md:mt-20 grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-5 md:gap-6 max-w-6xl mx-auto" aria-label="Pricing plans">
+        <section className="mt-14 md:mt-20 grid grid-cols-1 lg:grid-cols-[0.92fr_1.08fr] gap-6 md:gap-8 max-w-6xl mx-auto" aria-label="Pricing plans">
           <PlanCard
             title="Free"
             label="Manual journal"
@@ -207,20 +163,7 @@ export function PricingPage() {
             cta="Get started free"
             onClick={() => navigate('/login')}
           >
-            <FeatureList items={FREE_FEATURES} tone="muted" />
-            <div className="mt-8 border-t border-border/70 pt-6">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground mb-4">Not included</p>
-              <ul className="space-y-3">
-                {FREE_LIMITS.map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
-                    <span className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                      <X size={13} strokeWidth={3} />
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <FeatureList plan="free" />
           </PlanCard>
 
           <PlanCard
@@ -233,7 +176,7 @@ export function PricingPage() {
             cta="Upgrade to Pro"
             onClick={handleUpgradeClick}
           >
-            <FeatureList items={PRO_FEATURES} />
+            <FeatureList plan="pro" />
           </PlanCard>
         </section>
 
@@ -250,7 +193,32 @@ export function PricingPage() {
             </div>
 
             <ul className="border-y border-border divide-y divide-border">
-              {PRO_FEATURES.map((feature) => (
+              {[
+                {
+                  label: 'MT4/MT5 auto import (Meta API sync)',
+                  detail: 'Connect supported MetaTrader accounts and import closed trades automatically.',
+                },
+                {
+                  label: 'Full analytics suite & reports',
+                  detail: 'Review win rate, profit factor, drawdown, sessions, setups, and performance trends.',
+                },
+                {
+                  label: 'Unlimited synced trade history',
+                  detail: 'Keep logging as your sample size grows instead of cutting review short at the limit.',
+                },
+                {
+                  label: 'Deeper trade context (mood, tags, quality)',
+                  detail: 'Use notes, screenshots, tags, setup quality, mood, and post-trade reflection together.',
+                },
+                {
+                  label: 'Private secure cloud database',
+                  detail: 'Keep sensitive trade history in a focused account built around your review workflow.',
+                },
+                {
+                  label: 'Priority product support & updates',
+                  detail: 'Get priority support and early access to improvements built for serious XAUUSD traders.',
+                },
+              ].map((feature) => (
                 <Motion.li
                   key={feature.label}
                   initial={{ opacity: 0, y: 14 }}
@@ -335,8 +303,13 @@ function PlanCard({ title, label, price, period, description, cta, onClick, feat
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex flex-col border-y border-border/80 py-8 sm:py-9 md:py-10 ${featured ? 'lg:border-l lg:border-primary/50 lg:pl-10' : 'lg:pr-10'}`}
+      whileHover={{ y: -6, transition: { duration: 0.2 } }}
+      className={`relative flex flex-col rounded-3xl border border-border bg-card/30 backdrop-blur-md p-6 sm:p-8 md:p-10 shadow-lg transition-all duration-300 ${
+        featured 
+          ? 'border-primary/40 bg-gradient-to-b from-card/60 via-card/40 to-primary/5 shadow-primary/5 shadow-xl' 
+          : ''
+      }`}
+      data-ux-card="true"
     >
       {featured ? (
         <p className="mb-4 text-[10px] font-black uppercase tracking-[0.18em] text-primary">
@@ -361,7 +334,7 @@ function PlanCard({ title, label, price, period, description, cta, onClick, feat
       <button
         type="button"
         onClick={onClick}
-        className={`mt-9 min-h-12 w-full rounded-2xl px-5 text-sm font-black transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background flex items-center justify-center gap-2 ${featured ? 'bg-foreground text-background hover:bg-foreground/90' : 'border border-border bg-background hover:border-primary/40 hover:text-primary'}`}
+        className={`mt-9 min-h-12 w-full rounded-2xl px-5 text-sm font-black transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background flex items-center justify-center gap-2 ${featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-border bg-background hover:border-primary/40 hover:text-primary'}`}
       >
         {cta}
         {featured ? <ArrowRight size={17} /> : null}
@@ -370,20 +343,30 @@ function PlanCard({ title, label, price, period, description, cta, onClick, feat
   );
 }
 
-function FeatureList({ items, tone = 'default' }) {
+function FeatureList({ plan }) {
   return (
     <ul className="space-y-4">
-      {items.map((item) => (
-        <li key={item.label} className="flex gap-3">
-          <span className={`mt-0.5 h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${tone === 'muted' ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'}`}>
-            <Check size={13} strokeWidth={4} />
-          </span>
-          <span>
-            <span className="block text-sm font-black text-foreground">{item.label}</span>
-            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground font-medium">{item.detail}</span>
-          </span>
-        </li>
-      ))}
+      {ALL_PRODUCT_FEATURES.map((item) => {
+        const isIncluded = plan === 'pro' ? item.pro : item.free;
+        return (
+          <li key={item.label} className={`flex items-center gap-3 transition-opacity duration-200 ${isIncluded ? '' : 'opacity-45'}`}>
+            <span className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${
+              isIncluded 
+                ? 'bg-primary/10 text-primary border border-primary/20' 
+                : 'bg-muted/80 text-muted-foreground/60 border border-border/40'
+            }`}>
+              {isIncluded ? (
+                <Check size={12} strokeWidth={4} />
+              ) : (
+                <X size={11} strokeWidth={3.5} />
+              )}
+            </span>
+            <span className={`text-sm tracking-tight ${isIncluded ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+              {item.label}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

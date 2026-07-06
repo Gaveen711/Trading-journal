@@ -3971,3 +3971,71 @@ nav .apple-glass-panel:hover,
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ── Premium Responsive Mouse & Touch Micro Interactions ── */
+@media (hover: hover) and (pointer: fine) {
+  /* Link hover animation */
+  a:not([data-ux-control="true"]):hover,
+  .nav-link:hover,
+  header a:hover {
+    color: hsl(var(--primary)) !important;
+    transform: translateY(-1px);
+    transition: transform 220ms ease, color 220ms ease;
+  }
+
+  /* Button hover scale-up with shadow glow */
+  button[data-ux-control="true"]:not(:disabled):hover,
+  a[data-ux-control="true"]:not(:disabled):hover,
+  [role="button"][data-ux-control="true"]:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 12px 24px -10px hsl(var(--primary) / 0.38) !important;
+    filter: brightness(1.06);
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease, filter 220ms ease !important;
+  }
+
+  /* Premium Card Hover Lift & Glow */
+  [data-ux-card="true"]:hover {
+    transform: translateY(-6px) translateZ(0) !important;
+    border-color: hsl(var(--primary) / 0.42) !important;
+    box-shadow: 
+      0 32px 64px -20px hsl(var(--primary) / 0.16),
+      0 0 24px hsl(var(--primary) / 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    background-color: hsl(var(--card) / 0.46) !important;
+  }
+  
+  .dark [data-ux-card="true"]:hover {
+    border-color: hsl(var(--primary) / 0.48) !important;
+    box-shadow: 
+      0 32px 64px -20px rgba(0, 0, 0, 0.62),
+      0 0 28px hsl(var(--primary) / 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+    background-color: hsl(var(--card) / 0.62) !important;
+  }
+
+  /* List & Grid item subtle slide */
+  .story-principle:hover,
+  ul.space-y-4 li:hover,
+  ul.space-y-3 li:hover {
+    transform: translate3d(4px, 0, 0);
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Tactile Active feedback for touch devices */
+@media (hover: none) or (pointer: coarse) {
+  button[data-ux-control="true"]:not(:disabled):active,
+  a[data-ux-control="true"]:active,
+  [role="button"][data-ux-control="true"]:active {
+    transform: scale(0.96) !important;
+    filter: brightness(0.92);
+    transition: transform 100ms ease !important;
+  }
+
+  [data-ux-card="true"]:active {
+    transform: scale(0.982) !important;
+    transition: transform 100ms ease !important;
+  }
+}
+
+

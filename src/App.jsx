@@ -187,7 +187,7 @@ function useGlobalInteractions(pathname) {
 
     let observer;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const skipSelector = 'header, footer, [role="dialog"], .Toastify, .dashboard-sidebar, .xau-scroll-top, .site-scroll-top, [data-ux-skip="true"]';
+    const skipSelector = 'header, footer, [role="dialog"], .Toastify, .dashboard-sidebar, .story-page, .xau-page, .xau-scroll-top, .site-scroll-top, [data-ux-skip="true"]';
     const shouldSkip = (element) => Boolean(
       element.closest(skipSelector) ||
       element.closest('[aria-hidden="true"]') ||
@@ -205,8 +205,10 @@ function useGlobalInteractions(pathname) {
       if (main) {
         main.setAttribute('tabindex', '-1');
         main.classList.remove('ux-route-enter');
-        void main.offsetWidth;
-        main.classList.add('ux-route-enter');
+        if (!main.classList.contains('story-page') && !main.classList.contains('xau-page')) {
+          void main.offsetWidth;
+          main.classList.add('ux-route-enter');
+        }
 
         if (document.body.dataset.uxHasMounted === 'true') {
           main.focus({ preventScroll: true });
@@ -317,6 +319,10 @@ function App() {
     </>
   );
   useGlobalInteractions(location.pathname);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
