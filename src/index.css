@@ -4077,4 +4077,23 @@ input:focus, textarea:focus, select:focus {
   transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease !important;
 }
 
+/* Ticker Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.3333%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+  display: flex;
+  width: max-content;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 

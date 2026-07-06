@@ -373,7 +373,7 @@ export default function TheStoryPage() {
           if (stage) {
             ScrollTrigger.create({
               trigger: '.story-showcase-pin-wrapper',
-              start: isDesktop ? 'top top+=88' : 'top 72%',
+              start: isDesktop ? 'top top' : 'top 72%',
               end: isDesktop ? () => `+=${window.innerHeight * 3}` : 'bottom 28%',
               pin: isDesktop ? '.story-showcase-pin-wrapper' : false,
               scrub: 0.7,

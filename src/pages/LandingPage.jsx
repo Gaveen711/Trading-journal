@@ -126,12 +126,11 @@ function useSpiralStory(rootRef) {
           defaults: { overwrite: 'auto' },
           scrollTrigger: {
             trigger: section,
-            start: 'top top+=80',
+            start: 'top top',
             end: () => '+=' + Math.max(window.innerHeight * 2.1, 1600),
             scrub: 0.85,
             pin: wrapper,
             pinSpacing: true,
-            pinType: 'fixed',
             anticipatePin: 1,
             invalidateOnRefresh: true,
           },
@@ -389,11 +388,47 @@ function DashboardPreview() {
     </Motion.div>
   );
 }
+
+function SignalsTicker() {
+  const tickerItems = [
+    { type: 'BUY LIMIT', rate: '2,342.50', tp: '2,360.00', status: 'PENDING', color: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' },
+    { type: 'BUY STOP', rate: '2,356.10', tp: '+14.2% R:R', status: 'FILLED', color: 'text-green-500 bg-green-500/10 border border-green-500/20' },
+    { type: 'SELL LIMIT', rate: '2,398.20', tp: '2,370.00', status: 'PENDING', color: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' },
+    { type: 'BUY LIMIT', rate: '2,310.40', tp: '+24.8% R:R', status: 'LIVE', color: 'text-sky-500 bg-sky-500/10 border border-sky-500/20' },
+    { type: 'SELL STOP', rate: '2,382.00', tp: '+18.5% R:R', status: 'FILLED', color: 'text-green-500 bg-green-500/10 border border-green-500/20' },
+    { type: 'BUY STOP', rate: '2,412.30', tp: '2,430.00', status: 'PENDING', color: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' }
+  ];
+
+  const items = [...tickerItems, ...tickerItems, ...tickerItems, ...tickerItems];
+
+  return (
+    <div className="w-full overflow-hidden bg-[var(--xau-surface-solid)]/30 border-y border-[var(--xau-border)] py-4 backdrop-blur-md relative z-20">
+      <div className="flex whitespace-nowrap animate-marquee gap-8 items-center">
+        {items.map((item, idx) => (
+          <div key={idx} className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--xau-muted)]">
+            <span className="text-[var(--xau-ink)] font-black">XAU/USD</span>
+            <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black tracking-widest ${item.color}`}>
+              {item.type}
+            </span>
+            <span className="text-[var(--xau-ink)] font-black">{item.rate}</span>
+            <span className="text-[var(--xau-muted)] opacity-60">➔</span>
+            <span className="text-[var(--xau-ink)] font-black">{item.tp}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--xau-border-strong)]" />
+            <span className="text-[9px] font-black opacity-55">{item.status}</span>
+            <span className="text-[var(--xau-border)] mx-3">|</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Hero() {
   const heroMorphTexts = ["the entry.", "the reason.", "the risk.", "the next rule."];
 
   return (
-    <section className="xau-hero" aria-labelledby="landing-hero-heading">
+    <>
+      <section className="xau-hero" aria-labelledby="landing-hero-heading">
       <div className="xau-shell">
         <div className="xau-hero-copy">
           <Motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
@@ -423,6 +458,8 @@ function Hero() {
         </div>
       </div>
     </section>
+    <SignalsTicker />
+    </>
   );
 }
 
