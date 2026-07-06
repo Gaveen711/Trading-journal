@@ -391,7 +391,7 @@ function DashboardPreview() {
 
 function SignalsTicker() {
   const [tickerPrices, setTickerPrices] = useState({
-    xau: { name: 'XAU/USD', desc: 'Gold Spot', price: 2389.33, change: 0.59, lastPrice: 2389.33, decimals: 2 },
+    xau: { name: 'XAU/USD', desc: 'Gold Spot', price: 4150.56, change: 0.59, lastPrice: 4150.56, decimals: 2 },
     xag: { name: 'XAG/USD', desc: 'Silver Spot', price: 29.355, change: -0.22, lastPrice: 29.355, decimals: 3 },
     xpt: { name: 'XPT/USD', desc: 'Platinum Spot', price: 995.10, change: 0.12, lastPrice: 995.10, decimals: 2 },
     xpd: { name: 'XPD/USD', desc: 'Palladium Spot', price: 1028.10, change: -0.08, lastPrice: 1028.10, decimals: 2 },
