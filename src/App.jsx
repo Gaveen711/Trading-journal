@@ -15,7 +15,6 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
 import { PublicNavbar } from './components/PublicNavbar';
-import CustomCursor from './components/CustomCursor';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -328,52 +327,28 @@ function App() {
   useEffect(() => {
     if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
 
-    const styleId = 'global-heading-reveal-styles';
+    const styleId = 'global-text-scroll-reveal-styles';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
       style.innerHTML = `
-        .heading-text-reveal {
-          --heading-reveal-step: 34ms;
+        .text-reveal-pending {
           opacity: 0;
-          transform: translateY(18px);
-          filter: blur(7px);
-          transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1), transform 680ms cubic-bezier(0.16, 1, 0.3, 1), filter 680ms cubic-bezier(0.16, 1, 0.3, 1);
-          will-change: transform, opacity, filter;
+          transform: translate3d(0, 18px, 0);
+          filter: blur(4px);
+          transition: 
+            opacity 680ms cubic-bezier(0.16, 1, 0.3, 1),
+            transform 680ms cubic-bezier(0.16, 1, 0.3, 1),
+            filter 680ms cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: opacity, transform, filter;
         }
-        .heading-text-reveal .heading-reveal-word {
-          display: inline-block;
-          opacity: 0;
-          transform: translateY(0.72em) rotateX(18deg);
-          transform-origin: 50% 100%;
-          filter: blur(5px);
-          transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 660ms cubic-bezier(0.16, 1, 0.3, 1), filter 660ms cubic-bezier(0.16, 1, 0.3, 1);
-          transition-delay: calc(var(--word-index, 0) * var(--heading-reveal-step));
-          will-change: transform, opacity, filter;
-        }
-        .heading-text-reveal.revealed {
-          opacity: 1;
-          transform: translateY(0);
-          filter: blur(0);
-        }
-        .heading-text-reveal.revealed .heading-reveal-word {
-          opacity: 1;
-          transform: translateY(0) rotateX(0deg);
-          filter: blur(0);
-        }
-        :is(.aurora-text, .xau-gradient, .xau-ink-highlight, .xau-heading-gooey, .story-gradient-word, .text-gradient) .heading-reveal-word {
-          background: inherit;
-          background-size: inherit;
-          background-position: inherit;
-          background-repeat: inherit;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          color: transparent;
+        .text-reveal-active {
+          opacity: 1 !important;
+          transform: translate3d(0, 0, 0) !important;
+          filter: blur(0) !important;
         }
         @media (prefers-reduced-motion: reduce) {
-          .heading-text-reveal,
-          .heading-text-reveal .heading-reveal-word {
+          .text-reveal-pending {
             opacity: 1 !important;
             transform: none !important;
             filter: none !important;
@@ -384,78 +359,43 @@ function App() {
       document.head.appendChild(style);
     }
 
-    const splitHeadingText = (heading) => {
-      if (heading.dataset.headingRevealReady === 'true') return;
-
-      let wordIndex = 0;
-      const splitNode = (node) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const fragment = document.createDocumentFragment();
-          const parts = node.textContent.split(/(\s+)/);
-          parts.forEach((part) => {
-            if (!part) return;
-            if (/^\s+$/.test(part)) {
-              fragment.appendChild(document.createTextNode(part));
-              return;
-            }
-            const word = document.createElement('span');
-            word.className = 'heading-reveal-word';
-            word.style.setProperty('--word-index', wordIndex);
-            word.textContent = part;
-            wordIndex += 1;
-            fragment.appendChild(word);
-          });
-          node.replaceWith(fragment);
-          return;
-        }
-
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        if (node.matches('script, style, svg, img, input, textarea, button, .aurora-text, .xau-gradient, .xau-ink-highlight, .xau-heading-gooey, .story-gradient-word, .text-gradient')) return;
-        Array.from(node.childNodes).forEach(splitNode);
-      };
-
-      Array.from(heading.childNodes).forEach(splitNode);
-      heading.dataset.headingRevealReady = 'true';
-    };
-
-    const observer = new IntersectionObserver((entries) => {
+    const textObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
-          observer.unobserve(entry.target);
+          entry.target.classList.add('text-reveal-active');
+          textObserver.unobserve(entry.target);
         }
       });
     }, {
-      threshold: 0.12,
-      rootMargin: '0px 0px -10% 0px'
+      threshold: 0.08,
+      rootMargin: '0px 0px -8% 0px'
     });
 
     const timer = setTimeout(() => {
-      const headings = document.querySelectorAll('main h1, main h2, [role="main"] h1, [role="main"] h2');
-      headings.forEach(heading => {
+      const textElements = document.querySelectorAll(
+        'main h1, main h2, main h3, main h4, main p, main blockquote, main .story-eyebrow, main .xau-eyebrow, main li'
+      );
+      textElements.forEach(el => {
         if (
-          heading.dataset.headingRevealSkip === 'true' ||
-          heading.classList.contains('heading-text-reveal') ||
-          heading.closest('header') ||
-          heading.closest('footer') ||
-          heading.closest('[role="dialog"]') ||
-          heading.closest('.Toastify') ||
-          heading.closest('.xau-metric') ||
-          heading.closest('.xau-row') ||
-          heading.closest('[aria-hidden="true"]')
+          el.closest('header') ||
+          el.closest('footer') ||
+          el.closest('.dashboard-sidebar') ||
+          el.closest('.Toastify') ||
+          el.closest('[role="dialog"]') ||
+          el.closest('[aria-hidden="true"]')
         ) {
           return;
         }
-
-        splitHeadingText(heading);
-        heading.classList.add('heading-text-reveal');
-        observer.observe(heading);
+        if (!el.classList.contains('text-reveal-active')) {
+          el.classList.add('text-reveal-pending');
+          textObserver.observe(el);
+        }
       });
     }, 120);
 
     return () => {
       clearTimeout(timer);
-      observer.disconnect();
+      textObserver.disconnect();
     };
   }, [location.pathname]);
 
@@ -493,7 +433,6 @@ function App() {
   return (
     <ErrorBoundary>
       <PageSEO />
-      <CustomCursor />
       <div className="ux-scroll-progress" style={{ '--ux-scroll-progress': scrollProgress }} aria-hidden="true" />
       <Suspense fallback={showPublicNavbarDuringLoad ? publicPageLoader() : <PageLoader />}>
         {authError ? (
