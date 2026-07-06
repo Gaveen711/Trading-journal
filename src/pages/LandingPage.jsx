@@ -421,7 +421,6 @@ function Hero() {
         <div className="xau-proof" aria-label="Product highlights">
           {proof.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
         </div>
-        <DashboardPreview />
       </div>
     </section>
   );
