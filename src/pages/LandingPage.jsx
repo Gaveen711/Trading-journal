@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion as Motion, useReducedMotion } from 'framer-motion';
 import gsap from 'gsap';
@@ -390,34 +390,76 @@ function DashboardPreview() {
 }
 
 function SignalsTicker() {
-  const tickerItems = [
-    { type: 'BUY LIMIT', rate: '2,342.50', tp: '2,360.00', status: 'PENDING', color: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' },
-    { type: 'BUY STOP', rate: '2,356.10', tp: '+14.2% R:R', status: 'FILLED', color: 'text-green-500 bg-green-500/10 border border-green-500/20' },
-    { type: 'SELL LIMIT', rate: '2,398.20', tp: '2,370.00', status: 'PENDING', color: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' },
-    { type: 'BUY LIMIT', rate: '2,310.40', tp: '+24.8% R:R', status: 'LIVE', color: 'text-sky-500 bg-sky-500/10 border border-sky-500/20' },
-    { type: 'SELL STOP', rate: '2,382.00', tp: '+18.5% R:R', status: 'FILLED', color: 'text-green-500 bg-green-500/10 border border-green-500/20' },
-    { type: 'BUY STOP', rate: '2,412.30', tp: '2,430.00', status: 'PENDING', color: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' }
+  const [metalPrices, setMetalPrices] = useState({
+    xau: { name: 'XAU/USD', symbol: 'Gold Spot', price: 2389.33, change: 0.59, lastPrice: 2389.33 },
+    xag: { name: 'XAG/USD', symbol: 'Silver Spot', price: 29.355, change: -0.22, lastPrice: 29.355 },
+    xpt: { name: 'XPT/USD', symbol: 'Platinum Spot', price: 995.10, change: 0.12, lastPrice: 995.10 },
+    xpd: { name: 'XPD/USD', symbol: 'Palladium Spot', price: 1028.10, change: -0.08, lastPrice: 1028.10 }
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMetalPrices(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(key => {
+          const m = next[key];
+          const fluctuation = (Math.random() - 0.5) * 0.0003;
+          const oldPrice = m.price;
+          const newPrice = Number((oldPrice * (1 + fluctuation)).toFixed(key === 'xag' ? 3 : 2));
+          const change = Number((m.change + (Math.random() - 0.5) * 0.02).toFixed(2));
+          next[key] = {
+            ...m,
+            lastPrice: oldPrice,
+            price: newPrice,
+            change
+          };
+        });
+        return next;
+      });
+    }, 1500);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const items = [
+    { key: 'xau', signal: 'BUY LIMIT', target: '2,410.00', status: 'PENDING', bg: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' },
+    { key: 'xag', signal: 'BUY STOP', target: '29.80', status: 'FILLED', bg: 'text-green-500 bg-green-500/10 border border-green-500/20' },
+    { key: 'xpt', signal: 'SELL LIMIT', target: '985.00', status: 'ACTIVE', bg: 'text-rose-500 bg-rose-500/10 border border-rose-500/20' },
+    { key: 'xpd', signal: 'BUY LIMIT', target: '1,045.00', status: 'PENDING', bg: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' }
   ];
 
-  const items = [...tickerItems, ...tickerItems, ...tickerItems, ...tickerItems];
+  const repeatedItems = [...items, ...items, ...items, ...items];
 
   return (
     <div className="w-full overflow-hidden bg-[var(--xau-surface-solid)]/30 border-y border-[var(--xau-border)] py-4 backdrop-blur-md relative z-20">
       <div className="flex whitespace-nowrap animate-marquee gap-8 items-center">
-        {items.map((item, idx) => (
-          <div key={idx} className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--xau-muted)]">
-            <span className="text-[var(--xau-ink)] font-black">XAU/USD</span>
-            <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black tracking-widest ${item.color}`}>
-              {item.type}
-            </span>
-            <span className="text-[var(--xau-ink)] font-black">{item.rate}</span>
-            <span className="text-[var(--xau-muted)] opacity-60">➔</span>
-            <span className="text-[var(--xau-ink)] font-black">{item.tp}</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--xau-border-strong)]" />
-            <span className="text-[9px] font-black opacity-55">{item.status}</span>
-            <span className="text-[var(--xau-border)] mx-3">|</span>
-          </div>
-        ))}
+        {repeatedItems.map((item, idx) => {
+          const metal = metalPrices[item.key];
+          const isUp = metal.change >= 0;
+          const priceChanged = metal.price !== metal.lastPrice;
+          const updateColor = priceChanged ? (metal.price > metal.lastPrice ? 'text-green-400 font-bold' : 'text-red-400 font-bold') : '';
+
+          return (
+            <div key={idx} className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--xau-muted)]">
+              <span className="text-[var(--xau-ink)] font-black">{metal.name}</span>
+              <span className="text-[9px] text-muted-foreground/60 font-medium lowercase">({metal.symbol})</span>
+              <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black tracking-widest ${item.bg}`}>
+                {item.signal}
+              </span>
+              <span className={`font-black transition-colors duration-300 ${updateColor || 'text-[var(--xau-ink)]'}`}>
+                {metal.price}
+              </span>
+              <span className={`font-black ${isUp ? 'text-green-500' : 'text-rose-500'}`}>
+                {isUp ? '▲' : '▼'} {Math.abs(metal.change)}%
+              </span>
+              <span className="text-[var(--xau-muted)] opacity-60">➔</span>
+              <span className="text-[var(--xau-ink)] font-bold">Target: {item.target}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--xau-border-strong)]" />
+              <span className="text-[9px] font-black opacity-55">{item.status}</span>
+              <span className="text-[var(--xau-border)] mx-3">|</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
