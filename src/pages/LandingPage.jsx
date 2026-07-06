@@ -180,7 +180,7 @@ function useSpiralStory(rootRef) {
 }
 
 function useLandingPageAssets() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof document === 'undefined') return undefined;
     const style = document.createElement('style');
     style.id = 'xau-landing-product-styles';
