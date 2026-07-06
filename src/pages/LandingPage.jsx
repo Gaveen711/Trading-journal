@@ -390,25 +390,34 @@ function DashboardPreview() {
 }
 
 function SignalsTicker() {
-  const [metalPrices, setMetalPrices] = useState({
-    xau: { name: 'XAU/USD', symbol: 'Gold Spot', price: 2389.33, change: 0.59, lastPrice: 2389.33 },
-    xag: { name: 'XAG/USD', symbol: 'Silver Spot', price: 29.355, change: -0.22, lastPrice: 29.355 },
-    xpt: { name: 'XPT/USD', symbol: 'Platinum Spot', price: 995.10, change: 0.12, lastPrice: 995.10 },
-    xpd: { name: 'XPD/USD', symbol: 'Palladium Spot', price: 1028.10, change: -0.08, lastPrice: 1028.10 }
+  const [tickerPrices, setTickerPrices] = useState({
+    xau: { name: 'XAU/USD', desc: 'Gold Spot', price: 2389.33, change: 0.59, lastPrice: 2389.33, decimals: 2 },
+    xag: { name: 'XAG/USD', desc: 'Silver Spot', price: 29.355, change: -0.22, lastPrice: 29.355, decimals: 3 },
+    xpt: { name: 'XPT/USD', desc: 'Platinum Spot', price: 995.10, change: 0.12, lastPrice: 995.10, decimals: 2 },
+    xpd: { name: 'XPD/USD', desc: 'Palladium Spot', price: 1028.10, change: -0.08, lastPrice: 1028.10, decimals: 2 },
+    btc: { name: 'BTC/USD', desc: 'Bitcoin', price: 58340.00, change: 1.45, lastPrice: 58340.00, decimals: 2 },
+    eur: { name: 'EUR/USD', desc: 'Euro', price: 1.08245, change: 0.04, lastPrice: 1.08245, decimals: 5 },
+    gbp: { name: 'GBP/USD', desc: 'British Pound', price: 1.27452, change: -0.07, lastPrice: 1.27452, decimals: 5 },
+    jpy: { name: 'USD/JPY', desc: 'US Dollar / Yen', price: 157.824, change: 0.12, lastPrice: 157.824, decimals: 3 },
+    aud: { name: 'AUD/USD', desc: 'Australian Dollar', price: 0.66428, change: -0.15, lastPrice: 0.66428, decimals: 5 }
   });
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setMetalPrices(prev => {
+      setTickerPrices(prev => {
         const next = { ...prev };
         Object.keys(next).forEach(key => {
-          const m = next[key];
-          const fluctuation = (Math.random() - 0.5) * 0.0003;
-          const oldPrice = m.price;
-          const newPrice = Number((oldPrice * (1 + fluctuation)).toFixed(key === 'xag' ? 3 : 2));
-          const change = Number((m.change + (Math.random() - 0.5) * 0.02).toFixed(2));
+          const t = next[key];
+          let scale = 0.0002;
+          if (key === 'btc') scale = 0.0005;
+          if (['eur', 'gbp', 'jpy', 'aud'].includes(key)) scale = 0.00005;
+
+          const fluctuation = (Math.random() - 0.5) * scale;
+          const oldPrice = t.price;
+          const newPrice = Number((oldPrice * (1 + fluctuation)).toFixed(t.decimals));
+          const change = Number((t.change + (Math.random() - 0.5) * 0.015).toFixed(2));
           next[key] = {
-            ...m,
+            ...t,
             lastPrice: oldPrice,
             price: newPrice,
             change
@@ -416,47 +425,39 @@ function SignalsTicker() {
         });
         return next;
       });
-    }, 1500);
+    }, 1200);
 
     return () => clearInterval(timer);
   }, []);
 
-  const items = [
-    { key: 'xau', signal: 'BUY LIMIT', target: '2,410.00', status: 'PENDING', bg: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' },
-    { key: 'xag', signal: 'BUY STOP', target: '29.80', status: 'FILLED', bg: 'text-green-500 bg-green-500/10 border border-green-500/20' },
-    { key: 'xpt', signal: 'SELL LIMIT', target: '985.00', status: 'ACTIVE', bg: 'text-rose-500 bg-rose-500/10 border border-rose-500/20' },
-    { key: 'xpd', signal: 'BUY LIMIT', target: '1,045.00', status: 'PENDING', bg: 'text-amber-500 bg-amber-500/10 border border-amber-500/20' }
-  ];
-
-  const repeatedItems = [...items, ...items, ...items, ...items];
+  const keys = ['xau', 'xag', 'xpt', 'xpd', 'btc', 'eur', 'gbp', 'jpy', 'aud'];
+  const repeatedKeys = [...keys, ...keys, ...keys, ...keys];
 
   return (
     <div className="w-full overflow-hidden bg-[var(--xau-surface-solid)]/30 border-y border-[var(--xau-border)] py-4 backdrop-blur-md relative z-20">
       <div className="flex whitespace-nowrap animate-marquee gap-8 items-center">
-        {repeatedItems.map((item, idx) => {
-          const metal = metalPrices[item.key];
-          const isUp = metal.change >= 0;
-          const priceChanged = metal.price !== metal.lastPrice;
-          const updateColor = priceChanged ? (metal.price > metal.lastPrice ? 'text-green-400 font-bold' : 'text-red-400 font-bold') : '';
+        {repeatedKeys.map((key, idx) => {
+          const item = tickerPrices[key];
+          const isUp = item.change >= 0;
+          const priceChanged = item.price !== item.lastPrice;
+          const updateColor = priceChanged ? (item.price > item.lastPrice ? 'text-green-400 font-bold' : 'text-red-400 font-bold') : '';
 
           return (
-            <div key={idx} className="inline-flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--xau-muted)]">
-              <span className="text-[var(--xau-ink)] font-black">{metal.name}</span>
-              <span className="text-[9px] text-muted-foreground/60 font-medium lowercase">({metal.symbol})</span>
-              <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black tracking-widest ${item.bg}`}>
-                {item.signal}
-              </span>
+            <div key={idx} className="inline-flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--xau-muted)]">
+              <span className="text-[var(--xau-ink)] font-black">{item.name}</span>
+              <span className="text-[9px] text-muted-foreground/60 font-medium lowercase">({item.desc})</span>
               <span className={`font-black transition-colors duration-300 ${updateColor || 'text-[var(--xau-ink)]'}`}>
-                {metal.price}
+                {item.decimals === 5 
+                  ? item.price.toFixed(5) 
+                  : item.decimals === 3 
+                    ? item.price.toFixed(3) 
+                    : item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              <span className={`font-black ${isUp ? 'text-green-500' : 'text-rose-500'}`}>
-                {isUp ? '▲' : '▼'} {Math.abs(metal.change)}%
+              <span className={`font-black ${isUp ? 'text-green-500' : 'text-rose-500'} flex items-center gap-1`}>
+                <span>{isUp ? '▲' : '▼'}</span>
+                <span>{Math.abs(item.change).toFixed(2)}%</span>
               </span>
-              <span className="text-[var(--xau-muted)] opacity-60">➔</span>
-              <span className="text-[var(--xau-ink)] font-bold">Target: {item.target}</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--xau-border-strong)]" />
-              <span className="text-[9px] font-black opacity-55">{item.status}</span>
-              <span className="text-[var(--xau-border)] mx-3">|</span>
+              <span className="text-[var(--xau-border)] mx-4">|</span>
             </div>
           );
         })}

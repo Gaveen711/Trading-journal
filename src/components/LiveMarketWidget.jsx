@@ -42,7 +42,7 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
 
   // Real-time Simulated Tickers state
   const [tickers, setTickers] = useState({
-    xauusd: { id: 'xauusd', name: 'XAU/USD', desc: 'Gold Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAUUSD', symbol: 'Au', color: 'amber-500', price: 4190.500, change: -0.20, history: [4200.000, 4195.000, 4188.000, 4192.000, 4196.000, 4187.000, 4191.000, 4189.000, 4190.500] },
+    xauusd: { id: 'xauusd', name: 'XAU/USD', desc: 'Gold Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAUUSD', symbol: 'Au', color: 'amber-500', price: 2389.500, change: -0.20, history: [2380.000, 2385.000, 2388.000, 2392.000, 2396.000, 2387.000, 2391.000, 2389.000, 2389.500] },
     xagusd: { id: 'xagusd', name: 'XAG/USD', desc: 'Silver Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XAGUSD', symbol: 'Ag', color: 'slate-300', price: 29.355, change: -0.07, history: [29.400, 29.380, 29.320, 29.350, 29.370, 29.310, 29.360, 29.340, 29.355] },
     xptusd: { id: 'xptusd', name: 'XPT/USD', desc: 'Platinum Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPTUSD', symbol: 'Pt', color: 'slate-400', price: 995.100, change: -0.01, history: [996.000, 995.500, 994.000, 995.000, 995.800, 994.200, 995.300, 994.800, 995.100] },
     xpdusd: { id: 'xpdusd', name: 'XPD/USD', desc: 'Palladium Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPDUSD', symbol: 'Pd', color: 'slate-500', price: 1028.100, change: -0.02, history: [1029.000, 1028.500, 1027.000, 1028.000, 1028.600, 1027.400, 1028.300, 1027.800, 1028.100] }
