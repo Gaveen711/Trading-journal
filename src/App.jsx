@@ -15,6 +15,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
 import { PublicNavbar } from './components/PublicNavbar';
+import CustomCursor from './components/CustomCursor';
 
 // Lazy load pages for performance
 const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
@@ -492,6 +493,7 @@ function App() {
   return (
     <ErrorBoundary>
       <PageSEO />
+      <CustomCursor />
       <div className="ux-scroll-progress" style={{ '--ux-scroll-progress': scrollProgress }} aria-hidden="true" />
       <Suspense fallback={showPublicNavbarDuringLoad ? publicPageLoader() : <PageLoader />}>
         {authError ? (
