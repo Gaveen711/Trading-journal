@@ -2305,7 +2305,7 @@ a[href*="neat.firecms.co"] {
   --primary: #ffc506;
   --neutral-1: #f7f8f7;
   --neutral-2: #e7e7e7;
-  --radius: 16px;
+  --radius: 999px;
 
   cursor: pointer;
   border-radius: var(--radius);
@@ -3766,7 +3766,7 @@ header {
   position: fixed !important;
   top: max(16px, env(safe-area-inset-top)) !important;
   left: 50% !important;
-  transform: translateX(-50%) !important;
+  transform: translateX(-50%);
   z-index: 150 !important;
 }
 
@@ -4094,6 +4094,77 @@ input:focus, textarea:focus, select:focus {
 }
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+/* --- Global micro-interaction hover glow on cards and boxes --- */
+.card-premium,
+.card-apple-glass,
+.card-pastel-green-glass,
+.card-pastel-blue-glass,
+.card-pastel-pink-glass,
+.card-pastel-yellow-glass,
+.cyber-step-card,
+.bg-card,
+[class*="bg-card"],
+.xau-card,
+.xau-pricing-card,
+.story-board,
+.story-founder-note,
+.story-product-panel,
+.story-item,
+.story-scale-item {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), 
+              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), 
+              border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+@media (hover: hover) {
+  .card-premium:hover,
+  .card-apple-glass:hover,
+  .card-pastel-green-glass:hover,
+  .card-pastel-blue-glass:hover,
+  .card-pastel-pink-glass:hover,
+  .card-pastel-yellow-glass:hover,
+  .cyber-step-card:hover,
+  .bg-card:hover,
+  [class*="bg-card"]:hover,
+  .xau-card:hover,
+  .xau-pricing-card:hover,
+  .story-board:hover,
+  .story-founder-note:hover,
+  .story-product-panel:hover,
+  .story-item:hover,
+  .story-scale-item:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, hsl(var(--primary, 175 100% 40%)) 32%, var(--story-border, rgba(245,229,191,0.22))) !important;
+    box-shadow: 0 10px 30px -10px color-mix(in srgb, hsl(var(--primary, 175 100% 40%)) 15%, transparent),
+                0 0 20px -2px color-mix(in srgb, hsl(var(--primary, 175 100% 40%)) 10%, transparent),
+                var(--story-shadow, 0 20px 40px rgba(0,0,0,0.15)) !important;
+  }
+}
+
+/* Touch active compatibility for pointer devices */
+@media (hover: none) {
+  .card-premium:active,
+  .card-apple-glass:active,
+  .card-pastel-green-glass:active,
+  .card-pastel-blue-glass:active,
+  .card-pastel-pink-glass:active,
+  .card-pastel-yellow-glass:active,
+  .cyber-step-card:active,
+  .bg-card:active,
+  [class*="bg-card"]:active,
+  .xau-card:active,
+  .xau-pricing-card:active,
+  .story-board:active,
+  .story-founder-note:active,
+  .story-product-panel:active,
+  .story-item:active,
+  .story-scale-item:active {
+    transform: scale(0.985);
+    border-color: color-mix(in srgb, hsl(var(--primary, 175 100% 40%)) 32%, var(--story-border, rgba(245,229,191,0.22))) !important;
+    box-shadow: 0 4px 15px -5px color-mix(in srgb, hsl(var(--primary, 175 100% 40%)) 20%, transparent) !important;
+  }
 }
 
 

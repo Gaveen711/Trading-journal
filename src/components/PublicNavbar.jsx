@@ -12,13 +12,23 @@ export function PublicNavbar({ showScrollTopButton = true } = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const { isLightMode, toggleTheme } = useAppTheme();
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    let lastY = window.scrollY;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-      setShowScrollTop(window.scrollY > Math.max(300, window.innerHeight * 0.65));
+      const currentY = window.scrollY;
+      setIsScrolled(currentY > 20);
+      setShowScrollTop(currentY > Math.max(300, window.innerHeight * 0.65));
+
+      if (currentY > lastY && currentY > 80) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      lastY = currentY;
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
@@ -45,7 +55,7 @@ export function PublicNavbar({ showScrollTopButton = true } = {}) {
       <header>
         <nav
           data-public-nav
-          style={{ transform: 'translateX(-50%)' }}
+          style={{ transform: `translateX(-50%) translateY(${isVisible || mobileMenuOpen ? '0' : '-120%'})` }}
           className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-6xl z-[150] h-14 md:h-16 flex items-center justify-between px-5 md:px-8 backdrop-blur-xl border rounded-2xl md:rounded-full shadow-lg transition-all duration-300 will-change-transform ${isScrolled
             ? 'bg-background/90 border-border/40 shadow-xl'
             : 'bg-background/60 border-border/20 shadow-md'

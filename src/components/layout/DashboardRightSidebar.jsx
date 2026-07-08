@@ -332,10 +332,17 @@ export function DashboardRightSidebar({
           {TABS.map((tab) => {
             const badge = tab.id === 'risk' ? riskFilled : tab.id === 'mood' ? moodFilled : tab.id === 'advanced' ? advancedFilled : 0;
             const IconComponent = tab.icon;
+            const isTabLocked = isFree && (tab.id === 'mood' || tab.id === 'advanced');
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (isTabLocked) {
+                    requireProFeature(plan, setShowPricingModal, toast, tab.id === 'mood' ? 'Trade psychology log' : 'Advanced setup review');
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
                 className={`relative flex items-center gap-1.5 px-3 py-2 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all border-b-2 -mb-[2px] group shrink-0 ${
                   activeTab === tab.id
                     ? 'text-foreground border-primary'
@@ -347,7 +354,10 @@ export function DashboardRightSidebar({
                   style={activeTab === tab.id ? { color: tab.color, filter: `drop-shadow(0 0 3px ${tab.color})` } : {}}
                 />
                 {tab.label}
-                {badge > 0 && (
+                {isTabLocked && (
+                  <LockFill className="w-2.5 h-2.5 text-muted-foreground/60 ml-0.5" />
+                )}
+                {badge > 0 && !isTabLocked && (
                   <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-black flex items-center justify-center">
                     {badge}
                   </span>
@@ -469,9 +479,22 @@ export function DashboardRightSidebar({
                     ]}
                   />
                 </div>
-                <div className="space-y-0.5">
-                  <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1">Strategy</label>
+                <div 
+                  className="space-y-0.5"
+                  onClickCapture={(e) => {
+                    if (isFree) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      requireProFeature(plan, setShowPricingModal, toast, 'strategy tags');
+                    }
+                  }}
+                >
+                  <label className="text-[11.5px] md:text-[13px] font-bold uppercase text-foreground/75 tracking-wider pl-1 flex items-center gap-1">
+                    Strategy
+                    {isFree && <LockFill className="w-2.5 h-2.5 text-primary" />}
+                  </label>
                   <CustomSelect value={strategy} onChange={setStrategy} placeholder="Strategy" className="h-10 px-3.5" align="top"
+                    disabled={isFree}
                     options={[
                       { value: 'Breakout', label: 'Breakout'    },
                       { value: 'SMC',      label: 'SMC'         },

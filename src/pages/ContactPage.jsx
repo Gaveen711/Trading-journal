@@ -193,7 +193,7 @@ export function ContactPage() {
                                                 {content}
                                             </a>
                                         ) : (
-                                            <div className="flex gap-4 py-5">{content}</div>
+                                            <div className="flex gap-4 py-5 transition-colors hover:text-primary cursor-pointer rounded-2xl">{content}</div>
                                         )}
                                     </li>
                                 );
@@ -345,14 +345,14 @@ export function ContactPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-20 md:mt-28 max-w-6xl"
+                    className="mt-20 md:mt-24 max-w-5xl mx-auto"
                     aria-labelledby="contact-help-heading"
                 >
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-primary mb-4">What to include</p>
                     <h2 id="contact-help-heading" className="max-w-3xl text-3xl md:text-5xl font-black tracking-tight leading-tight text-balance">
                         Better details create <span className="aurora-text">faster answers.</span>
                     </h2>
-                    <BentoGrid className="mt-9 lg:auto-rows-[17rem]">
+                    <BentoGrid className="mt-9 lg:grid-cols-4 lg:auto-rows-[14.5rem]">
                         {SUPPORT_TOPICS.map(({ icon: Icon, label, detail }, index) => {
                             const [accent, secondary] = SUPPORT_BENTO_COLORS[index];
 

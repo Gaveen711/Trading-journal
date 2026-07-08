@@ -466,7 +466,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full max-w-[200px] h-12 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black font-black text-[10px] uppercase tracking-[0.18em] hover:scale-105 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 flex items-center justify-center shadow-lg dark:shadow-[0_8px_30px_rgba(255,255,255,0.05)] border-0 cursor-pointer"
+              className="w-full max-w-[200px] h-12 rounded-full bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black font-black text-[10px] uppercase tracking-[0.18em] hover:scale-105 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 flex items-center justify-center shadow-lg dark:shadow-[0_8px_30px_rgba(255,255,255,0.05)] border-0 cursor-pointer"
             >
               {loading ? 'Authorizing...' : isSignUp ? 'Get Started' : 'Login'}
             </button>
@@ -500,7 +500,7 @@ function Login() {
             type="button"
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full h-12 bg-white dark:bg-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-700/50 border border-slate-200/60 dark:border-zinc-700/50 rounded-2xl flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.98] shadow-sm font-semibold text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white"
+            className="w-full h-12 bg-white dark:bg-zinc-800/80 hover:bg-slate-50 dark:hover:bg-zinc-700/50 border border-slate-200/60 dark:border-zinc-700/50 rounded-full flex items-center justify-center gap-2.5 transition-all duration-300 active:scale-[0.98] shadow-sm font-semibold text-xs text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white"
           >
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Lenis from 'lenis';
 import gsap from 'gsap';
@@ -68,6 +68,7 @@ const PRODUCT_STEPS = [
     outcome: 'A clean record before memory starts editing the story.',
     body: 'Closed MT4/MT5 trades can become structured entries with price, size, result, and instrument context preserved.',
     rows: [['Input', 'MT4 / MT5 closed trades'], ['Preserve', 'price, size, P&L'], ['Result', 'less manual admin']],
+    image: '/story-capture-step.png',
   },
   {
     key: 'Context',
@@ -79,6 +80,7 @@ const PRODUCT_STEPS = [
     outcome: 'The trade becomes evidence, not just a number.',
     body: 'Notes, screenshots, session labels, setup quality, and emotional state sit beside the trade they explain.',
     rows: [['Explain', 'setup and session'], ['Remember', 'psychology and intent'], ['Connect', 'screenshots and notes']],
+    image: '/story-context-step.png',
   },
   {
     key: 'Read',
@@ -90,6 +92,7 @@ const PRODUCT_STEPS = [
     outcome: 'The journal shows where execution is improving or leaking.',
     body: 'Calendar rhythm, drawdown, win rate, profit factor, session behavior, and repeat setups become easier to compare.',
     rows: [['Metrics', 'win rate and profit factor'], ['Risk', 'drawdown and exposure'], ['Pattern', 'session edge']],
+    image: '/story-read-step.png',
   },
   {
     key: 'Scale',
@@ -101,6 +104,7 @@ const PRODUCT_STEPS = [
     outcome: 'A private workflow becomes a product for serious traders everywhere.',
     body: 'The company builds infrastructure around the habit: secure accounts, cloud history, subscription access, and a roadmap filtered by real trading utility.',
     rows: [['Product', 'SaaS review system'], ['Audience', 'millions of traders'], ['Promise', 'better decisions']],
+    image: '/story-scale-step.png',
   },
 ];
 
@@ -148,33 +152,35 @@ const STYLES = `
   .story-gradient-word { display:inline-block; background:linear-gradient(90deg,#B08A5A 0%,#D49224 22%,#C95B3C 44%,#14B8A6 72%,#B08A5A 100%); background-size:220% 100%; background-repeat:repeat; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; text-decoration:none; animation:storyGradientText 8s linear infinite; }
   .dark .story-gradient-word { background-image:linear-gradient(90deg,#D4A76A 0%,#F5B544 22%,#FF7A59 44%,#2DD4BF 72%,#D4A76A 100%); }
   @keyframes storyGradientText { 0% { background-position:0% 50%; } 100% { background-position:220% 50%; } }
-  .story-title-xl { margin-top:1.2rem; color:var(--story-ink); font-size:clamp(3rem,7.3vw,7.6rem) !important; line-height:.96 !important; font-weight:800 !important; letter-spacing:0 !important; text-wrap:balance; }
-  .story-title-lg { margin-top:1rem; color:var(--story-ink); font-size:clamp(2.2rem,5vw,5.2rem) !important; line-height:1.02 !important; font-weight:800 !important; letter-spacing:0 !important; text-wrap:balance; }
-  .story-title-md { color:var(--story-ink); font-size:clamp(1.5rem,3vw,2.4rem) !important; line-height:1.08 !important; font-weight:850 !important; letter-spacing:0 !important; }
-  .story-lede, .story-copy { color:var(--story-muted); line-height:1.75; font-weight:560; }
-  .story-lede { max-width:760px; margin:1.35rem auto 0; font-size:clamp(1rem,1.35vw,1.16rem); }
-  .story-copy { max-width:680px; margin-top:1rem; font-size:clamp(1rem,1.35vw,1.12rem); }
+  .story-title-xl { margin-top:1rem; color:var(--story-ink); font-size:clamp(1.8rem,4vw,2.8rem) !important; line-height:1.1 !important; font-weight:800 !important; letter-spacing:-0.02em !important; text-wrap:balance; }
+  .story-title-lg { margin-top:0.8rem; color:var(--story-ink); font-size:clamp(1.4rem,3vw,2.2rem) !important; line-height:1.15 !important; font-weight:800 !important; letter-spacing:-0.01em !important; text-wrap:balance; }
+  .story-title-md { color:var(--story-ink); font-size:clamp(1.1rem,2vw,1.4rem) !important; line-height:1.2 !important; font-weight:800 !important; letter-spacing:-0.01em !important; }
+  .story-lede { max-width:700px; margin:1.2rem auto 0; font-size:clamp(0.88rem,1.1vw,1.02rem); color:var(--story-muted); line-height:1.65; font-weight:500; }
+  .story-copy { max-width:640px; margin-top:0.8rem; font-size:clamp(0.82rem,1vw,0.92rem); color:var(--story-muted); line-height:1.6; font-weight:500; }
   .story-hero { min-height:100dvh; display:grid; align-items:center; padding:clamp(7.5rem,10vw,10rem) 0 clamp(4rem,8vw,6rem); }
   .story-hero-grid { display:grid; grid-template-columns:1fr; gap:clamp(2.25rem,5vw,4.75rem); align-items:center; justify-items:center; text-align:center; }
   .story-hero-copy { max-width:min(980px,100%); margin:0 auto; display:grid; justify-items:center; text-align:center; }
   .story-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.75rem; margin-top:2rem; }
-  .story-primary, .story-secondary { min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:.55rem; border-radius:8px; padding:0 1.1rem; font-size:.92rem; font-weight:800; text-decoration:none; transition:transform 220ms ease,border-color 220ms ease,background 220ms ease,color 220ms ease; }
-  .story-primary { border:1px solid var(--story-ink); background:var(--story-ink); color:var(--story-surface); }
-  .story-secondary { border:1px solid var(--story-strong); background:color-mix(in srgb,var(--story-surface) 70%,transparent); color:var(--story-ink); }
-  .story-primary:hover, .story-secondary:hover { transform:translateY(-2px); }
+  .story-primary, .story-secondary { min-height:52px; display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:999px; padding:0 26px; font-size:15px; font-weight:780; letter-spacing:-.01em; text-decoration:none; transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease,color .2s ease; }
+  .story-primary { border:1px solid transparent; background:var(--story-ink); color:var(--story-surface); box-shadow:0 6px 24px rgba(0,0,0,.18); }
+  .story-secondary { border:1px solid var(--story-strong); background:color-mix(in srgb,var(--story-surface) 70%,transparent); color:var(--story-ink); box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .story-primary:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(0,0,0,.26); }
+  .story-secondary:hover { transform:translateY(-2px); background:color-mix(in srgb,var(--story-ink) 5%,color-mix(in srgb,var(--story-surface) 70%,transparent)); box-shadow:0 4px 16px rgba(0,0,0,.1); }
   .story-primary:focus-visible, .story-secondary:focus-visible, .story-scroll-top:focus-visible { outline:2px solid var(--story-accent); outline-offset:4px; }
   .story-proof { width:min(980px,100%); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-top:1px solid var(--story-border); border-bottom:1px solid var(--story-border); margin-top:3rem; text-align:left; }
   .story-proof-item { padding:1.05rem 1.1rem 1.05rem 0; border-right:1px solid var(--story-border); }
   .story-proof-item:nth-child(2) { padding-left:1.1rem; }
   .story-proof-item:last-child { border-right:0; padding-right:0; padding-left:1.1rem; }
-  .story-proof-item span, .story-board-title span, .story-board-metric span { display:block; color:var(--story-muted); font-size:.78rem; font-weight:740; text-transform:uppercase; }
-  .story-proof-item strong, .story-board-metric strong { display:block; margin-top:.35rem; color:var(--story-ink); font-size:1.02rem; line-height:1.25; }
-  .story-proof-item p { margin-top:.35rem; color:var(--story-muted); font-size:.84rem; line-height:1.5; }
-  .story-board, .story-item, .story-founder-note, .story-scale-item, .story-principle, .story-product-panel { border:none!important; border-radius:8px; background:transparent!important; box-shadow:none!important; }
+  .story-proof-item span, .story-board-title span, .story-board-metric span { display:block; color:var(--story-muted); font-size:.7rem; font-weight:740; text-transform:uppercase; }
+  .story-proof-item strong, .story-board-metric strong { display:block; margin-top:.35rem; color:var(--story-ink); font-size:.92rem; line-height:1.25; }
+  .story-proof-item p { margin-top:.35rem; color:var(--story-muted); font-size:.78rem; line-height:1.5; }
+  .story-board, .story-founder-note, .story-product-panel { background:var(--story-surface) !important; border:1px solid var(--story-border) !important; border-radius:12px !important; box-shadow:var(--story-shadow) !important; }
+  .story-item, .story-scale-item { background:var(--story-surface) !important; border:1px solid var(--story-border) !important; border-radius:12px !important; }
+  .story-principle { border:none !important; background:transparent !important; box-shadow:none !important; }
   .story-hero-stack { display:grid; gap:1rem; align-self:center; }
-  .story-board { width:min(980px,100%); margin:0 auto; border:none!important; box-shadow:none!important; overflow:hidden; text-align:left; }
+  .story-board { width:min(980px,100%); margin:0 auto; overflow:hidden; text-align:left; }
   .story-board-inner { will-change:transform; }
-  .story-board-header { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem; border-bottom:none!important; background:transparent!important; }
+  .story-board-header { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem; border-bottom:1px solid var(--story-border) !important; }
   .story-board-brand { color:var(--story-ink); font-size:1.15rem; line-height:1; font-weight:850; }
   .story-board-brand span { color:var(--story-accent); }
   .story-board-status { display:inline-flex; align-items:center; gap:.45rem; color:var(--story-muted); font-size:.78rem; font-weight:760; }
@@ -198,44 +204,46 @@ const STYLES = `
   .story-section-head .story-copy { margin-left:auto; margin-right:auto; }
   .story-split { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:clamp(1.2rem,4vw,3rem); align-items:start; }
   .story-statement { border-top:none!important; padding-top:1.4rem; }
-  .story-statement blockquote { color:var(--story-ink); font-size:clamp(1.7rem,3.4vw,3rem); line-height:1.15; font-weight:800; text-wrap:balance; }
-  .story-statement p { margin-top:1.2rem; color:var(--story-muted); font-size:1rem; line-height:1.75; font-weight:560; }
+  .story-statement blockquote { color:var(--story-ink); font-size:clamp(1.2rem,2.2vw,1.6rem); line-height:1.15; font-weight:800; text-wrap:balance; }
+  .story-statement p { margin-top:1.2rem; color:var(--story-muted); font-size:.84rem; line-height:1.65; font-weight:500; }
   .story-list { display:grid; gap:1rem; }
   .story-item, .story-scale-item { display:grid; grid-template-columns:auto 1fr; gap:1rem; padding:1.1rem; }
   .story-icon { width:2.65rem; height:2.65rem; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--story-border); border-radius:8px; color:var(--story-accent); background:var(--story-surface-2); }
-  .story-item h3, .story-founder-note h3, .story-timeline-item h3, .story-scale-item h3 { color:var(--story-ink); font-size:1.05rem !important; line-height:1.25 !important; font-weight:800 !important; letter-spacing:0 !important; }
-  .story-item p, .story-founder-note p, .story-timeline-item p, .story-scale-item p { margin-top:.45rem; color:var(--story-muted); font-size:.94rem; line-height:1.65; font-weight:540; }
+  .story-item h3, .story-founder-note h3, .story-timeline-item h3, .story-scale-item h3 { color:var(--story-ink); font-size:.95rem !important; line-height:1.25 !important; font-weight:800 !important; letter-spacing:0 !important; }
+  .story-item p, .story-founder-note p, .story-timeline-item p, .story-scale-item p { margin-top:.45rem; color:var(--story-muted); font-size:.84rem; line-height:1.65; font-weight:500; }
   .story-founder-note { position:sticky; top:7rem; padding:clamp(1.2rem,3vw,1.7rem); }
   .story-founder-mark { width:4.35rem; height:4.35rem; display:grid; place-items:center; border:1px solid var(--story-strong); border-radius:8px; background:var(--story-ink); color:var(--story-surface); font-weight:850; font-size:1.25rem; }
-  .story-founder-note h3 { margin-top:1.2rem; font-size:clamp(1.5rem,2.5vw,2.2rem) !important; }
+  .story-founder-note h3 { margin-top:1.2rem; font-size:clamp(1.1rem,1.8vw,1.4rem) !important; }
   .story-founder-meta { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.2rem; }
   .story-founder-meta span { border:none!important; padding:.45rem .6rem; color:var(--story-muted); font-size:.78rem; font-weight:760; }
   .story-timeline-item { display:grid; grid-template-columns:4rem 1fr; gap:1rem; border-bottom:none!important; padding-bottom:1.25rem; }
   .story-timeline-item:last-child { border-bottom:0; padding-bottom:0; }
-  .story-timeline-number { color:var(--story-accent); font-size:1.8rem; line-height:1; font-weight:850; }
+  .story-timeline-number { color:var(--story-accent); font-size:1.4rem; line-height:1; font-weight:850; }
   .story-showcase { padding:clamp(5rem,10vw,9rem) 0; border:none!important; background:transparent!important; }
   .story-showcase-stage { --stage-progress:0; --stage-shift:0px; --stage-accent:#0f766e; --stage-accent-soft:rgba(15,118,110,.16); min-height:min(78vh,760px); display:grid; grid-template-columns:minmax(0,.86fr) minmax(360px,1.14fr); gap:clamp(2rem,6vw,5rem); align-items:center; position:relative; }
   .story-showcase-stage::before { content:''; position:absolute; left:0; right:0; top:0; height:1px; background:linear-gradient(90deg,var(--stage-accent),transparent); transform:scaleX(calc(.18 + (var(--stage-progress) * .82))); transform-origin:left; }
   .story-stage-label { display:flex; align-items:center; gap:.75rem; color:var(--stage-accent); font-size:.9rem; font-weight:820; text-transform:uppercase; }
   .story-stage-progress { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.4rem; margin-top:2rem; }
-  .story-stage-step { min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-bottom:2px solid var(--story-border); color:var(--story-muted); font-size:.82rem; font-weight:800; transition:color 220ms ease,border-color 220ms ease; }
+  .story-stage-step { min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-bottom:2px solid var(--story-border); color:var(--story-muted); font-size:.75rem; font-weight:800; transition:color 220ms ease,border-color 220ms ease; }
   .story-stage-step.is-active { color:var(--stage-accent); border-color:var(--stage-accent); }
   .story-product-shell { transform:translateX(var(--stage-shift)); transition:transform 280ms ease; }
-  .story-product-panel { border:none!important; background:transparent!important; box-shadow:none!important; overflow:hidden; }
-  .story-product-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:64px; padding:1rem; border-bottom:none!important; background:var(--stage-accent-soft); }
+  .story-product-panel { overflow:hidden; }
+  .story-product-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:64px; padding:1rem; border-bottom:1px solid var(--story-border) !important; background:var(--stage-accent-soft); }
   .story-product-head span { color:var(--stage-accent); font-size:.84rem; font-weight:820; text-transform:uppercase; }
   .story-product-head strong { color:var(--story-ink); font-size:1rem; }
   .story-product-body { padding:clamp(1.1rem,3vw,1.6rem); }
   .story-product-main { display:grid; grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr); gap:1.2rem; align-items:stretch; }
-  .story-product-number { min-height:220px; display:grid; place-items:center; border:1px solid var(--story-border); border-radius:8px; overflow:hidden; background:linear-gradient(90deg,var(--story-border) 1px,transparent 1px),linear-gradient(180deg,var(--story-border) 1px,transparent 1px),var(--stage-accent-soft); background-size:28px 28px; color:var(--stage-accent); font-size:clamp(4.5rem,10vw,8rem); line-height:1; font-weight:860; }
-  .story-product-outcome { margin-top:.6rem; color:var(--stage-accent); font-size:.94rem; font-weight:820; }
-  .story-product-detail p:not(.story-product-outcome) { margin-top:.9rem; color:var(--story-muted); font-size:.95rem; line-height:1.65; font-weight:540; }
+  .story-product-visual-wrapper { position:relative; min-height:220px; display:flex; align-items:center; justify-content:center; border:1px solid var(--story-border); border-radius:8px; overflow:hidden; background:var(--stage-accent-soft); }
+  .story-product-img { width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.95); transition:transform 0.4s ease; }
+  .story-product-visual-wrapper:hover .story-product-img { transform:scale(1.03); }
+  .story-product-outcome { margin-top:.6rem; color:var(--stage-accent); font-size:.82rem; font-weight:820; }
+  .story-product-detail p:not(.story-product-outcome) { margin-top:.9rem; color:var(--story-muted); font-size:.82rem; line-height:1.65; font-weight:500; }
   .story-product-rows { display:grid; gap:.55rem; margin-top:1.1rem; }
   .story-product-row { display:grid; grid-template-columns:.8fr 1.2fr; gap:.75rem; border-top:none!important; padding-top:.65rem; }
-  .story-product-row span { color:var(--story-muted); font-size:.78rem; font-weight:760; }
-  .story-product-row strong { color:var(--story-ink); font-size:.9rem; font-weight:820; }
+  .story-product-row span { color:var(--story-muted); font-size:.72rem; font-weight:760; }
+  .story-product-row strong { color:var(--story-ink); font-size:.82rem; font-weight:820; }
   .story-scale-lead { border-top:none!important; padding-top:1.4rem; }
-  .story-principle { display:grid; grid-template-columns:auto 1fr; gap:.85rem; padding:1rem; color:var(--story-muted); font-size:.96rem; line-height:1.6; font-weight:650; border:none!important; background:transparent!important; box-shadow:none!important; }
+  .story-principle { display:grid; grid-template-columns:auto 1fr; gap:.85rem; padding:1rem; color:var(--story-muted); font-size:.88rem; line-height:1.6; font-weight:650; border:none!important; background:transparent!important; box-shadow:none!important; }
   .story-principle svg { color:var(--story-teal); margin-top:.18rem; }
   .story-final { padding:clamp(5rem,9vw,8rem) 0; }
   .story-final-inner { display:grid; grid-template-columns:1fr; gap:2rem; justify-items:center; text-align:center; border-top:none!important; padding-top:clamp(1.5rem,4vw,2.5rem); }
@@ -243,7 +251,7 @@ const STYLES = `
   .story-scroll-top { position:fixed; right:1.25rem; bottom:1.25rem; z-index:90; width:46px; height:46px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--story-strong); border-radius:8px; background:var(--story-surface); color:var(--story-ink); box-shadow:var(--story-shadow); cursor:pointer; transition:transform 220ms ease,opacity 220ms ease; }
   .story-reveal { will-change:transform,opacity; }
   @media (max-width:1023px) { .story-hero { min-height:auto; padding-top:7rem; } .story-hero-grid, .story-split, .story-showcase-stage, .story-final-inner { grid-template-columns:1fr; } .story-founder-note { position:relative; top:auto; } .story-showcase-stage { min-height:auto; gap:2rem; } .story-product-shell { transform:none !important; } }
-  @media (max-width:720px) { .story-shell { width:min(100% - 1.25rem,1180px); } .story-title-xl { font-size:clamp(2.65rem,15vw,4.35rem) !important; } .story-actions { flex-direction:column; } .story-primary, .story-secondary { width:100%; } .story-proof, .story-board-metrics, .story-product-main { grid-template-columns:1fr; } .story-proof-item, .story-proof-item:nth-child(2), .story-proof-item:last-child, .story-board-metric, .story-board-metric + .story-board-metric, .story-board-metric:last-child { padding-left:0; padding-right:0; border-right:0; } .story-proof-item, .story-board-metric { border-bottom:none!important; } .story-proof-item:last-child, .story-board-metric:last-child { border-bottom:0; } .story-board-header { align-items:flex-start; flex-direction:column; } .story-item, .story-scale-item { grid-template-columns:1fr; } .story-timeline-item { grid-template-columns:1fr; gap:.45rem; } .story-stage-progress { grid-template-columns:repeat(2,minmax(0,1fr)); } .story-product-number { min-height:150px; } .story-product-row { grid-template-columns:1fr; gap:.25rem; } .story-market-bars { height:132px; gap:.35rem; padding:.8rem; } }
+  @media (max-width:720px) { .story-shell { width:min(100% - 1.25rem,1180px); } .story-title-xl { font-size:clamp(1.8rem,9vw,2.65rem) !important; } .story-actions { flex-direction:column; } .story-primary, .story-secondary { width:100%; } .story-proof, .story-board-metrics, .story-product-main { grid-template-columns:1fr; } .story-proof-item, .story-proof-item:nth-child(2), .story-proof-item:last-child, .story-board-metric, .story-board-metric + .story-board-metric, .story-board-metric:last-child { padding-left:0; padding-right:0; border-right:0; } .story-proof-item, .story-board-metric { border-bottom:none!important; } .story-proof-item:last-child, .story-board-metric:last-child { border-bottom:0; } .story-board-header { align-items:flex-start; flex-direction:column; } .story-item, .story-scale-item { grid-template-columns:1fr; } .story-timeline-item { grid-template-columns:1fr; gap:.45rem; } .story-stage-progress { grid-template-columns:repeat(2,minmax(0,1fr)); } .story-product-visual-wrapper { min-height:150px; } .story-product-row { grid-template-columns:1fr; gap:.25rem; } .story-market-bars { height:132px; gap:.35rem; padding:.8rem; } }
   @media (prefers-reduced-motion:reduce) { .story-reveal, .story-board-inner, .story-product-shell { opacity:1 !important; transform:none !important; } .story-primary, .story-secondary, .story-stage-step, .story-scroll-top { transition-duration:.01ms !important; } }
 `;
 
@@ -313,20 +321,46 @@ function MissionBoard() {
 export default function TheStoryPage() {
   const stageRef = useRef(null);
   const cardRef = useRef(null);
+  const lenisRef = useRef(null);
   const activeProductRef = useRef(0);
   const [activeProduct, setActiveProduct] = useState(0);
 
+  useEffect(() => {
+    const card = cardRef.current;
+    if (card) {
+      gsap.fromTo(card, { autoAlpha: 0.58, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+    }
+  }, [activeProduct]);
+
+  const handleStepClick = (index) => {
+    setActiveProduct(index);
+    activeProductRef.current = index;
+
+    const trigger = ScrollTrigger.getById('story-showcase-trigger');
+    if (trigger) {
+      const start = trigger.start;
+      const end = trigger.end;
+      const progress = index / (PRODUCT_STEPS.length - 1);
+      const scrollPos = start + (end - start) * progress;
+      if (lenisRef.current) {
+        lenisRef.current.scrollTo(scrollPos);
+      } else {
+        window.scrollTo({ top: scrollPos, behavior: 'smooth' });
+      }
+    }
+  };
+
   useLayoutEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let lenis = null;
     let tickerCallback = null;
+    let refreshTimer = null;
 
     if (!reducedMotion) {
-      lenis = new Lenis({ lerp: 0.075, smoothWheel: true });
-      lenis.on('scroll', ScrollTrigger.update);
+      lenisRef.current = new Lenis({ lerp: 0.075, smoothWheel: true });
+      lenisRef.current.on('scroll', ScrollTrigger.update);
 
       tickerCallback = (time) => {
-        lenis.raf(time * 1000);
+        if (lenisRef.current) lenisRef.current.raf(time * 1000);
       };
       gsap.ticker.add(tickerCallback);
       gsap.ticker.lagSmoothing(0);
@@ -372,30 +406,28 @@ export default function TheStoryPage() {
 
           if (stage) {
             ScrollTrigger.create({
+              id: 'story-showcase-trigger',
               trigger: '.story-showcase-pin-wrapper',
-              start: isDesktop ? 'top top' : 'top 72%',
-              end: isDesktop ? () => `+=${window.innerHeight * 3}` : 'bottom 28%',
+              start: isDesktop ? 'top 96px' : 'top 72%',
+              end: isDesktop ? () => `+=${window.innerHeight * 2}` : 'bottom 28%',
               pin: isDesktop ? '.story-showcase-pin-wrapper' : false,
               scrub: 0.7,
               anticipatePin: 1,
               invalidateOnRefresh: true,
               onUpdate: (self) => {
+                if (!isDesktop) return;
                 const rawStep = self.progress * (PRODUCT_STEPS.length - 1);
                 const nextStep = Math.min(PRODUCT_STEPS.length - 1, Math.round(rawStep));
                 const next = PRODUCT_STEPS[nextStep];
 
                 stage.style.setProperty('--stage-progress', self.progress.toFixed(3));
-                stage.style.setProperty('--stage-shift', isDesktop ? `${gsap.utils.interpolate(-18, 18, self.progress)}px` : '0px');
+                stage.style.setProperty('--stage-shift', `${gsap.utils.interpolate(-18, 18, self.progress)}px`);
                 stage.style.setProperty('--stage-accent', next.accent);
                 stage.style.setProperty('--stage-accent-soft', next.soft);
 
                 if (activeProductRef.current !== nextStep) {
                   activeProductRef.current = nextStep;
                   setActiveProduct(nextStep);
-
-                  if (card) {
-                    gsap.fromTo(card, { autoAlpha: 0.58, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out' });
-                  }
                 }
               },
             });
@@ -405,9 +437,21 @@ export default function TheStoryPage() {
     });
     ScrollTrigger.refresh();
 
+    // Recalculate ScrollTrigger once fonts/images are fully loaded to resolve layout shift jumps
+    const handleLoad = () => ScrollTrigger.refresh();
+    window.addEventListener('load', handleLoad);
+    refreshTimer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 1200);
+
     return () => {
       if (tickerCallback) gsap.ticker.remove(tickerCallback);
-      if (lenis) lenis.destroy();
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+        lenisRef.current = null;
+      }
+      window.removeEventListener('load', handleLoad);
+      if (refreshTimer) clearTimeout(refreshTimer);
       ctx.revert();
     };
   }, []);
@@ -467,6 +511,13 @@ export default function TheStoryPage() {
                   XAU Journal was created to protect that habit. It connects execution, context, and analysis
                   so the trader can spend less time rebuilding the past and more time improving the next trade.
                 </p>
+                <div className='story-image-card mt-6 border border-border/20 rounded-xl overflow-hidden shadow-md bg-background/30 backdrop-blur-sm'>
+                  <img src='/story-candle-code.png' alt='Candlestick chart and trade logs analysis code' className='w-full object-cover max-h-[220px] filter brightness-95 contrast-105' />
+                  <div className='p-3.5 bg-background/50 border-t border-border/10 text-[11px] text-muted-foreground flex items-center justify-between'>
+                    <span>Chart & Execution Sync</span>
+                    <span className='font-mono opacity-60'>XAUUSD Daily</span>
+                  </div>
+                </div>
               </article>
 
               <div className='story-list'>
@@ -502,6 +553,9 @@ export default function TheStoryPage() {
                 <span>XAUUSD trader</span>
                 <span>Product owner</span>
               </div>
+              <div className='story-image-card mt-6 border border-border/20 rounded-xl overflow-hidden shadow-md bg-background/30 backdrop-blur-sm'>
+                <img src='/story-trader-builder.png' alt='Gaveen Perera developer workspace' className='w-full object-cover max-h-[180px] filter brightness-95' />
+              </div>
             </aside>
 
             <div className='story-list'>
@@ -528,23 +582,31 @@ export default function TheStoryPage() {
               <div
                 className='story-showcase-stage'
                 ref={stageRef}
-                style={{ '--stage-accent': activeStep.accent, '--stage-accent-soft': activeStep.soft }}
+                style={{
+                  '--stage-accent': activeStep.accent,
+                  '--stage-accent-soft': activeStep.soft,
+                  '--stage-progress': activeProduct / (PRODUCT_STEPS.length - 1)
+                }}
               >
-                <div className='story-reveal'>
+                <div>
                   <span className='story-stage-label'><ActiveIcon size={18} />{activeStep.key}</span>
                   <h2 className='story-title-lg'><Highlight>{activeStep.key}</Highlight>: {activeStep.outcome}</h2>
                   <p className='story-copy'>{activeStep.body}</p>
 
                   <div className='story-stage-progress' aria-label='Product creation progress'>
                     {PRODUCT_STEPS.map((step, index) => (
-                      <span className={`story-stage-step ${activeProduct === index ? 'is-active' : ''}`} key={step.key}>
+                      <button
+                        onClick={() => handleStepClick(index)}
+                        className={`story-stage-step cursor-pointer focus:outline-none ${activeProduct === index ? 'is-active' : ''}`}
+                        key={step.key}
+                      >
                         {step.label} {step.key}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <div className='story-product-shell story-reveal'>
+                <div className='story-product-shell'>
                   <article className='story-product-panel' ref={cardRef} aria-live='polite'>
                     <div className='story-product-head'>
                       <span>XAU Journal system</span>
@@ -553,7 +615,40 @@ export default function TheStoryPage() {
 
                     <div className='story-product-body'>
                       <div className='story-product-main'>
-                        <div className='story-product-number' aria-hidden='true'>{activeStep.label}</div>
+                        <div className='story-product-visual-wrapper'>
+                          {activeStep.key === 'Capture' ? (
+                            <div className='flex items-center justify-center gap-6 md:gap-8 w-full h-full p-4 relative overflow-hidden bg-background/10'>
+                              <div className='absolute w-28 h-28 rounded-full bg-cyan-500/5 blur-xl -translate-x-10' />
+                              <div className='absolute w-28 h-28 rounded-full bg-emerald-500/5 blur-xl translate-x-10' />
+
+                              <div className='flex flex-col items-center gap-2 transition-transform duration-300 hover:scale-105'>
+                                <div className='w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border border-border/10 shadow-md bg-background/40 flex items-center justify-center'>
+                                  <img src='/mt4.svg' alt='MT4 Icon' className='w-full h-full object-contain' />
+                                </div>
+                                <span className='text-[9px] md:text-[10px] font-black uppercase tracking-wider text-muted-foreground'>MT4</span>
+                              </div>
+
+                              <div className='flex items-center justify-center relative'>
+                                <div className='h-[1px] w-8 md:w-12 bg-gradient-to-r from-cyan-500/30 via-primary/20 to-emerald-500/30 relative'>
+                                  <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-ping' />
+                                </div>
+                              </div>
+
+                              <div className='flex flex-col items-center gap-2 transition-transform duration-300 hover:scale-105'>
+                                <div className='w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border border-border/10 shadow-md bg-background/40 flex items-center justify-center'>
+                                  <img src='/mt5.svg' alt='MT5 Icon' className='w-full h-full object-contain' />
+                                </div>
+                                <span className='text-[9px] md:text-[10px] font-black uppercase tracking-wider text-muted-foreground'>MT5</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <img
+                              src={activeStep.image}
+                              alt={activeStep.title}
+                              className='story-product-img'
+                            />
+                          )}
+                        </div>
                         <div className='story-product-detail'>
                           <h3 className='story-title-md'><Highlight>{activeStep.title}</Highlight></h3>
                           <p className='story-product-outcome'>{activeStep.outcome}</p>

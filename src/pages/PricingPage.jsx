@@ -334,7 +334,7 @@ function PlanCard({ title, label, price, period, description, cta, onClick, feat
       <button
         type="button"
         onClick={onClick}
-        className={`mt-9 min-h-12 w-full rounded-2xl px-5 text-sm font-black transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background flex items-center justify-center gap-2 ${featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-border bg-background hover:border-primary/40 hover:text-primary'}`}
+        className={`mt-9 min-h-12 w-full rounded-full px-5 text-sm font-black transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background flex items-center justify-center gap-2 ${featured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-border bg-background hover:border-primary/40 hover:text-primary'}`}
       >
         {cta}
         {featured ? <ArrowRight size={17} /> : null}
