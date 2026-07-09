@@ -1,5 +1,14 @@
+# xaujournal.com robots.txt
+
 User-agent: *
 Allow: /
 Disallow: /app/
+Disallow: /api/
+Disallow: /checkout-success
+Disallow: /checkout-cancel
 
+# Crawl rate
+Crawl-delay: 1
+
+# Sitemap
 Sitemap: https://www.xaujournal.com/sitemap.xml

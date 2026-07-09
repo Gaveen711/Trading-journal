@@ -81,15 +81,26 @@ export function applyPageSEO(pathname) {
   const base = pathname.split('?')[0];
   const config = ROUTE_SEO[base] || ROUTE_SEO['/'];
   const url = `${SITE_URL}${base === '/' ? '' : base}`;
+  const ogImage = `${SITE_URL}/favicon.png`;
 
   document.title = config.title;
   setMeta('name', 'description', config.description);
   setMeta('name', 'keywords', DEFAULT_KEYWORDS);
+
+  // Open Graph
+  setMeta('property', 'og:type', 'website', true);
   setMeta('property', 'og:title', config.title, true);
   setMeta('property', 'og:description', config.description, true);
   setMeta('property', 'og:url', url, true);
+  setMeta('property', 'og:image', ogImage, true);
+  setMeta('property', 'og:site_name', SITE_NAME, true);
+
+  // Twitter
+  setMeta('name', 'twitter:card', 'summary_large_image');
   setMeta('name', 'twitter:title', config.title);
   setMeta('name', 'twitter:description', config.description);
+  setMeta('name', 'twitter:image', ogImage);
+
   setCanonical(url);
 }
 
