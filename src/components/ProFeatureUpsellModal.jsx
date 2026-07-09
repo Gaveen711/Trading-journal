@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { XLg, ArrowClockwise, CheckCircleFill } from 'react-bootstrap-icons';
 import { ProTermsModal } from './ProTermsModal';
-import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
+import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY, PRO_YEARLY_MONTHLY_DISPLAY, PRO_YEARLY_SAVINGS } from '../lib/pricing';
 
 const FEATURE_COPY = {
   'broker-sync': {
@@ -65,6 +65,7 @@ export function ProFeatureUpsellModal({
               <span className="text-4xl font-black text-primary">{PRO_MONTHLY_DISPLAY}</span>
               <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
             </div>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">or {PRO_YEARLY_DISPLAY}/year ({PRO_YEARLY_MONTHLY_DISPLAY}/mo) — <span className="text-primary font-black">save ${PRO_YEARLY_SAVINGS}</span></p>
             <p className="text-[10px] text-muted-foreground">Cancel anytime from billing.</p>
           </div>
 

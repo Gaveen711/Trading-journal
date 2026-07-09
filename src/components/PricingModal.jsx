@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { XLg, CheckCircleFill, CheckCircle } from 'react-bootstrap-icons';
 import { ProTermsModal } from './ProTermsModal';
-import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
+import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY, PRO_YEARLY_MONTHLY_DISPLAY, PRO_YEARLY_SAVINGS } from '../lib/pricing';
 
 export function PricingModal({ plan, expiry, onSubscribe, onClose, recordProAcceptance }) {
   const [showTerms, setShowTerms] = useState(false);
@@ -84,6 +84,7 @@ export function PricingModal({ plan, expiry, onSubscribe, onClose, recordProAcce
                 <span className="text-3xl font-black text-primary">{PRO_MONTHLY_DISPLAY}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
               </div>
+              <p className="text-[10px] text-muted-foreground/70 mt-1.5">or {PRO_YEARLY_DISPLAY}/year ({PRO_YEARLY_MONTHLY_DISPLAY}/mo) — <span className="text-primary font-black">save ${PRO_YEARLY_SAVINGS}</span></p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Cancel anytime from billing.</p>
             </div>
             <ul className="space-y-3 flex-1">

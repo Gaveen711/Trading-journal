@@ -21,7 +21,7 @@ import { PublicNavbar } from '../components/PublicNavbar';
 import { auth } from '../firebase';
 import { useSubscription } from '../hooks/useSubscription';
 import { ProTermsModal } from '../components/ProTermsModal';
-import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
+import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY, PRO_YEARLY_MONTHLY_DISPLAY, PRO_YEARLY_SAVINGS } from '../lib/pricing';
 
 const ALL_PRODUCT_FEATURES = [
   { label: 'Unlimited manual trades', free: true, pro: true },
@@ -172,6 +172,7 @@ export function PricingPage() {
             label="Complete trading review"
             price={PRO_MONTHLY_DISPLAY}
             period="/mo"
+            yearlyNote={<>or {PRO_YEARLY_DISPLAY}/year ({PRO_YEARLY_MONTHLY_DISPLAY}/mo) — <span className="text-primary font-black">save ${PRO_YEARLY_SAVINGS}</span></>}
             description="For active XAUUSD traders who want sync, structure, and enough data to actually improve execution."
             cta="Upgrade to Pro"
             onClick={handleUpgradeClick}
@@ -297,7 +298,7 @@ export function PricingPage() {
   );
 }
 
-function PlanCard({ title, label, price, period, description, cta, onClick, featured = false, children }) {
+function PlanCard({ title, label, price, period, yearlyNote, description, cta, onClick, featured = false, children }) {
   return (
     <Motion.article
       initial={{ opacity: 0, y: 28 }}
@@ -326,6 +327,7 @@ function PlanCard({ title, label, price, period, description, cta, onClick, feat
           </span>
           <span className="pb-2 text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">{period}</span>
         </div>
+        {yearlyNote && <p className="mt-2 text-xs text-muted-foreground/70 font-semibold">{yearlyNote}</p>}
         <p className="mt-5 text-sm md:text-base text-muted-foreground font-semibold leading-relaxed">{description}</p>
       </div>
 
