@@ -13,6 +13,15 @@ import { getFriendlyErrorMessage } from './lib/errorUtils';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from './hooks/useAppTheme';
 
+async function fetchCountry() {
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.country_code || null;
+  } catch { return null; }
+}
+
 function Login() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -151,6 +160,7 @@ function Login() {
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        const country = await fetchCountry();
         
         await updateProfile(user, { displayName: `${firstName} ${lastName}` });
         
@@ -163,6 +173,7 @@ function Login() {
           totalTradesLogged: 0,
           totalJournalsLogged: 0,
           agreedToTerms: false,
+          country,
           createdAt: new Date().toISOString()
         }, { merge: true });
 
@@ -250,6 +261,7 @@ function Login() {
       const lastName = last.join(' ') || '';
 
       // Initialize/update their user doc in Firestore to ensure names are present
+      const country = await fetchCountry();
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         firstName: firstName || 'Google',
@@ -258,6 +270,7 @@ function Login() {
         totalTradesLogged: 0,
         totalJournalsLogged: 0,
         agreedToTerms: false,
+        country,
         createdAt: new Date().toISOString()
       }, { merge: true });
 
