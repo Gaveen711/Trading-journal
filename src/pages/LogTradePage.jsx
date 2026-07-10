@@ -198,7 +198,7 @@ export function LogTradePage() {
 
   const winRateMtd = useMemo(() => {
     const targetTrades = mtdTrades.length > 0 ? mtdTrades : trades;
-    if (targetTrades.length === 0) return 68;
+    if (targetTrades.length === 0) return 0;
     const wins = targetTrades.filter(t => t.outcome === 'WIN').length;
     return Math.round((wins / targetTrades.length) * 100);
   }, [mtdTrades, trades]);
@@ -220,20 +220,20 @@ export function LogTradePage() {
   }, [mtdTrades, trades]);
 
   const bestTradeVal = useMemo(() => {
-    return bestTradeMtd ? bestTradeMtd.pnl : 760;
+    return bestTradeMtd ? bestTradeMtd.pnl : 0;
   }, [bestTradeMtd]);
 
   const bestTradeMarket = useMemo(() => {
-    return bestTradeMtd ? (bestTradeMtd.market || 'XAU/USD') : 'XAU/USD';
+    return bestTradeMtd ? (bestTradeMtd.market || 'XAU/USD') : '—';
   }, [bestTradeMtd]);
 
   const bestTradeSession = useMemo(() => {
-    return bestTradeMtd ? (bestTradeMtd.session || 'London') : 'London';
+    return bestTradeMtd ? (bestTradeMtd.session || 'London') : '—';
   }, [bestTradeMtd]);
 
   const avgRRatio = useMemo(() => {
     const tradesWithRR = trades.filter(t => t.rr !== undefined && t.rr !== null && !isNaN(Number(t.rr)) && Number(t.rr) > 0);
-    if (tradesWithRR.length === 0) return 2.4;
+    if (tradesWithRR.length === 0) return 0;
     const sum = tradesWithRR.reduce((s, t) => s + Number(t.rr), 0);
     return parseFloat((sum / tradesWithRR.length).toFixed(1));
   }, [trades]);
@@ -393,7 +393,7 @@ export function LogTradePage() {
               {winRateMtd}%
             </h2>
             <div className="text-[10px] md:text-xs font-black uppercase text-muted-foreground mt-1 flex items-center gap-1">
-              <span className="text-green-500">▲</span>
+              {totalCountMtd > 0 && <span className="text-green-500">▲</span>}
               <span>{winCountMtd} of {totalCountMtd} trades</span>
             </div>
           </div>
@@ -408,11 +408,11 @@ export function LogTradePage() {
           <div className="space-y-1 relative z-10">
             <span className="text-[11px] md:text-sm font-black uppercase tracking-widest text-muted-foreground">Best Trade</span>
             <h2 className="text-2xl font-black tracking-tight text-purple-400 mt-1">
-              +{formatCurrency(bestTradeVal)}
+              {bestTradeVal > 0 ? '+' : ''}{formatCurrency(bestTradeVal)}
             </h2>
             <div className="text-[10px] md:text-xs font-black uppercase text-muted-foreground mt-1 flex items-center gap-1">
-              <span className="text-green-500">▲</span>
-              <span>{bestTradeMarket} - {bestTradeSession}</span>
+              {bestTradeVal > 0 && <span className="text-green-500">▲</span>}
+              <span>{bestTradeVal > 0 ? `${bestTradeMarket} - ${bestTradeSession}` : 'No Trades'}</span>
             </div>
           </div>
           <div className="w-9 h-9 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500 relative z-10 shrink-0">

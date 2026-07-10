@@ -1,8 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        request.auth.uid == 'lvn2aJ3xSufChJ9E5ns6mwrrx5t2'
+      );
+    }
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      // Trusted administrators may manage account state; users remain blocked from billing fields.
+      allow write: if isAdmin();
       // Allow write only if sensitive fields are not modified or set by the client
       allow write: if request.auth != null && request.auth.uid == userId
         && (
@@ -91,6 +101,18 @@ service cloud.firestore {
       }
     }
 
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+    match /announcements/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /coupons/{code} { allow read, write: if isAdmin(); }
+    match /payments/{id} { allow read, write: if isAdmin(); }
+    match /settings/{id} { allow read, write: if isAdmin(); }
     // Secure API keys (server-only write/read)
     match /apiKeys/{keyId} {
       allow read, write: if false;
