@@ -698,13 +698,27 @@ const BROKER_CATALOG_FILTERS = [
   { id: 'soon', label: 'Coming Soon' },
 ];
 
-const getBrokerLogoUrl = (domain) => (
-  domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=96` : ''
+// Broker logos are bundled with the app. Loading them from a third-party
+// favicon service can be blocked in production, leaving cards without icons.
+const LOCAL_BROKER_LOGO_FILES = {
+  octafx: 'octafx.svg',
+  thefundedtrader: 'thefundedtrader.svg',
+  ctrader: 'ctrader.svg',
+  custom_api: 'custom-api.svg',
+  custom: 'other-broker.svg',
+};
+
+const getBrokerLogoUrl = (preset) => (
+  LOCAL_BROKER_LOGO_FILES[preset.id]
+    ? `/broker-logos/${LOCAL_BROKER_LOGO_FILES[preset.id]}`
+    : preset.logoDomain
+      ? `/broker-logos/${preset.id}.png`
+      : ''
 );
 
 function BrokerLogo({ preset, className = 'w-10 h-10 rounded-2xl', imageClassName = 'w-6 h-6' }) {
   const [hasImageError, setHasImageError] = useState(false);
-  const logoUrl = !hasImageError ? getBrokerLogoUrl(preset.logoDomain) : '';
+  const logoUrl = !hasImageError ? getBrokerLogoUrl(preset) : '';
 
   return (
     <div className={`${className} border flex items-center justify-center shrink-0 overflow-hidden bg-white/80 dark:bg-white/5 ${preset.badgeBg}`}>
@@ -724,6 +738,12 @@ function BrokerLogo({ preset, className = 'w-10 h-10 rounded-2xl', imageClassNam
   );
 }
 
+function PlatformMark({ platform, className = 'h-4 w-4' }) {
+  const src = platform === 'mt5' ? '/mt5.svg' : '/mt4.svg';
+  const label = platform === 'mt5' ? 'MetaTrader 5' : 'MetaTrader 4';
+
+  return <img src={src} alt={label} className={`${className} object-contain`} width="96" height="96" loading="lazy" />;
+}
 function FieldError({ id, children }) {
   return (
     <div id={id} className="flex items-start gap-2 text-[11px] font-bold leading-relaxed text-red-500">
@@ -1262,7 +1282,8 @@ export default function EASetup() {
                 <div className="flex items-start gap-3 min-w-0">
                   <BrokerLogo preset={preset} />
                   <div className="space-y-1 min-w-0">
-                    <span className="text-[9px] font-black tracking-widest text-muted-foreground/80 uppercase block">
+                    <span className="flex items-center gap-1.5 text-[9px] font-black tracking-widest text-muted-foreground/80 uppercase">
+                      {!preset.comingSoon && <PlatformMark platform={preset.platform} className="h-3.5 w-3.5" />}
                       {platformLabel}
                     </span>
                     <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors leading-snug break-words">
@@ -1482,7 +1503,10 @@ export default function EASetup() {
                               selectedPlatform === platform ? 'bg-primary text-white shadow' : 'text-muted-foreground hover:text-foreground'
                             }`}
                           >
-                            {platform === 'mt5' ? 'MetaTrader 5' : 'MetaTrader 4'}
+                            <span className="flex items-center justify-center gap-2">
+                              <PlatformMark platform={platform} className="h-5 w-5" />
+                              {platform === 'mt5' ? 'MetaTrader 5' : 'MetaTrader 4'}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -1818,3 +1842,8 @@ export default function EASetup() {
     </div>
   );
 }
+
+
+
+
+
