@@ -6,7 +6,7 @@ service cloud.firestore {
       return signedIn() && (
         request.auth.token.admin == true ||
         request.auth.token.role == 'admin' ||
-        request.auth.uid == 'lvn2aJ3xSufChJ9E5ns6mwrrx5t2'
+        request.auth.uid == 'rbGsMM2A2EdhgKLKLf9y0dGJ7RY2'
       );
     }
     match /users/{userId} {
