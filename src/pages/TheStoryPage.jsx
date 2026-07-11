@@ -1,745 +1,553 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+﻿import { useLayoutEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
+  ArrowDown,
   ArrowRight,
-  ArrowUp,
-  BarChart3,
-  CheckCircle2,
+  Check,
   Code2,
-  Database,
-  Globe2,
-  Layers3,
+  Image,
   NotebookPen,
   PlugZap,
-  ShieldCheck,
-  Target,
-  TrendingUp,
 } from 'lucide-react';
 
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
+import './TheStoryPage.css';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
   ScrollTrigger.config({ ignoreMobileResize: true });
 }
 
-const HERO_PROOF = [
-  ['Founder', 'Developer + trader', 'Built from the same review pain the product now solves.'],
-  ['Focus', 'XAUUSD first', 'Gold trading workflows before broad market noise.'],
-  ['Ambition', 'Global SaaS', 'A review system made to serve millions of disciplined traders.'],
-];
-
-const ORIGIN_POINTS = [
+const STORY_SCENES = [
   {
-    icon: NotebookPen,
-    title: 'The record was scattered',
-    body: 'Broker history showed the execution. Screenshots held the context. Notes carried the psychology. The real lesson lived between them.',
+    number: '01',
+    label: '14:32 / The result',
+    title: 'The trade was profitable.',
+    body: 'It made +1.18R. I still could not tell whether it was a good trade.',
   },
   {
-    icon: Target,
-    title: 'Gold needed precision',
-    body: 'XAUUSD does not behave like a generic pair. Position sizing, contract value, volatility, and session rhythm deserve a product built around that reality.',
+    number: '02',
+    label: '22:47 / The review',
+    title: 'Profit answered the wrong question.',
+    body: 'The result said yes. The process said I entered before confirmation. Broker history could not hold both truths.',
   },
   {
-    icon: Layers3,
-    title: 'Review needed less friction',
-    body: 'The habit breaks when a trader has to rebuild the session manually. The product began as a way to protect the review habit.',
-  },
-];
-
-const FOUNDER_TIMELINE = [
-  ['01', 'Trade the problem', 'I was not looking for a startup idea. I was looking for a cleaner way to understand my own XAUUSD decisions after the market closed.'],
-  ['02', 'Build the workflow', 'The first principle was practical: capture the trade, keep the context, and make the next review faster than the last one.'],
-  ['03', 'Shape the company', 'Once the workflow kept proving useful, XAU Journal became a company mission: make serious trade review accessible as a focused SaaS product.'],
-];
-
-const PRODUCT_STEPS = [
-  {
-    key: 'Capture',
-    label: '01',
-    accent: '#06b6d4',
-    soft: 'rgba(6, 182, 212, 0.16)',
-    icon: PlugZap,
-    title: 'Capture the execution',
-    outcome: 'A clean record before memory starts editing the story.',
-    body: 'Closed MT4/MT5 trades can become structured entries with price, size, result, and instrument context preserved.',
-    rows: [['Input', 'MT4 / MT5 closed trades'], ['Preserve', 'price, size, P&L'], ['Result', 'less manual admin']],
-    image: '/story-capture-step.png',
+    number: '03',
+    label: 'The ritual',
+    title: 'Every review began by rebuilding the trade.',
+    body: 'History here. Screenshot there. Notes somewhere else. By the time the evidence met, memory had already edited it.',
   },
   {
-    key: 'Context',
-    label: '02',
-    accent: '#10b981',
-    soft: 'rgba(16, 185, 129, 0.16)',
-    icon: NotebookPen,
-    title: 'Attach the reason',
-    outcome: 'The trade becomes evidence, not just a number.',
-    body: 'Notes, screenshots, session labels, setup quality, and emotional state sit beside the trade they explain.',
-    rows: [['Explain', 'setup and session'], ['Remember', 'psychology and intent'], ['Connect', 'screenshots and notes']],
-    image: '/story-context-step.png',
+    number: '04',
+    label: 'The repeat',
+    title: 'Then the same lesson returned.',
+    body: 'A second profitable trade carried the same early entry. The review system was too fragile to make the lesson survive.',
   },
   {
-    key: 'Read',
-    label: '03',
-    accent: '#2563eb',
-    soft: 'rgba(37, 99, 235, 0.15)',
-    icon: BarChart3,
-    title: 'Read the pattern',
-    outcome: 'The journal shows where execution is improving or leaking.',
-    body: 'Calendar rhythm, drawdown, win rate, profit factor, session behavior, and repeat setups become easier to compare.',
-    rows: [['Metrics', 'win rate and profit factor'], ['Risk', 'drawdown and exposure'], ['Pattern', 'session edge']],
-    image: '/story-read-step.png',
+    number: '05',
+    label: 'The decision',
+    title: 'Software was not the idea.',
+    body: 'A repeatable review loop was: capture the facts, keep the reason, compare what repeats, and carry one rule forward.',
   },
   {
-    key: 'Scale',
-    label: '04',
-    accent: '#f59e0b',
-    soft: 'rgba(245, 158, 11, 0.18)',
-    icon: TrendingUp,
-    title: 'Scale the discipline',
-    outcome: 'A private workflow becomes a product for serious traders everywhere.',
-    body: 'The company builds infrastructure around the habit: secure accounts, cloud history, subscription access, and a roadmap filtered by real trading utility.',
-    rows: [['Product', 'SaaS review system'], ['Audience', 'millions of traders'], ['Promise', 'better decisions']],
-    image: '/story-scale-step.png',
+    number: '06',
+    label: 'The first build',
+    title: 'One nightly screen became the product.',
+    body: 'I built the smallest version I would use after a long session. When the loop held up, it became XAU Journal—a focused SaaS tool for serious review.',
+  },
+  {
+    number: '07',
+    label: 'The purpose',
+    title: 'Make the lesson survive tomorrow.',
+    body: 'The product exists to shorten the distance between a closed trade and an honest next decision.',
   },
 ];
 
-const SCALE_POINTS = [
-  {
-    icon: Globe2,
-    title: 'Built for a global desk',
-    body: 'A trader in Colombo, London, New York, or Dubai should be able to open the same clean review system and understand the last session.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Trust is part of the product',
-    body: 'Trading history is sensitive. The experience is designed to feel private, controlled, and serious from the first screen.',
-  },
-  {
-    icon: Database,
-    title: 'Data becomes memory',
-    body: 'The product stores the shape of a trader\'s process so the next decision is informed by evidence, not mood.',
-  },
+const REVIEW_JOBS = [
+  ['01', 'Capture', 'Execution without retyping it'],
+  ['02', 'Context', 'The reason beside the result'],
+  ['03', 'Compare', 'Patterns across real sessions'],
+  ['04', 'Carry', 'One rule into the next trade'],
 ];
 
-const PRINCIPLES = [
-  'Specialize deeply before expanding broadly.',
-  'Reduce the work around journaling so traders keep the habit.',
-  'Make analytics explain behavior, not decorate a dashboard.',
-  'Build every feature as the trader who has to trust it after a live session.',
-];
-
-const MARKET_BARS = [38, 52, 44, 67, 58, 74, 63, 82, 71, 88, 79, 94];
-
-const STYLES = `
-  html.lenis, html.lenis body { height: auto; }
-  .lenis.lenis-smooth { scroll-behavior: auto !important; }
-  .lenis.lenis-stopped { overflow: hidden; }
-  .story-page { --story-bg:#f8f6ef; --story-bg-2:#f0eadb; --story-surface:#fffdf7; --story-surface-2:#ffffff; --story-ink:#14120d; --story-muted:#655f51; --story-border:rgba(39,31,19,.12); --story-strong:rgba(39,31,19,.24); --story-accent:#0f9f8a; --story-teal:#0f9f8a; --story-copper:#b55337; --story-rust:#c98924; --story-shadow:0 28px 80px rgba(39,31,19,.14); min-height:100vh; position:relative; isolation:isolate; overflow-x:hidden; background:linear-gradient(125deg,color-mix(in srgb,var(--story-accent) 10%,transparent),transparent 24%),linear-gradient(220deg,color-mix(in srgb,var(--story-accent) 9%,transparent),transparent 30%),linear-gradient(180deg,var(--story-bg) 0%,color-mix(in srgb,var(--story-bg) 95%,var(--story-surface)) 54%,var(--story-bg) 100%); color:var(--story-ink); font-family:'Poppins','Inter',system-ui,sans-serif; overflow-x:clip; overflow-y:visible }
-  .story-page:before { content:''; position:fixed; inset:0; z-index:-2; pointer-events:none; background-image:linear-gradient(var(--story-border) 1px,transparent 1px),linear-gradient(90deg,var(--story-border) 1px,transparent 1px); background-size:88px 88px; mask-image:linear-gradient(to bottom,black 0%,transparent 84%) }
-  .story-page:after { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--story-bg) 70%,transparent) 72%,var(--story-bg) 100%) }
-  .dark .story-page { --story-bg:#050604; --story-bg-2:#0d0f0a; --story-surface:#0e120d; --story-surface-2:#0a0d09; --story-border:rgba(245,229,191,.12); --story-strong:rgba(245,229,191,.23); --story-ink:#f8f3e7; --story-muted:#b8ad99; --story-accent:#5eead4; --story-teal:#35db7a; --story-copper:#ff7a59; --story-rust:#f5b544; --story-shadow:0 32px 90px rgba(0,0,0,.48); }
-  .story-page .scroll-reveal-text { opacity:1 !important; transform:none !important; }
-  .story-page > section, .story-page > footer { position:relative; z-index:1; }
-  .story-progress { position:fixed; inset:0 auto auto 0; width:100%; height:3px; transform:scaleX(0); transform-origin:left; z-index:1000; background:linear-gradient(90deg,var(--story-rust),var(--story-copper),var(--story-teal),var(--story-accent)); }
-  .story-shell { width:min(1180px,calc(100% - 2rem)); margin:0 auto; }
-  .story-eyebrow { display:inline-flex; align-items:center; gap:.55rem; color:var(--story-accent); font-size:.78rem; font-weight:800; line-height:1.2; letter-spacing:0; text-transform:uppercase; }
-  .story-eyebrow::before { content:none; }
-  .story-gradient-word { display:inline-block; background:linear-gradient(90deg,#B08A5A 0%,#D49224 22%,#C95B3C 44%,#14B8A6 72%,#B08A5A 100%); background-size:220% 100%; background-repeat:repeat; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; text-decoration:none; animation:storyGradientText 8s linear infinite; }
-  .dark .story-gradient-word { background-image:linear-gradient(90deg,#D4A76A 0%,#F5B544 22%,#FF7A59 44%,#2DD4BF 72%,#D4A76A 100%); }
-  @keyframes storyGradientText { 0% { background-position:0% 50%; } 100% { background-position:220% 50%; } }
-  .story-title-xl { margin-top:1rem; color:var(--story-ink); font-size:clamp(1.8rem,4vw,2.8rem) !important; line-height:1.1 !important; font-weight:800 !important; letter-spacing:-0.02em !important; text-wrap:balance; }
-  .story-title-lg { margin-top:0.8rem; color:var(--story-ink); font-size:clamp(1.4rem,3vw,2.2rem) !important; line-height:1.15 !important; font-weight:800 !important; letter-spacing:-0.01em !important; text-wrap:balance; }
-  .story-title-md { color:var(--story-ink); font-size:clamp(1.1rem,2vw,1.4rem) !important; line-height:1.2 !important; font-weight:800 !important; letter-spacing:-0.01em !important; }
-  .story-lede { max-width:700px; margin:1.2rem auto 0; font-size:clamp(0.88rem,1.1vw,1.02rem); color:var(--story-muted); line-height:1.65; font-weight:500; }
-  .story-copy { max-width:640px; margin-top:0.8rem; font-size:clamp(0.82rem,1vw,0.92rem); color:var(--story-muted); line-height:1.6; font-weight:500; }
-  .story-hero { min-height:100dvh; display:grid; align-items:center; padding:clamp(7.5rem,10vw,10rem) 0 clamp(4rem,8vw,6rem); }
-  .story-hero-grid { display:grid; grid-template-columns:1fr; gap:clamp(2.25rem,5vw,4.75rem); align-items:center; justify-items:center; text-align:center; }
-  .story-hero-copy { max-width:min(980px,100%); margin:0 auto; display:grid; justify-items:center; text-align:center; }
-  .story-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.75rem; margin-top:2rem; }
-  .story-primary, .story-secondary { min-height:52px; display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:999px; padding:0 26px; font-size:15px; font-weight:780; letter-spacing:-.01em; text-decoration:none; transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease,color .2s ease; }
-  .story-primary { border:1px solid transparent; background:var(--story-ink); color:var(--story-surface); box-shadow:0 6px 24px rgba(0,0,0,.18); }
-  .story-secondary { border:1px solid var(--story-strong); background:color-mix(in srgb,var(--story-surface) 70%,transparent); color:var(--story-ink); box-shadow:0 2px 8px rgba(0,0,0,.06); }
-  .story-primary:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(0,0,0,.26); }
-  .story-secondary:hover { transform:translateY(-2px); background:color-mix(in srgb,var(--story-ink) 5%,color-mix(in srgb,var(--story-surface) 70%,transparent)); box-shadow:0 4px 16px rgba(0,0,0,.1); }
-  .story-primary:focus-visible, .story-secondary:focus-visible, .story-scroll-top:focus-visible { outline:2px solid var(--story-accent); outline-offset:4px; }
-  .story-proof { width:min(980px,100%); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-top:1px solid var(--story-border); border-bottom:1px solid var(--story-border); margin-top:3rem; text-align:left; }
-  .story-proof-item { padding:1.05rem 1.1rem 1.05rem 0; border-right:1px solid var(--story-border); }
-  .story-proof-item:nth-child(2) { padding-left:1.1rem; }
-  .story-proof-item:last-child { border-right:0; padding-right:0; padding-left:1.1rem; }
-  .story-proof-item span, .story-board-title span, .story-board-metric span { display:block; color:var(--story-muted); font-size:.7rem; font-weight:740; text-transform:uppercase; }
-  .story-proof-item strong, .story-board-metric strong { display:block; margin-top:.35rem; color:var(--story-ink); font-size:.92rem; line-height:1.25; }
-  .story-proof-item p { margin-top:.35rem; color:var(--story-muted); font-size:.78rem; line-height:1.5; }
-  .story-board, .story-founder-note, .story-product-panel { background:var(--story-surface) !important; border:1px solid var(--story-border) !important; border-radius:12px !important; box-shadow:var(--story-shadow) !important; }
-  .story-item, .story-scale-item { background:var(--story-surface) !important; border:1px solid var(--story-border) !important; border-radius:12px !important; }
-  .story-principle { border:none !important; background:transparent !important; box-shadow:none !important; }
-  .story-hero-stack { display:grid; gap:1rem; align-self:center; }
-  .story-board { width:min(980px,100%); margin:0 auto; overflow:hidden; text-align:left; }
-  .story-board-inner { will-change:transform; }
-  .story-board-header { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem; border-bottom:1px solid var(--story-border) !important; }
-  .story-board-brand { color:var(--story-ink); font-size:1.15rem; line-height:1; font-weight:850; }
-  .story-board-brand span { color:var(--story-accent); }
-  .story-board-status { display:inline-flex; align-items:center; gap:.45rem; color:var(--story-muted); font-size:.78rem; font-weight:760; }
-  .story-board-status::before { content:''; width:.52rem; height:.52rem; border-radius:999px; background:var(--story-teal); }
-  .story-board-body { padding:clamp(1rem,3vw,1.6rem); }
-  .story-board-title { display:grid; gap:.5rem; padding-bottom:1.15rem; border-bottom:none!important; }
-  .story-board-title strong { color:var(--story-ink); font-size:clamp(1.3rem,2.2vw,2rem); line-height:1.08; }
-  .story-board-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-bottom:none!important; }
-  .story-board-metric { padding:1rem .9rem 1rem 0; border-right:none!important; }
-  .story-board-metric + .story-board-metric { padding-left:.9rem; }
-  .story-board-metric:last-child { border-right:0; padding-right:0; }
-  .story-market { padding-top:1.2rem; }
-  .story-market-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; color:var(--story-muted); font-size:.82rem; font-weight:760; }
-  .story-market-bars { height:164px; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); align-items:end; gap:.52rem; margin-top:1rem; padding:1rem; border:none!important; background:transparent!important; }
-  .story-market-bar { min-height:18px; border-radius:3px 3px 0 0; background:var(--story-teal); opacity:.82; }
-  .story-market-bar:nth-child(3n + 1) { background:var(--story-accent); }
-  .story-market-bar:nth-child(4n) { background:var(--story-copper); }
-  .story-code-line { display:flex; align-items:center; gap:.6rem; margin-top:1rem; border-top:none!important; padding-top:1rem; color:var(--story-muted); font-family:'Roboto Mono',Consolas,monospace; font-size:.78rem; line-height:1.6; }
-  .story-section { padding:clamp(4.5rem,9vw,8rem) 0; }
-  .story-section-head { max-width:820px; margin:0 auto clamp(2rem,5vw,3.5rem); display:grid; justify-items:center; text-align:center; }
-  .story-section-head .story-copy { margin-left:auto; margin-right:auto; }
-  .story-split { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:clamp(1.2rem,4vw,3rem); align-items:start; }
-  .story-statement { border-top:none!important; padding-top:1.4rem; }
-  .story-statement blockquote { color:var(--story-ink); font-size:clamp(1.2rem,2.2vw,1.6rem); line-height:1.15; font-weight:800; text-wrap:balance; }
-  .story-statement p { margin-top:1.2rem; color:var(--story-muted); font-size:.84rem; line-height:1.65; font-weight:500; }
-  .story-list { display:grid; gap:1rem; }
-  .story-item, .story-scale-item { display:grid; grid-template-columns:auto 1fr; gap:1rem; padding:1.1rem; }
-  .story-icon { width:2.65rem; height:2.65rem; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--story-border); border-radius:8px; color:var(--story-accent); background:var(--story-surface-2); }
-  .story-item h3, .story-founder-note h3, .story-timeline-item h3, .story-scale-item h3 { color:var(--story-ink); font-size:.95rem !important; line-height:1.25 !important; font-weight:800 !important; letter-spacing:0 !important; }
-  .story-item p, .story-founder-note p, .story-timeline-item p, .story-scale-item p { margin-top:.45rem; color:var(--story-muted); font-size:.84rem; line-height:1.65; font-weight:500; }
-  .story-founder-note { position:sticky; top:7rem; padding:clamp(1.2rem,3vw,1.7rem); }
-  .story-founder-mark { width:4.35rem; height:4.35rem; display:grid; place-items:center; border:1px solid var(--story-strong); border-radius:8px; background:var(--story-ink); color:var(--story-surface); font-weight:850; font-size:1.25rem; }
-  .story-founder-note h3 { margin-top:1.2rem; font-size:clamp(1.1rem,1.8vw,1.4rem) !important; }
-  .story-founder-meta { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.2rem; }
-  .story-founder-meta span { border:none!important; padding:.45rem .6rem; color:var(--story-muted); font-size:.78rem; font-weight:760; }
-  .story-timeline-item { display:grid; grid-template-columns:4rem 1fr; gap:1rem; border-bottom:none!important; padding-bottom:1.25rem; }
-  .story-timeline-item:last-child { border-bottom:0; padding-bottom:0; }
-  .story-timeline-number { color:var(--story-accent); font-size:1.4rem; line-height:1; font-weight:850; }
-  .story-showcase { padding:clamp(5rem,10vw,9rem) 0; border:none!important; background:transparent!important; }
-  .story-showcase-stage { --stage-progress:0; --stage-shift:0px; --stage-accent:#0f766e; --stage-accent-soft:rgba(15,118,110,.16); min-height:min(78vh,760px); display:grid; grid-template-columns:minmax(0,.86fr) minmax(360px,1.14fr); gap:clamp(2rem,6vw,5rem); align-items:center; position:relative; }
-  .story-showcase-stage::before { content:''; position:absolute; left:0; right:0; top:0; height:1px; background:linear-gradient(90deg,var(--stage-accent),transparent); transform:scaleX(calc(.18 + (var(--stage-progress) * .82))); transform-origin:left; }
-  .story-stage-label { display:flex; align-items:center; gap:.75rem; color:var(--stage-accent); font-size:.9rem; font-weight:820; text-transform:uppercase; }
-  .story-stage-progress { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.4rem; margin-top:2rem; }
-  .story-stage-step { min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-bottom:2px solid var(--story-border); color:var(--story-muted); font-size:.75rem; font-weight:800; transition:color 220ms ease,border-color 220ms ease; }
-  .story-stage-step.is-active { color:var(--stage-accent); border-color:var(--stage-accent); }
-  .story-product-shell { transform:translateX(var(--stage-shift)); transition:transform 280ms ease; }
-  .story-product-panel { overflow:hidden; }
-  .story-product-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:64px; padding:1rem; border-bottom:1px solid var(--story-border) !important; background:var(--stage-accent-soft); }
-  .story-product-head span { color:var(--stage-accent); font-size:.84rem; font-weight:820; text-transform:uppercase; }
-  .story-product-head strong { color:var(--story-ink); font-size:1rem; }
-  .story-product-body { padding:clamp(1.1rem,3vw,1.6rem); }
-  .story-product-main { display:grid; grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr); gap:1.2rem; align-items:stretch; }
-  .story-product-visual-wrapper { position:relative; min-height:220px; display:flex; align-items:center; justify-content:center; border:1px solid var(--story-border); border-radius:8px; overflow:hidden; background:var(--stage-accent-soft); }
-  .story-product-img { width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.95); transition:transform 0.4s ease; }
-  .story-product-visual-wrapper:hover .story-product-img { transform:scale(1.03); }
-  .story-product-outcome { margin-top:.6rem; color:var(--stage-accent); font-size:.82rem; font-weight:820; }
-  .story-product-detail p:not(.story-product-outcome) { margin-top:.9rem; color:var(--story-muted); font-size:.82rem; line-height:1.65; font-weight:500; }
-  .story-product-rows { display:grid; gap:.55rem; margin-top:1.1rem; }
-  .story-product-row { display:grid; grid-template-columns:.8fr 1.2fr; gap:.75rem; border-top:none!important; padding-top:.65rem; }
-  .story-product-row span { color:var(--story-muted); font-size:.72rem; font-weight:760; }
-  .story-product-row strong { color:var(--story-ink); font-size:.82rem; font-weight:820; }
-  .story-scale-lead { border-top:none!important; padding-top:1.4rem; }
-  .story-principle { display:grid; grid-template-columns:auto 1fr; gap:.85rem; padding:1rem; color:var(--story-muted); font-size:.88rem; line-height:1.6; font-weight:650; border:none!important; background:transparent!important; box-shadow:none!important; }
-  .story-principle svg { color:var(--story-teal); margin-top:.18rem; }
-  .story-final { padding:clamp(5rem,9vw,8rem) 0; }
-  .story-final-inner { display:grid; grid-template-columns:1fr; gap:2rem; justify-items:center; text-align:center; border-top:none!important; padding-top:clamp(1.5rem,4vw,2.5rem); }
-  .story-final-inner .story-copy { margin-left:auto; margin-right:auto; }
-  .story-scroll-top { position:fixed; right:1.25rem; bottom:1.25rem; z-index:90; width:46px; height:46px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--story-strong); border-radius:8px; background:var(--story-surface); color:var(--story-ink); box-shadow:var(--story-shadow); cursor:pointer; transition:transform 220ms ease,opacity 220ms ease; }
-  .story-reveal { will-change:transform,opacity; }
-  @media (max-width:1023px) { .story-hero { min-height:auto; padding-top:7rem; } .story-hero-grid, .story-split, .story-showcase-stage, .story-final-inner { grid-template-columns:1fr; } .story-founder-note { position:relative; top:auto; } .story-showcase-stage { min-height:auto; gap:2rem; } .story-product-shell { transform:none !important; } }
-  @media (max-width:720px) { .story-shell { width:min(100% - 1.25rem,1180px); } .story-title-xl { font-size:clamp(1.8rem,9vw,2.65rem) !important; } .story-actions { flex-direction:column; } .story-primary, .story-secondary { width:100%; } .story-proof, .story-board-metrics, .story-product-main { grid-template-columns:1fr; } .story-proof-item, .story-proof-item:nth-child(2), .story-proof-item:last-child, .story-board-metric, .story-board-metric + .story-board-metric, .story-board-metric:last-child { padding-left:0; padding-right:0; border-right:0; } .story-proof-item, .story-board-metric { border-bottom:none!important; } .story-proof-item:last-child, .story-board-metric:last-child { border-bottom:0; } .story-board-header { align-items:flex-start; flex-direction:column; } .story-item, .story-scale-item { grid-template-columns:1fr; } .story-timeline-item { grid-template-columns:1fr; gap:.45rem; } .story-stage-progress { grid-template-columns:repeat(2,minmax(0,1fr)); } .story-product-visual-wrapper { min-height:150px; } .story-product-row { grid-template-columns:1fr; gap:.25rem; } .story-market-bars { height:132px; gap:.35rem; padding:.8rem; } }
-  @media (prefers-reduced-motion:reduce) { .story-reveal, .story-board-inner, .story-product-shell { opacity:1 !important; transform:none !important; } .story-primary, .story-secondary, .story-stage-step, .story-scroll-top { transition-duration:.01ms !important; } }
-`;
-
-function StoryButton({ to, children, variant = 'primary' }) {
-  const className = variant === 'primary' ? 'story-primary' : 'story-secondary';
-
-  if (to.startsWith('#')) {
-    return <a href={to} className={className}>{children}</a>;
-  }
-
-  return <Link to={to} className={className}>{children}</Link>;
-}
-
-function Highlight({ children }) {
-  return <span className='story-gradient-word'>{children}</span>;
-}
-
-function SectionHeading({ eyebrow, title, children }) {
+function MarketTrace({ quiet = false }) {
   return (
-    <div className='story-section-head story-reveal'>
-      <span className='story-eyebrow'>{eyebrow}</span>
-      <h2 className='story-title-lg'>{title}</h2>
-      {children ? <p className='story-copy'>{children}</p> : null}
+    <svg className={'xjs-trace' + (quiet ? ' is-quiet' : '')} viewBox="0 0 560 190" role="img" aria-label="A simplified XAUUSD market trace">
+      <g className="xjs-chart-grid">
+        <path d="M0 38H560M0 76H560M0 114H560M0 152H560" />
+        <path d="M70 0V190M140 0V190M210 0V190M280 0V190M350 0V190M420 0V190M490 0V190" />
+      </g>
+      <path className="xjs-trace-line" d="M0 145 C28 142 32 126 58 130 S91 153 118 123 S153 92 179 102 S212 132 242 105 S276 59 305 69 S337 95 365 71 S397 27 426 38 S456 74 483 48 S523 13 560 28" />
+      <circle className="xjs-trace-point is-entry" cx="305" cy="69" r="5" />
+      <circle className="xjs-trace-point is-exit" cx="560" cy="28" r="5" />
+    </svg>
+  );
+}
+
+function TradeTicket({ annotated = false, repeat = false }) {
+  return (
+    <div className={'xjs-trade-ticket' + (repeat ? ' is-repeat' : '')}>
+      <div className="xjs-ticket-head">
+        <div>
+          <span>{repeat ? '21 May / 15:08' : '14 May / 14:32'}</span>
+          <strong>XAUUSD</strong>
+        </div>
+        <span className="xjs-ticket-status">Closed</span>
+      </div>
+      <MarketTrace quiet={repeat} />
+      <div className="xjs-ticket-data">
+        <div><span>Result</span><strong className="is-positive">{repeat ? '+0.74R' : '+1.18R'}</strong></div>
+        <div><span>Setup</span><strong>Retest</strong></div>
+        <div><span>Session</span><strong>London</strong></div>
+      </div>
+      <div className="xjs-ticket-why">
+        <span>Why this trade?</span>
+        <strong>{annotated || repeat ? 'Entered before confirmation' : 'Not recorded'}</strong>
+      </div>
+      {(annotated || repeat) && <div className="xjs-ticket-mark">Same process leak</div>}
     </div>
   );
 }
 
-function MissionBoard() {
+function EvidencePieces({ mobile = false }) {
   return (
-    <div className='story-board story-reveal' aria-label='XAU Journal product mission board'>
-      <div className='story-board-inner'>
-        <div className='story-board-header'>
-          <span className='story-board-brand' aria-label='XAU Journal'>Xau Journal<span>.</span></span>
-          <span className='story-board-status'>Founder build active</span>
-        </div>
-
-        <div className='story-board-body'>
-          <div className='story-board-title'>
-            <span>Company note</span>
-            <strong>From one trader's review problem to a SaaS product for serious traders.</strong>
-          </div>
-
-          <div className='story-board-metrics'>
-            <div className='story-board-metric'><span>Instrument</span><strong>XAUUSD</strong></div>
-            <div className='story-board-metric'><span>Workflow</span><strong>Sync + review</strong></div>
-            <div className='story-board-metric'><span>Built by</span><strong>Gaveen Perera</strong></div>
-          </div>
-
-          <div className='story-market'>
-            <div className='story-market-head'><span>Review signal</span><span>session by session</span></div>
-            <div className='story-market-bars' aria-hidden='true'>
-              {MARKET_BARS.map((height, index) => (
-                <span className='story-market-bar' style={{ height: `${height}%` }} key={`${height}-${index}`} />
-              ))}
-            </div>
-          </div>
-
-          <div className='story-code-line'>
-            <Code2 size={16} />
-            <span>mission = capture execution + preserve context + improve the next decision</span>
-          </div>
-        </div>
+    <div className={'xjs-evidence-pieces' + (mobile ? ' is-mobile' : '')}>
+      <div className="xjs-piece xjs-piece-history">
+        <span>Broker history</span>
+        <strong>+ $218.40</strong>
+        <small>Reason: —</small>
+      </div>
+      <div className="xjs-piece xjs-piece-chart">
+        <span>Screenshot_1432</span>
+        <MarketTrace quiet />
+      </div>
+      <div className="xjs-piece xjs-piece-note">
+        <NotebookPen aria-hidden="true" />
+        <span>Desk note</span>
+        <p>Waited for the retest.<br />Entered too early?</p>
+      </div>
+      <div className="xjs-piece xjs-piece-sheet">
+        <span>Review.xlsx</span>
+        <div><i /> Date</div>
+        <div><i /> Result</div>
+        <div><i /> Setup</div>
+        <div className="is-empty"><i /> Lesson</div>
       </div>
     </div>
   );
 }
-export default function TheStoryPage() {
-  const stageRef = useRef(null);
-  const cardRef = useRef(null);
-  const lenisRef = useRef(null);
-  const activeProductRef = useRef(0);
-  const [activeProduct, setActiveProduct] = useState(0);
 
-  useEffect(() => {
-    const card = cardRef.current;
-    if (card) {
-      gsap.fromTo(card, { autoAlpha: 0.58, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out' });
-    }
-  }, [activeProduct]);
+function ReviewBlueprint({ mobile = false }) {
+  return (
+    <div className={'xjs-blueprint' + (mobile ? ' is-mobile' : '')}>
+      <div className="xjs-blueprint-core">
+        <Code2 aria-hidden="true" />
+        <span>The review loop</span>
+      </div>
+      {REVIEW_JOBS.map(([number, title, detail]) => (
+        <div className="xjs-build-node" key={title}>
+          <span>{number}</span>
+          <div><strong>{title}</strong><small>{detail}</small></div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-  const handleStepClick = (index) => {
-    setActiveProduct(index);
-    activeProductRef.current = index;
+function ProductWindow({ final = false }) {
+  return (
+    <div className={'xjs-product-window' + (final ? ' is-final' : '')}>
+      <div className="xjs-product-bar">
+        <strong>Xau Journal.</strong>
+        <div><span /> <span /> <span /></div>
+        <small>Private workspace</small>
+      </div>
+      <div className="xjs-product-body">
+        <aside>
+          <span className="is-active">J</span>
+          <span>A</span>
+          <span>H</span>
+        </aside>
+        <div className="xjs-product-main">
+          <div className="xjs-product-heading">
+            <div><span>Trade review / #042</span><strong>XAUUSD · London</strong></div>
+            <span className="xjs-reviewed"><Check aria-hidden="true" /> Reviewed</span>
+          </div>
+          <div className="xjs-product-trade">
+            <div className="xjs-product-chart"><MarketTrace /></div>
+            <div className="xjs-product-context">
+              <span>Context preserved</span>
+              <p>Retest setup. Entry taken before the confirmation candle closed.</p>
+              <div><Image aria-hidden="true" /> Screenshot attached</div>
+            </div>
+          </div>
+          <div className="xjs-product-rule">
+            <span>Rule for the next session</span>
+            <strong>Wait for the close. No exceptions.</strong>
+          </div>
+          <div className="xjs-product-sync"><PlugZap aria-hidden="true" /> MT4 / MT5 capture removes the admin—not the thinking.</div>
+        </div>
+      </div>
+      <div className="xjs-final-brief">
+        <span>Next session brief</span>
+        <strong>The result is stored.<br />The lesson is ready.</strong>
+        <p>Review complete / London session</p>
+      </div>
+    </div>
+  );
+}
 
-    const trigger = ScrollTrigger.getById('story-showcase-trigger');
-    if (trigger) {
-      const start = trigger.start;
-      const end = trigger.end;
-      const progress = index / (PRODUCT_STEPS.length - 1);
-      const scrollPos = start + (end - start) * progress;
-      if (lenisRef.current) {
-        lenisRef.current.scrollTo(scrollPos);
-      } else {
-        window.scrollTo({ top: scrollPos, behavior: 'smooth' });
-      }
-    }
-  };
+function DesktopWorkbench() {
+  return (
+    <div className="xjs-bench-canvas" aria-hidden="true">
+      <div className="xjs-bench-grid" />
+      <svg className="xjs-evidence-thread" viewBox="0 0 760 600" preserveAspectRatio="none">
+        <path pathLength="1" d="M92 292 C180 84 315 92 363 218 C410 342 520 480 668 304" />
+      </svg>
+      <span className="xjs-thread-head" />
 
+      <div className="xjs-primary-ticket"><TradeTicket /></div>
+      <div className="xjs-process-callout">
+        <span>Result</span><strong>Profitable</strong>
+        <i />
+        <span>Process</span><strong>Entered early</strong>
+      </div>
+
+      <div className="xjs-desktop-pieces"><EvidencePieces /></div>
+      <div className="xjs-repeat-ticket"><TradeTicket annotated repeat /></div>
+      <div className="xjs-repeat-caption">One week later.<br />The same lesson.</div>
+
+      <div className="xjs-desktop-blueprint"><ReviewBlueprint /></div>
+      <div className="xjs-desktop-product"><ProductWindow /></div>
+    </div>
+  );
+}
+
+function MobileArtifact({ index }) {
+  if (index === 0) return <TradeTicket />;
+  if (index === 1) return <TradeTicket annotated />;
+  if (index === 2) return <EvidencePieces mobile />;
+  if (index === 3) {
+    return (
+      <div className="xjs-mobile-repeat">
+        <TradeTicket annotated />
+        <TradeTicket annotated repeat />
+      </div>
+    );
+  }
+  if (index === 4) return <ReviewBlueprint mobile />;
+  if (index === 5) return <ProductWindow />;
+  return <ProductWindow final />;
+}
+
+function useStoryMotion(pageRef, storyRef, pinRef) {
   useLayoutEffect(() => {
+    const root = pageRef.current;
+    const story = storyRef.current;
+    const pin = pinRef.current;
+    if (!root || !story || !pin || typeof window === 'undefined') return undefined;
+
+    window.scrollTo(0, 0);
+
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let tickerCallback = null;
-    let refreshTimer = null;
+    let cancelled = false;
+    let context;
+    let media;
+    let firstFrame = 0;
+    let secondFrame = 0;
+    let settleTimer = 0;
+    let viewportTimer = 0;
 
-    if (!reducedMotion) {
-      lenisRef.current = new Lenis({ lerp: 0.075, smoothWheel: true });
-      lenisRef.current.on('scroll', ScrollTrigger.update);
+    const refresh = () => {
+      if (!cancelled) ScrollTrigger.refresh();
+    };
 
-      tickerCallback = (time) => {
-        if (lenisRef.current) lenisRef.current.raf(time * 1000);
-      };
-      gsap.ticker.add(tickerCallback);
-      gsap.ticker.lagSmoothing(0);
-    }
+    const scheduleRefresh = () => {
+      if (cancelled) return;
+      window.clearTimeout(viewportTimer);
+      viewportTimer = window.setTimeout(refresh, 140);
+    };
 
-    const ctx = gsap.context(() => {
-      gsap.to('.story-progress', {
-        scaleX: 1,
-        ease: 'none',
-        scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 0.2 },
-      });
+    const init = () => {
+      if (cancelled) return;
 
-      if (!reducedMotion) {
-        gsap.utils.toArray('.story-reveal').forEach((element) => {
-          gsap.fromTo(
-            element,
-            { y: 34, autoAlpha: 0 },
-            {
-              y: 0,
-              autoAlpha: 1,
-              duration: 0.82,
-              ease: 'power3.out',
-              scrollTrigger: { trigger: element, start: 'top 84%', once: true },
+      context = gsap.context(() => {
+        const heroItems = gsap.utils.toArray('[data-story-intro]', root);
+
+        if (!reducedMotion) {
+          gsap.from(heroItems, {
+            autoAlpha: 0,
+            y: 26,
+            duration: 0.72,
+            stagger: 0.08,
+            ease: 'power3.out',
+          });
+
+          gsap.to(root.querySelector('.xjs-opening-time'), {
+            yPercent: 16,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: root.querySelector('.xjs-opening'),
+              start: 'top top',
+              end: 'bottom top',
+              scrub: 0.5,
             },
-          );
-        });
+          });
+        }
 
-        gsap.to('.story-board-inner', {
-          yPercent: -3,
-          ease: 'none',
-          scrollTrigger: { trigger: '.story-hero', start: 'top top', end: 'bottom top', scrub: true },
-        });
+        media = gsap.matchMedia();
+        media.add('(min-width: 900px)', () => {
+          if (reducedMotion) return undefined;
 
-        const stage = stageRef.current;
-        const card = cardRef.current;
+          const captions = gsap.utils.toArray('[data-story-caption]', root);
+          const markers = gsap.utils.toArray('[data-story-marker]', root);
+          const pieces = gsap.utils.toArray('.xjs-piece', root);
+          const nodes = gsap.utils.toArray('.xjs-build-node', root);
+          const thread = root.querySelector('.xjs-evidence-thread path');
+          const threadHead = root.querySelector('.xjs-thread-head');
+          const ticket = root.querySelector('.xjs-primary-ticket');
+          const callout = root.querySelector('.xjs-process-callout');
+          const repeatTicket = root.querySelector('.xjs-repeat-ticket');
+          const repeatCaption = root.querySelector('.xjs-repeat-caption');
+          const blueprint = root.querySelector('.xjs-desktop-blueprint');
+          const blueprintCore = root.querySelector('.xjs-blueprint-core');
+          const product = root.querySelector('.xjs-desktop-product');
+          const productWindow = product?.querySelector('.xjs-product-window');
+          const productBody = product?.querySelector('.xjs-product-body');
+          const finalBrief = product?.querySelector('.xjs-final-brief');
+          const trackFill = root.querySelector('.xjs-story-track-fill');
 
-        const mm = gsap.matchMedia();
-        mm.add({
-          isDesktop: '(min-width: 900px)',
-          isMobile: '(max-width: 899px)'
-        }, (context) => {
-          const { isDesktop } = context.conditions;
+          if (!captions.length || !ticket || !productWindow || !thread) return undefined;
 
-          if (stage) {
-            ScrollTrigger.create({
-              id: 'story-showcase-trigger',
-              trigger: '.story-showcase-pin-wrapper',
-              start: isDesktop ? 'top 96px' : 'top 72%',
-              end: isDesktop ? () => `+=${window.innerHeight * 2}` : 'bottom 28%',
-              pin: isDesktop ? '.story-showcase-pin-wrapper' : false,
-              scrub: 0.7,
+          gsap.set(captions, { autoAlpha: 0, y: 28, pointerEvents: 'none' });
+          gsap.set(captions[0], { autoAlpha: 1, y: 0, pointerEvents: 'auto' });
+          gsap.set(markers, { opacity: 0.28 });
+          gsap.set(markers[0], { opacity: 1 });
+          gsap.set(callout, { autoAlpha: 0, y: 18 });
+          gsap.set(pieces, { autoAlpha: 0, y: 28, scale: 0.9 });
+          gsap.set([repeatTicket, repeatCaption], { autoAlpha: 0, y: 22 });
+          gsap.set(blueprint, { autoAlpha: 0, scale: 0.92 });
+          gsap.set([blueprintCore, ...nodes], { autoAlpha: 0, scale: 0.82 });
+          gsap.set(thread, { strokeDashoffset: 1 });
+          gsap.set(threadHead, { autoAlpha: 0, x: 80, y: 275 });
+          gsap.set(product, { autoAlpha: 0, y: 34, scale: 0.9 });
+          gsap.set(finalBrief, { autoAlpha: 0, y: 24 });
+          gsap.set(trackFill, { scaleX: 0 });
+
+          const timeline = gsap.timeline({
+            defaults: { ease: 'power2.inOut' },
+            scrollTrigger: {
+              trigger: story,
+              start: 'top top',
+              end: () => '+=' + Math.max(window.innerHeight * (captions.length - 1) * 0.94, 3600),
+              scrub: 0.72,
+              pin,
+              pinSpacing: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
-              onUpdate: (self) => {
-                if (!isDesktop) return;
-                const rawStep = self.progress * (PRODUCT_STEPS.length - 1);
-                const nextStep = Math.min(PRODUCT_STEPS.length - 1, Math.round(rawStep));
-                const next = PRODUCT_STEPS[nextStep];
+            },
+          });
 
-                stage.style.setProperty('--stage-progress', self.progress.toFixed(3));
-                stage.style.setProperty('--stage-shift', `${gsap.utils.interpolate(-18, 18, self.progress)}px`);
-                stage.style.setProperty('--stage-accent', next.accent);
-                stage.style.setProperty('--stage-accent-soft', next.soft);
+          const showCaption = (index, at) => {
+            timeline
+              .to(captions[index - 1], { autoAlpha: 0, y: -20, pointerEvents: 'none', duration: 0.12 }, at)
+              .to(markers[index - 1], { opacity: 0.28, duration: 0.08 }, at)
+              .to(captions[index], { autoAlpha: 1, y: 0, pointerEvents: 'auto', duration: 0.16, ease: 'power3.out' }, at + 0.14)
+              .to(markers[index], { opacity: 1, duration: 0.1 }, at + 0.14);
+          };
 
-                if (activeProductRef.current !== nextStep) {
-                  activeProductRef.current = nextStep;
-                  setActiveProduct(nextStep);
-                }
-              },
-            });
-          }
+          timeline.to(trackFill, { scaleX: 1, duration: 6.4, ease: 'none' }, 0);
+
+          showCaption(1, 0.78);
+          timeline
+            .to(callout, { autoAlpha: 1, y: 0, duration: 0.24 }, 0.92)
+            .to(ticket, { scale: 0.96, duration: 0.35 }, 0.9);
+
+          showCaption(2, 1.72);
+          timeline
+            .to(ticket, { x: -188, y: 125, scale: 0.58, rotation: -4, opacity: 0.45, duration: 0.42 }, 1.86)
+            .to(callout, { autoAlpha: 0, y: -18, duration: 0.16 }, 1.78)
+            .to(pieces, { autoAlpha: 1, y: 0, scale: 1, duration: 0.34, stagger: 0.04 }, 1.94);
+
+          showCaption(3, 2.68);
+          timeline
+            .to(repeatTicket, { autoAlpha: 1, y: 0, rotation: 3, duration: 0.32 }, 2.83)
+            .to(repeatCaption, { autoAlpha: 1, y: 0, duration: 0.24 }, 2.96)
+            .to(pieces, { opacity: 0.62, duration: 0.22 }, 2.9);
+
+          showCaption(4, 3.64);
+          timeline
+            .to([repeatTicket, repeatCaption, ticket], { autoAlpha: 0, duration: 0.18 }, 3.7)
+            .to(pieces, { opacity: 0.26, scale: 0.92, duration: 0.28 }, 3.74)
+            .to(blueprint, { autoAlpha: 1, scale: 1, duration: 0.32 }, 3.82)
+            .to(thread, { strokeDashoffset: 0, duration: 0.7, ease: 'none' }, 3.78)
+            .to(threadHead, { autoAlpha: 1, duration: 0.08 }, 3.8)
+            .to(threadHead, { x: 344, y: 198, duration: 0.24 }, 3.86)
+            .to(threadHead, { x: 502, y: 416, duration: 0.24 }, 4.1)
+            .to(threadHead, { x: 650, y: 284, duration: 0.22 }, 4.34)
+            .to([blueprintCore, ...nodes], { autoAlpha: 1, scale: 1, duration: 0.28, stagger: 0.05 }, 3.94);
+
+          showCaption(5, 4.74);
+          timeline
+            .to([blueprint, threadHead], { autoAlpha: 0, scale: 0.9, duration: 0.24 }, 4.84)
+            .to(thread, { opacity: 0.18, duration: 0.2 }, 4.82)
+            .to(pieces, { autoAlpha: 0, scale: 0.78, duration: 0.24, stagger: 0.02 }, 4.84)
+            .to(product, { autoAlpha: 1, y: 0, scale: 1, duration: 0.42, ease: 'power3.out' }, 4.96);
+
+          showCaption(6, 5.72);
+          timeline
+            .to(productBody, { opacity: 0.16, scale: 0.985, duration: 0.26 }, 5.84)
+            .to(finalBrief, { autoAlpha: 1, y: 0, duration: 0.34, ease: 'power3.out' }, 5.96)
+            .to(productWindow, { scale: 0.97, duration: 0.34 }, 5.9);
+
+          return () => {
+            timeline.scrollTrigger?.kill();
+            timeline.kill();
+          };
         });
-      }
-    });
-    ScrollTrigger.refresh();
+      }, root);
 
-    // Recalculate ScrollTrigger once fonts/images are fully loaded to resolve layout shift jumps
-    const handleLoad = () => ScrollTrigger.refresh();
-    window.addEventListener('load', handleLoad);
-    refreshTimer = setTimeout(() => {
-      ScrollTrigger.refresh();
-    }, 1200);
+      root.dataset.motionReady = 'true';
+      ScrollTrigger.sort();
+      refresh();
+      settleTimer = window.setTimeout(refresh, 420);
+    };
+
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(init);
+    });
+
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(scheduleRefresh).catch(() => undefined);
+    }
+
+    const onLoad = () => scheduleRefresh();
+    if (document.readyState === 'complete') {
+      scheduleRefresh();
+    } else {
+      window.addEventListener('load', onLoad, { once: true });
+    }
+
+    window.visualViewport?.addEventListener('resize', scheduleRefresh);
 
     return () => {
-      if (tickerCallback) gsap.ticker.remove(tickerCallback);
-      if (lenisRef.current) {
-        lenisRef.current.destroy();
-        lenisRef.current = null;
-      }
-      window.removeEventListener('load', handleLoad);
-      if (refreshTimer) clearTimeout(refreshTimer);
-      ctx.revert();
+      cancelled = true;
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(viewportTimer);
+      window.removeEventListener('load', onLoad);
+      window.visualViewport?.removeEventListener('resize', scheduleRefresh);
+      media?.revert();
+      context?.revert();
+      delete root.dataset.motionReady;
     };
-  }, []);
+  }, [pageRef, storyRef, pinRef]);
+}
 
-  const activeStep = PRODUCT_STEPS[activeProduct];
-  const ActiveIcon = activeStep.icon;
+export default function TheStoryPage() {
+  const pageRef = useRef(null);
+  const storyRef = useRef(null);
+  const pinRef = useRef(null);
+
+  useStoryMotion(pageRef, storyRef, pinRef);
 
   return (
-    <>
+    <div ref={pageRef} className="xjs-page" data-ux-skip="true">
       <PublicNavbar />
-      <main className='story-page'>
-        <style>{STYLES}</style>
-        <div className='story-progress' />
 
-        <section className='story-hero'>
-          <div className='story-shell story-hero-grid'>
-            <div className='story-hero-copy'>
-              <span className='story-eyebrow story-reveal'>The Story</span>
-              <h1 className='story-title-xl story-reveal'>A trading journal built from the <Highlight>desk it serves.</Highlight></h1>
-              <p className='story-lede story-reveal'>
-                I am Gaveen Perera, a developer and gold trader. XAU Journal began with a personal problem:
-                every session produced data, screenshots, notes, emotions, and lessons, but no clean system to
-                connect them. The company exists to turn that review discipline into a SaaS product for millions
-                of traders.
-              </p>
-              <div className='story-actions story-reveal'>
-                <StoryButton to='/signup'>Start journaling <ArrowRight size={17} /></StoryButton>
-                <StoryButton to='#product-showcase' variant='secondary'>See the creation</StoryButton>
-              </div>
+      <main className="story-page" data-ux-skip="true">
+        <section className="xjs-opening" aria-labelledby="story-heading">
+          <div className="xjs-shell xjs-opening-grid">
+            <div className="xjs-opening-copy">
+              <p className="xjs-kicker" data-story-intro><span>00</span> The origin / one trade</p>
+              <h1 id="story-heading" data-story-intro>The trade was profitable.<br />The lesson nearly disappeared.</h1>
+              <p className="xjs-opening-lede" data-story-intro>This is how a failed review ritual became XAU Journal.</p>
+            </div>
+            <div className="xjs-opening-time" data-story-intro aria-hidden="true">
+              <span>Closed</span>
+              <strong>14:32</strong>
+              <small>XAUUSD / +1.18R</small>
+            </div>
+            <div className="xjs-scroll-cue" data-story-intro aria-hidden="true"><ArrowDown /> Follow the evidence</div>
+          </div>
+        </section>
 
-              <div className='story-proof story-reveal' aria-label='Story highlights'>
-                {HERO_PROOF.map(([label, value, detail]) => (
-                  <div className='story-proof-item' key={label}>
-                    <span>{label}</span>
-                    <strong>{value}</strong>
-                    <p>{detail}</p>
-                  </div>
+        <section ref={storyRef} className="xjs-workbench" aria-label="How one trade became XAU Journal">
+          <div ref={pinRef} className="xjs-workbench-pin">
+            <div className="xjs-casebar">
+              <span>Case 001</span>
+              <strong>One trade → one product</strong>
+              <span>XAUUSD / London</span>
+            </div>
+
+            <div className="xjs-shell xjs-workbench-grid">
+              <div className="xjs-caption-stage">
+                {STORY_SCENES.map((scene) => (
+                  <article className="xjs-caption" data-story-caption key={scene.number}>
+                    <p className="xjs-kicker"><span>{scene.number}</span> {scene.label}</p>
+                    <h2>{scene.title}</h2>
+                    <p>{scene.body}</p>
+                  </article>
                 ))}
               </div>
+              <DesktopWorkbench />
             </div>
 
-            <MissionBoard />
-          </div>
-        </section>
-
-        <section className='story-section'>
-          <div className='story-shell'>
-            <SectionHeading eyebrow='Origin' title={<>The company began with a <Highlight>workflow failure.</Highlight></>}>
-              Good traders do not need more noise after the closing bell. They need a clear record of what
-              happened, why it happened, and what must change before the next session.
-            </SectionHeading>
-
-            <div className='story-split'>
-              <article className='story-statement story-reveal'>
-                <blockquote>When review takes longer than the session, the habit breaks.</blockquote>
-                <p>
-                  XAU Journal was created to protect that habit. It connects execution, context, and analysis
-                  so the trader can spend less time rebuilding the past and more time improving the next trade.
-                </p>
-                <div className='story-image-card mt-6 border border-border/20 rounded-xl overflow-hidden shadow-md bg-background/30 backdrop-blur-sm'>
-                  <img src='/story-candle-code.png' alt='Candlestick chart and trade logs analysis code' className='w-full object-cover max-h-[220px] filter brightness-95 contrast-105' />
-                  <div className='p-3.5 bg-background/50 border-t border-border/10 text-[11px] text-muted-foreground flex items-center justify-between'>
-                    <span>Chart & Execution Sync</span>
-                    <span className='font-mono opacity-60'>XAUUSD Daily</span>
-                  </div>
-                </div>
-              </article>
-
-              <div className='story-list'>
-                {ORIGIN_POINTS.map((point) => {
-                  const Icon = point.icon;
-
-                  return (
-                    <article className='story-item story-reveal' key={point.title}>
-                      <span className='story-icon'><Icon size={20} /></span>
-                      <div>
-                        <h3>{point.title}</h3>
-                        <p>{point.body}</p>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className='story-section'>
-          <div className='story-shell story-split'>
-            <aside className='story-founder-note story-reveal'>
-              <div className='story-founder-mark'>G.P</div>
-              <h3>Built by the <Highlight>trader</Highlight> using it.</h3>
-              <p>
-                That is the constraint behind the product. I write the code, but I also have to trust the result
-                after real trades. The page is the company story, and the company story is product discipline.
-              </p>
-              <div className='story-founder-meta' aria-label='Founder roles'>
-                <span>Developer</span>
-                <span>XAUUSD trader</span>
-                <span>Product owner</span>
-              </div>
-              <div className='story-image-card mt-6 border border-border/20 rounded-xl overflow-hidden shadow-md bg-background/30 backdrop-blur-sm'>
-                <img src='/story-trader-builder.png' alt='Gaveen Perera developer workspace' className='w-full object-cover max-h-[180px] filter brightness-95' />
-              </div>
-            </aside>
-
-            <div className='story-list'>
-              {FOUNDER_TIMELINE.map(([number, title, body]) => (
-                <article className='story-timeline-item story-reveal' key={title}>
-                  <span className='story-timeline-number'>{number}</span>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{body}</p>
-                  </div>
-                </article>
+            <div className="xjs-story-track" aria-hidden="true">
+              <div className="xjs-story-track-line"><span className="xjs-story-track-fill" /></div>
+              {STORY_SCENES.map((scene) => (
+                <span data-story-marker key={scene.number}>{scene.number}</span>
               ))}
             </div>
           </div>
         </section>
-        <section className='story-showcase' id='product-showcase'>
-          <div className='story-shell'>
-            <SectionHeading eyebrow='Creation' title={<>How a private workflow became a <Highlight>product.</Highlight></>}>
-              The scroll below follows the product logic: capture the trade, attach the reason, read the
-              pattern, then scale the discipline through software.
-            </SectionHeading>
 
-            <div className='story-showcase-pin-wrapper w-full'>
-              <div
-                className='story-showcase-stage'
-                ref={stageRef}
-                style={{
-                  '--stage-accent': activeStep.accent,
-                  '--stage-accent-soft': activeStep.soft,
-                  '--stage-progress': activeProduct / (PRODUCT_STEPS.length - 1)
-                }}
-              >
+        <section className="xjs-mobile-story" aria-label="How one trade became XAU Journal on mobile">
+          <div className="xjs-shell">
+            {STORY_SCENES.map((scene, index) => (
+              <article className="xjs-mobile-chapter" key={scene.number}>
                 <div>
-                  <span className='story-stage-label'><ActiveIcon size={18} />{activeStep.key}</span>
-                  <h2 className='story-title-lg'><Highlight>{activeStep.key}</Highlight>: {activeStep.outcome}</h2>
-                  <p className='story-copy'>{activeStep.body}</p>
-
-                  <div className='story-stage-progress' aria-label='Product creation progress'>
-                    {PRODUCT_STEPS.map((step, index) => (
-                      <button
-                        onClick={() => handleStepClick(index)}
-                        className={`story-stage-step cursor-pointer focus:outline-none ${activeProduct === index ? 'is-active' : ''}`}
-                        key={step.key}
-                      >
-                        {step.label} {step.key}
-                      </button>
-                    ))}
-                  </div>
+                  <p className="xjs-kicker"><span>{scene.number}</span> {scene.label}</p>
+                  <h2>{scene.title}</h2>
+                  <p>{scene.body}</p>
                 </div>
+                <div className="xjs-mobile-artifact" aria-hidden="true"><MobileArtifact index={index} /></div>
+              </article>
+            ))}
+          </div>
+        </section>
 
-                <div className='story-product-shell'>
-                  <article className='story-product-panel' ref={cardRef} aria-live='polite'>
-                    <div className='story-product-head'>
-                      <span>XAU Journal system</span>
-                      <strong>{activeStep.title}</strong>
-                    </div>
-
-                    <div className='story-product-body'>
-                      <div className='story-product-main'>
-                        <div className='story-product-visual-wrapper'>
-                          {activeStep.key === 'Capture' ? (
-                            <div className='flex items-center justify-center gap-6 md:gap-8 w-full h-full p-4 relative overflow-hidden bg-background/10'>
-                              <div className='absolute w-28 h-28 rounded-full bg-cyan-500/5 blur-xl -translate-x-10' />
-                              <div className='absolute w-28 h-28 rounded-full bg-emerald-500/5 blur-xl translate-x-10' />
-
-                              <div className='flex flex-col items-center gap-2 transition-transform duration-300 hover:scale-105'>
-                                <div className='w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border border-border/10 shadow-md bg-background/40 flex items-center justify-center'>
-                                  <img src='/mt4.svg' alt='MT4 Icon' className='w-full h-full object-contain' />
-                                </div>
-                                <span className='text-[9px] md:text-[10px] font-black uppercase tracking-wider text-muted-foreground'>MT4</span>
-                              </div>
-
-                              <div className='flex items-center justify-center relative'>
-                                <div className='h-[1px] w-8 md:w-12 bg-gradient-to-r from-cyan-500/30 via-primary/20 to-emerald-500/30 relative'>
-                                  <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-ping' />
-                                </div>
-                              </div>
-
-                              <div className='flex flex-col items-center gap-2 transition-transform duration-300 hover:scale-105'>
-                                <div className='w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border border-border/10 shadow-md bg-background/40 flex items-center justify-center'>
-                                  <img src='/mt5.svg' alt='MT5 Icon' className='w-full h-full object-contain' />
-                                </div>
-                                <span className='text-[9px] md:text-[10px] font-black uppercase tracking-wider text-muted-foreground'>MT5</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <img
-                              src={activeStep.image}
-                              alt={activeStep.title}
-                              className='story-product-img'
-                            />
-                          )}
-                        </div>
-                        <div className='story-product-detail'>
-                          <h3 className='story-title-md'><Highlight>{activeStep.title}</Highlight></h3>
-                          <p className='story-product-outcome'>{activeStep.outcome}</p>
-                          <p>{activeStep.body}</p>
-
-                          <div className='story-product-rows'>
-                            {activeStep.rows.map(([label, value]) => (
-                              <div className='story-product-row' key={label}>
-                                <span>{label}</span>
-                                <strong>{value}</strong>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                </div>
-              </div>
+        <section className="xjs-conviction" aria-labelledby="conviction-heading">
+          <div className="xjs-shell xjs-conviction-grid">
+            <div>
+              <p className="xjs-kicker"><span>08</span> What the company protects</p>
+              <h2 id="conviction-heading">A journal should preserve the truth of the trade.</h2>
+            </div>
+            <div className="xjs-conviction-rail">
+              <p>Not a scoreboard. <strong>Process beside outcome.</strong></p>
+              <p>Not a broker replacement. <strong>A place to understand what the broker records.</strong></p>
+              <p>Not automation for its own sake. <strong>Less admin. More honest review.</strong></p>
             </div>
           </div>
         </section>
 
-        <section className='story-section'>
-          <div className='story-shell story-split'>
-            <div className='story-scale-lead story-reveal'>
-              <span className='story-eyebrow'>Company</span>
-              <h2 className='story-title-lg'>A SaaS product with a <Highlight>trading-desk standard.</Highlight></h2>
-              <p className='story-copy'>
-                The ambition is not to create another dashboard. It is to build durable review infrastructure for
-                traders who want their history, discipline, and decisions in one place.
-              </p>
-            </div>
-
-            <div className='story-list'>
-              {SCALE_POINTS.map((point) => {
-                const Icon = point.icon;
-
-                return (
-                  <article className='story-scale-item story-reveal' key={point.title}>
-                    <span className='story-icon'><Icon size={20} /></span>
-                    <div>
-                      <h3>{point.title}</h3>
-                      <p>{point.body}</p>
-                    </div>
-                  </article>
-                );
-              })}
+        <section className="xjs-close" aria-labelledby="close-heading">
+          <div className="xjs-shell xjs-close-inner">
+            <p className="xjs-kicker"><span>09</span> Your next session</p>
+            <h2 id="close-heading">Your next trade will add a result.<br />Make sure it also leaves a lesson.</h2>
+            <div className="xjs-actions">
+              <Link className="xjs-button xjs-button-primary" to="/login">Review your first trade <ArrowRight aria-hidden="true" /></Link>
+              <Link className="xjs-button xjs-button-secondary" to="/pricing">Compare plans</Link>
             </div>
           </div>
         </section>
-
-        <section className='story-section'>
-          <div className='story-shell story-split'>
-            <SectionHeading eyebrow='Principles' title={<>The roadmap stays close to the <Highlight>trading desk.</Highlight></>}>
-              The product should get calmer and more useful as it grows. These principles keep the company from
-              drifting into feature noise.
-            </SectionHeading>
-
-            <div className='story-list'>
-              {PRINCIPLES.map((principle) => (
-                <div className='story-principle story-reveal' key={principle}>
-                  <CheckCircle2 size={19} />
-                  <span>{principle}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className='story-final'>
-          <div className='story-shell story-final-inner'>
-            <div className='story-reveal'>
-              <span className='story-eyebrow'>Next session</span>
-              <h2 className='story-title-lg'>Built so review becomes <Highlight>better execution.</Highlight></h2>
-              <p className='story-copy'>
-                Start with the record. Add the context. Read the pattern. Improve the next session. That is the
-                product promise and the reason XAU Journal exists.
-              </p>
-            </div>
-
-            <div className='story-actions story-reveal'>
-              <StoryButton to='/signup'>Start now <ArrowRight size={17} /></StoryButton>
-              <StoryButton to='/pricing' variant='secondary'>View pricing</StoryButton>
-            </div>
-          </div>
-        </section>
-
-        <PublicFooter />
-
       </main>
-    </>
+
+      <PublicFooter />
+    </div>
   );
 }

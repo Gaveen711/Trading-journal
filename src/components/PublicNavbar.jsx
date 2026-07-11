@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion as Motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 
 import Logo from './Logo';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -55,7 +56,7 @@ export function PublicNavbar({ showScrollTopButton = true } = {}) {
       <header>
         <nav
           data-public-nav
-          style={{ transform: `translateX(-50%) translateY(${isVisible || mobileMenuOpen ? '0' : '-120%'})` }}
+          style={{ transform: `translateX(-50%) translateY(${isVisible || mobileMenuOpen ? '0' : '-160%'})` }}
           className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-6xl z-[150] h-14 md:h-16 flex items-center justify-between px-5 md:px-8 backdrop-blur-xl border rounded-2xl md:rounded-full shadow-lg transition-all duration-300 will-change-transform ${isScrolled
             ? 'bg-background/90 border-border/40 shadow-xl'
             : 'bg-background/60 border-border/20 shadow-md'
@@ -174,28 +175,6 @@ export function PublicNavbar({ showScrollTopButton = true } = {}) {
         </AnimatePresence>
       </header>
 
-      {/* Scroll to Top Button */}
-      <AnimatePresence>
-        {showScrollTopButton && showScrollTop && (
-          <Motion.button
-            type="button"
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.94 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
-            whileHover={reduceMotion ? undefined : { y: -3 }}
-            whileTap={reduceMotion ? undefined : { scale: 0.94 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            onClick={() => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })}
-            className="site-scroll-top"
-            aria-label="Scroll to top"
-            data-ux-skip="true"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M18 15l-6-6-6 6" />
-            </svg>
-          </Motion.button>
-        )}
-      </AnimatePresence>
     </>
   );
 }

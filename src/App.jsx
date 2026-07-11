@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+﻿import { useState, useEffect, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
@@ -187,7 +187,7 @@ function useGlobalInteractions(pathname) {
 
     let observer;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const skipSelector = 'header, footer, [role="dialog"], .Toastify, .dashboard-sidebar, .story-page, .xau-page, .xau-scroll-top, .site-scroll-top, [data-ux-skip="true"]';
+    const skipSelector = 'header, footer, [role="dialog"], .Toastify, .dashboard-sidebar, .story-page, .xau-page, .xjs-page, .qgs-page, .xau-scroll-top, .site-scroll-top, [data-ux-skip="true"]';
     const shouldSkip = (element) => Boolean(
       element.closest(skipSelector) ||
       element.closest('[aria-hidden="true"]') ||
@@ -205,7 +205,11 @@ function useGlobalInteractions(pathname) {
       if (main) {
         main.setAttribute('tabindex', '-1');
         main.classList.remove('ux-route-enter');
-        if (!main.classList.contains('story-page') && !main.classList.contains('xau-page')) {
+        const ownsRouteMotion = Boolean(
+          main.matches('[data-ux-skip="true"], .story-page, .xau-page, .qgs-page') ||
+          main.closest('.xjs-page, .qgs-page')
+        );
+        if (!ownsRouteMotion) {
           void main.offsetWidth;
           main.classList.add('ux-route-enter');
         }
@@ -377,6 +381,9 @@ function App() {
       );
       textElements.forEach(el => {
         if (
+          el.closest('.qgs-page') ||
+          el.closest('.xjs-page') ||
+          el.closest('[data-ux-skip="true"]') ||
           el.closest('header') ||
           el.closest('footer') ||
           el.closest('.dashboard-sidebar') ||
@@ -435,7 +442,7 @@ function App() {
       <PageSEO />
       <div className="ux-scroll-progress" style={{ '--ux-scroll-progress': scrollProgress }} aria-hidden="true" />
       <Suspense fallback={showPublicNavbarDuringLoad ? publicPageLoader() : <PageLoader />}>
-        {authError ? (
+        {authError && !showPublicNavbarDuringLoad ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
             <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
               <div className="w-20 h-20 bg-primary/10 rounded-3xl mx-auto flex items-center justify-center border border-primary/20 relative">
@@ -453,7 +460,7 @@ function App() {
               </button>
             </div>
           </div>
-        ) : loading ? (
+        ) : loading && !showPublicNavbarDuringLoad ? (
           localStorage.getItem('xau-auth-hint') === 'true' ? (
             showPublicNavbarDuringLoad ? publicPageLoader("Restoring Secure Session") : <PageLoader text="Restoring Secure Session" />
           ) : (
