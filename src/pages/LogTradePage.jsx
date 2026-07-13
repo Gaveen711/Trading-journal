@@ -108,7 +108,7 @@ export function LogTradePage() {
   useEffect(() => {
     const fetchGoldPriceFallback = async () => {
       try {
-        const res = await fetch('https://api.gold-api.com/price/XAU');
+        const res = await fetch('/api/spot-price/XAU');
         if (res.ok) {
           const data = await res.json();
           if (data && data.price) {

@@ -25,7 +25,7 @@ const HistorySkeleton = () => (
 );
 
 export function HistoryPage() {
-  const { trades, isLoadingTrades, removeTrade, editTrade, plan, setShowPricingModal } = useOutletContext();
+  const { trades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, removeTrade, editTrade, plan, setShowPricingModal } = useOutletContext();
   const toast = useToast();
   
   // Primary layout filters
@@ -177,14 +177,22 @@ export function HistoryPage() {
     if (totalFiltered === 0) {
       return { pnl: 0, winRate: 0, count: 0, wins: 0, longs: 0, shorts: 0, avgPnl: 0, pips: 0 };
     }
-    const sumPnl = filteredAndSortedTrades.reduce((s, t) => s + (t.pnl || 0), 0);
-    const wins = filteredAndSortedTrades.filter(t => t.outcome === 'WIN').length;
-    const winRate = Math.round((wins / totalFiltered) * 100);
-    const longs = filteredAndSortedTrades.filter(t => t.direction?.toUpperCase() === 'BUY').length;
-    const shorts = filteredAndSortedTrades.filter(t => t.direction?.toUpperCase() === 'SELL').length;
-    const avgPnl = sumPnl / totalFiltered;
-    const sumPips = filteredAndSortedTrades.reduce((s, t) => s + (Number(t.pips) || 0), 0);
-    return { pnl: sumPnl, winRate, count: totalFiltered, wins, longs, shorts, avgPnl, pips: sumPips };
+    const totals = filteredAndSortedTrades.reduce((acc, trade) => {
+      acc.pnl += Number(trade.pnl) || 0;
+      acc.pips += Number(trade.pips) || 0;
+      if (trade.outcome === 'WIN') acc.wins += 1;
+      const direction = trade.direction?.toUpperCase();
+      if (direction === 'BUY') acc.longs += 1;
+      if (direction === 'SELL') acc.shorts += 1;
+      return acc;
+    }, { pnl: 0, pips: 0, wins: 0, longs: 0, shorts: 0 });
+
+    return {
+      ...totals,
+      winRate: Math.round((totals.wins / totalFiltered) * 100),
+      count: totalFiltered,
+      avgPnl: totals.pnl / totalFiltered,
+    };
   }, [filteredAndSortedTrades]);
 
   const uniqueStrategies = useMemo(() => {
@@ -207,6 +215,15 @@ export function HistoryPage() {
   const displayedTrades = useMemo(() => {
     return filteredAndSortedTrades.slice(0, visibleCount);
   }, [filteredAndSortedTrades, visibleCount]);
+
+  const handleLoadMore = async () => {
+    if (visibleCount < filteredAndSortedTrades.length) {
+      setVisibleCount((count) => count + 30);
+      return;
+    }
+    await loadMoreTrades();
+    setVisibleCount((count) => count + 30);
+  };
 
   if (isLoadingTrades) return <HistorySkeleton />;
 
@@ -611,7 +628,7 @@ export function HistoryPage() {
               return (
                 <div 
                   key={t.id} 
-                  className="apple-glass-panel p-4 flex flex-col hover:bg-muted/10 transition-all border border-border/10 hover:border-primary/20 duration-300 rounded-3xl"
+                  className="apple-glass-panel history-virtual-item p-4 flex flex-col hover:bg-muted/10 transition-all border border-border/10 hover:border-primary/20 duration-300 rounded-3xl"
                 >
                   {/* MAIN CARD ROW */}
                   <div 
@@ -820,13 +837,16 @@ export function HistoryPage() {
               );
             })}
 
-            {filteredAndSortedTrades.length > visibleCount && (
+            {(filteredAndSortedTrades.length > visibleCount || hasMoreTrades) && (
               <div className="flex justify-center pt-4">
                 <button
-                  onClick={() => setVisibleCount(prev => prev + 30)}
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
                   className="px-6 py-3 rounded-xl border border-border/50 bg-card hover:bg-muted text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all text-foreground/80 cursor-pointer"
                 >
-                  Load More Trades ({filteredAndSortedTrades.length - visibleCount} remaining)
+                  {isLoadingMore ? 'Loading…' : filteredAndSortedTrades.length > visibleCount
+                    ? 'Load More Trades (' + (filteredAndSortedTrades.length - visibleCount) + ' loaded)'
+                    : 'Load Older Trades'}
                 </button>
               </div>
             )}

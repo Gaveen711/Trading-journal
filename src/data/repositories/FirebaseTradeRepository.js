@@ -1,109 +1,91 @@
-import { collection, onSnapshot, updateDoc, doc, query, orderBy, increment, writeBatch, serverTimestamp } from 'firebase/firestore';
+import {
+  collection, doc, getDocs, increment, limit, onSnapshot, orderBy, query,
+  runTransaction, serverTimestamp, startAfter, writeBatch,
+} from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { TradeRepository } from '../../core/domain/repositories/TradeRepository.js';
+import { subtractTradeAnalytics, tradeAnalyticsDelta } from '../../lib/tradeAnalytics.js';
+
+const DEFAULT_PAGE_SIZE = 100;
+const analyticsIncrements = (delta) => Object.fromEntries(
+  Object.entries(delta).map(([key, value]) => ['analytics.' + key, increment(value)])
+);
 
 export class FirebaseTradeRepository extends TradeRepository {
-  subscribeToTrades(userId, onUpdate, onError) {
-    const q = query(
-      collection(db, 'users', userId, 'trades'),
-      orderBy('date', 'desc')
-    );
+  subscribeToTrades(userId, onUpdate, onError, pageSize = DEFAULT_PAGE_SIZE) {
+    const tradesQuery = query(collection(db, 'users', userId, 'trades'), orderBy('date', 'desc'), limit(pageSize));
+    return onSnapshot(tradesQuery, (snapshot) => {
+      const loaded = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+      const triggerSync = snapshot.docChanges().some((change) => (
+        change.type === 'added' && change.doc.data().source === 'MT5_AUTO'
+      ));
+      onUpdate(loaded, triggerSync, {
+        cursor: snapshot.docs.at(-1) || null,
+        hasMore: snapshot.size === pageSize,
+      });
+    }, onError);
+  }
 
-    return onSnapshot(q, 
-      (snapshot) => {
-        const loaded = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        let triggerSync = false;
-
-        snapshot.docChanges().forEach(change => {
-          if (change.type === 'added') {
-            const data = change.doc.data();
-            if (data.source === 'MT5_AUTO') {
-              triggerSync = true;
-            }
-          }
-        });
-
-        onUpdate(loaded, triggerSync);
-      },
-      onError
-    );
+  async getTradesPage(userId, cursor, pageSize = DEFAULT_PAGE_SIZE) {
+    const constraints = [orderBy('date', 'desc')];
+    if (cursor) constraints.push(startAfter(cursor));
+    constraints.push(limit(pageSize));
+    const snapshot = await getDocs(query(collection(db, 'users', userId, 'trades'), ...constraints));
+    return {
+      trades: snapshot.docs.map((item) => ({ id: item.id, ...item.data() })),
+      cursor: snapshot.docs.at(-1) || null,
+      hasMore: snapshot.size === pageSize,
+    };
   }
 
   async addTrade(userId, tradeData) {
     const batch = writeBatch(db);
     const tradeRef = doc(collection(db, 'users', userId, 'trades'));
-    
-    batch.set(tradeRef, {
-      ...tradeData,
-      id: tradeRef.id
-    });
-    
+    batch.set(tradeRef, { ...tradeData, id: tradeRef.id });
     batch.update(doc(db, 'users', userId), {
       totalTradesLogged: increment(1),
-      lastTradeTime: serverTimestamp()
+      lastTradeTime: serverTimestamp(),
+      ...analyticsIncrements(tradeAnalyticsDelta(tradeData)),
     });
-    
     await batch.commit();
     return tradeRef;
   }
 
   async removeTrade(userId, tradeId) {
-    const batch = writeBatch(db);
-    batch.delete(doc(db, 'users', userId, 'trades', tradeId));
-    batch.update(doc(db, 'users', userId), {
-      totalTradesLogged: increment(-1)
+    await runTransaction(db, async (transaction) => {
+      const tradeRef = doc(db, 'users', userId, 'trades', tradeId);
+      const snapshot = await transaction.get(tradeRef);
+      if (!snapshot.exists()) return;
+      transaction.delete(tradeRef);
+      transaction.update(doc(db, 'users', userId), {
+        totalTradesLogged: increment(-1),
+        ...analyticsIncrements(tradeAnalyticsDelta(snapshot.data(), -1)),
+      });
     });
-    await batch.commit();
   }
 
   async editTrade(userId, tradeId, updatedData) {
     const { id: _drop, ...safeData } = updatedData;
-    await updateDoc(doc(db, 'users', userId, 'trades', tradeId), safeData);
+    await runTransaction(db, async (transaction) => {
+      const tradeRef = doc(db, 'users', userId, 'trades', tradeId);
+      const snapshot = await transaction.get(tradeRef);
+      if (!snapshot.exists()) throw new Error('Trade not found');
+      const nextTrade = { ...snapshot.data(), ...safeData };
+      transaction.update(tradeRef, safeData);
+      transaction.update(doc(db, 'users', userId), {
+        ...analyticsIncrements(subtractTradeAnalytics(snapshot.data(), nextTrade)),
+      });
+    });
   }
 
   async resetTrades(userId, idToken) {
-    try {
-      const resp = await fetch('/api/reset-trades', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`
-        }
-      });
-      if (!resp.ok) {
-        const data = await resp.json();
-        throw new Error(data.error || 'Failed to reset trades via API');
-      }
-    } catch (apiError) {
-      console.warn('API reset failed or unavailable. Falling back to direct client-side wipe:', apiError);
-      
-      const { getDocs } = await import('firebase/firestore');
-      const q = query(collection(db, 'users', userId, 'trades'));
-      const snapshot = await getDocs(q);
-      const docs = snapshot.docs;
-      const CHUNK_SIZE = 400;
-      
-      for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-        const batch = writeBatch(db);
-        const chunk = docs.slice(i, i + CHUNK_SIZE);
-        chunk.forEach((documentSnapshot) => {
-          batch.delete(doc(db, 'users', userId, 'trades', documentSnapshot.id));
-        });
-        
-        if (i + CHUNK_SIZE >= docs.length) {
-          batch.update(doc(db, 'users', userId), {
-            totalTradesLogged: 0
-          });
-        }
-        await batch.commit();
-      }
-      
-      if (docs.length === 0) {
-        const batch = writeBatch(db);
-        batch.update(doc(db, 'users', userId), {
-          totalTradesLogged: 0
-        });
-        await batch.commit();
-      }
+    const response = await fetch('/api/reset-trades', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + idToken },
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to reset trades via API');
     }
   }
 }

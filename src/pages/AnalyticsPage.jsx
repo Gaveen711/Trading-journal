@@ -43,28 +43,32 @@ const PremiumOverlay = ({ title, description, onUpgrade }) => (
 );
 
 export function AnalyticsPage() {
-  const { trades, isLoadingTrades, walletBalance, plan, isTrial, setShowPricingModal } = useOutletContext();
+  const { trades, analytics, isLoadingTrades, walletBalance, plan, isTrial, setShowPricingModal } = useOutletContext();
   const isFree = (plan === 'basic' || plan === 'free') && !isTrial;
   const navigate = useNavigate();
   const { isLightMode } = useAppTheme();
-  
+
   const [showExact, setShowExact] = useState({});
   const [sharingTrade, setSharingTrade] = useState(null);
 
   const setExact = useCallback((index, val) => {
     setShowExact(prev => ({ ...prev, [index]: val }));
   }, []);
-  
+
   const stats = useMemo(() => {
     const tradesList = trades || [];
     const wins = tradesList.filter(t => t.outcome === 'WIN');
     const losses = tradesList.filter(t => t.outcome === 'LOSS');
-    const avgWin = wins.length ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0;
-    const avgLoss = losses.length ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : 0;
-    const wr = tradesList.length ? wins.length / tradesList.length : 0;
+    const hasAggregate = analytics?.version === 1 && Number.isFinite(Number(analytics.tradeCount));
+    const winsCount = hasAggregate ? Number(analytics.wins) || 0 : wins.length;
+    const lossesCount = hasAggregate ? Number(analytics.losses) || 0 : losses.length;
+    const totalCount = hasAggregate ? Number(analytics.tradeCount) || 0 : tradesList.length;
+    const grossWin = hasAggregate ? Number(analytics.grossProfit) || 0 : wins.reduce((s, t) => s + t.pnl, 0);
+    const grossLoss = hasAggregate ? Number(analytics.grossLoss) || 0 : Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+    const avgWin = winsCount ? grossWin / winsCount : 0;
+    const avgLoss = lossesCount ? -(grossLoss / lossesCount) : 0;
+    const wr = totalCount ? winsCount / totalCount : 0;
     const expectancy = (wr * avgWin) + ((1 - wr) * avgLoss);
-    const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
-    const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
     const pf = grossLoss > 0 ? grossWin / grossLoss : null;
 
     let peak = walletBalance || 0, maxDD = 0, running = walletBalance || 0;
@@ -84,7 +88,7 @@ export function AnalyticsPage() {
     const sessionDataMap = {};
     const PLAYBOOK_STRATEGIES = ['Breakout', 'SMC', 'ICT', 'Scalp', 'Swing', 'S/R'];
     const strategyDataMap = {};
-    
+
     // Initialize standard playbook strategies
     PLAYBOOK_STRATEGIES.forEach(strat => {
       strategyDataMap[strat] = { pnl: 0, wins: 0, total: 0 };
@@ -106,7 +110,7 @@ export function AnalyticsPage() {
       tags.forEach(tag => {
         if (!tag) return;
         const normTag = tag.trim().toLowerCase();
-        
+
         // Match standard playbook strategy names (case-insensitive)
         const found = PLAYBOOK_STRATEGIES.find(strat => {
           const normStrat = strat.toLowerCase();
@@ -196,7 +200,7 @@ export function AnalyticsPage() {
 
     tradesList.forEach(t => {
       const session = getNormalizedSession(t.session);
-      
+
       // Update summary maps
       if (sessionSummaryMap[session]) {
         sessionSummaryMap[session].total++;
@@ -250,7 +254,7 @@ export function AnalyticsPage() {
     // 5. Performance by Strategy
     const strategyLabels = Object.keys(strategyDataMap).sort((a, b) => strategyDataMap[b].pnl - strategyDataMap[a].pnl);
     const strategyValues = strategyLabels.map(l => strategyDataMap[l].pnl);
-    
+
     const performanceByStrategyChartData = {
       labels: strategyLabels,
       datasets: [{
@@ -263,13 +267,14 @@ export function AnalyticsPage() {
       }]
     };
 
-    const totalPnl = tradesList.reduce((s, t) => s + t.pnl, 0);
+    const totalPnl = hasAggregate ? Number(analytics.totalPnl) || 0 : tradesList.reduce((s, t) => s + t.pnl, 0);
     const currentWalletBalance = (walletBalance || 0) + totalPnl;
-    const winRatePercent = tradesList.length ? (wins.length / tradesList.length * 100).toFixed(0) : 0;
+    const winRatePercent = totalCount ? (winsCount / totalCount * 100).toFixed(0) : 0;
 
     return {
-      wins,
-      losses,
+      winsCount,
+      lossesCount,
+      totalCount,
       avgWin,
       avgLoss,
       expectancy,
@@ -283,11 +288,12 @@ export function AnalyticsPage() {
       currentWalletBalance,
       winRatePercent
     };
-  }, [trades, walletBalance]);
+  }, [analytics, trades, walletBalance]);
 
   const {
-    wins,
-    losses,
+    winsCount,
+    lossesCount,
+    totalCount,
     avgWin,
     avgLoss,
     expectancy,
@@ -307,7 +313,7 @@ export function AnalyticsPage() {
     maintainAspectRatio: false,
     resizeDelay: 120,
     animation: { duration: 220 },
-    plugins: { 
+    plugins: {
       legend: { display: false },
       tooltip: {
         backgroundColor: 'rgba(13, 13, 20, 0.9)',
@@ -346,10 +352,10 @@ export function AnalyticsPage() {
   const recentSignals = useMemo(() => sortedTrades.slice(-5).reverse(), [sortedTrades]);
 
   const statCards = useMemo(() => [
-    { 
-      label: 'Wallet Balance', 
-      value: showExact[0] ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance), 
-      sub: 'Current Liquidity', 
+    {
+      label: 'Wallet Balance',
+      value: showExact[0] ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance),
+      sub: 'Current Liquidity',
       color: 'text-primary',
       isInteractive: true,
       index: 0,
@@ -362,10 +368,10 @@ export function AnalyticsPage() {
       subPrefix: '',
       subPrefixColor: ''
     },
-    { 
-      label: 'Win Rate', 
-      value: `${winRatePercent}%`, 
-      sub: `${wins.length} successful`, 
+    {
+      label: 'Win Rate',
+      value: `${winRatePercent}%`,
+      sub: `${winsCount} successful`,
       color: 'text-green-500',
       isInteractive: false,
       index: 1,
@@ -378,28 +384,28 @@ export function AnalyticsPage() {
       subPrefix: '▲',
       subPrefixColor: 'text-green-500'
     },
-    { 
-      label: 'Expectancy', 
-      value: trades.length ? (showExact[2] ? formatCurrency(expectancy) : formatCurrencyCompact(expectancy)) : '—', 
-      sub: trades.length ? 'Average per trade' : 'Average per trade', 
+    {
+      label: 'Expectancy',
+      value: totalCount ? (showExact[2] ? formatCurrency(expectancy) : formatCurrencyCompact(expectancy)) : '—',
+      sub: totalCount ? 'Average per trade' : 'Average per trade',
       color: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : '',
-      isInteractive: trades.length > 0,
+      isInteractive: totalCount > 0,
       index: 2,
-      Icon: trades.length ? (expectancy > 0 ? GraphUp : expectancy < 0 ? GraphDown : Activity) : Activity,
-      iconColor: trades.length ? (expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : 'text-muted-foreground') : 'text-muted-foreground',
-      iconBg: trades.length ? (expectancy > 0 ? 'bg-green-500/10' : expectancy < 0 ? 'bg-red-500/10' : 'bg-zinc-500/10') : 'bg-zinc-500/10',
-      iconBorder: trades.length ? (expectancy > 0 ? 'border-green-500/20' : expectancy < 0 ? 'border-red-500/20' : 'border-zinc-500/20') : 'border-zinc-500/20',
-      glowBg: trades.length ? (expectancy > 0 ? 'bg-green-500/5' : expectancy < 0 ? 'bg-red-500/5' : 'bg-zinc-500/5') : 'bg-zinc-500/5',
-      glowHoverBg: trades.length ? (expectancy > 0 ? 'group-hover:bg-green-500/10' : expectancy < 0 ? 'group-hover:bg-red-500/10' : 'group-hover:bg-zinc-500/10') : 'group-hover:bg-zinc-500/10',
-      subPrefix: trades.length ? (expectancy > 0 ? '▲' : expectancy < 0 ? '▼' : '') : '',
+      Icon: totalCount ? (expectancy > 0 ? GraphUp : expectancy < 0 ? GraphDown : Activity) : Activity,
+      iconColor: totalCount ? (expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : 'text-muted-foreground') : 'text-muted-foreground',
+      iconBg: totalCount ? (expectancy > 0 ? 'bg-green-500/10' : expectancy < 0 ? 'bg-red-500/10' : 'bg-zinc-500/10') : 'bg-zinc-500/10',
+      iconBorder: totalCount ? (expectancy > 0 ? 'border-green-500/20' : expectancy < 0 ? 'border-red-500/20' : 'border-zinc-500/20') : 'border-zinc-500/20',
+      glowBg: totalCount ? (expectancy > 0 ? 'bg-green-500/5' : expectancy < 0 ? 'bg-red-500/5' : 'bg-zinc-500/5') : 'bg-zinc-500/5',
+      glowHoverBg: totalCount ? (expectancy > 0 ? 'group-hover:bg-green-500/10' : expectancy < 0 ? 'group-hover:bg-red-500/10' : 'group-hover:bg-zinc-500/10') : 'group-hover:bg-zinc-500/10',
+      subPrefix: totalCount ? (expectancy > 0 ? '▲' : expectancy < 0 ? '▼' : '') : '',
       subPrefixColor: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : ''
     },
-    { 
-      label: 'Avg Win', 
-      value: wins.length ? (showExact[3] ? formatCurrency(avgWin) : formatCurrencyCompact(avgWin)) : '—', 
-      sub: `${wins.length} winners`, 
+    {
+      label: 'Avg Win',
+      value: winsCount ? (showExact[3] ? formatCurrency(avgWin) : formatCurrencyCompact(avgWin)) : '—',
+      sub: `${winsCount} winners`,
       color: 'text-green-500',
-      isInteractive: wins.length > 0,
+      isInteractive: winsCount > 0,
       index: 3,
       Icon: GraphUp,
       iconColor: 'text-green-500',
@@ -407,15 +413,15 @@ export function AnalyticsPage() {
       iconBorder: 'border-green-500/20',
       glowBg: 'bg-green-500/5',
       glowHoverBg: 'group-hover:bg-green-500/10',
-      subPrefix: wins.length ? '▲' : '',
+      subPrefix: winsCount ? '▲' : '',
       subPrefixColor: 'text-green-500'
     },
-    { 
-      label: 'Avg Loss', 
-      value: losses.length ? (showExact[4] ? formatCurrency(avgLoss) : formatCurrencyCompact(avgLoss)) : '—', 
-      sub: `${losses.length} losers`, 
+    {
+      label: 'Avg Loss',
+      value: lossesCount ? (showExact[4] ? formatCurrency(avgLoss) : formatCurrencyCompact(avgLoss)) : '—',
+      sub: `${lossesCount} losers`,
       color: 'text-red-500',
-      isInteractive: losses.length > 0,
+      isInteractive: lossesCount > 0,
       index: 4,
       Icon: GraphDown,
       iconColor: 'text-red-500',
@@ -423,13 +429,13 @@ export function AnalyticsPage() {
       iconBorder: 'border-red-500/20',
       glowBg: 'bg-red-500/5',
       glowHoverBg: 'group-hover:bg-red-500/10',
-      subPrefix: losses.length ? '▼' : '',
+      subPrefix: lossesCount ? '▼' : '',
       subPrefixColor: 'text-red-500'
     },
-    { 
-      label: 'Profit Factor', 
-      value: pf !== null ? pf.toFixed(2) : '—', 
-      sub: 'Gross Profit / Loss', 
+    {
+      label: 'Profit Factor',
+      value: pf !== null ? pf.toFixed(2) : '—',
+      sub: 'Gross Profit / Loss',
       color: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : '',
       isInteractive: false,
       index: 5,
@@ -442,7 +448,7 @@ export function AnalyticsPage() {
       subPrefix: pf !== null ? (pf >= 1.5 ? '▲' : pf < 1 ? '▼' : '▲') : '',
       subPrefixColor: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : 'text-amber-500'
     },
-  ], [avgLoss, avgWin, currentWalletBalance, expectancy, losses.length, pf, showExact, trades.length, winRatePercent, wins.length]);
+  ], [avgLoss, avgWin, currentWalletBalance, expectancy, lossesCount, pf, showExact, totalCount, winRatePercent, winsCount]);
 
   if (isLoadingTrades) return (
     <div className="space-y-8">
@@ -459,13 +465,13 @@ export function AnalyticsPage() {
         <h1 className="text-2xl sm:text-3xl font-black text-foreground uppercase tracking-tight">Performance Analytics</h1>
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest">Deep insights into your edge, consistency, and risk management.</p>
       </header>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {statCards.map((stat, i) => {
           const isLocked = isFree && stat.index > 1;
           return (
-            <div 
-              key={i} 
+            <div
+              key={i}
               onMouseEnter={() => !isLocked && stat.isInteractive && setExact(stat.index, true)}
               onMouseLeave={() => !isLocked && stat.isInteractive && setExact(stat.index, false)}
               onFocus={() => !isLocked && stat.isInteractive && setExact(stat.index, true)}
@@ -493,13 +499,13 @@ export function AnalyticsPage() {
                   <span className="truncate min-w-0">{stat.sub}</span>
                 </div>
               </div>
-              
+
               <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ${stat.iconBg} ${stat.iconBorder} flex items-center justify-center ${stat.iconColor} relative z-10 shrink-0 ml-2 transition-all duration-300 ${isLocked ? 'blur-[4px] opacity-30' : ''}`}>
                 <stat.Icon className="w-4 h-4 sm:w-5 h-5" />
               </div>
-              
+
               <div className={`absolute top-0 right-0 w-24 h-24 ${stat.glowBg} rounded-full blur-2xl pointer-events-none ${stat.glowHoverBg} transition-colors`} />
-              
+
               {isLocked && (
                 <div className="absolute inset-0 flex items-center justify-center z-20 bg-background/10 backdrop-blur-[2px] transition-colors group-hover:bg-primary/5">
                   <LockFill className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] animate-in zoom-in-50 duration-300" />
@@ -536,7 +542,7 @@ export function AnalyticsPage() {
                   'Swing': '#6366f1',    // Indigo
                   'S/R': '#E5B80B',      // Amber/Gold
                 };
-                
+
                 // Fallback palette for any custom user strategies
                 const defaultPalette = ['#ec4899', '#f43f5e', '#a855f7', '#06b6d4'];
                 const pbColor = strategyColorsMap[setup.name] || defaultPalette[Math.abs(setup.name.charCodeAt(0) || 0) % defaultPalette.length];
@@ -560,12 +566,12 @@ export function AnalyticsPage() {
                           {setup.winRate}%
                         </span>
                       </div>
-                      
+
                       {/* Horizontal Progress Bar */}
                       <div className="w-full bg-muted/40 h-1.5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500" 
-                          style={{ 
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
                             width: `${setup.winRate}%`,
                             backgroundColor: pbColor
                           }}
@@ -625,7 +631,7 @@ export function AnalyticsPage() {
                   Comparative weekly session edge analysis and win rates.
                 </p>
               </div>
-              
+
               {/* Custom HTML Legend */}
               <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-wider">
                 <div className="flex items-center gap-1.5">
@@ -648,9 +654,9 @@ export function AnalyticsPage() {
             </div>
 
             <div className="h-64 mb-8">
-              <Bar 
-                data={sessionWeeklyChartData} 
-                options={sessionWeeklyOptions} 
+              <Bar
+                data={sessionWeeklyChartData}
+                options={sessionWeeklyOptions}
               />
             </div>
 
@@ -669,7 +675,7 @@ export function AnalyticsPage() {
                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/80 group-hover:text-primary transition-colors">
                       {session.label}
                     </span>
-                    
+
                     <div className="mt-2 mb-1 flex items-baseline justify-between">
                       <span className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                         {session.winRate}%
@@ -681,9 +687,9 @@ export function AnalyticsPage() {
 
                     {/* Progress Bar */}
                     <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden mt-1 mb-2">
-                      <div 
-                        className="h-full rounded-full transition-all duration-500" 
-                        style={{ 
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
                           width: `${session.winRate}%`,
                           backgroundColor: pbColor
                         }}
@@ -735,8 +741,8 @@ export function AnalyticsPage() {
             <BarChartLine className="w-4 h-4 text-primary" />
             Recent Signals
           </h3>
-          <button 
-            onClick={() => navigate('/app/history')} 
+          <button
+            onClick={() => navigate('/app/history')}
             className="min-h-11 px-3 -mr-3 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             View All History →

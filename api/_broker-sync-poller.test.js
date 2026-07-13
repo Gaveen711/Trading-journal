@@ -75,8 +75,11 @@ vi.mock('./_firebase.js', () => {
 
   const dbMock = {
     collection: mockCollection,
-    collectionGroup: vi.fn(() => ({
-      where: vi.fn(() => ({
+    collectionGroup: vi.fn(() => {
+      const query = {
+        where: vi.fn(() => query),
+        orderBy: vi.fn(() => query),
+        limit: vi.fn(() => query),
         get: vi.fn(async () => {
           const nowMs = Date.now();
           const uids = ['LIFETIME_USER', 'ACTIVE_PRO_USER', 'EXPIRED_PRO_USER', 'ACTIVE_GRACE_USER', 'EXPIRED_GRACE_USER'];
@@ -94,14 +97,16 @@ vi.mock('./_firebase.js', () => {
                 server: `server_${uid}`,
                 brokerType: 'mt5',
                 isActive: true,
+                syncJobState: 'queued',
+                nextSyncAt: new Date(nowMs - 1000).toISOString(),
                 lastSyncTime: new Date(nowMs - 100000).toISOString(),
               })
             }))
           };
         })
-      }))
-    })),
-    batch: mockBatch,
+      };
+      return query;
+    }),    batch: mockBatch,
     getAll: mockGetAll,
     __mocks: {
       mockDocGet,
@@ -207,7 +212,7 @@ describe('Broker Sync Poller Cron Job', () => {
       });
     });
 
-    const res = await executePollerRequest({ 'x-cron-secret': cronSecret });
+    const res = await executePollerRequest({ Authorization: `Bearer ${cronSecret}` });
     expect(res.status).toBe(200);
 
     const json = await res.json();

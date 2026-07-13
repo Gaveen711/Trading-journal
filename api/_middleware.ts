@@ -46,9 +46,13 @@ export async function rateLimitMiddleware(c: Context, next: Next) {
 
   const path = c.req.path
   const isWebhook = path.includes('/tv-webhook')
+  const isBroker = path.includes('/broker-') || path.includes('/connect-broker')
+  const isMarket = path.includes('/yahoo-chart') || path.includes('/spot-price')
+  const isVitals = path.includes('/vitals')
   const ip = getClientIp(c)
-  const key = `rl:${ip}`
-  const limit = isWebhook ? 500 : 100
+  const scope = isWebhook ? 'webhook' : isBroker ? 'broker' : isMarket ? 'market' : isVitals ? 'vitals' : 'api'
+  const key = 'rl:' + scope + ':' + ip
+  const limit = isWebhook ? 500 : isBroker ? 10 : isMarket ? 120 : isVitals ? 60 : 100
   const windowSeconds = 60
 
   let current = 0
@@ -63,7 +67,7 @@ export async function rateLimitMiddleware(c: Context, next: Next) {
     }
   } catch (kvErr: any) {
     console.error('[RateLimit] Vercel KV error:', kvErr.message)
-    // Fallback if KV is down/not configured: allow request
+    if (isBroker) return c.json({ error: 'Broker service temporarily unavailable' }, 503)
     return await next()
   }
 

@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "brokerAccounts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "syncJobState", "order": "ASCENDING" },
+        { "fieldPath": "nextSyncAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

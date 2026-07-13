@@ -34,7 +34,23 @@ import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 import Lenis from 'lenis';
 
-export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
+function CurrentTime() {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return new Date(now).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+}
+
+export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
   const { isLightMode, toggleTheme, currentTemplate, setTemplate } = useAppTheme();
   const { accounts, syncAccount } = useBrokerAccounts();
   const location = useLocation();
@@ -54,7 +70,6 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(false);
 
   const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
-  const formattedTime = new Date(currentTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const userInitial = displayName?.trim()?.charAt(0)?.toUpperCase() || 'T';
   const notificationItems = [
     {
@@ -94,7 +109,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
   const planBadgeLabel = hasActivePaidAccess ? plan : `${plan} tier`;
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
 
@@ -114,14 +129,11 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     }
     rafId = requestAnimationFrame(raf);
 
-    // Reset scroll on location change
-    lenis.scrollTo(0, { immediate: true });
-
     return () => {
       lenis.destroy();
       cancelAnimationFrame(rafId);
     };
-  }, [location.pathname]);
+  }, []);
 
   useEffect(() => {
     const updateTimers = () => {
@@ -144,7 +156,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     };
 
     updateTimers();
-    const intervalId = setInterval(updateTimers, 1000);
+    const intervalId = setInterval(updateTimers, 60_000);
     return () => clearInterval(intervalId);
   }, [hasLegacyTrial, expiry]);
 
@@ -165,23 +177,28 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
 
   const profileMenuRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
 
   useEffect(() => {
-    const handleScroll = () => {
+    let frameId = 0;
+    const updateVisibility = () => {
+      frameId = 0;
       const currentScrollY = window.scrollY;
-      if (currentScrollY < lastScrollY || currentScrollY < 50) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false);
-        setShowProfileMenu(false);
-      }
-      setLastScrollY(currentScrollY);
+      const nextVisible = currentScrollY < lastScrollYRef.current || currentScrollY < 50;
+      setIsVisible((visible) => visible === nextVisible ? visible : nextVisible);
+      if (!nextVisible && currentScrollY > 100) setShowProfileMenu(false);
+      lastScrollYRef.current = currentScrollY;
+    };
+    const handleScroll = () => {
+      if (!frameId) frameId = window.requestAnimationFrame(updateVisibility);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -199,7 +216,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const { trades, isLoading: isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
+  const { trades, isLoading: isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
 
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
@@ -478,7 +495,7 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
                       </svg>
                     </span>
                     <span className="text-[9.5px] font-black uppercase text-primary tracking-[0.05em] bg-primary/10 px-1.5 py-0.5 rounded text-center mt-0.5 w-max flex items-center gap-1 font-mono">
-                      {formattedTime}
+                      <CurrentTime />
                     </span>
                   </div>
                 )}
@@ -704,8 +721,8 @@ export function DashboardLayout({ user, plan, expiry, isTrial, isTrialExpired, t
             <div className="hidden sm:block absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none -z-10 mix-blend-screen transform-gpu will-change-transform" />
 
             <Outlet context={{
-              user, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal,
-              trades: displayedTrades, isLoadingTrades, addTrade, removeTrade, editTrade, resetTrades,
+              user, plan, expiry, isTrial, isTrialExpired, totalTrades, analytics, setShowPricingModal, openPortal,
+              trades: displayedTrades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
               walletBalance: displayedWalletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
               isExpanded: isRightSidebarExpanded,

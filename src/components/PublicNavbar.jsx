@@ -1,39 +1,41 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
-import { AnimatePresence, motion as Motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
 import Logo from './Logo';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 
-export function PublicNavbar({ showScrollTopButton = true } = {}) {
+export function PublicNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const { isLightMode, toggleTheme } = useAppTheme();
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let lastY = window.scrollY;
-    const handleScroll = () => {
+    let frameId = 0;
+    const updateNavigation = () => {
+      frameId = 0;
       const currentY = window.scrollY;
-      setIsScrolled(currentY > 20);
-      setShowScrollTop(currentY > Math.max(300, window.innerHeight * 0.65));
-
-      if (currentY > lastY && currentY > 80) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
+      const nextScrolled = currentY > 20;
+      const nextVisible = !(currentY > lastY && currentY > 80);
+      setIsScrolled((current) => current === nextScrolled ? current : nextScrolled);
+      setIsVisible((current) => current === nextVisible ? current : nextVisible);
       lastY = currentY;
     };
+    const handleScroll = () => {
+      if (!frameId) frameId = window.requestAnimationFrame(updateNavigation);
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    updateNavigation();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
   }, []);
 
   useEffect(() => {

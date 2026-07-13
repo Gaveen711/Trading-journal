@@ -18,7 +18,7 @@ import {
 
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
-import { auth } from '../firebase';
+import { auth } from '../firebaseAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { ProTermsModal } from '../components/ProTermsModal';
 import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY, PRO_YEARLY_MONTHLY_DISPLAY, PRO_YEARLY_SAVINGS } from '../lib/pricing';

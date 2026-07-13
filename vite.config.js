@@ -51,10 +51,9 @@ export default defineConfig(({ mode }) => {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('firebase')) return 'firebase';
-            if (id.includes('framer-motion')) return 'framer-motion';
+            if (id.includes('gsap')) return 'gsap';
             if (id.includes('chart.js') || id.includes('react-chartjs-2')) return 'chart';
-            return 'vendor';
+            return undefined;
           }
         }
       }

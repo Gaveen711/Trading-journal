@@ -8,6 +8,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:budget": "vite build && node scripts/check-bundle-budget.mjs",
+    "migrate:performance": "node scripts/migrate-performance-data.mjs",
+    "migrate:performance:apply": "node scripts/migrate-performance-data.mjs --apply",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"

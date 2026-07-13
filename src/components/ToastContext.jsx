@@ -1,19 +1,33 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
 const ToastContext = createContext(null);
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const nextId = useRef(0);
+  const timers = useRef(new Map());
+
+  useEffect(() => () => {
+    timers.current.forEach((timer) => window.clearTimeout(timer));
+    timers.current.clear();
+  }, []);
 
   const toast = useCallback((msg, type = 'success', duration = 4000) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, msg, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+    const id = ++nextId.current;
+    setToasts((current) => [...current, { id, msg, type }]);
+    const timer = window.setTimeout(() => {
+      timers.current.delete(id);
+      setToasts((current) => current.filter((item) => item.id !== id));
+    }, duration);
+    timers.current.set(id, timer);
   }, []);
 
   const dismiss = useCallback((id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+    const timer = timers.current.get(id);
+    if (timer) window.clearTimeout(timer);
+    timers.current.delete(id);
+    setToasts((current) => current.filter((item) => item.id !== id));
   }, []);
 
   return (

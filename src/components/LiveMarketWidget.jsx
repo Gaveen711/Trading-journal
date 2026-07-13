@@ -125,7 +125,7 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
           assets.map(async (asset) => {
             try {
               // Fetch spot price directly from Gold-API (supports CORS!)
-              const spotPromise = fetch(`https://api.gold-api.com/price/${asset.spotSymbol}`)
+              const spotPromise = fetch(`/api/spot-price/${asset.spotSymbol}`)
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null);
 

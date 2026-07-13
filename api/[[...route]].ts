@@ -21,6 +21,7 @@ import {
 import { getClientIp } from './_ipUtils.js'
 import { chunkedDbGetAll, runWithConcurrencyLimit } from './_firestoreUtils.js'
 import { persistBrokerTrades, toDateOrNull } from './_brokerTradePersistence.js'
+import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
@@ -218,8 +219,8 @@ async function consolidateBrokerConnect({
   brokerType,
   accountName
 }: any) {
-  const metaApiAccountId = await provisionMetaApiAccount({ login, password, server, brokerType })
-  const deals = await fetchMetaApiDeals(metaApiAccountId)
+  const metaApiAccountId = await withRetryBudget('metaapi-provision', () => provisionMetaApiAccount({ login, password, server, brokerType }), { timeoutMs: 30_000, retries: 1 })
+  const deals = await withRetryBudget('metaapi', () => fetchMetaApiDeals(metaApiAccountId), { timeoutMs: 25_000, retries: 2 })
 
   const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
   const name = accountName || `${server} · ${login}`
@@ -234,21 +235,22 @@ async function consolidateBrokerConnect({
     isActive: true,
     lastSyncTime: now(),
     lastSyncStatus: 'success',
+    syncJobState: 'queued',
+    retryCount: 0,
+    nextSyncAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
     tradeCount: deals.length,
     createdAt: now(),
     updatedAt: now(),
   })
 
-  const tradesRef = db.collection('users').doc(uid).collection('trades')
-  const batch = db.batch()
-  let stored = 0
-  for (const trade of deals) {
-    const tradeDocId = `broker_${brokerRef.id}_${trade.closeDealTicket}`
-    batch.set(tradesRef.doc(tradeDocId), { ...trade, accountId: brokerRef.id, syncedAt: now(), createdAt: now(), updatedAt: now() }, { merge: true })
-    stored++
-  }
-  if (stored > 0) await batch.commit()
-
+  await persistBrokerTrades({
+    db,
+    userId: uid,
+    accountId: brokerRef.id,
+    brokerTrades: deals,
+    timestampFactory: now,
+    incrementFactory: (value: number) => admin.firestore.FieldValue.increment(value),
+  })
   return {
     accountId: brokerRef.id,
     metaApiAccountId,
@@ -358,88 +360,17 @@ app.post('/broker-login-sync', async (c) => {
       const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
       const accountSnap = await accountRef.get()
       if (!accountSnap.exists) return c.json({ error: 'Broker account not found' }, 404)
-
-      const account = accountSnap.data()
-
-
-      const lastSyncDate = toDateOrNull(account.lastSyncTime)
-      const brokerTrades = await fetchBrokerTrades(
-        {
-          metaApiAccountId: account.metaApiAccountId,
-          login: account.login,
-          server: account.server,
-          brokerType: account.brokerType,
-        },
-        lastSyncDate as any
-      )
-
-      const syncResult = await persistBrokerTrades({
-        db,
-        userId: uid,
-        accountId: account.id,
-        brokerTrades,
-        timestampFactory: now,
-      })
-
       await accountRef.update({
-        lastSyncTime: now(),
-        lastSyncStatus: 'success',
-        tradeCount: syncResult.totalFetched,
+        syncJobState: 'queued',
+        nextSyncAt: new Date().toISOString(),
+        syncRequestedAt: now(),
         updatedAt: now(),
       })
-
-      return c.json({
-        ok: true,
-        message: 'Broker trades synced successfully',
-        newTrades: syncResult.newTrades,
-        updatedTrades: syncResult.updatedTrades,
-        totalFetched: syncResult.totalFetched,
-      })
+      return c.json({ ok: true, queued: true, message: 'Broker sync queued' }, 202)
     } catch (error: any) {
-      console.error('[broker-login-sync] Sync error:', error.message)
-      try {
-        const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
-        await accountRef.update({
-          lastSyncStatus: 'failed',
-          lastSyncError: 'Sync failed. Internal error occurred.',
-          updatedAt: now(),
-        })
-      } catch (updateErr: any) {
-        console.error('[broker-login-sync] Failed to update error status:', updateErr.message)
-      }
-      return handleRouteError('broker-login-sync:sync', error, c, 'Sync failed')
+      return handleRouteError('broker-login-sync:queue', error, c, 'Failed to queue sync')
     }
   }
-
-  if (action === 'list') {
-    try {
-      const snapshot = await db.collection('users').doc(uid).collection('brokerAccounts').where('isActive', '==', true).get()
-      const maskLogin = (login: any) => {
-        const s = String(login)
-        if (s.length <= 4) return '****'
-        return '*'.repeat(s.length - 4) + s.slice(-4)
-      }
-      const accounts = snapshot.docs.map((doc: any) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          accountName: data.accountName,
-          brokerType: data.brokerType,
-          server: data.server,
-          login: maskLogin(data.login),
-          isActive: data.isActive,
-          lastSyncTime: data.lastSyncTime,
-          lastSyncStatus: data.lastSyncStatus,
-          tradeCount: data.tradeCount,
-          createdAt: data.createdAt,
-        }
-      })
-      return c.json({ accounts })
-    } catch (error) {
-      return handleRouteError('broker-login-sync:list', error, c)
-    }
-  }
-
   if (action === 'remove') {
     const { accountId } = body
     if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
@@ -635,6 +566,10 @@ app.post('/init-user', async (c) => {
       planExpiry: null,
       createdAt: now(),
       updatedAt: now(),
+      analytics: {
+        version: 1, tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0, breakEven: 0,
+        longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
+      },
     }
 
     await userDocRef.set(initData, { merge: true })
@@ -885,7 +820,11 @@ app.post('/reset-trades', async (c) => {
     }
 
     await db.collection('users').doc(uid).set({
-      totalTradesLogged: 0
+      totalTradesLogged: 0,
+      analytics: {
+        version: 1, tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0, breakEven: 0,
+        longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
+      },
     }, { merge: true })
 
     console.log(`[reset-trades] Wiped trades for uid=${uid}`)
@@ -941,8 +880,12 @@ app.post('/tv-webhook', async (c) => {
 
 // ── 13. Cron Jobs ───────────────────────────────────────────────────────────
 const handleBrokerSyncPoller = async (c: any) => {
-  const cronSecret = c.req.header('x-cron-secret') || ''
   const expectedSecret = process.env.CRON_SECRET || ''
+  const authorization = c.req.header('Authorization') || ''
+  const cronSecret = authorization.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length)
+    : (c.req.header('x-cron-secret') || '')
+  if (!expectedSecret) return c.json({ error: 'Cron secret is not configured' }, 503)
   const a = crypto.createHash('sha256').update(cronSecret).digest()
   const b = crypto.createHash('sha256').update(expectedSecret).digest()
   if (!crypto.timingSafeEqual(a, b)) {
@@ -961,6 +904,10 @@ const handleBrokerSyncPoller = async (c: any) => {
     const accountsSnapshot = await db
       .collectionGroup('brokerAccounts')
       .where('isActive', '==', true)
+      .where('syncJobState', 'in', ['queued', 'retry'])
+      .where('nextSyncAt', '<=', new Date().toISOString())
+      .orderBy('nextSyncAt')
+      .limit(100)
       .get()
 
     if (accountsSnapshot.empty) {
@@ -1017,74 +964,52 @@ const handleBrokerSyncPoller = async (c: any) => {
 
     // 5. Sync accounts in parallel with a bounded concurrency pool (limit of 5 concurrent processes)
     const syncAccountTask = async ({ uid, accountData, accountId, accountRef }: any) => {
-      try {
-        const lastSyncDate = toDateOrNull(accountData.lastSyncTime)
-        if (lastSyncDate) {
-          const lastSync = lastSyncDate.getTime()
-          const timeSinceSync = Date.now() - lastSync
-          if (timeSinceSync < 30000) {
-            console.log(`[broker-sync-poller] Skipping ${accountId} - recently synced`)
-            return
-          }
-        }
+      const nextSyncAt = toDateOrNull(accountData.nextSyncAt)
+      if (nextSyncAt && nextSyncAt.getTime() > Date.now()) return
 
-
-        const brokerTrades = await fetchBrokerTrades(
-          {
+      const result = await withAccountLock(uid + ':' + accountId, async () => {
+        try {
+          await accountRef.update({ syncJobState: 'running', syncStartedAt: new Date().toISOString() })
+          const lastSyncDate = toDateOrNull(accountData.lastSyncTime)
+          const brokerTrades = await withRetryBudget('metaapi', () => fetchBrokerTrades({
             metaApiAccountId: accountData.metaApiAccountId,
             login: accountData.login,
             server: accountData.server,
             brokerType: accountData.brokerType,
-          },
-          lastSyncDate as any
-        )
+          }, lastSyncDate as any), { timeoutMs: 25_000, retries: 2 })
 
-        const syncResult = await persistBrokerTrades({
-          db,
-          userId: uid,
-          accountId,
-          brokerTrades,
-          timestampFactory: () => new Date().toISOString(),
-        })
-
-        await accountRef.update({
-          lastSyncTime: new Date().toISOString(),
-          lastSyncStatus: 'success',
-          tradeCount: syncResult.totalFetched,
-          updatedAt: new Date().toISOString(),
-        })
-
-        await db.collection('users').doc(uid).set({
-          lastBrokerSync: new Date(),
-          lastBrokerSyncStatus: 'success',
-          lastBrokerSyncCount: syncResult.totalFetched,
-          lastBrokerSyncError: null
-        }, { merge: true })
-
-        console.log(`[broker-sync-poller] Synced ${syncResult.newTrades} new trades for ${accountId}`)
-        successfulSyncs++
-      } catch (error: any) {
-        console.error(`[broker-sync-poller] ✗ Failed to sync ${accountId}:`, error.message)
-        
-        try {
-          await accountRef.update({
-            lastSyncStatus: 'failed',
-            lastSyncError: error.message,
-            updatedAt: new Date().toISOString(),
+          const syncResult = await persistBrokerTrades({
+            db, userId: uid, accountId, brokerTrades,
+            timestampFactory: () => new Date().toISOString(),
+            incrementFactory: (value: number) => admin.firestore.FieldValue.increment(value),
           })
-
+          const nextRun = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+          await accountRef.update({
+            lastSyncTime: new Date().toISOString(), lastSyncStatus: 'success',
+            tradeCount: syncResult.totalFetched, updatedAt: new Date().toISOString(),
+            syncJobState: 'queued', retryCount: 0, nextSyncAt: nextRun,
+          })
           await db.collection('users').doc(uid).set({
-            lastBrokerSyncStatus: 'failed',
-            lastBrokerSyncError: error.message
+            lastBrokerSync: new Date(), lastBrokerSyncStatus: 'success',
+            lastBrokerSyncCount: syncResult.totalFetched, lastBrokerSyncError: null,
           }, { merge: true })
-        } catch (updateErr: any) {
-          console.error('[broker-sync-poller] Failed to update error status:', updateErr.message)
+          successfulSyncs++
+          return syncResult
+        } catch (error: any) {
+          const retryCount = Number(accountData.retryCount || 0) + 1
+          const retryDelay = Math.min(30 * (2 ** Math.min(retryCount, 6)), 3600)
+          await accountRef.update({
+            lastSyncStatus: 'failed', lastSyncError: error.message,
+            syncJobState: retryCount >= 6 ? 'dead' : 'retry',
+            retryCount, nextSyncAt: new Date(Date.now() + retryDelay * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+          }).catch(() => undefined)
+          failedSyncs++
+          return null
         }
-
-        failedSyncs++
-      }
+      })
+      if (result === null) console.log('[broker-sync-poller] account lock busy:', accountId)
     }
-
     // Run sync tasks with a concurrency limit of 5 to avoid CPU/memory exhaustion or MetaAPI limit hitting
     await runWithConcurrencyLimit(5, accountsToSync, syncAccountTask)
 
@@ -1232,49 +1157,56 @@ const handleRevokeExpired = async (c: any) => {
 app.get('/cron/revoke-expired', handleRevokeExpired)
 app.post('/cron/revoke-expired', handleRevokeExpired)
 
-// Proxy route for Yahoo Finance to bypass client-side CORS issues
+// Cached market-data proxy with request coalescing and stale-while-revalidate.
 app.get('/yahoo-chart/:symbol', async (c) => {
   const symbol = c.req.param('symbol')
   const interval = c.req.query('interval') || '1m'
   const range = c.req.query('range') || '1d'
-
   try {
-    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`
-    const res = await fetch(yahooUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    })
-    
-    if (!res.ok) {
-      return c.json({ error: 'Failed to fetch from Yahoo Finance', status: res.status }, res.status as any)
-    }
-
-    const data = await res.json()
-    return c.json(data)
+    const result = await cachedJson('yahoo:' + symbol + ':' + interval + ':' + range, async () => {
+      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol)
+        + '?interval=' + encodeURIComponent(interval) + '&range=' + encodeURIComponent(range)
+      return withRetryBudget('yahoo', async (signal) => {
+        const response = await fetch(url, { signal, headers: { 'User-Agent': 'xaujournal-market-proxy/1.0' } })
+        if (!response.ok) throw new Error('Yahoo upstream returned ' + response.status)
+        return response.json()
+      }, { timeoutMs: 5_000, retries: 1 })
+    }, { freshSeconds: 15, staleSeconds: 120 })
+    c.header('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=120')
+    c.header('X-Cache', result.cache)
+    return c.json(result.data)
   } catch (error: any) {
-    console.error('[yahoo-chart] Proxy error:', error)
-    return c.json({ error: 'Internal Server Error', message: error.message }, 500)
+    return handleRouteError('yahoo-chart', error, c, 'Market data unavailable')
   }
 })
 
-// Proxy route for spot precious metals prices from Gold-API
 app.get('/spot-price/:symbol', async (c) => {
   const symbol = c.req.param('symbol')
   try {
-    const res = await fetch(`https://api.gold-api.com/price/${encodeURIComponent(symbol)}`)
-    if (!res.ok) {
-      return c.json({ error: 'Failed to fetch spot price from Gold-API', status: res.status }, res.status as any)
-    }
-    const data = await res.json()
-    return c.json(data)
+    const result = await cachedJson('spot:' + symbol, async () => withRetryBudget('gold-api', async (signal) => {
+      const response = await fetch('https://api.gold-api.com/price/' + encodeURIComponent(symbol), { signal })
+      if (!response.ok) throw new Error('Gold API upstream returned ' + response.status)
+      return response.json()
+    }, { timeoutMs: 4_000, retries: 1 }), { freshSeconds: 10, staleSeconds: 90 })
+    c.header('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=90')
+    c.header('X-Cache', result.cache)
+    return c.json(result.data)
   } catch (error: any) {
-    console.error('[spot-price] Proxy error:', error)
-    return c.json({ error: 'Internal Server Error', message: error.message }, 500)
+    return handleRouteError('spot-price', error, c, 'Spot price unavailable')
   }
 })
 
-
+app.post('/vitals', async (c) => {
+  const body = await c.req.json().catch(() => null)
+  if (!body || typeof body.name !== 'string' || typeof body.value !== 'number') {
+    return c.json({ error: 'Invalid metric' }, 400)
+  }
+  console.log('[web-vital]', JSON.stringify({
+    name: body.name, value: body.value, rating: body.rating,
+    route: String(body.route || '').slice(0, 120),
+  }))
+  return c.body(null, 204)
+})
 
 // Export handlers for Vercel
 export const GET = handle(app)

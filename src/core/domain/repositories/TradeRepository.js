@@ -3,6 +3,10 @@ export class TradeRepository {
     throw new Error('subscribeToTrades not implemented');
   }
 
+  getTradesPage(_userId, _cursor, _pageSize) {
+    throw new Error('getTradesPage not implemented');
+  }
+
   addTrade(_userId, _tradeData) {
     throw new Error('addTrade not implemented');
   }

@@ -6,12 +6,12 @@ import { auth } from '../firebase';
 
 
 export function useSubscription(user) {
-  const [subscription, setSubscription] = useState({ 
-    plan: 'free', 
-    expiry: null, 
+  const [subscription, setSubscription] = useState({
+    plan: 'free',
+    expiry: null,
     isTrial: false,
-    isLoading: true, 
-    agreedToTerms: false 
+    isLoading: true,
+    agreedToTerms: false
   });
   const toast = useToast();
 
@@ -34,42 +34,45 @@ export function useSubscription(user) {
 
         if (isPro && expiryDate) {
           const cutoffDate = new Date(expiryDate.getTime() + graceMs);
-          
+
           if (now > cutoffDate) {
-            setSubscription({ 
-              plan: 'free', 
-              expiry: data.planExpiry, 
+            setSubscription({
+              plan: 'free',
+              expiry: data.planExpiry,
               isTrial: false,
               isTrialExpired: data.isTrial || false,
               totalTrades: data.totalTradesLogged || 0,
               totalJournals: data.totalJournalsLogged || 0,
+              analytics: data.analytics || null,
               agreedToTerms: data.agreedToTerms || false,
-              isLoading: false 
+              isLoading: false
             });
           } else {
-            setSubscription({ 
-              plan: 'pro', 
-              expiry: data.planExpiry, 
+            setSubscription({
+              plan: 'pro',
+              expiry: data.planExpiry,
               isTrial: data.isTrial || false,
               isTrialExpired: false,
               totalTrades: data.totalTradesLogged || 0,
               totalJournals: data.totalJournalsLogged || 0,
+              analytics: data.analytics || null,
               agreedToTerms: data.agreedToTerms || false,
               isLoading: false,
-              isGracePeriod: now > expiryDate 
+              isGracePeriod: now > expiryDate
             });
           }
         } else {
           const isTrialExpired = data.isTrial && expiryDate && now > expiryDate;
-          setSubscription({ 
-            plan: data.plan || 'free', 
-            expiry: data.planExpiry || null, 
+          setSubscription({
+            plan: data.plan || 'free',
+            expiry: data.planExpiry || null,
             isTrial: data.isTrial || false,
             isTrialExpired: isTrialExpired || false,
             totalTrades: data.totalTradesLogged || 0,
             totalJournals: data.totalJournalsLogged || 0,
+            analytics: data.analytics || null,
             agreedToTerms: data.agreedToTerms || false,
-            isLoading: false 
+            isLoading: false
           });
         }
       } else {
@@ -87,15 +90,16 @@ export function useSubscription(user) {
           });
         });
 
-        setSubscription({ 
-          plan: 'free', 
-          expiry: null, 
-          isTrial: false, 
-          isTrialExpired: false, 
-          totalTrades: 0, 
-          totalJournals: 0, 
-          agreedToTerms: false, 
-          isLoading: true 
+        setSubscription({
+          plan: 'free',
+          expiry: null,
+          isTrial: false,
+          isTrialExpired: false,
+          totalTrades: 0,
+          totalJournals: 0,
+          analytics: null,
+          agreedToTerms: false,
+          isLoading: true
         });
       }
     }, (error) => {
@@ -114,7 +118,7 @@ export function useSubscription(user) {
     const baseUrl = planType === 'pro_yearly'
       ? (import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL_YEARLY || '')
       : (import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL_MONTHLY || '');
-    
+
     if (!baseUrl) {
       toast("Checkout is currently unavailable. Please try again later.", "info");
       return;
@@ -156,7 +160,7 @@ export function useSubscription(user) {
       toast("Failed to process agreement. Please check your connection.", "error");
     }
   };
-  
+
   return { ...subscription, startCheckout, openPortal, agreeToTerms, recordProAcceptance };
 }
 

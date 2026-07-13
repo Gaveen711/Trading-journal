@@ -131,14 +131,16 @@ export function PrivacyPolicyPage() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smooth: true,
     });
-    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-    requestAnimationFrame(raf);
+    let rafId;
+    function raf(time) { lenis.raf(time); rafId = requestAnimationFrame(raf); }
+    rafId = requestAnimationFrame(raf);
 
     document.body.style.overflow = '';
     window.scrollTo(0, 0);
 
     return () => {
       lenis.destroy();
+      cancelAnimationFrame(rafId);
       document.body.style.overflow = '';
     };
   }, []);

@@ -1,31 +1,15 @@
-﻿import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase.js";
+import { auth } from "./firebaseAuth.js";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
-import { useToast } from './components/ToastContext';
-import { DashboardLayout } from './components/layout/DashboardLayout';
-import { useSubscription } from './hooks/useSubscription';
-import { useWallet } from './hooks/useWallet';
 import { ErrorBoundary } from './components/ErrorBoundary';
-
-import { PricingModal } from './components/PricingModal';
-import { ProFeatureUpsellModal } from './components/ProFeatureUpsellModal';
-import { OnboardingModal } from './components/OnboardingModal';
-import { ConsentModal } from './components/ConsentModal';
 import { PageSEO } from './components/PageSEO';
 import { PublicNavbar } from './components/PublicNavbar';
+import { PageLoader } from './components/PageLoader';
+import { observeRouteWebVitals } from './lib/webVitals';
 
 // Lazy load pages for performance
-const LogTradePage = lazy(() => import('./pages/LogTradePage.jsx').then(m => ({ default: m.LogTradePage })));
-const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx').then(m => ({ default: m.HistoryPage })));
-const CalendarPage = lazy(() => import('./pages/CalendarPage.jsx').then(m => ({ default: m.CalendarPage })));
-const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx').then(m => ({ default: m.AnalyticsPage })));
-const JournalPage = lazy(() => import('./pages/JournalPage.jsx').then(m => ({ default: m.JournalPage })));
-const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx').then(m => ({ default: m.SettingsPage })));
-const EASetup = lazy(() => import('./components/EASetup').then(m => ({ default: m.default })));
-const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess.jsx').then(m => ({ default: m.CheckoutSuccess })));
-const CheckoutCancel = lazy(() => import('./pages/CheckoutCancel.jsx').then(m => ({ default: m.CheckoutCancel })));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage.jsx').then(m => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage.jsx').then(m => ({ default: m.TermsOfServicePage })));
 const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage.jsx').then(m => ({ default: m.RefundPolicyPage })));
@@ -34,121 +18,12 @@ const ContactPage = lazy(() => import('./pages/ContactPage.jsx').then(m => ({ de
 const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
 const TheStoryPage = lazy(() => import('./pages/TheStoryPage.jsx'));
 const Login = lazy(() => import('./Login.jsx'));
+const AuthenticatedApp = lazy(() => import('./AuthenticatedApp.jsx').then((module) => ({ default: module.AuthenticatedApp })));
 
 const PUBLIC_NAVBAR_PATHS = new Set(['/', '/home', '/pricing', '/contact', '/privacy', '/terms-and-conditions', '/refund-policy', '/the-story']);
 
-const PageLoader = ({ text = "Syncing Terminal" }) => (
-  <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6">
-    <div className="relative">
-      <div className="absolute inset-0 bg-[#007CFF]/10 blur-3xl rounded-full" />
-      <div className="loader-wrapper relative z-10 animate-in fade-in duration-300">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 120" width="380" height="76" className="inline-block select-none max-w-full">
-          <defs>
-            <linearGradient gradientUnits="userSpaceOnUse" y2={0} x2={600} y1={0} x1={0} id="loader-grad">
-              <stop stopColor="#973BED" offset="0%" />
-              <stop stopColor="#007CFF" offset="33%" />
-              <stop stopColor="#00E0ED" offset="66%" />
-              <stop stopColor="#00DA72" offset="100%" />
-            </linearGradient>
-          </defs>
-          <text
-            x="50%"
-            y="55%"
-            dominantBaseline="middle"
-            textAnchor="middle"
-            fontFamily="'Poppins', 'Montserrat', -apple-system, sans-serif"
-            fontWeight="900"
-            fontSize="54"
-            letterSpacing="8"
-            stroke="url(#loader-grad)"
-            strokeWidth="3.5"
-            fill="none"
-            className="dash-text"
-            pathLength="360"
-          >
-            XAU JOURNAL
-          </text>
-        </svg>
-      </div>
-    </div>
-    {text && text !== "Syncing Terminal" && (
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">{text}</p>
-      </div>
-    )}
-  </div>
-);
-
-function AuthenticatedApp({ user }) {
-  const [showPricingModal, setShowPricingModal] = useState(false);
-  const [showBrokerSyncUpsell, setShowBrokerSyncUpsell] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const { plan, expiry, isTrial, isTrialExpired, totalTrades, totalJournals, agreedToTerms, isLoading: isSubLoading, startCheckout, openPortal, agreeToTerms, recordProAcceptance } = useSubscription(user);
-  const { updateBalance } = useWallet(user);
-  const toast = useToast();
-
-  useEffect(() => {
-    if (!localStorage.getItem('xau-onboarded')) {
-      setTimeout(() => setShowOnboarding(true), 400);
-    }
-  }, []);
-
-  const dismissOnboarding = () => {
-    localStorage.setItem('xau-onboarded', '1');
-    setShowOnboarding(false);
-  };
-
-  const completeOnboarding = async (val) => {
-    const startingBalance = Number(val);
-    if (!Number.isNaN(startingBalance) && startingBalance > 0) {
-      const newBalance = Number(startingBalance.toFixed(2));
-      await updateBalance(newBalance);
-    }
-    localStorage.setItem('xau-onboarded', '1');
-    setShowOnboarding(false);
-    toast('Welcome! Log your first trade below.', 'success');
-  };
-
-  const location = useLocation();
-  const isPublicPage = ['/privacy', '/pricing', '/contact', '/terms-and-conditions', '/refund-policy', '/the-story'].includes(location.pathname);
-
-  return (
-    <>
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route element={<DashboardLayout user={user} plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} totalTrades={totalTrades} totalJournals={totalJournals} setShowPricingModal={setShowPricingModal} openBrokerSyncUpsell={() => setShowBrokerSyncUpsell(true)} openPortal={openPortal} />}>
-              <Route index element={<LogTradePage />} />
-              <Route path="history" element={<HistoryPage />} />
-              <Route path="calendar" element={<CalendarPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="journal" element={<JournalPage />} />
-              <Route path="sync" element={<EASetup />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="checkout-success" element={<CheckoutSuccess />} />
-              <Route path="checkout-cancel" element={<CheckoutCancel />} />
-            </Route>
-          </Routes>
-        </Suspense>
-      </ErrorBoundary>
-      {showPricingModal && <PricingModal plan={plan} expiry={expiry} isTrial={isTrial} isTrialExpired={isTrialExpired} onSubscribe={startCheckout} recordProAcceptance={recordProAcceptance} onClose={() => setShowPricingModal(false)} />}
-      {showBrokerSyncUpsell && (
-        <ProFeatureUpsellModal
-          feature="broker-sync"
-          plan={plan}
-          onSubscribe={startCheckout}
-          recordProAcceptance={recordProAcceptance}
-          onClose={() => setShowBrokerSyncUpsell(false)}
-        />
-      )}
-      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} onClose={dismissOnboarding} />}
-      {!agreedToTerms && !isSubLoading && !isPublicPage && <ConsentModal onAgree={agreeToTerms} />}
-    </>
-  );
-}
-
-function useScrollProgress(pathname) {
-  const [scrollProgress, setScrollProgress] = useState(0);
+function ScrollProgress({ pathname }) {
+  const progressRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
@@ -158,7 +33,7 @@ function useScrollProgress(pathname) {
       frameId = 0;
       const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       const progress = Math.min(1, Math.max(0, window.scrollY / scrollable));
-      setScrollProgress(progress);
+      progressRef.current?.style.setProperty('--ux-scroll-progress', progress);
     };
     const requestUpdate = () => {
       if (frameId) return;
@@ -178,7 +53,7 @@ function useScrollProgress(pathname) {
     };
   }, [pathname]);
 
-  return scrollProgress;
+  return <div ref={progressRef} className="ux-scroll-progress" aria-hidden="true" />;
 }
 
 function useGlobalInteractions(pathname) {
@@ -314,7 +189,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
   const location = useLocation();
-  const scrollProgress = useScrollProgress(location.pathname);
+
+  useEffect(() => observeRouteWebVitals(location.pathname), [location.pathname]);
   const showPublicNavbarDuringLoad = PUBLIC_NAVBAR_PATHS.has(location.pathname);
   const publicPageLoader = (text) => (
     <>
@@ -329,86 +205,8 @@ function App() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
-
-    const styleId = 'global-text-scroll-reveal-styles';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.innerHTML = `
-        .text-reveal-pending {
-          opacity: 0;
-          transform: translate3d(0, 18px, 0);
-          filter: blur(4px);
-          transition: 
-            opacity 680ms cubic-bezier(0.16, 1, 0.3, 1),
-            transform 680ms cubic-bezier(0.16, 1, 0.3, 1),
-            filter 680ms cubic-bezier(0.16, 1, 0.3, 1);
-          will-change: opacity, transform, filter;
-        }
-        .text-reveal-active {
-          opacity: 1 !important;
-          transform: translate3d(0, 0, 0) !important;
-          filter: blur(0) !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .text-reveal-pending {
-            opacity: 1 !important;
-            transform: none !important;
-            filter: none !important;
-            transition: none !important;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    const textObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('text-reveal-active');
-          textObserver.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.08,
-      rootMargin: '0px 0px -8% 0px'
-    });
-
-    const timer = setTimeout(() => {
-      const textElements = document.querySelectorAll(
-        'main h1, main h2, main h3, main h4, main p, main blockquote, main .story-eyebrow, main .xau-eyebrow, main li'
-      );
-      textElements.forEach(el => {
-        if (
-          el.closest('.qgs-page') ||
-          el.closest('.xjs-page') ||
-          el.closest('[data-ux-skip="true"]') ||
-          el.closest('header') ||
-          el.closest('footer') ||
-          el.closest('.dashboard-sidebar') ||
-          el.closest('.Toastify') ||
-          el.closest('[role="dialog"]') ||
-          el.closest('[aria-hidden="true"]')
-        ) {
-          return;
-        }
-        if (!el.classList.contains('text-reveal-active')) {
-          el.classList.add('text-reveal-pending');
-          textObserver.observe(el);
-        }
-      });
-    }, 120);
-
-    return () => {
-      clearTimeout(timer);
-      textObserver.disconnect();
-    };
-  }, [location.pathname]);
-
-  useEffect(() => {
     const timeout = setTimeout(() => {
-      if (loading) setAuthError(true);
+      setAuthError(true);
     }, 15000);
 
     const unsubscribe = onAuthStateChanged(auth,
@@ -435,12 +233,12 @@ function App() {
       unsubscribe();
       clearTimeout(timeout);
     };
-  }, [loading]);
+  }, []);
 
   return (
     <ErrorBoundary>
       <PageSEO />
-      <div className="ux-scroll-progress" style={{ '--ux-scroll-progress': scrollProgress }} aria-hidden="true" />
+      <ScrollProgress pathname={location.pathname} />
       <Suspense fallback={showPublicNavbarDuringLoad ? publicPageLoader() : <PageLoader />}>
         {authError && !showPublicNavbarDuringLoad ? (
           <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
