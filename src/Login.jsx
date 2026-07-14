@@ -7,7 +7,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth, googleProvider, setPersistence, browserLocalPersistence, browserSessionPersistence } from './firebase.js';
 import { getFriendlyErrorMessage } from './lib/errorUtils';
 import { NeatGradient } from '@firecms/neat';
@@ -262,17 +262,24 @@ function Login() {
 
       // Initialize/update their user doc in Firestore to ensure names are present
       const country = await fetchCountry();
-      await setDoc(doc(db, "users", user.uid), {
+      const userRef = doc(db, "users", user.uid);
+      const existingUser = await getDoc(userRef);
+      const profileData = {
         email: user.email,
         firstName: firstName || 'Google',
         lastName: lastName || 'User',
         displayName: displayName || user.email?.split('@')[0] || 'Google User',
-        totalTradesLogged: 0,
-        totalJournalsLogged: 0,
-        agreedToTerms: false,
         country,
-        createdAt: new Date().toISOString()
-      }, { merge: true });
+      };
+      if (!existingUser.exists()) {
+        Object.assign(profileData, {
+          totalTradesLogged: 0,
+          totalJournalsLogged: 0,
+          agreedToTerms: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      await setDoc(userRef, profileData, { merge: true });
 
       // Trigger Login Alert Email
       try {

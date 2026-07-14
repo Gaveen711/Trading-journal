@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
+import { ANALYTICS_VERSION } from '../lib/tradeAnalytics.js';
 import { BarChartLine, ClockFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity, LockFill } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { ShareTradeModal } from '../components/ShareTradeModal';
@@ -43,23 +44,39 @@ const PremiumOverlay = ({ title, description, onUpgrade }) => (
 );
 
 export function AnalyticsPage() {
-  const { trades, analytics, isLoadingTrades, walletBalance, plan, isTrial, setShowPricingModal } = useOutletContext();
+  const { trades, analytics, isLoadingTrades, isLoadingMore, hasMoreTrades, loadAllTrades, walletBalance, plan, isTrial, setShowPricingModal } = useOutletContext();
   const isFree = (plan === 'basic' || plan === 'free') && !isTrial;
   const navigate = useNavigate();
   const { isLightMode } = useAppTheme();
 
   const [showExact, setShowExact] = useState({});
   const [sharingTrade, setSharingTrade] = useState(null);
+  const [historyLoadError, setHistoryLoadError] = useState(null);
 
   const setExact = useCallback((index, val) => {
     setShowExact(prev => ({ ...prev, [index]: val }));
   }, []);
 
+  const hydrateAllTrades = useCallback(async () => {
+    setHistoryLoadError(null);
+    try {
+      await loadAllTrades();
+    } catch (error) {
+      console.error('Failed to load complete analytics history:', error);
+      setHistoryLoadError(error);
+    }
+  }, [loadAllTrades]);
+
+  useEffect(() => {
+    if (isLoadingTrades || !hasMoreTrades) return;
+    void hydrateAllTrades();
+  }, [hasMoreTrades, hydrateAllTrades, isLoadingTrades]);
+
   const stats = useMemo(() => {
     const tradesList = trades || [];
     const wins = tradesList.filter(t => t.outcome === 'WIN');
     const losses = tradesList.filter(t => t.outcome === 'LOSS');
-    const hasAggregate = analytics?.version === 1 && Number.isFinite(Number(analytics.tradeCount));
+    const hasAggregate = analytics?.version === ANALYTICS_VERSION && Number.isFinite(Number(analytics.tradeCount));
     const winsCount = hasAggregate ? Number(analytics.wins) || 0 : wins.length;
     const lossesCount = hasAggregate ? Number(analytics.losses) || 0 : losses.length;
     const totalCount = hasAggregate ? Number(analytics.tradeCount) || 0 : tradesList.length;
@@ -450,7 +467,31 @@ export function AnalyticsPage() {
     },
   ], [avgLoss, avgWin, currentWalletBalance, expectancy, lossesCount, pf, showExact, totalCount, winRatePercent, winsCount]);
 
-  if (isLoadingTrades) return (
+  if (historyLoadError && hasMoreTrades) return (
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-3xl font-black text-foreground">Analytics</h1>
+      </header>
+      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+        <div className="flex items-start gap-3">
+          <ShieldExclamation className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+          <div>
+            <h2 className="font-bold text-foreground">Complete history could not be loaded</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Analytics are hidden so a partial trade history is never presented as authoritative.</p>
+            <button
+              type="button"
+              onClick={hydrateAllTrades}
+              className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isLoadingTrades || isLoadingMore || hasMoreTrades) return (
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-black text-foreground">Analytics</h1>

@@ -164,6 +164,7 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
   useEffect(() => {
     if (accounts.length > 0) {
       const activeAccount = accounts[0];
+      if (activeAccount.requiresReconnect) return;
       syncAccount(activeAccount.id)
         .then(() => {
           console.log('Background broker sync successful.');
@@ -216,7 +217,7 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const { trades, isLoading: isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
+  const { trades, isLoading: isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
 
   const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry } = useJournals(user);
   const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useWallet(user);
@@ -722,7 +723,7 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
 
             <Outlet context={{
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, analytics, setShowPricingModal, openPortal,
-              trades: displayedTrades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, addTrade, removeTrade, editTrade, resetTrades,
+              trades: displayedTrades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry,
               walletBalance: displayedWalletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
               isExpanded: isRightSidebarExpanded,

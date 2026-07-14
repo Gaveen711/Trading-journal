@@ -41,11 +41,12 @@ export class FirebaseTradeRepository extends TradeRepository {
   async addTrade(userId, tradeData) {
     const batch = writeBatch(db);
     const tradeRef = doc(collection(db, 'users', userId, 'trades'));
+    const delta = tradeAnalyticsDelta(tradeData);
     batch.set(tradeRef, { ...tradeData, id: tradeRef.id });
     batch.update(doc(db, 'users', userId), {
-      totalTradesLogged: increment(1),
+      totalTradesLogged: increment(delta.tradeCount),
       lastTradeTime: serverTimestamp(),
-      ...analyticsIncrements(tradeAnalyticsDelta(tradeData)),
+      ...analyticsIncrements(delta),
     });
     await batch.commit();
     return tradeRef;
@@ -56,10 +57,11 @@ export class FirebaseTradeRepository extends TradeRepository {
       const tradeRef = doc(db, 'users', userId, 'trades', tradeId);
       const snapshot = await transaction.get(tradeRef);
       if (!snapshot.exists()) return;
+      const delta = tradeAnalyticsDelta(snapshot.data(), -1);
       transaction.delete(tradeRef);
       transaction.update(doc(db, 'users', userId), {
-        totalTradesLogged: increment(-1),
-        ...analyticsIncrements(tradeAnalyticsDelta(snapshot.data(), -1)),
+        totalTradesLogged: increment(delta.tradeCount),
+        ...analyticsIncrements(delta),
       });
     });
   }
@@ -72,8 +74,10 @@ export class FirebaseTradeRepository extends TradeRepository {
       if (!snapshot.exists()) throw new Error('Trade not found');
       const nextTrade = { ...snapshot.data(), ...safeData };
       transaction.update(tradeRef, safeData);
+      const delta = subtractTradeAnalytics(snapshot.data(), nextTrade);
       transaction.update(doc(db, 'users', userId), {
-        ...analyticsIncrements(subtractTradeAnalytics(snapshot.data(), nextTrade)),
+        totalTradesLogged: increment(delta.tradeCount),
+        ...analyticsIncrements(delta),
       });
     });
   }

@@ -25,7 +25,7 @@ const HistorySkeleton = () => (
 );
 
 export function HistoryPage() {
-  const { trades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, removeTrade, editTrade, plan, setShowPricingModal } = useOutletContext();
+  const { trades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, removeTrade, editTrade, plan, setShowPricingModal } = useOutletContext();
   const toast = useToast();
   
   // Primary layout filters
@@ -227,14 +227,14 @@ export function HistoryPage() {
 
   if (isLoadingTrades) return <HistorySkeleton />;
 
-  const onExportCSV = () => {
+  const onExportCSV = (tradesToExport = trades) => {
     if (plan !== 'pro') {
       setShowPricingModal(true);
       return toast('Upgrade to Pro to export your trade data.', 'warn');
     }
-    if (!trades.length) return toast('No trades to export.', 'warn');
+    if (!tradesToExport.length) return toast('No trades to export.', 'warn');
     const headers = ['Date', 'Direction', 'Entry', 'Exit', 'P&L', 'Swap', 'Pips', 'Session', 'Setup', 'Outcome', 'Note'];
-    const rows = trades.map(t => [
+    const rows = tradesToExport.map(t => [
       t.date, t.direction, t.entry, t.exit, t.pnl, t.swap || 0, t.pips || 0, t.session, t.setup, t.outcome, `"${(t.note || '').replace(/"/g, '""')}"`
     ]);
     const csvContent = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
@@ -253,7 +253,7 @@ export function HistoryPage() {
     toast('CSV exported.', 'success');
   };
 
-  const handleExportClick = (e) => {
+  const handleExportClick = async (e) => {
     e.preventDefault();
 
     if (downloadState === 'idle') {
@@ -268,13 +268,19 @@ export function HistoryPage() {
         setDownloadState('idle');
         return;
       }
-      if (!trades.length) {
-        toast('No trades to export.', 'warn');
+      try {
+        const completeHistory = await loadAllTrades();
+        if (!completeHistory.length) {
+          toast('No trades to export.', 'warn');
+          return;
+        }
+        onExportCSV(completeHistory);
+      } catch (error) {
+        console.error('CSV export failed:', error);
+        toast('Could not load the complete trade history.', 'error');
+      } finally {
         setDownloadState('idle');
-        return;
       }
-      onExportCSV();
-      setDownloadState('idle');
     }
   };
 

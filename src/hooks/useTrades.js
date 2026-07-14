@@ -19,15 +19,21 @@ export function useTrades(user) {
   const cursorRef = useRef(null);
   const recentRef = useRef([]);
   const olderRef = useRef([]);
+  const hasMoreRef = useRef(false);
+  const pagingPromiseRef = useRef(null);
+  const activeUserIdRef = useRef(user?.uid || null);
 
   const repository = useMemo(() => new FirebaseTradeRepository(), []);
   const logTradeUseCase = useMemo(() => new LogTradeUseCase(repository), [repository]);
   const resetTradesUseCase = useMemo(() => new ResetTradesUseCase(repository), [repository]);
 
   useEffect(() => {
+    activeUserIdRef.current = user?.uid || null;
     recentRef.current = [];
     olderRef.current = [];
     cursorRef.current = null;
+    hasMoreRef.current = false;
+    pagingPromiseRef.current = null;
     setTrades([]);
     setHasMoreTrades(false);
     if (!user) {
@@ -41,6 +47,7 @@ export function useTrades(user) {
       if (olderRef.current.length === 0) {
         cursorRef.current = page.cursor;
         setHasMoreTrades(page.hasMore);
+        hasMoreRef.current = page.hasMore;
       }
       setTrades(mergeTrades(recentTrades, olderRef.current));
       setIsLoading(false);
@@ -52,18 +59,70 @@ export function useTrades(user) {
   }, [user, repository]);
 
   const loadMoreTrades = useCallback(async () => {
-    if (!user?.uid || !hasMoreTrades || isLoadingMore) return;
+    if (!user?.uid || !hasMoreRef.current) {
+      return mergeTrades(recentRef.current, olderRef.current);
+    }
+    if (pagingPromiseRef.current) return pagingPromiseRef.current;
+
+    const userId = user.uid;
     setIsLoadingMore(true);
-    try {
-      const page = await repository.getTradesPage(user.uid, cursorRef.current, PAGE_SIZE);
+    const operation = (async () => {
+      const page = await repository.getTradesPage(userId, cursorRef.current, PAGE_SIZE);
+      if (activeUserIdRef.current !== userId) {
+        return mergeTrades(recentRef.current, olderRef.current);
+      }
       olderRef.current = mergeTrades(olderRef.current, page.trades);
       cursorRef.current = page.cursor;
+      hasMoreRef.current = page.hasMore;
       setHasMoreTrades(page.hasMore);
-      setTrades(mergeTrades(recentRef.current, olderRef.current));
+      const merged = mergeTrades(recentRef.current, olderRef.current);
+      setTrades(merged);
+      return merged;
+    })();
+    pagingPromiseRef.current = operation;
+    try {
+      return await operation;
     } finally {
-      setIsLoadingMore(false);
+      if (pagingPromiseRef.current === operation) pagingPromiseRef.current = null;
+      if (activeUserIdRef.current === userId) setIsLoadingMore(false);
     }
-  }, [hasMoreTrades, isLoadingMore, repository, user?.uid]);
+  }, [repository, user?.uid]);
+
+  const loadAllTrades = useCallback(async () => {
+    if (!user?.uid) {
+      return mergeTrades(recentRef.current, olderRef.current);
+    }
+    if (pagingPromiseRef.current) await pagingPromiseRef.current;
+    const userId = user.uid;
+    if (activeUserIdRef.current !== userId) {
+      return mergeTrades(recentRef.current, olderRef.current);
+    }
+    if (!hasMoreRef.current) return mergeTrades(recentRef.current, olderRef.current);
+
+    setIsLoadingMore(true);
+    const operation = (async () => {
+      while (hasMoreRef.current) {
+        const page = await repository.getTradesPage(userId, cursorRef.current, PAGE_SIZE);
+        if (activeUserIdRef.current !== userId) {
+          return mergeTrades(recentRef.current, olderRef.current);
+        }
+        olderRef.current = mergeTrades(olderRef.current, page.trades);
+        cursorRef.current = page.cursor;
+        hasMoreRef.current = page.hasMore;
+      }
+      setHasMoreTrades(false);
+      const merged = mergeTrades(recentRef.current, olderRef.current);
+      setTrades(merged);
+      return merged;
+    })();
+    pagingPromiseRef.current = operation;
+    try {
+      return await operation;
+    } finally {
+      if (pagingPromiseRef.current === operation) pagingPromiseRef.current = null;
+      if (activeUserIdRef.current === userId) setIsLoadingMore(false);
+    }
+  }, [repository, user?.uid]);
 
   const addTrade = async (tradeData) => {
     if (!user?.uid) throw new Error('Not authenticated');
@@ -85,10 +144,13 @@ export function useTrades(user) {
     await resetTradesUseCase.execute(user.uid, await user.getIdToken());
     olderRef.current = [];
     setTrades([]);
+    cursorRef.current = null;
+    hasMoreRef.current = false;
+    setHasMoreTrades(false);
   };
 
   return {
-    trades, isLoading, isLoadingMore, hasMoreTrades, loadMoreTrades,
+    trades, isLoading, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades,
     addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { pad2, formatCurrency, formatNumber } from '../lib/tradeUtils';
@@ -18,11 +18,27 @@ import {
 } from 'react-bootstrap-icons';
 
 export function CalendarPage() {
-  const { trades, plan } = useOutletContext();
+  const { trades, plan, isLoadingTrades, isLoadingMore, hasMoreTrades, loadAllTrades } = useOutletContext();
   
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [selectedCalDay, setSelectedCalDay] = useState(null);
+  const [historyLoadError, setHistoryLoadError] = useState(null);
+
+  const hydrateAllTrades = useCallback(async () => {
+    setHistoryLoadError(null);
+    try {
+      await loadAllTrades();
+    } catch (error) {
+      console.error('Failed to load complete calendar history:', error);
+      setHistoryLoadError(error);
+    }
+  }, [loadAllTrades]);
+
+  useEffect(() => {
+    if (isLoadingTrades || !hasMoreTrades) return;
+    void hydrateAllTrades();
+  }, [hasMoreTrades, hydrateAllTrades, isLoadingTrades]);
 
   const formatDate = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
   const fmtDate = (dateString) => new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(dateString + 'T00:00:00'));
@@ -312,6 +328,26 @@ export function CalendarPage() {
   const strokeWidth = 6;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (consistencyRate / 100) * circumference;
+
+  if (historyLoadError && hasMoreTrades) return (
+    <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+      <h2 className="font-bold text-foreground">Complete calendar history could not be loaded</h2>
+      <p className="mt-1 text-sm text-muted-foreground">The calendar is hidden so a partial history is not mistaken for complete data.</p>
+      <button
+        type="button"
+        onClick={hydrateAllTrades}
+        className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-wider text-primary-foreground"
+      >
+        Retry
+      </button>
+    </div>
+  );
+
+  if (isLoadingTrades || isLoadingMore || hasMoreTrades) return (
+    <div className="rounded-2xl border border-border bg-card p-6 text-sm font-semibold text-muted-foreground">
+      Loading complete calendar history...
+    </div>
+  );
 
   return (
     <div className="max-w-[1250px] mx-auto w-full space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
