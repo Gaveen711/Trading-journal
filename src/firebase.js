@@ -23,5 +23,3 @@ export {
   storage,
 };
 export default app;
-/** Re-export for broker Cloud Functions (optional — set VITE_USE_FIREBASE_CALLABLE=true) */
-export { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';

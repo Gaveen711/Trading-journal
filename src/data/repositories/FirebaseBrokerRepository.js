@@ -1,4 +1,4 @@
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { BrokerRepository } from '../../core/domain/repositories/BrokerRepository.js';
 import {
@@ -12,6 +12,14 @@ export class FirebaseBrokerRepository extends BrokerRepository {
     return onSnapshot(doc(db, 'users', userId), onUpdate, onError);
   }
 
+  subscribeToAccounts(userId, onUpdate, onError) {
+    return onSnapshot(
+      collection(db, 'users', userId, 'brokerAccounts'),
+      (snapshot) => onUpdate(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      onError,
+    );
+  }
+
   async syncBrokerTrades(credentials) {
     return syncBrokerTradesCallable(credentials);
   }
@@ -20,7 +28,7 @@ export class FirebaseBrokerRepository extends BrokerRepository {
     return connectBrokerCallable(credentials);
   }
 
-  async disconnectBroker() {
-    return disconnectBrokerCallable();
+  async disconnectBroker(accountId) {
+    return disconnectBrokerCallable(accountId);
   }
 }

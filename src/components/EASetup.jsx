@@ -886,6 +886,15 @@ export default function EASetup() {
   const getSyncStatusInfo = (account) => {
     if (!account) return { status: 'disconnected', label: 'Offline', color: 'text-muted-foreground', dotBg: 'bg-muted-foreground/30', badgeBg: 'bg-muted/10 border-border/30' };
     
+    if (account.requiresReconnect) {
+      return {
+        status: 'reconnect',
+        label: 'Reconnect required',
+        color: 'text-amber-500',
+        dotBg: 'bg-amber-500',
+        badgeBg: 'bg-amber-500/15 border-amber-500/20'
+      };
+    }
     if (account.lastSyncStatus === 'failed') {
       return {
         status: 'failed',
@@ -1299,10 +1308,15 @@ export default function EASetup() {
 
                 {/* Status Badge */}
                 <div className="flex flex-wrap justify-end items-center gap-2 shrink-0 max-w-[45%]">
-                  {isCurrentActive && activeAccount?.lastSyncStatus === 'success' && (
+                  {isCurrentActive && !activeAccount?.requiresReconnect && activeAccount?.lastSyncStatus === 'success' && (
                     <span className="text-[10px] text-emerald-400/90 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Connected
+                    </span>
+                  )}
+                  {isCurrentActive && activeAccount?.requiresReconnect && (
+                    <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                      Reconnect required
                     </span>
                   )}
                   {isCurrentActive && activeAccount?.lastSyncStatus === 'failed' && (

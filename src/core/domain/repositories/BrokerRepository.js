@@ -3,6 +3,10 @@ export class BrokerRepository {
     throw new Error('subscribeToUserDoc not implemented');
   }
 
+  subscribeToAccounts(_userId, _onUpdate, _onError) {
+    throw new Error('subscribeToAccounts not implemented');
+  }
+
   syncBrokerTrades(_credentials) {
     throw new Error('syncBrokerTrades not implemented');
   }

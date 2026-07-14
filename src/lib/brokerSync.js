@@ -1,33 +1,29 @@
-import app, { auth, getFunctions, httpsCallable, connectFunctionsEmulator } from '../firebase';
+import { auth } from '../firebaseAuth.js';
 
-let functionsInstance = null;
-
-function getFunctionsInstance() {
-  if (!functionsInstance) {
-    functionsInstance = getFunctions(app, 'asia-southeast1');
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      connectFunctionsEmulator(functionsInstance, 'localhost', 5001);
-      console.log('Connected to local Cloud Functions emulator on port 5001');
-    }
-  }
-  return functionsInstance;
-}
-
-function callCallable(name, payload = {}, timeoutMs = 300000) {
-  if (!auth.currentUser) throw new Error('Not authenticated');
-  const functions = getFunctionsInstance();
-  const fn = httpsCallable(functions, name, { timeout: timeoutMs });
-  return fn(payload).then((res) => res.data);
+async function callBrokerApi(path, payload) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + await user.getIdToken(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || data.error || 'Broker request failed');
+  return data;
 }
 
 export function connectBrokerCallable(payload) {
-  return callCallable('connectBroker', payload, 540000);
+  return callBrokerApi('/api/connect-broker', payload);
 }
 
 export function syncBrokerTradesCallable(payload = {}) {
-  return callCallable('syncBrokerTrades', payload, 300000);
+  return callBrokerApi('/api/broker-login-sync', { action: 'sync', ...payload });
 }
 
-export function disconnectBrokerCallable() {
-  return callCallable('disconnectBroker', {}, 60000);
+export function disconnectBrokerCallable(accountId) {
+  return callBrokerApi('/api/broker-login-sync', { action: 'remove', accountId });
 }
