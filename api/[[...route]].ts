@@ -22,6 +22,7 @@ import { getClientIp } from './_ipUtils.js'
 import { chunkedDbGetAll, runWithConcurrencyLimit } from './_firestoreUtils.js'
 import { persistBrokerTrades, toDateOrNull } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
+import { emptyTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
@@ -37,6 +38,10 @@ function handleRouteError(route: string, err: any, c: any, customErrName = 'Inte
   const safeMsg = MSG_MAP[constructorName] || 'An unexpected error occurred.'
   return c.json({ error: customErrName, message: safeMsg }, 500)
 }
+
+const adminAnalyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
+  Object.entries(delta).map(([key, value]) => ['analytics.' + key, admin.firestore.FieldValue.increment(value)])
+)
 
 type Env = {}
 type Variables = Record<string, unknown>
@@ -219,43 +224,77 @@ async function consolidateBrokerConnect({
   brokerType,
   accountName
 }: any) {
-  const metaApiAccountId = await withRetryBudget('metaapi-provision', () => provisionMetaApiAccount({ login, password, server, brokerType }), { timeoutMs: 30_000, retries: 1 })
-  const deals = await withRetryBudget('metaapi', () => fetchMetaApiDeals(metaApiAccountId), { timeoutMs: 25_000, retries: 2 })
-
-  const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc()
+  const fingerprint = [brokerType, String(server).trim().toLowerCase(), String(login).trim()].join(':')
+  const accountId = 'broker_' + crypto.createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)
+  const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
   const name = accountName || `${server} · ${login}`
   
-  await brokerRef.set({
-    id: brokerRef.id,
-    accountName: name,
-    brokerType,
-    server,
-    login: String(login),
-    metaApiAccountId,
-    isActive: true,
-    lastSyncTime: now(),
-    lastSyncStatus: 'success',
-    syncJobState: 'queued',
-    retryCount: 0,
-    nextSyncAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-    tradeCount: deals.length,
-    createdAt: now(),
-    updatedAt: now(),
-  })
+  const lockResult = await withAccountLock(uid + ':connect', async () => {
+    const activeAccounts = await db.collection('users').doc(uid).collection('brokerAccounts')
+      .where('isActive', '==', true)
+      .limit(2)
+      .get()
+    if (activeAccounts.docs.some((accountDoc: any) => accountDoc.id !== accountId)) {
+      throw new Error('Only one broker account can be connected at a time')
+    }
 
-  await persistBrokerTrades({
-    db,
-    userId: uid,
-    accountId: brokerRef.id,
-    brokerTrades: deals,
-    timestampFactory: now,
-    incrementFactory: (value: number) => admin.firestore.FieldValue.increment(value),
+    const metaApiAccountId = await withRetryBudget(
+      'metaapi-provision',
+      () => provisionMetaApiAccount({ login, password, server, brokerType }),
+      { timeoutMs: 30_000, retries: 0 },
+    )
+    const existingAccount = await brokerRef.get()
+    const syncStartedAt = new Date()
+    await brokerRef.set({
+      id: accountId,
+      accountName: name,
+      brokerType,
+      server,
+      login: String(login),
+      metaApiAccountId,
+      isActive: true,
+      lastSyncStatus: 'running',
+      lastSyncError: null,
+      syncJobState: 'running',
+      retryCount: 0,
+      nextSyncAt: new Date(syncStartedAt.getTime() + 5 * 60 * 1000).toISOString(),
+      createdAt: existingAccount.exists ? (existingAccount.get('createdAt') || now()) : now(),
+      updatedAt: now(),
+    }, { merge: true })
+
+    try {
+      const deals = await withRetryBudget(
+        'metaapi',
+        () => fetchMetaApiDeals(metaApiAccountId),
+        { timeoutMs: 25_000, retries: 2 },
+      )
+      await persistBrokerTrades({
+        db,
+        userId: uid,
+        accountId,
+        brokerTrades: deals,
+        timestampFactory: now,
+        incrementFactory: (value: number) => admin.firestore.FieldValue.increment(value),
+      })
+      await brokerRef.update({
+        lastSyncTime: now(), lastSyncStatus: 'success', lastSyncError: null,
+        syncJobState: 'queued', retryCount: 0,
+        nextSyncAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        tradeCount: deals.length, updatedAt: now(),
+      })
+      return { accountId, metaApiAccountId, tradeCount: deals.length }
+    } catch (error: any) {
+      await brokerRef.update({
+        lastSyncStatus: 'failed', lastSyncError: error.message,
+        syncJobState: 'retry', retryCount: 1,
+        nextSyncAt: new Date(Date.now() + 60 * 1000).toISOString(),
+        updatedAt: now(),
+      }).catch(() => undefined)
+      throw error
+    }
   })
-  return {
-    accountId: brokerRef.id,
-    metaApiAccountId,
-    tradeCount: deals.length,
-  }
+  if (!lockResult.acquired) throw new Error('Broker connection is already in progress')
+  return lockResult.value
 }
 
 // ── Helper to handle Broker Addition logic ───────────────────────────
@@ -292,6 +331,12 @@ async function handleBrokerAdd(
   } catch (error: any) {
     console.error('[broker-connect-add] Add account error:', error.message)
     const msg = error.message || 'Failed to connect to broker'
+    if (/already in progress/i.test(msg)) {
+      return c.json({ error: 'Broker connection is already in progress. Try again shortly.' }, 409)
+    }
+    if (/only one broker account/i.test(msg)) {
+      return c.json({ error: 'Remove the current broker account before connecting another.' }, 409)
+    }
     if (/invalid|auth|credential|password|login/i.test(msg)) {
       return c.json({ error: 'Invalid broker credentials. Check login, password, and server name.' }, 401)
     }
@@ -559,6 +604,10 @@ app.post('/init-user', async (c) => {
       }
     }
 
+    const hasExistingTrades = userDoc.exists
+      ? !(await userDocRef.collection('trades').limit(1).get()).empty
+      : false
+
     // New user signup, initialize on Free with unlimited manual logging.
     const initData = {
       plan: 'free',
@@ -566,10 +615,8 @@ app.post('/init-user', async (c) => {
       planExpiry: null,
       createdAt: now(),
       updatedAt: now(),
-      analytics: {
-        version: 1, tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0, breakEven: 0,
-        longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
-      },
+      ...(hasExistingTrades ? {} : { analytics: emptyTradeAnalytics() }),
+      analyticsBackfillState: hasExistingTrades ? 'required' : 'not_required',
     }
 
     await userDocRef.set(initData, { merge: true })
@@ -655,6 +702,26 @@ app.post('/lemon-squeezy-webhook', async (c) => {
         updatedAt: now(),
       }, { merge: true })
 
+      if (plan === 'pro') {
+        const pausedAccounts = await userDocRef.collection('brokerAccounts')
+          .where('syncJobState', '==', 'paused')
+          .get()
+        if (!pausedAccounts.empty) {
+          const batch = db.batch()
+          let requeued = 0
+          pausedAccounts.docs.forEach((accountDoc: any) => {
+            if (accountDoc.get('isActive') === true) {
+              batch.update(accountDoc.ref, {
+                syncJobState: 'queued', retryCount: 0,
+                nextSyncAt: new Date().toISOString(), updatedAt: now(),
+              })
+              requeued += 1
+            }
+          })
+          if (requeued > 0) await batch.commit()
+        }
+      }
+
       console.log(`[lemon-squeezy-webhook] User ${userId} plan set to ${plan} (status: ${status}, expiry: ${planExpiry})`)
     }
 
@@ -722,19 +789,17 @@ app.post('/save-trade', async (c) => {
       }
     }
 
-    const tradeColRef = db.collection('users').doc(uid).collection('trades')
-    const newTradeDoc = tradeColRef.doc()
-
-    await Promise.all([
-      newTradeDoc.set({
-        ...safe,
-        createdAt: now(),
-        updatedAt: now()
-      }),
-      db.collection('users').doc(uid).set({
-        totalTradesLogged: admin.firestore.FieldValue.increment(1)
-      }, { merge: true })
-    ])
+    const userRef = db.collection('users').doc(uid)
+    const newTradeDoc = userRef.collection('trades').doc()
+    const tradeToSave = { ...safe, createdAt: now(), updatedAt: now() }
+    const delta = tradeAnalyticsDelta(tradeToSave)
+    const batch = db.batch()
+    batch.set(newTradeDoc, tradeToSave)
+    batch.update(userRef, {
+      totalTradesLogged: admin.firestore.FieldValue.increment(delta.tradeCount),
+      ...adminAnalyticsIncrements(delta),
+    })
+    await batch.commit()
 
     console.log(`[save-trade] New trade logged for uid=${uid}, tradeId=${newTradeDoc.id}`)
     return c.json({ id: newTradeDoc.id })
@@ -821,10 +886,7 @@ app.post('/reset-trades', async (c) => {
 
     await db.collection('users').doc(uid).set({
       totalTradesLogged: 0,
-      analytics: {
-        version: 1, tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0, breakEven: 0,
-        longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
-      },
+      analytics: emptyTradeAnalytics(),
     }, { merge: true })
 
     console.log(`[reset-trades] Wiped trades for uid=${uid}`)
@@ -904,7 +966,7 @@ const handleBrokerSyncPoller = async (c: any) => {
     const accountsSnapshot = await db
       .collectionGroup('brokerAccounts')
       .where('isActive', '==', true)
-      .where('syncJobState', 'in', ['queued', 'retry'])
+      .where('syncJobState', 'in', ['queued', 'retry', 'running'])
       .where('nextSyncAt', '<=', new Date().toISOString())
       .orderBy('nextSyncAt')
       .limit(100)
@@ -946,6 +1008,11 @@ const handleBrokerSyncPoller = async (c: any) => {
       const userData = usersMap.get(uid)
 
       if (!userData || !isSyncAllowed(userData)) {
+        await accountDoc.ref.update({
+          syncJobState: 'paused',
+          pausedReason: 'subscription',
+          pausedAt: new Date().toISOString(),
+        }).catch(() => undefined)
         continue
       }
 
@@ -969,14 +1036,22 @@ const handleBrokerSyncPoller = async (c: any) => {
 
       const result = await withAccountLock(uid + ':' + accountId, async () => {
         try {
-          await accountRef.update({ syncJobState: 'running', syncStartedAt: new Date().toISOString() })
+          const syncStartedAt = new Date()
+          await accountRef.update({
+            syncJobState: 'running',
+            syncStartedAt: syncStartedAt.toISOString(),
+            nextSyncAt: new Date(syncStartedAt.getTime() + 5 * 60 * 1000).toISOString(),
+          })
           const lastSyncDate = toDateOrNull(accountData.lastSyncTime)
+          const fetchFrom = lastSyncDate
+            ? new Date(lastSyncDate.getTime() - 10 * 60 * 1000)
+            : null
           const brokerTrades = await withRetryBudget('metaapi', () => fetchBrokerTrades({
             metaApiAccountId: accountData.metaApiAccountId,
             login: accountData.login,
             server: accountData.server,
             brokerType: accountData.brokerType,
-          }, lastSyncDate as any), { timeoutMs: 25_000, retries: 2 })
+          }, fetchFrom as any), { timeoutMs: 25_000, retries: 2 })
 
           const syncResult = await persistBrokerTrades({
             db, userId: uid, accountId, brokerTrades,
@@ -1008,7 +1083,7 @@ const handleBrokerSyncPoller = async (c: any) => {
           return null
         }
       })
-      if (result === null) console.log('[broker-sync-poller] account lock busy:', accountId)
+      if (!result.acquired) console.log('[broker-sync-poller] account lock busy:', accountId)
     }
     // Run sync tasks with a concurrency limit of 5 to avoid CPU/memory exhaustion or MetaAPI limit hitting
     await runWithConcurrencyLimit(5, accountsToSync, syncAccountTask)

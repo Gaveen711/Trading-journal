@@ -49,13 +49,15 @@ export async function withRetryBudget<T>(
   throw lastError
 }
 
-export async function withAccountLock<T>(accountId: string, operation: () => Promise<T>): Promise<T | null> {
+export type AccountLockResult<T> = { acquired: true; value: T } | { acquired: false }
+
+export async function withAccountLock<T>(accountId: string, operation: () => Promise<T>): Promise<AccountLockResult<T>> {
   const key = 'lock:broker:' + accountId
   const token = crypto.randomUUID()
-  const acquired = await kv.set(key, token, { nx: true, ex: 90 }).catch(() => null)
-  if (!acquired) return null
+  const acquired = await kv.set(key, token, { nx: true, ex: 240 }).catch(() => null)
+  if (!acquired) return { acquired: false }
   try {
-    return await operation()
+    return { acquired: true, value: await operation() }
   } finally {
     const owner = await kv.get<string>(key).catch(() => null)
     if (owner === token) await kv.del(key).catch(() => undefined)
@@ -78,7 +80,7 @@ export async function cachedJson<T>(
     if (!inflight.has(cacheKey)) {
       const promise = loader()
         .then(async (data) => {
-          await kv.set(cacheKey, { data, storedAt: Date.now() }, { ex: freshSeconds + staleSeconds })
+          await kv.set(cacheKey, { data, storedAt: Date.now() }, { ex: freshSeconds + staleSeconds }).catch(() => undefined)
           return data
         })
         .finally(() => inflight.delete(cacheKey))

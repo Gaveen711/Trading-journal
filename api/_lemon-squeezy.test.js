@@ -6,6 +6,10 @@ vi.mock('./_firebase.js', () => {
   const mockDocGet = vi.fn();
   const mockDocSet = vi.fn();
   const mockDocUpdate = vi.fn();
+  const mockPausedGet = vi.fn().mockResolvedValue({ empty: true, docs: [] });
+  const mockWhere = vi.fn(() => ({ get: mockPausedGet }));
+  const mockBatchUpdate = vi.fn();
+  const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
   
   const mockDoc = vi.fn(() => ({
     get: mockDocGet,
@@ -16,11 +20,19 @@ vi.mock('./_firebase.js', () => {
   
   const mockCollection = vi.fn(() => ({
     doc: mockDoc,
+    where: mockWhere,
   }));
 
   const db = {
     collection: mockCollection,
-    __mocks: { mockDocGet, mockDocSet, mockDocUpdate, mockDoc, mockCollection }
+    batch: vi.fn(() => ({
+      update: mockBatchUpdate,
+      commit: mockBatchCommit,
+    })),
+    __mocks: {
+      mockDocGet, mockDocSet, mockDocUpdate, mockDoc, mockCollection,
+      mockPausedGet, mockWhere, mockBatchUpdate, mockBatchCommit,
+    }
   };
 
   return {

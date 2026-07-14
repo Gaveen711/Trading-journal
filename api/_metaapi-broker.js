@@ -14,31 +14,51 @@ function getApi() {
 }
 
 /** Map MetaApi deal → xaujournal trade document */
-function normalizeDeal(deal, ctx) {
-  const type = String(deal.type || '').toLowerCase();
-  const isBuy = type.includes('buy') || deal.type === 'DEAL_TYPE_BUY';
-  const closeTime = deal.time ? new Date(deal.time) : new Date();
-  const price = Number(deal.price ?? deal.closePrice ?? 0);
-  const volume = Number(deal.volume ?? deal.lots ?? 0);
-  const profit = Number(deal.profit ?? deal.pnl ?? 0);
-  const commission = Number(deal.commission ?? 0);
-  const swap = Number(deal.swap ?? 0);
+const finiteNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const validDate = (value, fallback = new Date()) => {
+  const parsed = value ? new Date(value) : fallback;
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+};
+
+const isBuyDeal = (deal) => String(deal?.type || '').toUpperCase() === 'DEAL_TYPE_BUY';
+const isTradeDeal = (deal) => ['DEAL_TYPE_BUY', 'DEAL_TYPE_SELL'].includes(String(deal?.type || '').toUpperCase());
+
+function normalizeDeal(deal, ctx, entryDeal = null) {
+  const isBuy = entryDeal ? isBuyDeal(entryDeal) : !isBuyDeal(deal);
+  const closeTime = validDate(deal.time);
+  const price = finiteNumber(deal.price ?? deal.closePrice);
+  const volume = finiteNumber(deal.volume ?? deal.lots);
+  const profit = finiteNumber(deal.profit ?? deal.pnl);
+  const commission = finiteNumber(deal.commission);
+  const swap = finiteNumber(deal.swap);
   const netPnl = profit + commission + swap;
-  const ticket = String(deal.id ?? deal.ticket ?? deal.dealId ?? `${closeTime.getTime()}`);
-  const openPrice = Number(deal.openPrice ?? price);
-  const diff = isBuy ? price - openPrice : openPrice - price;
-  const pips = Math.round(diff / 0.1);
+  const positionId = String(deal.positionId ?? deal.position ?? deal.id ?? deal.ticket ?? closeTime.getTime());
+  const ticket = String(deal.id ?? deal.ticket ?? deal.dealId ?? `${positionId}_${closeTime.getTime()}`);
+  const rawOpenPrice = entryDeal?.price ?? deal.openPrice;
+  const openPrice = rawOpenPrice == null ? null : finiteNumber(rawOpenPrice, null);
+  const openTime = entryDeal?.time
+    ? validDate(entryDeal.time, closeTime).toISOString()
+    : deal.openTime
+      ? validDate(deal.openTime, closeTime).toISOString()
+      : null;
+  const diff = openPrice == null ? null : (isBuy ? price - openPrice : openPrice - price);
+  const pips = diff == null ? null : Math.round(diff / 0.1);
 
   return {
-    positionId: String(deal.positionId ?? deal.position ?? ticket),
+    positionId,
     closeDealTicket: ticket,
     symbol: deal.symbol || 'XAUUSD',
     direction: isBuy ? 'BUY' : 'SELL',
+    type: isBuy ? 'buy' : 'sell',
     lots: volume,
     closePrice: price,
     openPrice,
     closeTime: closeTime.toISOString(),
-    openTime: deal.openTime ? new Date(deal.openTime).toISOString() : closeTime.toISOString(),
+    openTime,
     date: closeTime.toISOString().split('T')[0],
     pnl: profit,
     commission,
@@ -52,6 +72,55 @@ function normalizeDeal(deal, ctx) {
     market: 'GOLD',
     outcome: netPnl > 0.01 ? 'WIN' : netPnl < -0.01 ? 'LOSS' : 'BE',
   };
+}
+
+const combineEntryDeals = (previous, next) => {
+  if (!previous || isBuyDeal(previous) !== isBuyDeal(next)) return next;
+  const previousVolume = finiteNumber(previous.volume);
+  const nextVolume = finiteNumber(next.volume);
+  const totalVolume = previousVolume + nextVolume;
+  if (totalVolume <= 0) return next;
+  return {
+    ...next,
+    price: ((finiteNumber(previous.price) * previousVolume) + (finiteNumber(next.price) * nextVolume)) / totalVolume,
+    volume: totalVolume,
+    time: previous.time || next.time,
+  };
+};
+
+export function normalizeMetaApiDeals(deals, ctx) {
+  const entries = new Map();
+  const normalized = [];
+  const sortedDeals = [...(Array.isArray(deals) ? deals : [])]
+    .sort((a, b) => validDate(a.time, new Date(0)) - validDate(b.time, new Date(0)));
+
+  for (const deal of sortedDeals) {
+    if (!isTradeDeal(deal)) continue;
+    const entryType = String(deal.entryType || '').toUpperCase();
+    const positionKey = String(deal.positionId ?? deal.position ?? deal.id ?? deal.ticket ?? '');
+    const previousEntry = entries.get(positionKey) || null;
+
+    if (entryType === 'DEAL_ENTRY_IN') {
+      entries.set(positionKey, combineEntryDeals(previousEntry, deal));
+      continue;
+    }
+
+    if (!entryType || ['DEAL_ENTRY_OUT', 'DEAL_ENTRY_OUT_BY', 'DEAL_ENTRY_INOUT'].includes(entryType)) {
+      normalized.push(normalizeDeal(deal, ctx, previousEntry));
+    } else {
+      continue;
+    }
+
+    if (entryType === 'DEAL_ENTRY_INOUT') {
+      entries.set(positionKey, deal);
+    } else if (previousEntry) {
+      const remainingVolume = finiteNumber(previousEntry.volume) - finiteNumber(deal.volume);
+      if (remainingVolume > 0.0000001) entries.set(positionKey, { ...previousEntry, volume: remainingVolume });
+      else entries.delete(positionKey);
+    }
+  }
+
+  return normalized;
 }
 
 /**
@@ -100,18 +169,27 @@ export async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
 
   const connection = account.getRPCConnection();
   await connection.connect();
-  await connection.waitSynchronized();
+  try {
+    await connection.waitSynchronized();
 
-  const start = fromDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  const end = new Date();
-  const deals = await connection.getDealsByTimeRange(start, end);
+    const start = fromDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const end = new Date();
+    const deals = await connection.getDealsByTimeRange(start, end);
 
-  const ctx = {
-    brokerType: account.platform,
-    server: account.server,
-  };
+    const ctx = {
+      brokerType: account.platform,
+      server: account.server,
+    };
 
-  return (Array.isArray(deals) ? deals : []).map((d) => normalizeDeal(d, ctx));
+    const rawDeals = Array.isArray(deals) ? deals : deals?.deals ?? [];
+    return normalizeMetaApiDeals(rawDeals, ctx);
+  } finally {
+    try {
+      await connection.close();
+    } catch {
+      // The sync result is still usable if provider-side cleanup fails.
+    }
+  }
 }
 
 export async function fetchBrokerTrades(credentials, fromDate = null) {
