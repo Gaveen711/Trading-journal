@@ -1,10 +1,6 @@
-// src/hooks/useBrokerAccounts.js
-// Broker credentials are sent once to provision the server-managed MetaApi account.
-// Only non-sensitive account metadata is retained in local storage.
-
-import { useState, useEffect, useMemo } from 'react';
-import { auth } from '../firebase';
-import { FirebaseBrokerRepository } from '../data/repositories/FirebaseBrokerRepository';
+// Credentials are sent once to provision a server-managed account; only safe metadata is cached locally.
+import { useEffect, useState } from 'react';
+import { useAppServices } from '../app/di/AppServicesContext.jsx';
 
 const toIsoString = (value) => {
   if (!value) return null;
@@ -12,23 +8,21 @@ const toIsoString = (value) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
+/** Coordinates authenticated broker metadata and secure server-side sync commands. */
 export function useBrokerAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const repository = useMemo(() => new FirebaseBrokerRepository(), []);
+  const { auth, brokerRepository: repository } = useAppServices();
 
   useEffect(() => {
     let unsubscribeUser = null;
     let unsubscribeAccounts = null;
-
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (unsubscribeUser) unsubscribeUser();
-      if (unsubscribeAccounts) unsubscribeAccounts();
+      unsubscribeUser?.();
+      unsubscribeAccounts?.();
       unsubscribeUser = null;
       unsubscribeAccounts = null;
-
       if (!user) {
         setAccounts([]);
         setLoading(false);
@@ -39,7 +33,6 @@ export function useBrokerAccounts() {
       let serverAccounts = [];
       setLoading(true);
       setError(null);
-
       const publishAccounts = () => {
         try {
           const localSaved = localStorage.getItem(`xau-broker-accounts-${user.uid}`);
@@ -81,106 +74,63 @@ export function useBrokerAccounts() {
         }
       };
 
-      unsubscribeUser = repository.subscribeToUserDoc(
-        user.uid,
-        (docSnap) => {
-          userData = docSnap.exists() ? docSnap.data() : {};
-          publishAccounts();
-        },
-        (snapshotError) => {
-          console.error('Failed to listen to legacy broker stats:', snapshotError);
-        },
-      );
-
-      unsubscribeAccounts = repository.subscribeToAccounts(
-        user.uid,
-        (nextAccounts) => {
-          serverAccounts = nextAccounts;
-          publishAccounts();
-          setLoading(false);
-        },
-        (snapshotError) => {
-          setError(snapshotError.message);
-          console.error('Failed to listen to broker accounts:', snapshotError);
-          publishAccounts();
-          setLoading(false);
-        },
-      );
+      unsubscribeUser = repository.subscribeToUserDoc(user.uid, (docSnap) => {
+        userData = docSnap.exists() ? docSnap.data() : {};
+        publishAccounts();
+      }, (snapshotError) => console.error('Failed to listen to legacy broker stats:', snapshotError));
+      unsubscribeAccounts = repository.subscribeToAccounts(user.uid, (nextAccounts) => {
+        serverAccounts = nextAccounts;
+        publishAccounts();
+        setLoading(false);
+      }, (snapshotError) => {
+        setError(snapshotError.message);
+        console.error('Failed to listen to broker accounts:', snapshotError);
+        publishAccounts();
+        setLoading(false);
+      });
     });
-
     return () => {
       unsubscribeAuth();
-      if (unsubscribeUser) unsubscribeUser();
-      if (unsubscribeAccounts) unsubscribeAccounts();
+      unsubscribeUser?.();
+      unsubscribeAccounts?.();
     };
-  }, [repository]);
+  }, [auth, repository]);
 
   async function addAccount(login, password, server, brokerType, accountName) {
     setError(null);
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
-
     try {
-      // Provision a durable server-managed account and perform the initial sync.
-      const result = await repository.connectBroker({
-        accountId: login,
-        password,
-        server,
-        platform: brokerType,
-      });
-
-      // Save configurations strictly on the client side (localStorage) WITHOUT credentials
+      const result = await repository.connectBroker({ accountId: login, password, server, platform: brokerType });
       const localKey = `xau-broker-accounts-${user.uid}`;
-
-      // We only support one connected account for now
-      const newAccount = {
-        id: result.accountId,
-        accountName,
-        platform: brokerType,
-        server,
-        login,
-        managedByWorker: true,
-      };
-
+      const newAccount = { id: result.accountId, accountName, platform: brokerType, server, login, managedByWorker: true };
       localStorage.setItem(localKey, JSON.stringify([newAccount]));
-
-      // Trigger a state reload
-      setAccounts([
-        {
-          ...newAccount,
-          requiresReconnect: false,
-          isActive: true,
-          lastSyncTime: new Date().toISOString(),
-          lastSyncStatus: 'success',
-          tradeCount: result.tradeCount || 0,
-        }
-      ]);
-
+      setAccounts([{
+        ...newAccount,
+        requiresReconnect: false,
+        isActive: true,
+        lastSyncTime: new Date().toISOString(),
+        lastSyncStatus: 'success',
+        tradeCount: result.tradeCount || 0,
+      }]);
       return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
+    } catch (operationError) {
+      setError(operationError.message);
+      throw operationError;
     }
   }
 
   async function syncAccount(accountId) {
     setError(null);
-    const user = auth.currentUser;
-    if (!user) throw new Error('Not authenticated');
-
+    if (!auth.currentUser) throw new Error('Not authenticated');
     try {
-      const acc = accounts.find((account) => account.id === accountId);
-      if (!acc) throw new Error('Broker account not found.');
-
-      if (acc.managedByWorker !== true) {
-        throw new Error('Reconnect this broker account once to enable secure background sync.');
-      }
-
-      const result = await repository.syncBrokerTrades({ accountId: acc.id });
-      return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
+      const account = accounts.find((item) => item.id === accountId);
+      if (!account) throw new Error('Broker account not found.');
+      if (account.managedByWorker !== true) throw new Error('Reconnect this broker account once to enable secure background sync.');
+      return await repository.syncBrokerTrades({ accountId: account.id });
+    } catch (operationError) {
+      setError(operationError.message);
+      throw operationError;
     }
   }
 
@@ -188,7 +138,6 @@ export function useBrokerAccounts() {
     setError(null);
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
-
     try {
       const localKey = `xau-broker-accounts-${user.uid}`;
       const localSaved = localStorage.getItem(localKey);
@@ -197,27 +146,16 @@ export function useBrokerAccounts() {
       const result = account?.managedByWorker === true
         ? await repository.disconnectBroker(accountId)
         : { message: 'Legacy broker account removed locally.' };
-
       const remainingLocal = localList.filter((item) => item.id !== accountId);
       if (remainingLocal.length) localStorage.setItem(localKey, JSON.stringify(remainingLocal));
       else localStorage.removeItem(localKey);
-
       setAccounts((current) => current.filter((item) => item.id !== accountId));
-
       return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
+    } catch (operationError) {
+      setError(operationError.message);
+      throw operationError;
     }
   }
 
-  return {
-    accounts,
-    loading,
-    error,
-    addAccount,
-    syncAccount,
-    removeAccount,
-  };
+  return { accounts, loading, error, addAccount, syncAccount, removeAccount };
 }
-

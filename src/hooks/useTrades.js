@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FirebaseTradeRepository } from '../data/repositories/FirebaseTradeRepository.js';
-import { LogTradeUseCase } from '../core/usecases/LogTrade.js';
-import { ResetTradesUseCase } from '../core/usecases/ResetTrades.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAppServices } from '../app/di/AppServicesContext.jsx';
 
 const PAGE_SIZE = 100;
 const mergeTrades = (...groups) => {
@@ -10,6 +8,7 @@ const mergeTrades = (...groups) => {
   return Array.from(byId.values()).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 };
 
+/** Coordinates real-time trades, cursor pagination and trade application use cases. */
 export function useTrades(user) {
   const [trades, setTrades] = useState([]);
   const [isLoading, setIsLoading] = useState(() => Boolean(user));
@@ -22,10 +21,7 @@ export function useTrades(user) {
   const hasMoreRef = useRef(false);
   const pagingPromiseRef = useRef(null);
   const activeUserIdRef = useRef(user?.uid || null);
-
-  const repository = useMemo(() => new FirebaseTradeRepository(), []);
-  const logTradeUseCase = useMemo(() => new LogTradeUseCase(repository), [repository]);
-  const resetTradesUseCase = useMemo(() => new ResetTradesUseCase(repository), [repository]);
+  const { tradeRepository: repository, logTradeUseCase, resetTradesUseCase } = useAppServices();
 
   useEffect(() => {
     activeUserIdRef.current = user?.uid || null;
@@ -59,18 +55,14 @@ export function useTrades(user) {
   }, [user, repository]);
 
   const loadMoreTrades = useCallback(async () => {
-    if (!user?.uid || !hasMoreRef.current) {
-      return mergeTrades(recentRef.current, olderRef.current);
-    }
+    if (!user?.uid || !hasMoreRef.current) return mergeTrades(recentRef.current, olderRef.current);
     if (pagingPromiseRef.current) return pagingPromiseRef.current;
 
     const userId = user.uid;
     setIsLoadingMore(true);
     const operation = (async () => {
       const page = await repository.getTradesPage(userId, cursorRef.current, PAGE_SIZE);
-      if (activeUserIdRef.current !== userId) {
-        return mergeTrades(recentRef.current, olderRef.current);
-      }
+      if (activeUserIdRef.current !== userId) return mergeTrades(recentRef.current, olderRef.current);
       olderRef.current = mergeTrades(olderRef.current, page.trades);
       cursorRef.current = page.cursor;
       hasMoreRef.current = page.hasMore;
@@ -89,23 +81,17 @@ export function useTrades(user) {
   }, [repository, user?.uid]);
 
   const loadAllTrades = useCallback(async () => {
-    if (!user?.uid) {
-      return mergeTrades(recentRef.current, olderRef.current);
-    }
+    if (!user?.uid) return mergeTrades(recentRef.current, olderRef.current);
     if (pagingPromiseRef.current) await pagingPromiseRef.current;
     const userId = user.uid;
-    if (activeUserIdRef.current !== userId) {
-      return mergeTrades(recentRef.current, olderRef.current);
-    }
+    if (activeUserIdRef.current !== userId) return mergeTrades(recentRef.current, olderRef.current);
     if (!hasMoreRef.current) return mergeTrades(recentRef.current, olderRef.current);
 
     setIsLoadingMore(true);
     const operation = (async () => {
       while (hasMoreRef.current) {
         const page = await repository.getTradesPage(userId, cursorRef.current, PAGE_SIZE);
-        if (activeUserIdRef.current !== userId) {
-          return mergeTrades(recentRef.current, olderRef.current);
-        }
+        if (activeUserIdRef.current !== userId) return mergeTrades(recentRef.current, olderRef.current);
         olderRef.current = mergeTrades(olderRef.current, page.trades);
         cursorRef.current = page.cursor;
         hasMoreRef.current = page.hasMore;
