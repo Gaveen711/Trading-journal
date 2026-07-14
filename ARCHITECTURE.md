@@ -45,6 +45,8 @@ functions/  # Firebase Cloud Functions backend, kept for optional/legacy broker 
 
 The app currently calls `/api/...` routes from the frontend. Keep `functions/` until production deployment is audited, because Firebase still declares it as a deployable Cloud Functions source and the broker-sync docs reference it. Treat it as an optional broker backend, not as random unused code.
 
+Broker credentials are client-managed by policy. The browser may keep broker login/password in per-user localStorage for explicit user-initiated sync, but Firestore and serverless routes must not persist broker passwords, broker logins, or provider account tokens. Server routes may receive credentials only transiently to fetch trades, then persist normalized trade records and non-sensitive account metadata.
+
 ## Extension rules
 
 - Add business rules to domain entities or use cases, never to page components.

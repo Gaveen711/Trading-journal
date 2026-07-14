@@ -10,7 +10,7 @@ import resend from './_resend.js'
 import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
 import { isSyncAllowed, getUidFromContext, verifyIdToken } from './_auth.js'
 // @ts-ignore
-import { fetchBrokerTrades, provisionMetaApiAccount, fetchMetaApiDeals } from './_metaapi-broker.js'
+import { fetchBrokerTrades } from './_metaapi-broker.js'
 import {
   resolveKey,
   invalidateUserCache,
@@ -227,7 +227,7 @@ async function consolidateBrokerConnect({
   const fingerprint = [brokerType, String(server).trim().toLowerCase(), String(login).trim()].join(':')
   const accountId = 'broker_' + crypto.createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)
   const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
-  const name = accountName || `${server} · ${login}`
+  const name = accountName || String(server)
   
   const lockResult = await withAccountLock(uid + ':connect', async () => {
     const activeAccounts = await db.collection('users').doc(uid).collection('brokerAccounts')
@@ -237,12 +237,6 @@ async function consolidateBrokerConnect({
     if (activeAccounts.docs.some((accountDoc: any) => accountDoc.id !== accountId)) {
       throw new Error('Only one broker account can be connected at a time')
     }
-
-    const metaApiAccountId = await withRetryBudget(
-      'metaapi-provision',
-      () => provisionMetaApiAccount({ login, password, server, brokerType }),
-      { timeoutMs: 30_000, retries: 0 },
-    )
     const existingAccount = await brokerRef.get()
     const syncStartedAt = new Date()
     await brokerRef.set({
@@ -250,8 +244,9 @@ async function consolidateBrokerConnect({
       accountName: name,
       brokerType,
       server,
-      login: String(login),
-      metaApiAccountId,
+      // Privacy boundary: broker login/password stay on the user's device.
+      // Firestore stores only metadata needed to display and identify the account.
+      credentialStorage: 'client-local',
       isActive: true,
       lastSyncStatus: 'running',
       lastSyncError: null,
@@ -265,7 +260,7 @@ async function consolidateBrokerConnect({
     try {
       const deals = await withRetryBudget(
         'metaapi',
-        () => fetchMetaApiDeals(metaApiAccountId),
+        () => fetchBrokerTrades({ login, password, server, brokerType }),
         { timeoutMs: 25_000, retries: 2 },
       )
       await persistBrokerTrades({
@@ -278,11 +273,11 @@ async function consolidateBrokerConnect({
       })
       await brokerRef.update({
         lastSyncTime: now(), lastSyncStatus: 'success', lastSyncError: null,
-        syncJobState: 'queued', retryCount: 0,
-        nextSyncAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        syncJobState: 'client-managed', retryCount: 0,
+        nextSyncAt: null,
         tradeCount: deals.length, updatedAt: now(),
       })
-      return { accountId, metaApiAccountId, tradeCount: deals.length }
+      return { accountId, tradeCount: deals.length }
     } catch (error: any) {
       await brokerRef.update({
         lastSyncStatus: 'failed', lastSyncError: error.message,
@@ -317,7 +312,6 @@ async function handleBrokerAdd(
       return c.json({
         message: `Connected to ${server}. Synced ${result.tradeCount} closed deal(s).`,
         accountId: result.accountId,
-        metaApiAccountId: result.metaApiAccountId,
         tradeCount: result.tradeCount,
       })
     }
@@ -398,22 +392,42 @@ app.post('/broker-login-sync', async (c) => {
   }
 
   if (action === 'sync') {
-    const { accountId } = body
+    const { accountId, login, password, server, brokerType } = body
     if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
+    if (!login || !password || !server || !brokerType) {
+      return c.json({ error: 'Missing local broker credentials for transient sync' }, 400)
+    }
 
     try {
       const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
       const accountSnap = await accountRef.get()
       if (!accountSnap.exists) return c.json({ error: 'Broker account not found' }, 404)
+      const deals = await withRetryBudget(
+        'metaapi',
+        () => fetchBrokerTrades({ login, password, server, brokerType }),
+        { timeoutMs: 25_000, retries: 2 },
+      )
+      const syncResult = await persistBrokerTrades({
+        db,
+        userId: uid,
+        accountId,
+        brokerTrades: deals,
+        timestampFactory: now,
+        incrementFactory: (value: number) => admin.firestore.FieldValue.increment(value),
+      })
       await accountRef.update({
-        syncJobState: 'queued',
-        nextSyncAt: new Date().toISOString(),
+        lastSyncTime: now(),
+        lastSyncStatus: 'success',
+        lastSyncError: null,
+        tradeCount: syncResult.totalFetched,
+        syncJobState: 'client-managed',
+        nextSyncAt: null,
         syncRequestedAt: now(),
         updatedAt: now(),
       })
-      return c.json({ ok: true, queued: true, message: 'Broker sync queued' }, 202)
+      return c.json({ ok: true, ...syncResult, message: 'Broker sync completed' })
     } catch (error: any) {
-      return handleRouteError('broker-login-sync:queue', error, c, 'Failed to queue sync')
+      return handleRouteError('broker-login-sync:sync', error, c, 'Failed to sync broker')
     }
   }
   if (action === 'remove') {
@@ -421,19 +435,6 @@ app.post('/broker-login-sync', async (c) => {
     if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
     try {
       const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
-      const accountSnap = await accountRef.get()
-      if (accountSnap.exists) {
-        const accountData = accountSnap.data()
-        if (accountData.metaApiAccountId) {
-          try {
-            const { deleteMetaApiAccount } = await import('./_metaapi-broker.js')
-            await deleteMetaApiAccount(accountData.metaApiAccountId)
-          } catch (metaApiErr: any) {
-            console.error('[broker-login-sync] Failed to delete MetaApi account:', metaApiErr.message || metaApiErr)
-          }
-        }
-      }
-
       await accountRef.update({
         isActive: false,
         updatedAt: now(),
@@ -486,7 +487,7 @@ app.post('/connect-broker', async (c) => {
       password,
       server,
       brokerType,
-      accountName: `${server} · ${accountId}`,
+      accountName: String(server),
       legacyResponse: true
     })
   } catch (err: any) {
@@ -1012,6 +1013,15 @@ const handleBrokerSyncPoller = async (c: any) => {
           syncJobState: 'paused',
           pausedReason: 'subscription',
           pausedAt: new Date().toISOString(),
+        }).catch(() => undefined)
+        continue
+      }
+
+      if (accountData.credentialStorage === 'client-local' || !accountData.metaApiAccountId) {
+        await accountDoc.ref.update({
+          syncJobState: 'client-managed',
+          nextSyncAt: null,
+          updatedAt: new Date().toISOString(),
         }).catch(() => undefined)
         continue
       }

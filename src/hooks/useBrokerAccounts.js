@@ -1,4 +1,4 @@
-// Credentials are sent once to provision a server-managed account; only safe metadata is cached locally.
+// Broker credentials are intentionally kept client-side and sent only for transient sync requests.
 import { useEffect, useState } from 'react';
 import { useAppServices } from '../app/di/AppServicesContext.jsx';
 
@@ -103,7 +103,7 @@ export function useBrokerAccounts() {
     try {
       const result = await repository.connectBroker({ accountId: login, password, server, platform: brokerType });
       const localKey = `xau-broker-accounts-${user.uid}`;
-      const newAccount = { id: result.accountId, accountName, platform: brokerType, server, login, managedByWorker: true };
+      const newAccount = { id: result.accountId, accountName, platform: brokerType, server, login, password, managedByWorker: true };
       localStorage.setItem(localKey, JSON.stringify([newAccount]));
       setAccounts([{
         ...newAccount,
@@ -126,8 +126,17 @@ export function useBrokerAccounts() {
     try {
       const account = accounts.find((item) => item.id === accountId);
       if (!account) throw new Error('Broker account not found.');
-      if (account.managedByWorker !== true) throw new Error('Reconnect this broker account once to enable secure background sync.');
-      return await repository.syncBrokerTrades({ accountId: account.id });
+      if (account.managedByWorker !== true) throw new Error('Reconnect this broker account once to enable secure client-managed sync.');
+      if (!account.login || !account.password || !account.server || !account.platform) {
+        throw new Error('Reconnect this broker account on this device to sync securely.');
+      }
+      return await repository.syncBrokerTrades({
+        accountId: account.id,
+        login: account.login,
+        password: account.password,
+        server: account.server,
+        brokerType: account.platform,
+      });
     } catch (operationError) {
       setError(operationError.message);
       throw operationError;
