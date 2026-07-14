@@ -77,13 +77,14 @@ import { app } from './[[...route]].ts';
 vi.mock('./_firebase.js', () => {
   const mockDocGet = vi.fn();
   const mockDocSet = vi.fn();
-  const mockDocUpdate = vi.fn();
+  const mockDocUpdate = vi.fn().mockResolvedValue(undefined);
   
   const mockDoc = vi.fn(() => ({
     get: mockDocGet,
     set: mockDocSet,
     update: mockDocUpdate,
     collection: mockCollection,
+    parent: { parent: {} },
   }));
   
   const mockCollection = vi.fn(() => ({
@@ -92,12 +93,22 @@ vi.mock('./_firebase.js', () => {
 
   const db = {
     collection: mockCollection,
+    runTransaction: vi.fn(async (callback) => callback({
+      get: (ref) => ref.get(),
+      set: (_ref, data) => mockDocUpdate(data),
+      update: (_ref, data) => mockDocUpdate(data),
+    })),
     __mocks: { mockDocGet, mockDocSet, mockDocUpdate, mockDoc, mockCollection }
   };
 
   return {
     admin: {
-      apps: { length: 1 }
+      apps: { length: 1 },
+      firestore: {
+        FieldValue: {
+          increment: (value) => ({ type: 'increment', value }),
+        },
+      },
     },
     initAdmin: vi.fn(),
     db,
@@ -157,7 +168,8 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
           get: db.__mocks.mockDocGet.bind({ collectionName: name }),
           set: db.__mocks.mockDocSet,
           update: db.__mocks.mockDocUpdate,
-          collection: db.__mocks.mockCollection
+          collection: db.__mocks.mockCollection,
+          parent: { parent: {} },
         };
         return obj;
       };

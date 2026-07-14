@@ -96,6 +96,29 @@ function dealToTrade(deal, entryDeal = null) {
   };
 }
 
+function analyticsDeltaForTrades(trades) {
+  return trades.reduce((result, trade) => {
+    const pnl = Number(trade.netPnl ?? trade.pnl) || 0;
+    const outcome = String(trade.outcome || (
+      pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE'
+    )).toUpperCase();
+    const direction = String(trade.direction || trade.type || '').toUpperCase();
+    result.tradeCount += 1;
+    result.totalPnl += pnl;
+    result.totalPips += Number(trade.pips) || 0;
+    result.wins += outcome === 'WIN' ? 1 : 0;
+    result.losses += outcome === 'LOSS' ? 1 : 0;
+    result.breakEven += outcome === 'BE' ? 1 : 0;
+    result.longs += direction === 'BUY' ? 1 : 0;
+    result.shorts += direction === 'SELL' ? 1 : 0;
+    result.grossProfit += pnl > 0 ? pnl : 0;
+    result.grossLoss += pnl < 0 ? Math.abs(pnl) : 0;
+    return result;
+  }, {
+    tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0,
+    breakEven: 0, longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
+  });
+}
 // ─── Shared sync logic ───────────────────────────────────────────────────────
 async function syncTrades(uid, account) {
   const connection = account.getRPCConnection();
@@ -137,11 +160,12 @@ async function syncTrades(uid, account) {
   });
 
   let newCount = 0;
-  const CHUNK_SIZE = 500;
+  const CHUNK_SIZE = 450;
   for (let i = 0; i < validDeals.length; i += CHUNK_SIZE) {
     const chunk = validDeals.slice(i, i + CHUNK_SIZE);
     const batch = db.batch();
     let chunkWrites = 0;
+    const newTrades = [];
 
     for (const deal of chunk) {
       if (existingMap.has(String(deal.positionId))) continue;
@@ -149,6 +173,7 @@ async function syncTrades(uid, account) {
       const tradeRef = tradesColRef.doc(String(deal.positionId));
       const entryDeal = entryDeals[deal.positionId] || null;
       const trade = dealToTrade(deal, entryDeal);
+      newTrades.push(trade);
       batch.set(tradeRef, {
         ...trade,
         createdAt: FieldValue.serverTimestamp(),
@@ -159,6 +184,14 @@ async function syncTrades(uid, account) {
     }
 
     if (chunkWrites > 0) {
+      const delta = analyticsDeltaForTrades(newTrades);
+      const analyticsUpdate = {
+        totalTradesLogged: FieldValue.increment(delta.tradeCount),
+      };
+      Object.entries(delta).forEach(([key, value]) => {
+        analyticsUpdate['analytics.' + key] = FieldValue.increment(value);
+      });
+      batch.update(db.collection('users').doc(uid), analyticsUpdate);
       await batch.commit();
     }
   }

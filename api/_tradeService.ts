@@ -1,7 +1,12 @@
 import { kv } from '@vercel/kv'
 // @ts-ignore
-import { db, now } from './_firebase.js'
+import { admin, db, now } from './_firebase.js'
 import { isSyncAllowed } from './_auth.js'
+import { subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
+
+const analyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
+  Object.entries(delta).map(([key, value]) => ['analytics.' + key, admin.firestore.FieldValue.increment(value)])
+)
 
 /**
  * Resolves an API key to a user UID.
@@ -86,65 +91,63 @@ export async function handleOpenTradeSync(tradeRef: any, payload: any, defaultSo
  * Unified trade close sync helper. Works for MT5 and TradingView.
  */
 export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultSource: 'mt5' | 'tradingview') {
-  const snap = await tradeRef.get()
   const brokerPnl = Number(payload.profit) || 0
   const commission = Number(payload.commission) || 0
   const swap = Number(payload.swap) || 0
   const netPnl = brokerPnl + commission + swap
-
-  const PIP_SIZE = 0.1
-  let pips = null
-
+  const closePrice = Number(payload.price) || 0
   const source = payload.source || defaultSource
   const isTv = source === 'tradingview'
+  const closeDate = new Date(payload.time || Date.now())
+  const date = Number.isNaN(closeDate.getTime())
+    ? new Date().toISOString().split('T')[0]
+    : closeDate.toISOString().split('T')[0]
+  let pips: number | null = null
 
-  if (snap.exists) {
-    const openPrice = snap.data().openPrice || 0
-    const direction = snap.data().direction || payload.direction
-    const closePrice = Number(payload.price) || 0
-    const diff = String(direction || '').toUpperCase() === 'BUY' ? closePrice - openPrice : openPrice - closePrice
-    pips = Math.round(diff / PIP_SIZE)
+  await db.runTransaction(async (transaction: any) => {
+    const snap = await transaction.get(tradeRef)
+    const previous = snap.exists ? snap.data() : null
+    const direction = String(previous?.direction || payload.direction || '').toUpperCase()
+    const openPrice = Number(previous?.openPrice ?? payload.openPrice)
+    if (Number.isFinite(openPrice)) {
+      const diff = direction === 'BUY' ? closePrice - openPrice : openPrice - closePrice
+      pips = Math.round(diff / 0.1)
+    }
 
-    const updateData: any = {
-      closePrice: Number(payload.price) || 0,
+    const tradeData: any = {
+      positionId: payload.positionId,
+      symbol: payload.symbol,
+      direction,
+      lots: Number(payload.lots ?? previous?.lots) || 0,
+      closePrice,
       closeTime: payload.time,
+      date,
       pnl: brokerPnl,
       commission,
       swap,
       netPnl,
       pips,
+      outcome: netPnl > 0.01 ? 'WIN' : netPnl < -0.01 ? 'LOSS' : 'BE',
       status: 'closed',
-      updatedAt: now(),
-    }
-    if (!isTv && payload.ticket) {
-      updateData.closeDealTicket = payload.ticket
-    }
-
-    await tradeRef.update(updateData)
-  } else {
-    const setData: any = {
-      positionId: payload.positionId,
-      symbol: payload.symbol,
-      direction: String(payload.direction || '').toUpperCase(),
-      lots: Number(payload.lots) || 0,
-      closePrice: Number(payload.price) || 0,
-      closeTime: payload.time,
-      pnl: brokerPnl,
-      commission,
-      swap,
-      netPnl,
-      status: 'closed',
-      partial: true,
       source,
-      createdAt: now(),
       updatedAt: now(),
     }
-    if (!isTv && payload.ticket) {
-      setData.closeDealTicket = payload.ticket
+    if (!previous) {
+      tradeData.partial = true
+      tradeData.createdAt = now()
     }
+    if (!isTv && payload.ticket) tradeData.closeDealTicket = payload.ticket
 
-    await tradeRef.set(setData)
-  }
+    const nextTrade = { ...(previous || {}), ...tradeData }
+    const delta = subtractTradeAnalytics(previous, nextTrade)
+    transaction.set(tradeRef, tradeData, { merge: true })
+    if (Object.values(delta).some((value) => value !== 0)) {
+      transaction.update(tradeRef.parent.parent, {
+        totalTradesLogged: admin.firestore.FieldValue.increment(delta.tradeCount),
+        ...analyticsIncrements(delta),
+      })
+    }
+  })
 
   return { status: 'updated', positionId: payload.positionId, pnl: brokerPnl, pips }
 }
