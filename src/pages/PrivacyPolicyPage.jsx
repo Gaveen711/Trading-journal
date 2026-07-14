@@ -31,18 +31,18 @@ const SECTIONS = [
   {
     id: 'data-security',
     title: '2. How we protect your data',
-    content: `All data in transit is encrypted via TLS 1.3. Data at rest is stored in encrypted, isolated cloud databases protected by strict security protocols that enforce user-level isolation — no user can access another user's data, and neither can we in normal operation.
+    content: `All data in transit is encrypted using modern TLS. Data at rest is stored in encrypted, isolated cloud databases protected by strict security protocols that enforce user-level isolation — no user can access another user's data, and neither can we in normal operation.
 
-Your trade data is strictly scoped, meaning only a valid authentication token for your account grants read/write access. API keys for Meta API broker sync are stored in a separate secure collection, hashed, and can be rotated or revoked at any time from your account settings.`,
+Your trade data is strictly scoped, meaning only a valid authentication token for your account grants read/write access. Broker credentials and broker-provider account tokens are not stored in our database.`,
   },
   {
     id: 'meta-api-sync',
     title: '3. Meta API & broker connection',
     content: `xaujournal supports automatic trade synchronisation via the Meta API — the industry-standard protocol used by MetaTrader 4 and MetaTrader 5 brokers. When you connect your broker account, you authorise xaujournal to read your trade history using a secure read-only API connection.
 
-We receive only: position ID, symbol, direction, lot size, open/close prices, open/close times, and broker-reported P&L. We do not receive your broker account password, full account balance, open positions beyond individual trade data, or any other sensitive account metadata.
+We store only the resulting trade fields: position ID, symbol, direction, lot size, open/close prices, open/close times, and broker-reported P&L. Our sync endpoint receives your broker login and password only during a sync request; it does not write them to our database, logs, or background jobs.
 
-Your broker credentials are never stored on our servers. The connection is established via a secure OAuth-style token issued by your broker through the Meta API protocol. You can revoke this connection at any time from your account settings, which immediately terminates our access to your broker account.
+Your broker credentials are stored in localStorage only in the browser and device where you enter them. For an explicit sync, the browser sends them over HTTPS/TLS to a serverless route, which creates a temporary Meta API provider connection, retrieves trade history, and removes that provider connection in request cleanup. We do not retain credentials or provider access tokens, so unattended background sync is not performed.
 
 xaujournal is not affiliated with, endorsed by, or responsible for any broker you choose to connect. Use of the Meta API connection is at your own discretion.`,
   },
@@ -84,7 +84,7 @@ If you are located in the European Economic Area (EEA), you have additional righ
     title: '7. Cookies & local storage',
     content: `xaujournal uses minimal browser storage:
 
-• localStorage — stores your onboarding state, starting balance, theme preference, and optionally your remembered email address if the "Stay signed in" option is checked. This data never leaves your device.
+• localStorage - stores your onboarding state, starting balance, theme preference, optionally your remembered email address, and broker credentials when you enable broker sync. Broker credentials leave the device only during an explicit sync request over HTTPS/TLS and are not retained by our backend.
 • Authentication service — stores an authentication token in IndexedDB to keep you logged in between sessions. This is essential for the app to function.
 
 We do not use advertising cookies, tracking pixels, or third-party analytics scripts.`,

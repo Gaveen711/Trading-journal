@@ -112,18 +112,30 @@ async function migrateBrokerJobs(db) {
       inspected += 1
       lastBrokerPath = accountDoc.ref.path
       const data = accountDoc.data()
-      if (data.isActive !== true) continue
-      if (data.syncJobState && data.nextSyncAt) continue
+      const alreadyClientManaged = data.credentialStorage === 'client-local'
+        && data.syncJobState === 'client-managed'
+        && data.nextSyncAt == null
+        && !Object.prototype.hasOwnProperty.call(data, 'login')
+        && !Object.prototype.hasOwnProperty.call(data, 'password')
+        && !Object.prototype.hasOwnProperty.call(data, 'metaApiAccountId')
+      if (alreadyClientManaged) continue
+
+      const remove = admin.firestore.FieldValue.delete()
       const update = {
-        syncJobState: data.syncJobState || 'queued',
-        nextSyncAt: data.nextSyncAt || new Date().toISOString(),
-        retryCount: Number(data.retryCount || 0),
-        migrationVersion: 1,
+        login: remove,
+        password: remove,
+        brokerLogin: remove,
+        metaApiAccountId: remove,
+        credentialStorage: 'client-local',
+        syncJobState: 'client-managed',
+        nextSyncAt: null,
+        retryCount: 0,
+        credentialPrivacyVersion: 1,
       }
       if (apply) batch.set(accountDoc.ref, update, { merge: true })
       writes += 1
       migrated += 1
-      console.log((apply ? 'QUEUED' : 'WOULD_QUEUE'), accountDoc.ref.path)
+      console.log(apply ? 'CLIENT_MANAGED' : 'WOULD_SET_CLIENT_MANAGED', accountDoc.ref.path)
     }
 
     if (apply && writes) await batch.commit()
@@ -131,7 +143,7 @@ async function migrateBrokerJobs(db) {
     if (accounts.size < PAGE_SIZE) break
   }
 
-  console.log(JSON.stringify({ section: 'brokerJobs', apply, inspected, migrated, lastBrokerPath }))
+  console.log(JSON.stringify({ section: 'brokerPrivacy', apply, inspected, migrated, lastBrokerPath }))
 }
 
 async function main() {

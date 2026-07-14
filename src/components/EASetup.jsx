@@ -1189,7 +1189,7 @@ export default function EASetup() {
         <div>
           <p className="text-xs font-black uppercase tracking-wide text-primary">Strict Client-Side Security</p>
           <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-            Your broker credentials remain 100% private. They are stored strictly local to this browser and device, and are never saved in our database. Synchronization establishes a transient, end-to-end encrypted connection to retrieve your trade history, which is immediately destroyed after use. Because storage is local, you will need to re-configure your credentials if you switch devices or browsers.
+            Your broker credentials are stored only in this browser on this device and are never saved in our database. When you start a sync, they are sent over an encrypted HTTPS/TLS connection, used only for that request, and the temporary broker-provider connection is removed immediately afterward. Because storage is local, you will need to re-configure your credentials if you switch devices or browsers.
           </p>
         </div>
       </div>

@@ -11,6 +11,8 @@
     "build:budget": "vite build && node scripts/check-bundle-budget.mjs",
     "migrate:performance": "node scripts/migrate-performance-data.mjs",
     "migrate:performance:apply": "node scripts/migrate-performance-data.mjs --apply",
+    "migrate:broker-privacy": "node scripts/migrate-broker-credential-privacy.mjs",
+    "migrate:broker-privacy:apply": "node scripts/migrate-broker-credential-privacy.mjs --apply",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"
