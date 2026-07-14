@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatCurrency, formatNumber } from '../lib/tradeUtils';
+import { getTradeStrategyTags } from '../lib/tradeAnalytics.js';
 
 export const TradeShareCard = React.forwardRef(({ trade }, ref) => {
   if (!trade) return null;
@@ -9,7 +10,7 @@ export const TradeShareCard = React.forwardRef(({ trade }, ref) => {
   const pipsFormatted = `${formatNumber(trade.pips || 0, 1)} Pips`;
   const lotsFormatted = `${trade.lots} Lots`;
   
-  const strategies = trade.strategies?.length > 0 ? trade.strategies : (trade.setup ? [trade.setup] : []);
+  const strategies = getTradeStrategyTags(trade);
 
   return (
     <div 

@@ -3,8 +3,10 @@ import {
   ANALYTICS_VERSION,
   analyticsDeltaForTrades,
   emptyTradeAnalytics,
+  getTradeStrategyTags,
   subtractTradeAnalytics,
   tradeAnalyticsDelta,
+  tradePnlValue,
 } from './tradeAnalytics.js';
 
 describe('trade analytics aggregates', () => {
@@ -57,5 +59,20 @@ describe('trade analytics aggregates', () => {
       grossProfit: 20,
       grossLoss: 5,
     });
+  });
+});
+describe('trade presentation compatibility', () => {
+  it('reads the current singular strategy field used by quick trade entry', () => {
+    expect(getTradeStrategyTags({ strategy: 'Breakout' })).toEqual(['Breakout']);
+  });
+
+  it('supports multi-tag and legacy setup records without duplicates', () => {
+    expect(getTradeStrategyTags({ strategies: ['SMC', 'SMC'], strategy: 'ICT', setup: 'Swing' }))
+      .toEqual(['SMC']);
+    expect(getTradeStrategyTags({ setup: 'S/R' })).toEqual(['S/R']);
+  });
+
+  it('uses broker net P&L when available', () => {
+    expect(tradePnlValue({ pnl: 50, netPnl: 47.5 })).toBe(47.5);
   });
 });

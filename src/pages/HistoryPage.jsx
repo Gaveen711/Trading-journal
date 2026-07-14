@@ -8,6 +8,7 @@ import { EditTradeModal } from '../components/EditTradeModal';
 import { ImageViewerModal } from '../components/ImageViewerModal';
 import { ShareTradeModal } from '../components/ShareTradeModal';
 import { formatCurrency, formatPrice } from '../lib/tradeUtils';
+import { getTradeStrategyTags } from '../lib/tradeAnalytics.js';
 
 const HistorySkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -107,10 +108,9 @@ export function HistoryPage() {
       if (filterSearch) {
         const query = filterSearch.toLowerCase();
         const matchesNote = t.note?.toLowerCase().includes(query);
-        const matchesSetup = t.setup?.toLowerCase().includes(query);
         const matchesMarket = t.market?.toLowerCase().includes(query);
-        const matchesStrategy = t.strategies?.some(s => s.toLowerCase().includes(query));
-        if (!matchesNote && !matchesSetup && !matchesMarket && !matchesStrategy) return false;
+        const matchesStrategy = getTradeStrategyTags(t).some(s => s.toLowerCase().includes(query));
+        if (!matchesNote && !matchesMarket && !matchesStrategy) return false;
       }
       
       // Direction filter
@@ -134,9 +134,7 @@ export function HistoryPage() {
       
       // Strategy filter
       if (filterStrategy) {
-        const hasStrat = t.strategies?.includes(filterStrategy);
-        const hasLegacySetup = t.setup === filterStrategy;
-        if (!hasStrat && !hasLegacySetup) return false;
+        if (!getTradeStrategyTags(t).includes(filterStrategy)) return false;
       }
       
       // Mood, Grade, Timeframe
@@ -198,11 +196,7 @@ export function HistoryPage() {
   const uniqueStrategies = useMemo(() => {
     const strats = new Set();
     trades.forEach(t => {
-      if (t.strategies && t.strategies.length > 0) {
-        t.strategies.forEach(s => strats.add(s));
-      } else if (t.setup) {
-        strats.add(t.setup);
-      }
+      getTradeStrategyTags(t).forEach(s => strats.add(s));
     });
     return Array.from(strats).sort();
   }, [trades]);
@@ -235,7 +229,9 @@ export function HistoryPage() {
     if (!tradesToExport.length) return toast('No trades to export.', 'warn');
     const headers = ['Date', 'Direction', 'Entry', 'Exit', 'P&L', 'Swap', 'Pips', 'Session', 'Setup', 'Outcome', 'Note'];
     const rows = tradesToExport.map(t => [
-      t.date, t.direction, t.entry, t.exit, t.pnl, t.swap || 0, t.pips || 0, t.session, t.setup, t.outcome, `"${(t.note || '').replace(/"/g, '""')}"`
+      t.date, t.direction, t.entry, t.exit, t.pnl, t.swap || 0, t.pips || 0, t.session,
+      `"${getTradeStrategyTags(t).join(' | ').replace(/"/g, '""')}"`, t.outcome,
+      `"${(t.note || '').replace(/"/g, '""')}"`
     ]);
     const csvContent = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
     
@@ -629,7 +625,7 @@ export function HistoryPage() {
               const isWin = t.pnl >= 0;
               const formattedPnL = formatCurrency(t.pnl, true);
               const formattedPips = t.pips >= 0 ? `+${t.pips}` : `${t.pips}`;
-              const strat = t.strategy || (t.strategies && t.strategies[0]) || t.setup || 'Breakout';
+              const strat = getTradeStrategyTags(t)[0] || 'Unclassified';
               
               return (
                 <div 

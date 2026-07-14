@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
-import { ANALYTICS_VERSION } from '../lib/tradeAnalytics.js';
+import { ANALYTICS_VERSION, getTradeStrategyTags, tradePnlValue } from '../lib/tradeAnalytics.js';
 import { BarChartLine, ClockFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity, LockFill } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { ShareTradeModal } from '../components/ShareTradeModal';
@@ -118,11 +118,7 @@ export function AnalyticsPage() {
       sessionDataMap[s].total++;
       if (t.outcome === 'WIN') sessionDataMap[s].wins++;
 
-      const tags = (t.strategies && t.strategies.length > 0)
-        ? t.strategies
-        : t.setup
-          ? [t.setup]
-          : [];
+      const tags = getTradeStrategyTags(t);
 
       tags.forEach(tag => {
         if (!tag) return;
@@ -139,7 +135,7 @@ export function AnalyticsPage() {
         if (!strategyDataMap[key]) {
           strategyDataMap[key] = { pnl: 0, wins: 0, total: 0 };
         }
-        strategyDataMap[key].pnl += t.pnl;
+        strategyDataMap[key].pnl += tradePnlValue(t);
         strategyDataMap[key].total++;
         if (t.outcome === 'WIN') strategyDataMap[key].wins++;
       });
@@ -162,7 +158,7 @@ export function AnalyticsPage() {
         pnl: data.pnl,
         total: data.total
       };
-    }).sort((a, b) => b.pnl - a.pnl);
+    }).filter((setup) => setup.total > 0).sort((a, b) => b.pnl - a.pnl);
 
     // 2. Monthly P/L
     const monthlyPnlMap = {};
@@ -798,7 +794,9 @@ export function AnalyticsPage() {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs font-black tracking-tight">{t.date}</span>
-                  <span className="text-[9px] text-foreground/70 font-bold uppercase tracking-widest">{t.session} · {t.setup}</span>
+                  <span className="text-[9px] text-foreground/70 font-bold uppercase tracking-widest">
+                    {[t.session, getTradeStrategyTags(t)[0]].filter(Boolean).join(' / ') || 'Unclassified trade'}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">

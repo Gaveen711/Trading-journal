@@ -4,6 +4,24 @@ const number = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+/** Returns canonical strategy tags across current and legacy trade schemas. */
+export function getTradeStrategyTags(trade) {
+  if (!trade) return [];
+  const source = Array.isArray(trade.strategies) && trade.strategies.length
+    ? trade.strategies
+    : trade.strategy
+      ? [trade.strategy]
+      : trade.setup
+        ? [trade.setup]
+        : [];
+  return [...new Set(source.map((tag) => String(tag).trim()).filter(Boolean))];
+}
+
+/** Net P&L is preferred for broker trades; manual trades fall back to P&L. */
+export function tradePnlValue(trade) {
+  return number(trade?.netPnl ?? trade?.pnl);
+}
 const emptyDelta = () => ({
   tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0,
   breakEven: 0, longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
@@ -21,7 +39,7 @@ export function isTradeAnalyticsEligible(trade) {
 export function tradeAnalyticsDelta(trade, multiplier = 1) {
   const delta = emptyDelta();
   if (!isTradeAnalyticsEligible(trade)) return delta;
-  const pnl = number(trade.netPnl ?? trade.pnl);
+  const pnl = tradePnlValue(trade);
   const inferredOutcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
   const providedOutcome = String(trade.outcome || '').toUpperCase();
   const outcome = ['WIN', 'LOSS', 'BE'].includes(providedOutcome) ? providedOutcome : inferredOutcome;
