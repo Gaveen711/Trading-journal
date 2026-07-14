@@ -1,0 +1,49 @@
+# XAU Journal Architecture
+
+## Product map
+
+XAU Journal is a trading journal and analytics terminal. Public routes explain the product and pricing. Authenticated routes let a trader log and review trades, maintain a journal, inspect analytics, manage wallet goals, and connect a broker for automated synchronization.
+
+## Dependency rule
+
+Dependencies point inward:
+
+1. `src/core/domain` contains business entities and repository contracts.
+2. `src/core/usecases` contains application operations such as logging and resetting trades.
+3. `src/data/repositories` implements domain contracts with Firebase and HTTP APIs.
+4. `src/app/di` is the composition root that selects concrete adapters.
+5. `src/hooks`, `src/features`, `src/pages`, and `src/components` are delivery code. They consume injected services and must not construct infrastructure adapters.
+
+## Frontend structure
+
+```text
+src/
+|-- app/
+|   |-- components/       # Application-wide recovery and overlay policy
+|   |-- di/               # Composition root and dependency provider
+|   |-- experience/       # Cross-cutting route UX and telemetry
+|   |-- providers/        # Root provider composition
+|   `-- routing/          # Public and authenticated URL policy
+|-- core/
+|   |-- domain/           # Entities and repository abstractions
+|   `-- usecases/         # Framework-independent application operations
+|-- data/repositories/    # Firebase/API infrastructure adapters
+|-- features/             # Feature-owned state and workflows
+|-- hooks/                # React adapters over application services
+|-- pages/                # Route-level presentation
+|-- components/           # Reusable presentation and layouts
+|-- lib/                  # Pure calculations and technical utilities
+`-- services/             # Legacy application services being migrated inward
+```
+
+## Extension rules
+
+- Add business rules to domain entities or use cases, never to page components.
+- Add external persistence behind a repository contract and register it in `createAppServices`.
+- Add a new URL in the appropriate routing module; lazy-load route-level code.
+- Keep feature state under `features/<feature>` and reusable visuals under `components`.
+- Comments explain architectural intent, security boundaries, or non-obvious behavior—not syntax.
+
+## Safe migration path
+
+Split large pages feature-by-feature: extract pure calculations, then workflow hooks, then visual sections. Keep routes and component props stable during each migration so behavior can be verified incrementally.
