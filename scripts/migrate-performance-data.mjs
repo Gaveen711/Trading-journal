@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { admin, initAdmin } from '../api/_firebase.js'
+import { ANALYTICS_VERSION, emptyTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
 
 const args = new Map(process.argv.slice(2).map((arg) => {
   const [key, ...rest] = arg.replace(/^--/, '').split('=')
@@ -13,36 +14,6 @@ const startAfterUser = args.get('start-after-user')
 const startAfterBrokerPath = args.get('start-after-broker-path')
 const PAGE_SIZE = 100
 
-const toNumber = (value) => Number(value) || 0
-const emptyAnalytics = () => ({
-  version: 1,
-  tradeCount: 0,
-  totalPnl: 0,
-  totalPips: 0,
-  wins: 0,
-  losses: 0,
-  breakEven: 0,
-  longs: 0,
-  shorts: 0,
-  grossProfit: 0,
-  grossLoss: 0,
-})
-
-function addTrade(analytics, trade) {
-  const outcome = String(trade.outcome || '').toUpperCase()
-  const direction = String(trade.direction || '').toUpperCase()
-  const pnl = toNumber(trade.netPnl ?? trade.pnl)
-  analytics.tradeCount += 1
-  analytics.totalPnl += pnl
-  analytics.totalPips += toNumber(trade.pips)
-  analytics.wins += outcome === 'WIN' ? 1 : 0
-  analytics.losses += outcome === 'LOSS' ? 1 : 0
-  analytics.breakEven += outcome === 'BE' ? 1 : 0
-  analytics.longs += direction === 'BUY' ? 1 : 0
-  analytics.shorts += direction === 'SELL' ? 1 : 0
-  analytics.grossProfit += pnl > 0 ? pnl : 0
-  analytics.grossLoss += pnl < 0 ? Math.abs(pnl) : 0
-}
 
 async function migrateAnalytics(db) {
   let cursor = startAfterUser ? db.collection('users').doc(String(startAfterUser)) : null
@@ -63,22 +34,51 @@ async function migrateAnalytics(db) {
     for (const userDoc of users.docs) {
       inspected += 1
       lastUserId = userDoc.id
-      if (userDoc.get('analytics.version') === 1) {
+      if (userDoc.get('analytics.version') === ANALYTICS_VERSION) {
         skipped += 1
         continue
       }
 
-      const analytics = emptyAnalytics()
-      const trades = userDoc.ref.collection('trades')
-        .select('outcome', 'direction', 'netPnl', 'pnl', 'pips')
-        .stream()
-      for await (const tradeDoc of trades) addTrade(analytics, tradeDoc.data())
+      const tradesQuery = userDoc.ref.collection('trades')
+        .select('status', 'outcome', 'direction', 'type', 'netPnl', 'pnl', 'pips')
+      let analytics
 
       if (apply) {
-        await userDoc.ref.set({
-          analytics,
-          analyticsBackfilledAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true })
+        const result = await db.runTransaction(async (transaction) => {
+          // Reading the user document makes every aggregate-aware trade writer
+          // contend with this backfill. Firestore retries the transaction if a
+          // trade changes while the complete history is being calculated.
+          const currentUser = await transaction.get(userDoc.ref)
+          if (currentUser.get('analytics.version') === ANALYTICS_VERSION) {
+            return { skipped: true, analytics: currentUser.get('analytics') }
+          }
+
+          const tradeSnapshot = await transaction.get(tradesQuery)
+          const nextAnalytics = emptyTradeAnalytics()
+          tradeSnapshot.docs.forEach((tradeDoc) => {
+            const delta = tradeAnalyticsDelta(tradeDoc.data())
+            Object.keys(delta).forEach((key) => { nextAnalytics[key] += delta[key] })
+          })
+          transaction.set(userDoc.ref, {
+            analytics: nextAnalytics,
+            totalTradesLogged: nextAnalytics.tradeCount,
+            analyticsBackfillState: 'complete',
+            analyticsBackfilledAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true })
+          return { skipped: false, analytics: nextAnalytics }
+        })
+        if (result.skipped) {
+          skipped += 1
+          continue
+        }
+        analytics = result.analytics
+      } else {
+        analytics = emptyTradeAnalytics()
+        const trades = tradesQuery.stream()
+        for await (const tradeDoc of trades) {
+          const delta = tradeAnalyticsDelta(tradeDoc.data())
+          Object.keys(delta).forEach((key) => { analytics[key] += delta[key] })
+        }
       }
       migrated += 1
       console.log((apply ? 'UPDATED' : 'WOULD_UPDATE'), 'user', userDoc.id, analytics.tradeCount, 'trades')
