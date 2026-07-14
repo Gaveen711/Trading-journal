@@ -22,6 +22,14 @@ export function getTradeStrategyTags(trade) {
 export function tradePnlValue(trade) {
   return number(trade?.netPnl ?? trade?.pnl);
 }
+
+/** Uses stored outcome when present and derives it for older broker records. */
+export function getTradeOutcome(trade) {
+  const provided = String(trade?.outcome || '').toUpperCase();
+  if (['WIN', 'LOSS', 'BE'].includes(provided)) return provided;
+  const pnl = tradePnlValue(trade);
+  return pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
+}
 const emptyDelta = () => ({
   tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0,
   breakEven: 0, longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,

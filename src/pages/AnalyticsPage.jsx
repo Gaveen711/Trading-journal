@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
-import { ANALYTICS_VERSION, getTradeStrategyTags, tradePnlValue } from '../lib/tradeAnalytics.js';
+import { ANALYTICS_VERSION, getTradeOutcome, getTradeStrategyTags, tradePnlValue } from '../lib/tradeAnalytics.js';
 import { BarChartLine, ClockFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity, LockFill } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { ShareTradeModal } from '../components/ShareTradeModal';
@@ -74,14 +74,14 @@ export function AnalyticsPage() {
 
   const stats = useMemo(() => {
     const tradesList = trades || [];
-    const wins = tradesList.filter(t => t.outcome === 'WIN');
-    const losses = tradesList.filter(t => t.outcome === 'LOSS');
+    const wins = tradesList.filter(t => getTradeOutcome(t) === 'WIN');
+    const losses = tradesList.filter(t => getTradeOutcome(t) === 'LOSS');
     const hasAggregate = analytics?.version === ANALYTICS_VERSION && Number.isFinite(Number(analytics.tradeCount));
     const winsCount = hasAggregate ? Number(analytics.wins) || 0 : wins.length;
     const lossesCount = hasAggregate ? Number(analytics.losses) || 0 : losses.length;
     const totalCount = hasAggregate ? Number(analytics.tradeCount) || 0 : tradesList.length;
-    const grossWin = hasAggregate ? Number(analytics.grossProfit) || 0 : wins.reduce((s, t) => s + t.pnl, 0);
-    const grossLoss = hasAggregate ? Number(analytics.grossLoss) || 0 : Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+    const grossWin = hasAggregate ? Number(analytics.grossProfit) || 0 : wins.reduce((s, t) => s + tradePnlValue(t), 0);
+    const grossLoss = hasAggregate ? Number(analytics.grossLoss) || 0 : Math.abs(losses.reduce((s, t) => s + tradePnlValue(t), 0));
     const avgWin = winsCount ? grossWin / winsCount : 0;
     const avgLoss = lossesCount ? -(grossLoss / lossesCount) : 0;
     const wr = totalCount ? winsCount / totalCount : 0;
@@ -94,7 +94,7 @@ export function AnalyticsPage() {
     const drawdownLabels = ['Start'];
 
     sortedTrades.forEach(t => {
-      running += t.pnl;
+      running += tradePnlValue(t);
       if (running > peak) peak = running;
       const dd = running - peak;
       if (Math.abs(dd) > maxDD) maxDD = Math.abs(dd);
@@ -114,9 +114,9 @@ export function AnalyticsPage() {
     tradesList.forEach(t => {
       const s = t.session || 'Unknown';
       if (!sessionDataMap[s]) sessionDataMap[s] = { pnl: 0, wins: 0, total: 0 };
-      sessionDataMap[s].pnl += t.pnl;
+      sessionDataMap[s].pnl += tradePnlValue(t);
       sessionDataMap[s].total++;
-      if (t.outcome === 'WIN') sessionDataMap[s].wins++;
+      if (getTradeOutcome(t) === 'WIN') sessionDataMap[s].wins++;
 
       const tags = getTradeStrategyTags(t);
 
@@ -137,7 +137,7 @@ export function AnalyticsPage() {
         }
         strategyDataMap[key].pnl += tradePnlValue(t);
         strategyDataMap[key].total++;
-        if (t.outcome === 'WIN') strategyDataMap[key].wins++;
+        if (getTradeOutcome(t) === 'WIN') strategyDataMap[key].wins++;
       });
     });
 
@@ -166,7 +166,7 @@ export function AnalyticsPage() {
       if (!t.date) return;
       const dateObj = new Date(t.date);
       const monthName = dateObj.toLocaleString('en-US', { month: 'short' }); // "May", "Jun", etc.
-      monthlyPnlMap[monthName] = (monthlyPnlMap[monthName] || 0) + t.pnl;
+      monthlyPnlMap[monthName] = (monthlyPnlMap[monthName] || 0) + tradePnlValue(t);
     });
 
     const monthsOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -217,7 +217,7 @@ export function AnalyticsPage() {
       // Update summary maps
       if (sessionSummaryMap[session]) {
         sessionSummaryMap[session].total++;
-        if (t.outcome === 'WIN') {
+        if (getTradeOutcome(t) === 'WIN') {
           sessionSummaryMap[session].wins++;
         }
       }
@@ -228,7 +228,7 @@ export function AnalyticsPage() {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const dayName = days[dateObj.getDay()];
         if (sessionWeeklyPnl[session] && sessionWeeklyPnl[session][dayName] !== undefined) {
-          sessionWeeklyPnl[session][dayName] += t.pnl;
+          sessionWeeklyPnl[session][dayName] += tradePnlValue(t);
         }
       }
     });
@@ -280,7 +280,7 @@ export function AnalyticsPage() {
       }]
     };
 
-    const totalPnl = hasAggregate ? Number(analytics.totalPnl) || 0 : tradesList.reduce((s, t) => s + t.pnl, 0);
+    const totalPnl = hasAggregate ? Number(analytics.totalPnl) || 0 : tradesList.reduce((s, t) => s + tradePnlValue(t), 0);
     const currentWalletBalance = (walletBalance || 0) + totalPnl;
     const winRatePercent = totalCount ? (winsCount / totalCount * 100).toFixed(0) : 0;
 
@@ -800,8 +800,8 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <div className={`text-sm font-black tracking-tighter tabular-nums ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {formatCurrency(t.pnl, true)}
+                <div className={`text-sm font-black tracking-tighter tabular-nums ${tradePnlValue(t) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {formatCurrency(tradePnlValue(t), true)}
                 </div>
                 <button
                   type="button"

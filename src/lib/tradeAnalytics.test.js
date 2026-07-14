@@ -3,6 +3,7 @@ import {
   ANALYTICS_VERSION,
   analyticsDeltaForTrades,
   emptyTradeAnalytics,
+  getTradeOutcome,
   getTradeStrategyTags,
   subtractTradeAnalytics,
   tradeAnalyticsDelta,
@@ -74,5 +75,10 @@ describe('trade presentation compatibility', () => {
 
   it('uses broker net P&L when available', () => {
     expect(tradePnlValue({ pnl: 50, netPnl: 47.5 })).toBe(47.5);
+  });
+
+  it('derives outcome when broker records omit the outcome field', () => {
+    expect(getTradeOutcome({ netPnl: 25 })).toBe('WIN');
+    expect(getTradeOutcome({ netPnl: -5 })).toBe('LOSS');
   });
 });
