@@ -1,7 +1,62 @@
-import { describe, expect, it } from 'vitest';
-import { normalizeMetaApiDeals } from './_metaapi-broker.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sdk = vi.hoisted(() => {
+  const connection = {
+    connect: vi.fn().mockResolvedValue(undefined),
+    waitSynchronized: vi.fn().mockResolvedValue(undefined),
+    getDealsByTimeRange: vi.fn().mockResolvedValue([]),
+    close: vi.fn().mockResolvedValue(undefined),
+  };
+  const account = {
+    id: 'temporary-provider-account',
+    platform: 'mt5',
+    server: 'Broker-Demo',
+    deploy: vi.fn().mockResolvedValue(undefined),
+    waitConnected: vi.fn().mockResolvedValue(undefined),
+    getRPCConnection: vi.fn(() => connection),
+  };
+  const metatraderAccountApi = {
+    createAccount: vi.fn().mockResolvedValue(account),
+    getAccount: vi.fn().mockResolvedValue(account),
+    removeAccount: vi.fn().mockResolvedValue(undefined),
+  };
+  return { account, connection, metatraderAccountApi };
+});
+
+vi.mock('metaapi.cloud-sdk/esm-node', () => ({
+  default: class MockMetaApi {
+    constructor() {
+      return { metatraderAccountApi: sdk.metatraderAccountApi };
+    }
+  },
+}));
+
+import { fetchBrokerTrades, normalizeMetaApiDeals } from './_metaapi-broker.js';
 
 const context = { brokerType: 'mt5', server: 'Broker-Demo' };
+
+describe('transient broker sync', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.METAAPI_TOKEN = 'test-token';
+  });
+
+  it('removes the temporary provider account after retrieving trades', async () => {
+    await fetchBrokerTrades({
+      login: '123456',
+      password: 'investor-password',
+      server: 'Broker-Demo',
+      brokerType: 'mt5',
+    });
+
+    expect(sdk.metatraderAccountApi.createAccount).toHaveBeenCalledWith(expect.objectContaining({
+      login: '123456',
+      password: 'investor-password',
+      server: 'Broker-Demo',
+    }));
+    expect(sdk.metatraderAccountApi.removeAccount).toHaveBeenCalledWith('temporary-provider-account');
+  });
+});
 
 describe('normalizeMetaApiDeals', () => {
   it('persists only exit deals and derives the original position direction', () => {

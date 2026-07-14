@@ -124,26 +124,18 @@ export function normalizeMetaApiDeals(deals, ctx) {
 }
 
 /**
- * Create/deploy MetaApi cloud account and return MetaApi account id.
+ * Create a short-lived MetaApi account used only for the current request.
+ *
+ * Never reuse an existing provider account here: doing so would turn a transient
+ * credential exchange into persistent provider-side access.
  */
 export async function provisionMetaApiAccount({ login, password, server, brokerType }) {
   const api = getApi();
   const platform = brokerType === 'mt4' ? 'mt4' : 'mt5';
   const loginStr = String(login);
 
-  const existing = await api.metatraderAccountApi.getAccountsWithInfiniteScroll();
-  const match = existing.find(
-    (a) => String(a.login) === loginStr && a.server === server && a.platform === platform
-  );
-  if (match) {
-    const account = await api.metatraderAccountApi.getAccount(match.id);
-    if (account.state !== 'DEPLOYED') await account.deploy();
-    await account.waitConnected(300);
-    return account.id;
-  }
-
   const account = await api.metatraderAccountApi.createAccount({
-    name: `xaujournal-${loginStr}-${server}`,
+    name: 'xaujournal-transient-' + Date.now(),
     type: 'cloud',
     login: loginStr,
     password,
@@ -193,21 +185,29 @@ export async function fetchMetaApiDeals(metaApiAccountId, fromDate = null) {
 }
 
 export async function fetchBrokerTrades(credentials, fromDate = null) {
-  if (credentials.metaApiAccountId) {
-    return fetchMetaApiDeals(credentials.metaApiAccountId, fromDate);
-  }
-
   const metaApiAccountId = await provisionMetaApiAccount(credentials);
-  return fetchMetaApiDeals(metaApiAccountId, fromDate);
+  try {
+    return await fetchMetaApiDeals(metaApiAccountId, fromDate);
+  } finally {
+    // Removing the temporary provider account destroys its stored broker secret.
+    // Cleanup failures are surfaced because silent failure would violate the
+    // client-managed credential policy.
+    await deleteMetaApiAccount(metaApiAccountId);
+  }
 }
 
 export async function deleteMetaApiAccount(metaApiAccountId) {
   const api = getApi();
-  try {
-    await api.metatraderAccountApi.removeAccount(metaApiAccountId);
-  } catch (err) {
-    console.error(`Failed to delete MetaApi account ${metaApiAccountId}:`, err.message || err);
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await api.metatraderAccountApi.removeAccount(metaApiAccountId);
+      return;
+    } catch (err) {
+      lastError = err;
+    }
   }
+  console.error('[metaapi-cleanup] Temporary provider account removal failed');
+  throw lastError || new Error('Temporary provider account removal failed');
 }
-
 

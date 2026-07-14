@@ -5,6 +5,7 @@ async function callBrokerApi(path, payload) {
   if (!user) throw new Error('Not authenticated');
   const response = await fetch(path, {
     method: 'POST',
+    cache: 'no-store',
     headers: {
       Authorization: 'Bearer ' + await user.getIdToken(),
       'Content-Type': 'application/json',

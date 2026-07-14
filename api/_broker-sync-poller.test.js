@@ -129,6 +129,7 @@ vi.mock('./_firebase.js', () => {
         FieldValue: {
           serverTimestamp: () => 'MOCK_SERVER_TIMESTAMP',
           increment: (val) => ({ type: 'increment', value: val }),
+          delete: () => 'MOCK_DELETE_FIELD',
         }
       }
     },
@@ -187,7 +188,7 @@ describe('Broker Sync Poller Cron Job', () => {
     expect(await res.json()).toEqual({ error: 'Unauthorized' });
   });
 
-  it('runs successfully and filters users correctly using isSyncAllowed', async () => {
+  it('scrubs legacy server-managed broker credentials instead of syncing them', async () => {
     const nowMs = Date.now();
 
     // Mock db.getAll to fetch user details and verify trade existence check correctly
@@ -217,10 +218,11 @@ describe('Broker Sync Poller Cron Job', () => {
 
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(json.usersProcessed).toBe(3); // LIFETIME_USER, ACTIVE_PRO_USER, ACTIVE_GRACE_USER
-    expect(json.accountsProcessed).toBe(3);
+    expect(json.usersProcessed).toBe(5);
+    expect(json.accountsProcessed).toBe(5);
 
-    // Verify fetchBrokerTrades was called exactly 3 times
-    expect(fetchBrokerTrades).toHaveBeenCalledTimes(3);
+    // Privacy policy forbids scheduled sync from using retained provider access.
+    expect(fetchBrokerTrades).not.toHaveBeenCalled();
+    expect(db.__mocks.mockDocUpdate).toHaveBeenCalledTimes(5);
   });
 });

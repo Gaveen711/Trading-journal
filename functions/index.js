@@ -220,10 +220,12 @@ async function transientSyncTrades(uid, server, accountId, password, platform) {
   const provisioningApi = api.metatraderAccountApi;
 
   let account = null;
+  let result;
+  let operationError = null;
   try {
-    // 1. Create a temporary MetaApi account config
+    // The provider account exists only for this explicit sync request.
     account = await provisioningApi.createAccount({
-      name: `XAUJournal-Temp-${uid}-${Date.now()}`,
+      name: 'XAUJournal-Transient-' + Date.now(),
       type: 'cloud',
       login: String(accountId),
       password,
@@ -234,27 +236,36 @@ async function transientSyncTrades(uid, server, accountId, password, platform) {
       reliability: 'regular',
     });
 
-    // 2. Deploy it
     await account.deploy();
     await account.waitConnected(120);
-
-    // 3. Sync the trades
-    const count = await syncTrades(uid, account);
-    return count;
+    result = await syncTrades(uid, account);
+  } catch (error) {
+    operationError = error;
   } finally {
-    // 4. Always clean up and delete the temporary account configuration
+    // Always remove the temporary provider account that held the broker secret.
     if (account) {
-      try {
-        await account.remove();
-        console.log(`[transientSyncTrades] Successfully cleaned up MetaApi account: ${account.id}`);
-      } catch (cleanupErr) {
-        console.error(`[transientSyncTrades] Failed to remove MetaApi account ${account.id}:`, cleanupErr.message || cleanupErr);
+      let cleanupError = null;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          await account.remove();
+          cleanupError = null;
+          break;
+        } catch (error) {
+          cleanupError = error;
+        }
+      }
+      if (cleanupError) {
+        console.error('[transientSyncTrades] Temporary provider account removal failed');
+        operationError = cleanupError;
       }
     }
   }
+
+  if (operationError) throw operationError;
+  return result;
 }
 
-// ─── 1. CONNECT BROKER ───────────────────────────────────────────────────────
+// --- 1. CONNECT BROKER ---
 exports.connectBroker = onCall(
   { secrets: [metaApiTokenSecret], timeoutSeconds: 540, memory: '1GiB' },
   async (request) => {
@@ -273,12 +284,12 @@ exports.connectBroker = onCall(
         tradeCount: count,
       };
     } catch (err) {
-      console.error('[connectBroker]', err);
+      console.error('[connectBroker]', { name: err?.constructor?.name, code: err?.code });
       try {
         await db.collection('users').doc(uid).set(
           { 
             lastBrokerSyncStatus: 'failed',
-            lastBrokerSyncError: err.message || 'Failed to connect broker'
+            lastBrokerSyncError: 'Broker connection failed'
           },
           { merge: true }
         );
@@ -289,7 +300,7 @@ exports.connectBroker = onCall(
       if (/invalid|auth|credential|password|login/i.test(msg)) {
         throw new HttpsError('unauthenticated', 'Invalid broker credentials.');
       }
-      throw new HttpsError('internal', msg);
+      throw new HttpsError('internal', 'Broker connection failed.');
     }
   }
 );
@@ -309,19 +320,19 @@ exports.syncBrokerTrades = onCall(
       const count = await transientSyncTrades(uid, server, accountId, password, platform);
       return { message: `Synced ${count} new trade(s).`, tradeCount: count, newTrades: count };
     } catch (err) {
-      console.error('[syncBrokerTrades]', err);
+      console.error('[syncBrokerTrades]', { name: err?.constructor?.name, code: err?.code });
       try {
         await db.collection('users').doc(uid).set(
           { 
             lastBrokerSyncStatus: 'failed',
-            lastBrokerSyncError: err.message || 'Sync failed'
+            lastBrokerSyncError: 'Broker sync failed'
           },
           { merge: true }
         );
       } catch (dbErr) {
         console.error('Failed to set sync error in Firestore:', dbErr);
       }
-      throw new HttpsError('internal', err.message || 'Sync failed');
+      throw new HttpsError('internal', 'Broker sync failed.');
     }
   }
 );

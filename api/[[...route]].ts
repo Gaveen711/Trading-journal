@@ -19,17 +19,17 @@ import {
   handleCloseTradeSync
 } from './_tradeService.js'
 import { getClientIp } from './_ipUtils.js'
-import { chunkedDbGetAll, runWithConcurrencyLimit } from './_firestoreUtils.js'
-import { persistBrokerTrades, toDateOrNull } from './_brokerTradePersistence.js'
+import { persistBrokerTrades } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
 import { emptyTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
 
-// Helper to sanitize error messages and log full details server-side
+// Helper to sanitize both client responses and server logs.
 function handleRouteError(route: string, err: any, c: any, customErrName = 'Internal Server Error') {
-  console.error(`[${route}] Error:`, err)
+  // Never log whole provider errors: SDK errors may embed request credentials.
+  console.error('[' + route + '] Error', { name: err?.constructor?.name, code: err?.code })
   const constructorName = err?.constructor?.name
   const MSG_MAP: Record<string, string> = {
     'MetaApiError': 'Broker connection failed. Check your credentials.',
@@ -42,6 +42,16 @@ function handleRouteError(route: string, err: any, c: any, customErrName = 'Inte
 const adminAnalyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
   Object.entries(delta).map(([key, value]) => ['analytics.' + key, admin.firestore.FieldValue.increment(value)])
 )
+
+/** Removes credential fields written by deployments that predate client-managed sync. */
+async function scrubLegacyBrokerCredentials(uid: string) {
+  const remove = admin.firestore.FieldValue.delete()
+  await db.collection('users').doc(uid).set({
+    brokerLogin: remove,
+    brokerPassword: remove,
+    metaApiAccountId: remove,
+  }, { merge: true })
+}
 
 type Env = {}
 type Variables = Record<string, unknown>
@@ -221,13 +231,14 @@ async function consolidateBrokerConnect({
   login,
   password,
   server,
-  brokerType,
-  accountName
+  brokerType
 }: any) {
-  const fingerprint = [brokerType, String(server).trim().toLowerCase(), String(login).trim()].join(':')
-  const accountId = 'broker_' + crypto.createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)
+  await scrubLegacyBrokerCredentials(uid)
+  // Random ids avoid persisting a credential-derived fingerprint.
+  const accountId = 'broker_' + crypto.randomUUID().replaceAll('-', '')
   const brokerRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
-  const name = accountName || String(server)
+  // Server-owned labels never reuse credential-shaped user input.
+  const name = String(server)
   
   const lockResult = await withAccountLock(uid + ':connect', async () => {
     const activeAccounts = await db.collection('users').doc(uid).collection('brokerAccounts')
@@ -247,6 +258,11 @@ async function consolidateBrokerConnect({
       // Privacy boundary: broker login/password stay on the user's device.
       // Firestore stores only metadata needed to display and identify the account.
       credentialStorage: 'client-local',
+      // Merge writes also remove sensitive fields left by older deployments.
+      login: admin.firestore.FieldValue.delete(),
+      password: admin.firestore.FieldValue.delete(),
+      brokerLogin: admin.firestore.FieldValue.delete(),
+      metaApiAccountId: admin.firestore.FieldValue.delete(),
       isActive: true,
       lastSyncStatus: 'running',
       lastSyncError: null,
@@ -261,7 +277,7 @@ async function consolidateBrokerConnect({
       const deals = await withRetryBudget(
         'metaapi',
         () => fetchBrokerTrades({ login, password, server, brokerType }),
-        { timeoutMs: 25_000, retries: 2 },
+        { timeoutMs: 25_000, retries: 0 },
       )
       await persistBrokerTrades({
         db,
@@ -280,9 +296,9 @@ async function consolidateBrokerConnect({
       return { accountId, tradeCount: deals.length }
     } catch (error: any) {
       await brokerRef.update({
-        lastSyncStatus: 'failed', lastSyncError: error.message,
-        syncJobState: 'retry', retryCount: 1,
-        nextSyncAt: new Date(Date.now() + 60 * 1000).toISOString(),
+        lastSyncStatus: 'failed', lastSyncError: 'Broker sync failed',
+        syncJobState: 'client-managed', retryCount: 0,
+        nextSyncAt: null,
         updatedAt: now(),
       }).catch(() => undefined)
       throw error
@@ -402,10 +418,11 @@ app.post('/broker-login-sync', async (c) => {
       const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
       const accountSnap = await accountRef.get()
       if (!accountSnap.exists) return c.json({ error: 'Broker account not found' }, 404)
+      await scrubLegacyBrokerCredentials(uid)
       const deals = await withRetryBudget(
         'metaapi',
         () => fetchBrokerTrades({ login, password, server, brokerType }),
-        { timeoutMs: 25_000, retries: 2 },
+        { timeoutMs: 25_000, retries: 0 },
       )
       const syncResult = await persistBrokerTrades({
         db,
@@ -435,6 +452,7 @@ app.post('/broker-login-sync', async (c) => {
     if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
     try {
       const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
+      await scrubLegacyBrokerCredentials(uid)
       await accountRef.update({
         isActive: false,
         updatedAt: now(),
@@ -985,118 +1003,30 @@ const handleBrokerSyncPoller = async (c: any) => {
       })
     }
 
-    // 2. Extract unique owner user IDs (UIDs) from account document paths
+    // Client-managed credentials make unattended server sync intentionally impossible.
+    // Convert queued legacy accounts to client-managed mode and remove any sensitive
+    // fields retained by an older deployment.
     const activeAccounts = accountsSnapshot.docs
-    const uids = Array.from(new Set(activeAccounts.map((doc: any) => doc.ref.parent.parent.id)))
-
-    // 3. Fetch all parent user documents in parallel chunked reads
-    const userRefs = uids.map(uid => db.collection('users').doc(uid))
-    const userSnaps = await chunkedDbGetAll(db, userRefs)
-    const usersMap = new Map()
-    userSnaps.forEach((snap: any) => {
-      if (snap.exists) {
-        usersMap.set(snap.id, snap.data())
-      }
-    })
-
-    // 4. Filter accounts that belong to users with valid sync access
-    const accountsToSync = []
-    const usersCounted = new Set()
+    const uniqueUsers = new Set()
 
     for (const accountDoc of activeAccounts) {
-      const accountData = accountDoc.data()
       const uid = accountDoc.ref.parent.parent.id
-      const userData = usersMap.get(uid)
-
-      if (!userData || !isSyncAllowed(userData)) {
-        await accountDoc.ref.update({
-          syncJobState: 'paused',
-          pausedReason: 'subscription',
-          pausedAt: new Date().toISOString(),
-        }).catch(() => undefined)
-        continue
-      }
-
-      if (accountData.credentialStorage === 'client-local' || !accountData.metaApiAccountId) {
-        await accountDoc.ref.update({
-          syncJobState: 'client-managed',
-          nextSyncAt: null,
-          updatedAt: new Date().toISOString(),
-        }).catch(() => undefined)
-        continue
-      }
-
-      usersCounted.add(uid)
-      totalAccounts++
-
-      accountsToSync.push({
-        uid,
-        accountData,
-        accountId: accountDoc.id,
-        accountRef: accountDoc.ref,
+      uniqueUsers.add(uid)
+      await scrubLegacyBrokerCredentials(uid)
+      await accountDoc.ref.update({
+        credentialStorage: 'client-local',
+        login: admin.firestore.FieldValue.delete(),
+        password: admin.firestore.FieldValue.delete(),
+        brokerLogin: admin.firestore.FieldValue.delete(),
+        metaApiAccountId: admin.firestore.FieldValue.delete(),
+        syncJobState: 'client-managed',
+        nextSyncAt: null,
+        updatedAt: new Date().toISOString(),
       })
     }
 
-    totalUsers = usersCounted.size
-
-    // 5. Sync accounts in parallel with a bounded concurrency pool (limit of 5 concurrent processes)
-    const syncAccountTask = async ({ uid, accountData, accountId, accountRef }: any) => {
-      const nextSyncAt = toDateOrNull(accountData.nextSyncAt)
-      if (nextSyncAt && nextSyncAt.getTime() > Date.now()) return
-
-      const result = await withAccountLock(uid + ':' + accountId, async () => {
-        try {
-          const syncStartedAt = new Date()
-          await accountRef.update({
-            syncJobState: 'running',
-            syncStartedAt: syncStartedAt.toISOString(),
-            nextSyncAt: new Date(syncStartedAt.getTime() + 5 * 60 * 1000).toISOString(),
-          })
-          const lastSyncDate = toDateOrNull(accountData.lastSyncTime)
-          const fetchFrom = lastSyncDate
-            ? new Date(lastSyncDate.getTime() - 10 * 60 * 1000)
-            : null
-          const brokerTrades = await withRetryBudget('metaapi', () => fetchBrokerTrades({
-            metaApiAccountId: accountData.metaApiAccountId,
-            login: accountData.login,
-            server: accountData.server,
-            brokerType: accountData.brokerType,
-          }, fetchFrom as any), { timeoutMs: 25_000, retries: 2 })
-
-          const syncResult = await persistBrokerTrades({
-            db, userId: uid, accountId, brokerTrades,
-            timestampFactory: () => new Date().toISOString(),
-            incrementFactory: (value: number) => admin.firestore.FieldValue.increment(value),
-          })
-          const nextRun = new Date(Date.now() + 5 * 60 * 1000).toISOString()
-          await accountRef.update({
-            lastSyncTime: new Date().toISOString(), lastSyncStatus: 'success',
-            tradeCount: syncResult.totalFetched, updatedAt: new Date().toISOString(),
-            syncJobState: 'queued', retryCount: 0, nextSyncAt: nextRun,
-          })
-          await db.collection('users').doc(uid).set({
-            lastBrokerSync: new Date(), lastBrokerSyncStatus: 'success',
-            lastBrokerSyncCount: syncResult.totalFetched, lastBrokerSyncError: null,
-          }, { merge: true })
-          successfulSyncs++
-          return syncResult
-        } catch (error: any) {
-          const retryCount = Number(accountData.retryCount || 0) + 1
-          const retryDelay = Math.min(30 * (2 ** Math.min(retryCount, 6)), 3600)
-          await accountRef.update({
-            lastSyncStatus: 'failed', lastSyncError: error.message,
-            syncJobState: retryCount >= 6 ? 'dead' : 'retry',
-            retryCount, nextSyncAt: new Date(Date.now() + retryDelay * 1000).toISOString(),
-            updatedAt: new Date().toISOString(),
-          }).catch(() => undefined)
-          failedSyncs++
-          return null
-        }
-      })
-      if (!result.acquired) console.log('[broker-sync-poller] account lock busy:', accountId)
-    }
-    // Run sync tasks with a concurrency limit of 5 to avoid CPU/memory exhaustion or MetaAPI limit hitting
-    await runWithConcurrencyLimit(5, accountsToSync, syncAccountTask)
+    totalUsers = uniqueUsers.size
+    totalAccounts = activeAccounts.length
 
     const result = {
       ok: true,
