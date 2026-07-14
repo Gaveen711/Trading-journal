@@ -65,14 +65,14 @@ export function ShareTradeModal({ trade, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 backdrop-blur-sm p-4 sm:py-8 animate-in fade-in duration-200">
 
       {/* Hidden container for rendering the high-res card off-screen */}
       <div className="fixed top-[-9999px] left-[-9999px]">
         <TradeShareCard ref={cardRef} trade={trade} />
       </div>
 
-      <div className="w-full max-w-4xl max-h-[calc(100dvh-2rem)] apple-glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+      <div className="w-full max-w-4xl max-h-[calc(100dvh-2rem)] apple-glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-top-3 duration-300">
         <div className="flex items-center justify-between p-4 border-b border-border/10 bg-muted/20">
           <div>
             <h3 className="text-lg font-black tracking-tight text-foreground">Share Trade</h3>

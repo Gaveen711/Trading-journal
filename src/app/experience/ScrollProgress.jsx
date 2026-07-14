@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 export function ScrollProgress({ pathname }) {
   const progressRef = useRef(null);
   useEffect(() => {
+    // Dashboard content has its own dense layout; avoid a distracting global line there.
+    if (pathname.startsWith('/app')) return undefined;
     if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
     let frameId = 0;
     const updateProgress = () => {
@@ -26,5 +28,6 @@ export function ScrollProgress({ pathname }) {
       window.removeEventListener('resize', requestUpdate);
     };
   }, [pathname]);
+  if (pathname.startsWith('/app')) return null;
   return <div ref={progressRef} className="ux-scroll-progress" aria-hidden="true" />;
 }
