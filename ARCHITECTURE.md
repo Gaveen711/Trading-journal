@@ -36,6 +36,15 @@ src/
 `-- services/             # Legacy application services being migrated inward
 ```
 
+## Backend structure
+
+```text
+api/        # Active Vercel-style serverless routes used by the frontend
+functions/  # Firebase Cloud Functions backend, kept for optional/legacy broker sync
+```
+
+The app currently calls `/api/...` routes from the frontend. Keep `functions/` until production deployment is audited, because Firebase still declares it as a deployable Cloud Functions source and the broker-sync docs reference it. Treat it as an optional broker backend, not as random unused code.
+
 ## Extension rules
 
 - Add business rules to domain entities or use cases, never to page components.
