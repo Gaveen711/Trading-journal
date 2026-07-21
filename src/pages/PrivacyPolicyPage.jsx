@@ -1,9 +1,4 @@
-import { useEffect } from 'react';
-import { AnimatePresence, motion as Motion } from 'framer-motion';
-import Lenis from 'lenis';
-import { PublicFooter } from '../components/FooterNav';
-import { PublicNavbar } from '../components/PublicNavbar';
-
+import { LegalPolicyPage } from './LegalPolicyPage';
 
 const SEO = {
   title: 'Privacy Policy | XAU Journal — XAUUSD Gold Trading Journal',
@@ -102,146 +97,16 @@ We do not use advertising cookies, tracking pixels, or third-party analytics scr
 ];
 
 export function PrivacyPolicyPage() {
-
-  useEffect(() => {
-    // SEO meta tags
-    document.title = SEO.title;
-    const setMeta = (name, content, isProperty = false) => {
-      const attr = isProperty ? 'property' : 'name';
-      let el = document.querySelector(`meta[${attr}="${name}"]`);
-      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
-      el.setAttribute('content', content);
-    };
-    setMeta('description', SEO.description);
-    setMeta('keywords', SEO.keywords);
-    setMeta('robots', 'index, follow');
-    setMeta('og:title', SEO.title, true);
-    setMeta('og:description', SEO.description, true);
-    setMeta('og:type', 'website', true);
-    setMeta('og:url', SEO.canonical, true);
-    setMeta('twitter:card', 'summary');
-    setMeta('twitter:title', SEO.title);
-    setMeta('twitter:description', SEO.description);
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) { canonical = document.createElement('link'); canonical.setAttribute('rel', 'canonical'); document.head.appendChild(canonical); }
-    canonical.setAttribute('href', SEO.canonical);
-
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smooth: true,
-    });
-    let rafId;
-    function raf(time) { lenis.raf(time); rafId = requestAnimationFrame(raf); }
-    rafId = requestAnimationFrame(raf);
-
-    document.body.style.overflow = '';
-    window.scrollTo(0, 0);
-
-    return () => {
-      lenis.destroy();
-      cancelAnimationFrame(rafId);
-      document.body.style.overflow = '';
-    };
-  }, []);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
-  };
-
-
-
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 font-sans antialiased aurora-theme">
-      <div className="grain-overlay" aria-hidden="true" />
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute rounded-full w-[600px] h-[600px] left-[65%] top-[-15%] opacity-45 blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 75%)' }} />
-        <div className="absolute rounded-full w-[450px] h-[450px] left-[-5%] top-[40%] opacity-40 blur-[90px]" style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 75%)' }} />
-      </div>
-
-      <PublicNavbar />
-
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-32 pb-24 md:pt-40 md:pb-40">
-        <Motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="text-center max-w-3xl mx-auto mb-20 md:mb-32"
-        >
-          <Motion.span variants={itemVariants} className="inline-block text-primary text-xs font-bold tracking-[0.2em] uppercase mb-6 px-3 py-1 rounded-full bg-primary/10">
-            Privacy Matters
-          </Motion.span>
-          <Motion.h1 variants={itemVariants} className="text-[clamp(2.5rem,8vw,4.5rem)] font-black leading-[1.1] tracking-tight mb-8">
-            Privacy <span className="aurora-text">Policy</span>
-          </Motion.h1>
-          <Motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
-            We believe privacy policies should be readable. This one is. Your trust is our most valuable asset.
-          </Motion.p>
-          <Motion.p variants={itemVariants} className="text-sm text-muted-foreground/60 mt-4">
-            Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} · Effective immediately
-          </Motion.p>
-        </Motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 sm:gap-12 lg:gap-24 items-start">
-          <aside className="hidden lg:block sticky top-32">
-            <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground mb-8">Table of Contents</h3>
-            <nav className="flex flex-col gap-4" aria-label="Privacy policy sections">
-              {SECTIONS.map((s) => (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors hover:translate-x-1 duration-200"
-                >
-                  {s.title.split('. ')[1]}
-                </a>
-              ))}
-            </nav>
-          </aside>
-
-          <Motion.article
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="prose prose-slate dark:prose-invert max-w-none"
-          >
-            <div className="p-8 rounded-3xl border border-primary/20 bg-primary/5 backdrop-blur-sm mb-20 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-              <p className="text-base md:text-lg leading-relaxed font-medium relative z-10">
-                <strong className="text-primary mr-2 font-bold uppercase tracking-wide text-sm">Summary:</strong>
-                We only collect what's needed to run the app. Your trading data belongs to you. We don't sell it. Payments are handled securely. You can delete everything at any time.
-              </p>
-            </div>
-
-            <div className="space-y-24 md:space-y-32">
-              {SECTIONS.map((s) => (
-                <section key={s.id} id={s.id} className="scroll-mt-32 group">
-                  <div className="flex items-center gap-5 mb-8">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-2xl bg-primary/10 text-primary text-sm font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-500">
-                      {s.title.split('.')[0]}
-                    </span>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{s.title.split('. ')[1]}</h2>
-                  </div>
-                  <div className="pl-2 md:pl-15 space-y-6">
-                    {s.content.split('\n\n').map((block, i) => (
-                      <p key={i} className="text-base md:text-lg text-muted-foreground/90 leading-relaxed whitespace-pre-line font-medium">
-                        {block}
-                      </p>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </Motion.article>
-        </div>
-      </main>
-      <PublicFooter />
-    </div>
+    <LegalPolicyPage
+      seo={SEO}
+      code="PRV"
+      eyebrow="Policy register / data & account"
+      title="Privacy"
+      accent="Policy"
+      lede="We believe privacy policies should be readable. This one is. Your trust is our most valuable asset."
+      summary="We only collect what's needed to run the app. Your trading data belongs to you. We don't sell it. Payments are handled securely. You can delete everything at any time."
+      sections={SECTIONS}
+    />
   );
 }
-
