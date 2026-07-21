@@ -1,31 +1,29 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-
 import Logo from './Logo';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
+import { ArrowUp } from 'lucide-react';
+import './PublicNavbar.css';
+import '../pages/PublicExperience.css';
 
 export function PublicNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
-    let lastY = window.scrollY;
     let frameId = 0;
     const updateNavigation = () => {
       frameId = 0;
-      const currentY = window.scrollY;
-      const nextScrolled = currentY > 20;
-      const nextVisible = !(currentY > lastY && currentY > 80);
+      const nextScrolled = window.scrollY > 20;
+      const nextShowScrollTop = window.scrollY > 560;
       setIsScrolled((current) => current === nextScrolled ? current : nextScrolled);
-      setIsVisible((current) => current === nextVisible ? current : nextVisible);
-      lastY = currentY;
+      setShowScrollTop((current) => current === nextShowScrollTop ? current : nextShowScrollTop);
     };
     const handleScroll = () => {
       if (!frameId) frameId = window.requestAnimationFrame(updateNavigation);
@@ -39,12 +37,16 @@ export function PublicNavbar() {
   }, []);
 
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
     { to: '/', label: 'How it works' },
@@ -53,12 +55,17 @@ export function PublicNavbar() {
     { to: '/contact', label: 'Contact' },
   ];
 
+  const scrollToTop = (event) => {
+    event.currentTarget.blur();
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
+
   return (
     <>
       <header>
         <nav
           data-public-nav
-          style={{ transform: `translateX(-50%) translateY(${isVisible || mobileMenuOpen ? '0' : '-160%'})` }}
           className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-6xl z-[150] h-14 md:h-16 flex items-center justify-between px-5 md:px-8 backdrop-blur-xl border rounded-2xl md:rounded-full shadow-lg transition-all duration-300 will-change-transform ${isScrolled
             ? 'bg-background/90 border-border/40 shadow-xl'
             : 'bg-background/60 border-border/20 shadow-md'
@@ -67,6 +74,7 @@ export function PublicNavbar() {
           <button
             onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); navigate('/', { replace: true }); }}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[151]"
+            aria-label="Go to XAU Journal home"
           >
             <Logo iconSize="w-6 h-6" />
           </button>
@@ -106,7 +114,9 @@ export function PublicNavbar() {
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-full hover:bg-foreground/5 text-muted-foreground hover:text-foreground transition-all duration-200"
-              aria-label="Toggle theme"
+              aria-label={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
+              aria-pressed={!isLightMode}
+              title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
             >
               {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
             </button>
@@ -122,7 +132,7 @@ export function PublicNavbar() {
                 </svg>
               </button>
             </div>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-full border border-border/30 hover:bg-foreground/5 transition-all duration-200 text-muted-foreground hover:text-foreground" aria-label="Toggle menu">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-full border border-border/30 hover:bg-foreground/5 transition-all duration-200 text-muted-foreground hover:text-foreground" aria-label="Toggle menu" aria-expanded={mobileMenuOpen} aria-controls="public-mobile-menu">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
@@ -133,6 +143,7 @@ export function PublicNavbar() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <Motion.div
+              id="public-mobile-menu"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -161,7 +172,7 @@ export function PublicNavbar() {
                     {label}
                   </NavLink>
                 ))}
-                <button onClick={() => navigate('/login')} className="cta cta-mobile active:scale-95 transition-all duration-300">
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/login'); }} className="cta cta-mobile active:scale-95 transition-all duration-300">
                   <svg viewBox="0 0 24 24" className="arr-2" aria-hidden="true">
                     <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
                   </svg>
@@ -176,6 +187,17 @@ export function PublicNavbar() {
           )}
         </AnimatePresence>
       </header>
+
+      <button
+        type="button"
+        className={'public-scroll-top' + (showScrollTop ? ' is-visible' : '')}
+        onClick={scrollToTop}
+        aria-label="Scroll to top"
+        aria-hidden={!showScrollTop}
+        tabIndex={showScrollTop ? 0 : -1}
+      >
+        <ArrowUp aria-hidden="true" />
+      </button>
 
     </>
   );
