@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import Logo from './Logo';
-import { useAppTheme } from '../hooks/useAppTheme';
-import { MoonStarsFill, SunFill } from 'react-bootstrap-icons';
 import { ArrowUp } from 'lucide-react';
 import './PublicNavbar.css';
 import '../pages/PublicExperience.css';
@@ -14,7 +12,6 @@ export function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const { isLightMode, toggleTheme } = useAppTheme();
 
   useEffect(() => {
     let frameId = 0;
@@ -111,15 +108,6 @@ export function PublicNavbar() {
           </ul>
 
           <div className="flex items-center gap-2.5 z-[151]">
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-full hover:bg-foreground/5 text-muted-foreground hover:text-foreground transition-all duration-200"
-              aria-label={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
-              aria-pressed={!isLightMode}
-              title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
-            >
-              {isLightMode ? <MoonStarsFill className="w-4 h-4" /> : <SunFill className="w-4 h-4" />}
-            </button>
             <div className="hidden lg:block">
               <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300">
                 <svg viewBox="0 0 24 24" className="arr-2" aria-hidden="true">
