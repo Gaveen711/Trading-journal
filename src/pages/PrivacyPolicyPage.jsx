@@ -36,7 +36,7 @@ Your trade data is strictly scoped, meaning only a valid authentication token fo
 
 We store only the resulting trade fields: position ID, symbol, direction, lot size, open/close prices, open/close times, and broker-reported P&L. Our sync endpoint receives your broker login and password only during a sync request; it does not write them to our database, logs, or background jobs.
 
-Your broker credentials are stored in localStorage only in the browser and device where you enter them. For an explicit sync, the browser sends them over HTTPS/TLS to a serverless route, which creates a temporary Meta API provider connection, retrieves trade history, and removes that provider connection in request cleanup. We do not retain credentials or provider access tokens, so unattended background sync is not performed.
+Your broker password never leaves the browser and device where you enter it, and it is held only in sessionStorage — cleared when you close the tab, and cleared again when you sign out. Only non-secret account details (server name, login number, display name) persist between sessions, so you may be asked for your password again when you return. For an explicit sync, the browser sends the credentials over HTTPS/TLS to a serverless route, which creates a temporary Meta API provider connection, retrieves trade history, and removes that provider connection in request cleanup. We do not retain credentials or provider access tokens, so unattended background sync is not performed.
 
 xaujournal is not affiliated with, endorsed by, or responsible for any broker you choose to connect. Use of the Meta API connection is at your own discretion.`,
   },
@@ -78,7 +78,8 @@ If you are located in the European Economic Area (EEA), you have additional righ
     title: '7. Cookies & local storage',
     content: `xaujournal uses minimal browser storage:
 
-• localStorage - stores your onboarding state, starting balance, theme preference, optionally your remembered email address, and broker credentials when you enable broker sync. Broker credentials leave the device only during an explicit sync request over HTTPS/TLS and are not retained by our backend.
+• localStorage - stores your onboarding state, starting balance, theme preference, optionally your remembered email address, and non-secret broker account details (server name and login number) when you enable broker sync. No password is written to localStorage.
+• sessionStorage - holds your broker password for the current browser tab only, so a sync can be performed without asking for it again. It is discarded when the tab closes and when you sign out, and it leaves the device only during an explicit sync request over HTTPS/TLS.
 • Authentication service — stores an authentication token in IndexedDB to keep you logged in between sessions. This is essential for the app to function.
 
 We do not use advertising cookies, tracking pixels, or third-party analytics scripts.`,

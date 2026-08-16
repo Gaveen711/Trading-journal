@@ -32,6 +32,10 @@ export function isSyncAllowed(userData: any): boolean {
 /**
  * Verifies the Bearer Authorization ID Token and returns the authenticated user's UID.
  * Throws an error if authentication fails.
+ *
+ * Also records whether the token's email is verified on the request context, so
+ * a route can enforce verification (via assertEmailVerified) after it has
+ * fetched the user document, without re-verifying the token.
  */
 export async function getUidFromContext(c: Context): Promise<string> {
   const authHeader = c.req.header('Authorization') || ''
@@ -43,7 +47,44 @@ export async function getUidFromContext(c: Context): Promise<string> {
   if (!decoded.uid) {
     throw new Error('UID missing from token claims')
   }
+  ;(c as any).set('emailVerified', decoded.email_verified === true)
   return decoded.uid
+}
+
+/**
+ * Whether unverified accounts are blocked from privileged (broker / API-key)
+ * routes. Default ON.
+ *
+ * This is safe to leave on because verification is *required* only for accounts
+ * that carry `requiresEmailVerification` — a flag /init-user sets on accounts
+ * created after verification was introduced. Accounts that predate it never got
+ * the flag, so they are grandfathered and cannot be locked out mid-subscription
+ * — the exact failure that previously kept this control disabled. Set
+ * REQUIRE_EMAIL_VERIFICATION=false to disable entirely.
+ */
+export function isEmailVerificationEnforced(): boolean {
+  return process.env.REQUIRE_EMAIL_VERIFICATION !== 'false'
+}
+
+/**
+ * Returns a 403 response when the account must verify its email and has not,
+ * or null when the request may proceed.
+ *
+ * Grandfathering is the whole point: only accounts with requiresEmailVerification
+ * === true are gated. That flag is server-written (by /init-user) and absent
+ * from the client rules allowlist, so a browser cannot clear it to dodge the
+ * check, and legacy accounts never carry it. Google sign-ins satisfy the check
+ * outright — Google returns email_verified true.
+ */
+export function assertEmailVerified(c: Context, userData: any): Response | null {
+  if (!isEmailVerificationEnforced()) return null
+  if (!userData || userData.requiresEmailVerification !== true) return null // grandfathered
+  if ((c as any).get('emailVerified') === true) return null
+  return c.json({
+    error: 'Email verification required',
+    message: 'Verify your email to connect or sync a broker. We sent a link when you signed up — check your inbox, or resend it from Settings.',
+    code: 'email-unverified',
+  }, 403 as any)
 }
 
 /**

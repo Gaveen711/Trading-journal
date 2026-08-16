@@ -182,7 +182,9 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'VALID_API_KEY',
+        // Real keys are 'xau_' + 24 random bytes of hex; resolveKey rejects
+        // anything without the prefix before it spends a Firestore read.
+        'x-api-key': 'xau_' + 'a1b2c3d4'.repeat(6),
         ...headers
       },
       body: JSON.stringify(body)

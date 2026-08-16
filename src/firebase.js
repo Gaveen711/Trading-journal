@@ -6,6 +6,7 @@ import {
   terminate,
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { clearBrokerCredentials } from './lib/brokerCredentials.js';
 import app, {
   auth,
   browserLocalPersistence,
@@ -44,7 +45,13 @@ const storage = getStorage(app);
  * remaining tabs are still the same user.
  */
 export async function signOutAndClearCache() {
+  const uid = auth.currentUser?.uid;
   localStorage.removeItem('xau-auth-hint');
+  // Broker credentials get the same treatment as the Firestore cache, and for
+  // the same reason: they are per-user data that must not outlive the session
+  // on a shared machine. This clears both the metadata and any session-held
+  // password, including blobs left by a previous identity on this device.
+  clearBrokerCredentials(uid);
   // Let a sign-out failure reach the caller — do not tear down the cache or
   // navigate if the user is in fact still signed in.
   await auth.signOut();

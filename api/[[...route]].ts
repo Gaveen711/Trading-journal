@@ -7,8 +7,21 @@ const db: any = _db
 // @ts-ignore
 import resend from './_resend.js'
 
+import { kv } from '@vercel/kv'
 import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
-import { isSyncAllowed, getUidFromContext, verifyIdToken } from './_auth.js'
+import { isSyncAllowed, getUidFromContext, verifyIdToken, assertEmailVerified } from './_auth.js'
+import {
+  assertCron,
+  assertRequiredConfig,
+  escapeHtml,
+  hashToken,
+  isValidAccountId,
+  isValidUid,
+  isRecaptchaConfigured,
+  timingSafeHexEqual,
+  validateSyncPayload,
+  verifyRecaptcha,
+} from './_security.js'
 // @ts-ignore
 import { fetchBrokerTrades } from './_metaapi-broker.js'
 import {
@@ -21,10 +34,14 @@ import {
 import { getClientIp } from './_ipUtils.js'
 import { persistBrokerTrades } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
-import { emptyTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
+import { emptyTradeAnalytics } from '../src/lib/tradeAnalytics.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
+
+// Surface missing secrets in the cold-start log rather than at the moment an
+// attacker discovers a control degraded to a no-op.
+assertRequiredConfig()
 
 // Helper to sanitize both client responses and server logs.
 function handleRouteError(route: string, err: any, c: any, customErrName = 'Internal Server Error') {
@@ -38,10 +55,6 @@ function handleRouteError(route: string, err: any, c: any, customErrName = 'Inte
   const safeMsg = MSG_MAP[constructorName] || 'An unexpected error occurred.'
   return c.json({ error: customErrName, message: safeMsg }, 500)
 }
-
-const adminAnalyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
-  Object.entries(delta).map(([key, value]) => ['analytics.' + key, admin.firestore.FieldValue.increment(value)])
-)
 
 /** Removes credential fields written by deployments that predate client-managed sync. */
 async function scrubLegacyBrokerCredentials(uid: string) {
@@ -82,10 +95,12 @@ app.post('/auth-utils', async (c) => {
     const token = authHeader.split('Bearer ')[1]
     
     let email: string
+    let decodedUid: string
     try {
       const decodedToken = await verifyIdToken(token)
       email = decodedToken.email
-      if (!email) {
+      decodedUid = decodedToken.uid
+      if (!email || !decodedUid) {
         return c.json({ error: 'Email not found in token' }, 400)
       }
     } catch (err: any) {
@@ -93,15 +108,31 @@ app.post('/auth-utils', async (c) => {
       return c.json({ error: 'Unauthorized: Invalid token' }, 401)
     }
 
+    // One alert per user per 15 minutes. The endpoint sends mail on every call
+    // and the Resend failure below is swallowed, so without a cooldown a single
+    // authenticated account can drive unbounded sends against the quota.
+    const cooldownKey = 'alert:login:' + decodedUid
+    try {
+      if (await kv.get(cooldownKey)) return c.json({ success: true, skipped: 'cooldown' })
+      await kv.set(cooldownKey, 1, { ex: 900 })
+    } catch (kvErr: any) {
+      console.error('[send-login-alert] KV cooldown unavailable:', kvErr.message)
+    }
+
     const ipAddress = getClientIp(c)
-    const userAgent = body.userAgent || c.req.header('user-agent') || 'Unknown'
-    const time = body.time || new Date().toUTCString()
+    // Client-supplied values are escaped: they are interpolated into HTML that
+    // lands in a mailbox. `time` is taken from the server, not the request —
+    // there is no reason to let the caller author the timestamp on a security
+    // notice.
+    const userAgent = String(body.userAgent || c.req.header('user-agent') || 'Unknown').slice(0, 256)
+    const time = new Date().toUTCString()
 
     try {
       await resend.emails.send({
         from: 'XauJournal Security <security@xaujournal.com>',
         to: email,
         subject: 'XauJournal New Login Detected',
+        text: `New login to your XauJournal account.\n\nIP Address: ${ipAddress}\nDevice/Browser: ${userAgent}\nTime: ${time}\n\nIf this was not you, reset your password immediately.`,
         html: `
           <div style="font-family: sans-serif; padding: 20px; color: #f1f5f9; background: #0f172a; border-radius: 8px;">
             <h2 style="color: #38bdf8; margin-bottom: 20px;">New Login Alert</h2>
@@ -109,15 +140,15 @@ app.post('/auth-utils', async (c) => {
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
               <tr>
                 <td style="padding: 8px 0; color: #94a3b8; width: 120px;">IP Address:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${ipAddress}</td>
+                <td style="padding: 8px 0; font-weight: bold;">${escapeHtml(ipAddress)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #94a3b8;">Device/Browser:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${userAgent || 'Unknown'}</td>
+                <td style="padding: 8px 0; font-weight: bold;">${escapeHtml(userAgent)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #94a3b8;">Time:</td>
-                <td style="padding: 8px 0; font-weight: bold;">${time || new Date().toUTCString()}</td>
+                <td style="padding: 8px 0; font-weight: bold;">${escapeHtml(time)}</td>
               </tr>
             </table>
             <p style="font-size: 13px; color: #64748b; line-height: 1.6;">If this was you, you can safely ignore this message. If you do not recognise this activity, please reset your password immediately.</p>
@@ -131,46 +162,11 @@ app.post('/auth-utils', async (c) => {
     return c.json({ success: true })
   }
 
-  if (action === 'recaptcha') {
-    let body;
-    try {
-      body = await c.req.json()
-    } catch {
-      return c.json({ valid: false, score: 0, blocked: true, error: 'Invalid JSON body' })
-    }
-    const { token, recaptchaAction } = body
-    if (!token) return c.json({ valid: false, score: 0, blocked: true, error: 'Missing token' })
-
-    try {
-      const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'xaujournal29'
-      const response = await fetch(
-        `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${process.env.RECAPTCHA_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: { token, siteKey: process.env.VITE_RECAPTCHA_SITE_KEY || '6LfSRMosAAAAAJkpsSHRweUx48z1amorEE2Abqe7', expectedAction: recaptchaAction }
-          })
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`reCAPTCHA API returned HTTP ${response.status}`)
-      }
-
-      const data: any = await response.json()
-      const valid = data?.tokenProperties?.valid === true
-      const score = data?.riskAnalysis?.score ?? 0
-      const blocked = !valid || score < 0.5
-
-      console.log(`reCAPTCHA: action=${recaptchaAction}, score=${score}, valid=${valid}, blocked=${blocked}`)
-      return c.json({ valid, score, blocked })
-    } catch (err) {
-      console.error('reCAPTCHA assessment error:', err)
-      return c.json({ valid: false, score: 0, blocked: true, error: 'reCAPTCHA validation failed' })
-    }
-  }
-
+  // The 'recaptcha' action was removed deliberately. It returned the verdict to
+  // the caller — who is the party being assessed — and let any anonymous
+  // request spend a billable Enterprise assessment against the project API key.
+  // Verification is now a server-side helper (_security.ts#verifyRecaptcha)
+  // invoked inline by the endpoints that need it.
   return c.json({ error: 'Unknown action' }, 400)
 })
 
@@ -182,9 +178,33 @@ app.post('/contact', async (c) => {
     return c.json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { name, email, subject, message } = body
+  // Bound every field before it touches storage or a mail template. Unbounded
+  // `message` allowed ~1MiB Firestore documents from anonymous callers, and
+  // CR/LF in `subject` is header-smuggling material.
+  const name = String(body.name ?? '').trim().slice(0, 120)
+  const email = String(body.email ?? '').trim().slice(0, 254)
+  const subject = String(body.subject ?? '').trim().slice(0, 200).replace(/[\r\n]+/g, ' ')
+  const message = String(body.message ?? '').trim().slice(0, 5000)
+
   if (!name || !email || !message) {
     return c.json({ error: 'Missing required fields: name, email, and message' }, 400)
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return c.json({ error: 'Invalid email address' }, 400)
+  }
+
+  // Enforced as soon as RECAPTCHA_API_KEY and VITE_RECAPTCHA_SITE_KEY are set.
+  // Until then the endpoint still runs, protected by the field caps above and
+  // the 5/hour `contact` rate-limit scope — but it logs the gap on every call
+  // so the missing configuration cannot go unnoticed.
+  if (isRecaptchaConfigured()) {
+    const verdict = await verifyRecaptcha(body.recaptchaToken, 'contact')
+    if (!verdict.ok) {
+      console.warn('[contact] reCAPTCHA rejected:', verdict.reason)
+      return c.json({ error: 'Verification failed. Please try again.' }, 403)
+    }
+  } else {
+    console.warn('[contact] reCAPTCHA is not configured — set RECAPTCHA_API_KEY and VITE_RECAPTCHA_SITE_KEY')
   }
 
   try {
@@ -194,23 +214,29 @@ app.post('/contact', async (c) => {
       email,
       subject: subject || 'No Subject',
       message,
+      ip: getClientIp(c),
       createdAt: now(),
     })
 
-    // 2. Send email via Resend
+    // 2. Send email via Resend. The plaintext part carries the real content;
+    //    the HTML part escapes every interpolated field, because this mail is
+    //    read by staff and an unescaped body is a phishing template delivered
+    //    from our own DKIM-signed domain.
     try {
       await resend.emails.send({
         from: 'XauJournal Contact Form<contact@xaujournal.com>',
         to: 'info@xaujournal.com',
+        replyTo: email,
         subject: `[Contact Form] ${subject || 'New Message'}`,
+        text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || 'No Subject'}\n\n${message}`,
         html: `
           <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
             <h2>New Contact Form Message</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
+            <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            <p><strong>Subject:</strong> ${escapeHtml(subject || 'No Subject')}</p>
             <p><strong>Message:</strong></p>
-            <p style="white-space: pre-wrap; background: #f1f5f9; padding: 15px; border-radius: 6px;">${message}</p>
+            <p style="white-space: pre-wrap; background: #f1f5f9; padding: 15px; border-radius: 6px;">${escapeHtml(message)}</p>
           </div>
         `
       })
@@ -378,6 +404,8 @@ app.post('/broker-login-sync', async (c) => {
   if (!isSyncAllowed(userData)) {
     return c.json({ error: 'Broker sync requires active Pro subscription' }, 403)
   }
+  const unverified = assertEmailVerified(c, userData)
+  if (unverified) return unverified
 
   let body;
   try {
@@ -409,7 +437,9 @@ app.post('/broker-login-sync', async (c) => {
 
   if (action === 'sync') {
     const { accountId, login, password, server, brokerType } = body
-    if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
+    // accountId becomes a Firestore document id; a slash would build a deeper
+    // path than the brokerAccounts document intended.
+    if (!isValidAccountId(accountId)) return c.json({ error: 'Missing or invalid accountId' }, 400)
     if (!login || !password || !server || !brokerType) {
       return c.json({ error: 'Missing local broker credentials for transient sync' }, 400)
     }
@@ -449,7 +479,7 @@ app.post('/broker-login-sync', async (c) => {
   }
   if (action === 'remove') {
     const { accountId } = body
-    if (!accountId) return c.json({ error: 'Missing accountId' }, 400)
+    if (!isValidAccountId(accountId)) return c.json({ error: 'Missing or invalid accountId' }, 400)
     try {
       const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
       await scrubLegacyBrokerCredentials(uid)
@@ -499,6 +529,8 @@ app.post('/connect-broker', async (c) => {
         message: 'Broker connect is a Pro feature.',
       }, 403)
     }
+    const unverified = assertEmailVerified(c, userData)
+    if (unverified) return unverified
 
     return handleBrokerAdd(c, uid, {
       login: accountId,
@@ -538,17 +570,30 @@ app.post('/generate-api-key', async (c) => {
         message: 'MT5/TradingView Auto-Sync is a Pro feature. Upgrade to generate an API key.',
       }, 403)
     }
+    const unverified = assertEmailVerified(c, userData)
+    if (unverified) return unverified
 
-    const existing = await db.collection('apiKeys').where('uid', '==', uid).limit(1).get()
+    // Keys are stored hashed, so an existing key can no longer be re-read and
+    // returned. Rotating is the only option: revoke the old record, mint a new
+    // secret, and show it once.
+    const existing = await db.collection('apiKeys').where('uid', '==', uid).get()
     if (!existing.empty) {
-      return c.json({ apiKey: existing.docs[0].id })
+      const batch = db.batch()
+      existing.docs.forEach((doc: any) => batch.delete(doc.ref))
+      await batch.commit()
+      await Promise.all(existing.docs.map((doc: any) => invalidateApiKeyCache(doc.id, uid)))
     }
 
     const apiKey = 'xau_' + crypto.randomBytes(24).toString('hex')
-    await db.collection('apiKeys').doc(apiKey).set({
+    // The document id is the SHA-256 of the key, never the key itself: document
+    // ids surface in exports, backups, audit-log resource names, and the
+    // Firebase console.
+    await db.collection('apiKeys').doc(hashToken(apiKey)).set({
       uid,
       label: 'MT5/TradingView Sync Key',
+      prefix: apiKey.slice(0, 12), // display-only, so the UI can identify a key
       createdAt: now(),
+      lastUsedAt: null,
     })
 
     await db.collection('users').doc(uid).set(
@@ -628,10 +673,16 @@ app.post('/init-user', async (c) => {
       : false
 
     // New user signup, initialize on Free with unlimited manual logging.
+    // requiresEmailVerification marks this as a post-verification account: only
+    // these are gated by assertEmailVerified, so existing users (who reach the
+    // early return above and never get here) are grandfathered and never locked
+    // out. This branch runs only for genuinely new accounts, which have already
+    // been sent a verification email at signup.
     const initData = {
       plan: 'free',
       isTrial: false,
       planExpiry: null,
+      requiresEmailVerification: true,
       createdAt: now(),
       updatedAt: now(),
       ...(hasExistingTrades ? {} : { analytics: emptyTradeAnalytics() }),
@@ -669,7 +720,7 @@ app.post('/lemon-squeezy-webhook', async (c) => {
   const hmac = crypto.createHmac('sha256', secret)
   const digest = hmac.update(rawBody).digest('hex')
 
-  if (digest !== signature) {
+  if (!timingSafeHexEqual(digest, signature)) {
     console.error('[lemon-squeezy-webhook] Signature verification failed')
     return c.text('Invalid signature', 401)
   }
@@ -682,6 +733,25 @@ app.post('/lemon-squeezy-webhook', async (c) => {
     if (!userId) {
       console.warn(`[lemon-squeezy-webhook] Event ${eventName} received without user_id`)
       return c.json({ ok: true, message: 'No user_id found in custom_data' })
+    }
+
+    // The signature covers the body only — no timestamp, no nonce — so a single
+    // captured request stays valid forever. Dedupe on event id so a replayed
+    // subscription_created cannot re-grant Pro after a cancellation.
+    const eventId = String(c.req.header('x-event-id') || body.meta?.event_id || digest)
+    const eventRef = db.collection('webhookEvents').doc(hashToken(eventId))
+    const seen = await Promise.resolve(eventRef.get()).catch(() => null)
+    if (seen?.exists) {
+      console.warn('[lemon-squeezy-webhook] Duplicate event ignored:', eventName)
+      return c.json({ ok: true, deduped: true })
+    }
+    await Promise.resolve(eventRef.set({ event: eventName, processedAt: now() })).catch(() => undefined)
+
+    // userId becomes a Firestore document path, and it arrives from an external
+    // system. A slash would build a deeper path than intended.
+    if (!isValidUid(userId)) {
+      console.error('[lemon-squeezy-webhook] Rejected malformed user_id')
+      return c.json({ ok: true, message: 'Invalid user_id' })
     }
 
     const attributes = body.data?.attributes
@@ -750,86 +820,16 @@ app.post('/lemon-squeezy-webhook', async (c) => {
   }
 })
 
-// ── 8. Save Trade Route ──────────────────────────────────────────────────────
-app.post('/save-trade', async (c) => {
-  let uid: string
-  try {
-    uid = await getUidFromContext(c)
-  } catch (err: any) {
-    console.error('[save-trade] verifyIdToken failed:', err.message)
-    return c.json({ error: 'Invalid or expired token', details: 'Authentication verification failed' }, 401)
-  }
-
-  try {
-    let tradeData;
-    try {
-      tradeData = await c.req.json()
-    } catch {
-      return c.json({ error: 'Missing trade data payload' }, 400)
-    }
-
-    if (!tradeData || typeof tradeData !== 'object') {
-      return c.json({ error: 'Missing trade data payload' }, 400)
-    }
-
-    const TRADE_FIELDS = ['symbol','direction','lots','openPrice',
-      'closePrice','openTime','closeTime','pnl','commission',
-      'swap','note','session','setup','riskRewardRatio',
-      'emotionTag','screenshot','tags']
-
-    const safe: any = Object.fromEntries(
-      TRADE_FIELDS
-        .filter(k => k in tradeData)
-        .map(k => [k, tradeData[k]])
-    )
-
-    const NUMERICS = ['lots','openPrice','closePrice','pnl',
-      'commission','swap','riskRewardRatio']
-    NUMERICS.forEach(k => { if (k in safe) safe[k] = Number(safe[k]) || 0 })
-
-    if (safe.note && safe.note.length > 4000) {
-      return c.json({ error: 'note exceeds 4000 characters' }, 400)
-    }
-    if (safe.symbol && safe.symbol.length > 20) {
-      return c.json({ error: 'invalid symbol' }, 400)
-    }
-
-    const userDoc = await db.collection('users').doc(uid).get()
-    const userData = userDoc.exists ? userDoc.data() : {}
-    const plan = userData.plan || 'free'
-
-    if (plan !== 'pro') {
-      const totalTrades = userData.totalTradesLogged || 0
-      if (totalTrades >= 50) {
-        return c.json({
-          error: 'Free tier limit reached (50 trades). Upgrade to Pro.',
-          code: 'limit-reached'
-        }, 403)
-      }
-    }
-
-    const userRef = db.collection('users').doc(uid)
-    const newTradeDoc = userRef.collection('trades').doc()
-    const tradeToSave = { ...safe, createdAt: now(), updatedAt: now() }
-    const delta = tradeAnalyticsDelta(tradeToSave)
-    const batch = db.batch()
-    batch.set(newTradeDoc, tradeToSave)
-    batch.update(userRef, {
-      totalTradesLogged: admin.firestore.FieldValue.increment(delta.tradeCount),
-      ...adminAnalyticsIncrements(delta),
-    })
-    await batch.commit()
-
-    console.log(`[save-trade] New trade logged for uid=${uid}, tradeId=${newTradeDoc.id}`)
-    return c.json({ id: newTradeDoc.id })
-  } catch (err: any) {
-    return handleRouteError('save-trade', err, c)
-  }
-})
-
-// ── 9. Sync Trade Route ──────────────────────────────────────────────────────
-app.post('/sync-trade', async (c) => {
-  let body;
+// ── 8. Trade Webhook Handler (shared by MT5 and TradingView) ────────────────
+//
+// /sync-trade and /tv-webhook previously duplicated ~30 lines of near-identical
+// handling, and both validated `positionId` for presence only. That value is
+// interpolated into a Firestore document id, and `.doc()` accepts a
+// slash-separated relative path — so `positionId: "a/b/c"` wrote into a nested
+// subcollection that /api/reset-trades never deletes. One implementation, one
+// validator.
+const handleTradeWebhook = (routeName: string, defaultSource: 'mt5' | 'tradingview') => async (c: any) => {
+  let body: any
   try {
     body = await c.req.json()
   } catch {
@@ -840,36 +840,28 @@ app.post('/sync-trade', async (c) => {
   const uid = await resolveKey(apiKey)
   if (!uid) return c.json({ error: 'Invalid API key or subscription expired' }, 403)
 
-  const { event, positionId, symbol } = body
-  if (!event || !positionId || !symbol) {
-    return c.json({ error: 'Missing: event, positionId, symbol' }, 400)
+  const payload = validateSyncPayload(body)
+  if (!payload) {
+    return c.json({ error: 'Missing or invalid: event, positionId, symbol' }, 400)
   }
 
-  if (body.comment && typeof body.comment === 'string' && body.comment.length > 500) {
-    return c.json({ error: 'comment exceeds 500 characters' }, 400)
-  }
-  if (symbol && typeof symbol === 'string' && symbol.length > 20) {
-    return c.json({ error: 'invalid symbol' }, 400)
-  }
-
-  const tradeRef = db.collection('users').doc(uid).collection('trades').doc(`pos_${positionId}`)
+  const tradeRef = db.collection('users').doc(uid).collection('trades').doc(`pos_${payload.positionId}`)
 
   let result
   try {
-    if (event === 'open') {
-      result = await handleOpenTradeSync(tradeRef, body, 'mt5')
-    } else if (event === 'close') {
-      result = await handleCloseTradeSync(tradeRef, body, 'mt5')
-    } else {
-      return c.json({ error: `Unknown event: ${event}` }, 400)
-    }
+    result = payload.event === 'open'
+      ? await handleOpenTradeSync(tradeRef, payload, defaultSource)
+      : await handleCloseTradeSync(tradeRef, payload, defaultSource)
   } catch (err: any) {
-    return handleRouteError('sync-trade', err, c)
+    return handleRouteError(routeName, err, c)
   }
 
-  console.log(`[sync-trade] uid=${uid} event=${event} pos=${positionId}`, result)
+  console.log(`[${routeName}] uid=${uid} event=${payload.event} pos=${payload.positionId}`, result)
   return c.json(result)
-})
+}
+
+// ── 9. Sync Trade Route ──────────────────────────────────────────────────────
+app.post('/sync-trade', handleTradeWebhook('sync-trade', 'mt5'))
 
 // ── 10b. Reset Trades Route ──────────────────────────────────────────────────
 app.post('/reset-trades', async (c) => {
@@ -890,16 +882,24 @@ app.post('/reset-trades', async (c) => {
     })
 
     const tradesColRef = db.collection('users').doc(uid).collection('trades')
-    const snapshot = await tradesColRef.get()
 
-    if (!snapshot.empty) {
-      const docs = snapshot.docs
-      const CHUNK_SIZE = 400
-      for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-        const chunk = docs.slice(i, i + CHUNK_SIZE)
-        const batch = db.batch()
-        chunk.forEach((doc: any) => batch.delete(doc.ref))
-        await batch.commit()
+    // recursiveDelete also removes subcollections. A batched delete of the
+    // top-level documents alone leaves any nested document behind, which is an
+    // erasure gap when the user has asked for their trade history to be wiped.
+    const firestore = admin.firestore()
+    if (typeof firestore.recursiveDelete === 'function') {
+      await firestore.recursiveDelete(tradesColRef)
+    } else {
+      const snapshot = await tradesColRef.get()
+      if (!snapshot.empty) {
+        const docs = snapshot.docs
+        const CHUNK_SIZE = 400
+        for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+          const chunk = docs.slice(i, i + CHUNK_SIZE)
+          const batch = db.batch()
+          chunk.forEach((doc: any) => batch.delete(doc.ref))
+          await batch.commit()
+        }
       }
     }
 
@@ -916,62 +916,17 @@ app.post('/reset-trades', async (c) => {
 })
 
 // ── 11. TradingView Webhook Route ────────────────────────────────────────────
-app.post('/tv-webhook', async (c) => {
-  let body;
-  try {
-    body = await c.req.json()
-  } catch {
-    return c.json({ error: 'Invalid JSON body' }, 400)
-  }
-
-  const apiKey = body?.apiKey || c.req.header('x-api-key')
-  const uid = await resolveKey(apiKey)
-  if (!uid) return c.json({ error: 'Invalid API key or subscription expired' }, 403)
-
-  const { event, positionId, symbol } = body
-  if (!event || !positionId || !symbol) {
-    return c.json({ error: 'Missing: event, positionId, symbol' }, 400)
-  }
-
-  if (body.comment && typeof body.comment === 'string' && body.comment.length > 500) {
-    return c.json({ error: 'comment exceeds 500 characters' }, 400)
-  }
-  if (symbol && typeof symbol === 'string' && symbol.length > 20) {
-    return c.json({ error: 'invalid symbol' }, 400)
-  }
-
-  const tradeRef = db.collection('users').doc(uid).collection('trades').doc(`pos_${positionId}`)
-
-  let result
-  try {
-    if (event === 'open') {
-      result = await handleOpenTradeSync(tradeRef, body, 'tradingview')
-    } else if (event === 'close') {
-      result = await handleCloseTradeSync(tradeRef, body, 'tradingview')
-    } else {
-      return c.json({ error: `Unknown event: ${event}` }, 400)
-    }
-  } catch (err: any) {
-    return handleRouteError('tv-webhook', err, c)
-  }
-
-  console.log(`[tv-webhook] uid=${uid} event=${event} pos=${positionId}`, result)
-  return c.json(result)
-})
+app.post('/tv-webhook', handleTradeWebhook('tv-webhook', 'tradingview'))
 
 // ── 13. Cron Jobs ───────────────────────────────────────────────────────────
+// Every scheduled handler goes through assertCron(), which refuses to run when
+// CRON_SECRET is absent. Building the expected value inline as
+// `Bearer ${process.env.CRON_SECRET}` produced the literal "Bearer undefined"
+// for an unset variable, which any caller could send.
+const CRON_PAGE_SIZE = 500
 const handleBrokerSyncPoller = async (c: any) => {
-  const expectedSecret = process.env.CRON_SECRET || ''
-  const authorization = c.req.header('Authorization') || ''
-  const cronSecret = authorization.startsWith('Bearer ')
-    ? authorization.slice('Bearer '.length)
-    : (c.req.header('x-cron-secret') || '')
-  if (!expectedSecret) return c.json({ error: 'Cron secret is not configured' }, 503)
-  const a = crypto.createHash('sha256').update(cronSecret).digest()
-  const b = crypto.createHash('sha256').update(expectedSecret).digest()
-  if (!crypto.timingSafeEqual(a, b)) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
+  const denied = assertCron(c)
+  if (denied) return denied
 
   console.log('[broker-sync-poller] Starting scheduled broker sync...')
 
@@ -1047,21 +1002,16 @@ app.get('/cron/broker-sync-poller', handleBrokerSyncPoller)
 app.post('/cron/broker-sync-poller', handleBrokerSyncPoller)
 
 const handleRemindExpiry = async (c: any) => {
-  const providedAuth = c.req.header('Authorization') || ''
-  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
-
-  const providedHash = crypto.createHash('sha256').update(providedAuth).digest()
-  const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest()
-
-  if (!crypto.timingSafeEqual(providedHash, expectedHash)) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
+  const denied = assertCron(c)
+  if (denied) return denied
 
   try {
     const nowTime = new Date()
     const threeDaysFromNow = new Date(nowTime.getTime() + (3 * 24 * 60 * 60 * 1000))
     const usersRef = db.collection('users')
-    const snapshot = await usersRef.where('plan', '==', 'pro').get()
+    // Bounded read: an unpaginated scan of every Pro user gets slower and more
+    // expensive with every signup, and eventually times out the function.
+    const snapshot = await usersRef.where('plan', '==', 'pro').limit(CRON_PAGE_SIZE).get()
 
     const emailPromises: Promise<any>[] = []
 
@@ -1082,12 +1032,15 @@ const handleRemindExpiry = async (c: any) => {
             continue
           }
 
+          // `name` is a client-writable profile field, so it is escaped before
+          // it reaches an HTML mail body.
+          const displayName = escapeHtml(String(data.name || 'Trader').slice(0, 100))
           emailPromises.push(
             resend.emails.send({
               from: 'xaujournal <alerts@xaujournal.com>',
               to: verifiedEmail,
               subject: 'xaujournal: 3 Days Left of Pro',
-              html: `<p>Hi ${data.name || 'Trader'}, your Pro access expires in 3 days. Renew now to avoid losing your advanced analytics.</p>`
+              html: `<p>Hi ${displayName}, your Pro access expires in 3 days. Renew now to avoid losing your advanced analytics.</p>`
             })
           )
         } catch (authErr: any) {
@@ -1106,15 +1059,8 @@ app.get('/cron/remind-expiry', handleRemindExpiry)
 app.post('/cron/remind-expiry', handleRemindExpiry)
 
 const handleRevokeExpired = async (c: any) => {
-  const providedAuth = c.req.header('Authorization') || ''
-  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
-
-  const providedHash = crypto.createHash('sha256').update(providedAuth).digest()
-  const expectedHash = crypto.createHash('sha256').update(expectedAuth).digest()
-
-  if (!crypto.timingSafeEqual(providedHash, expectedHash)) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
+  const denied = assertCron(c)
+  if (denied) return denied
 
   try {
     const nowTime = new Date()
@@ -1123,6 +1069,7 @@ const handleRevokeExpired = async (c: any) => {
     const snapshot = await db.collection('users')
       .where('plan', '==', 'grace')
       .where('graceUntil', '<=', nowIso)
+      .limit(CRON_PAGE_SIZE)
       .get()
 
     if (snapshot.empty) {
@@ -1211,14 +1158,25 @@ app.get('/spot-price/:symbol', async (c) => {
   }
 })
 
+// Unauthenticated, so every field that reaches the log is constrained: an
+// allowlisted metric name, a finite number, and bounded strings. Unbounded
+// caller-controlled text in structured logs is log injection.
+const WEB_VITAL_NAMES = new Set(['CLS', 'LCP', 'INP', 'FCP', 'TTFB', 'FID'])
+const WEB_VITAL_RATINGS = new Set(['good', 'needs-improvement', 'poor'])
+
 app.post('/vitals', async (c) => {
   const body = await c.req.json().catch(() => null)
-  if (!body || typeof body.name !== 'string' || typeof body.value !== 'number') {
+  if (!body || typeof body.name !== 'string' || !WEB_VITAL_NAMES.has(body.name)) {
+    return c.json({ error: 'Invalid metric' }, 400)
+  }
+  if (typeof body.value !== 'number' || !Number.isFinite(body.value)) {
     return c.json({ error: 'Invalid metric' }, 400)
   }
   console.log('[web-vital]', JSON.stringify({
-    name: body.name, value: body.value, rating: body.rating,
-    route: String(body.route || '').slice(0, 120),
+    name: body.name,
+    value: Math.round(body.value * 1000) / 1000,
+    rating: WEB_VITAL_RATINGS.has(body.rating) ? body.rating : null,
+    route: String(body.route || '').replace(/[\r\n]+/g, ' ').slice(0, 120),
   }))
   return c.body(null, 204)
 })

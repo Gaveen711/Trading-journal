@@ -3,13 +3,17 @@ import { secureHeaders } from 'hono/secure-headers'
 import { kv } from '@vercel/kv'
 import { getClientIp } from './_ipUtils.js'
 
-// Allowed Origins setup
+// Production origins only. localhost is added for non-production deployments
+// below: shipping a dev origin in the production allowlist widens CORS for no
+// operational benefit.
 const allowedOrigins = [
   'https://xaujournal.vercel.app',
   'https://www.xaujournal.com',
   'https://xaujournal.com',
-  'http://localhost:5173',
 ]
+if (process.env.VERCEL_ENV !== 'production' && process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:5173')
+}
 if (process.env.ALLOWED_ORIGIN) {
   allowedOrigins.push(process.env.ALLOWED_ORIGIN)
 }
@@ -21,6 +25,9 @@ export async function corsMiddleware(c: Context, next: Next) {
   const origin = c.req.header('Origin')
   if (origin && allowedOrigins.includes(origin)) {
     c.header('Access-Control-Allow-Origin', origin)
+    // Responses vary by request origin, so shared caches must not serve one
+    // origin's response to another.
+    c.header('Vary', 'Origin')
   }
   c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Api-Key, x-api-key')
   c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
@@ -36,6 +43,25 @@ export async function corsMiddleware(c: Context, next: Next) {
 export const secureHeadersMiddleware = secureHeaders()
 
 /**
+ * Per-scope limits, in requests per window.
+ *
+ * `contact` is deliberately far below the generic `api` bucket: it is a
+ * human-driven form that writes a Firestore document and sends an email on
+ * every call, so the generic 100/min allowance was three orders of magnitude
+ * more than any real user needs.
+ */
+const RATE_LIMIT_SCOPES: Array<{ scope: string; limit: number; windowSeconds: number; match: (path: string) => boolean }> = [
+  { scope: 'contact', limit: 5, windowSeconds: 3600, match: (p) => p.includes('/contact') },
+  { scope: 'auth', limit: 20, windowSeconds: 3600, match: (p) => p.includes('/auth-utils') },
+  { scope: 'webhook', limit: 500, windowSeconds: 60, match: (p) => p.includes('/tv-webhook') },
+  { scope: 'broker', limit: 10, windowSeconds: 60, match: (p) => p.includes('/broker-') || p.includes('/connect-broker') },
+  { scope: 'market', limit: 120, windowSeconds: 60, match: (p) => p.includes('/yahoo-chart') || p.includes('/spot-price') },
+  { scope: 'vitals', limit: 60, windowSeconds: 60, match: (p) => p.includes('/vitals') },
+]
+
+const DEFAULT_SCOPE = { scope: 'api', limit: 100, windowSeconds: 60 }
+
+/**
  * IP-based rate limiting using Vercel KV.
  * Bypass rate limiting for CORS preflight (OPTIONS) requests.
  */
@@ -45,15 +71,11 @@ export async function rateLimitMiddleware(c: Context, next: Next) {
   }
 
   const path = c.req.path
-  const isWebhook = path.includes('/tv-webhook')
-  const isBroker = path.includes('/broker-') || path.includes('/connect-broker')
-  const isMarket = path.includes('/yahoo-chart') || path.includes('/spot-price')
-  const isVitals = path.includes('/vitals')
+  const matched = RATE_LIMIT_SCOPES.find((entry) => entry.match(path)) || DEFAULT_SCOPE
+  const { scope, limit, windowSeconds } = matched
+  const isBroker = scope === 'broker'
   const ip = getClientIp(c)
-  const scope = isWebhook ? 'webhook' : isBroker ? 'broker' : isMarket ? 'market' : isVitals ? 'vitals' : 'api'
   const key = 'rl:' + scope + ':' + ip
-  const limit = isWebhook ? 500 : isBroker ? 10 : isMarket ? 120 : isVitals ? 60 : 100
-  const windowSeconds = 60
 
   let current = 0
   try {

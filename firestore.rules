@@ -2,36 +2,79 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+
+    // Admin is a custom claim only. The previous rule also hardcoded a UID,
+    // which meant admin access could not be granted or revoked without a rules
+    // deploy — no fast off-switch during an incident. Set the claim with the
+    // Admin SDK:
+    //   admin.auth().setCustomUserClaims(uid, { admin: true })
+    // and enforce MFA on any account that holds it.
     function isAdmin() {
-      return signedIn() && (
-        request.auth.token.admin == true ||
-        request.auth.token.role == 'admin' ||
-        request.auth.uid == 'rbGsMM2A2EdhgKLKLf9y0dGJ7RY2'
-      );
+      return signedIn() && request.auth.token.admin == true;
     }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
-      // Trusted administrators may manage account state; users remain blocked from billing fields.
+      allow read: if isAdmin() || isOwner(userId);
+
+      // Trusted administrators may manage account state.
       allow write: if isAdmin();
-      // Allow write only if sensitive fields are not modified or set by the client
-      allow write: if request.auth != null && request.auth.uid == userId
-        && (
-          (resource == null && !request.resource.data.keys().hasAny(['plan', 'planExpiry', 'isTrial', 'lemonSqueezySubscriptionId', 'lemonSqueezyStatus', 'graceUntil', 'graceReason'])) ||
-          (resource != null && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan', 'planExpiry', 'isTrial', 'lemonSqueezySubscriptionId', 'lemonSqueezyStatus', 'graceUntil', 'graceReason']))
-        );
-      
-      // VULN-08: Add explicit security rules for the auditLogs subcollection.
+
+      // Client-writable profile fields, as an ALLOWLIST.
+      //
+      // The previous rule denied a list of seven billing fields, which left
+      // every other field — including mt5SyncEnabled, analyticsBackfillState,
+      // syncKeyCreatedAt, and the whole lastBrokerSync* family — writable by
+      // the client, and silently exposed each new server-owned field as it was
+      // added. An allowlist fails closed instead.
+      //
+      // totalTradesLogged, totalJournalsLogged and analytics remain here
+      // because the client computes them today (FirebaseTradeRepository /
+      // FirebaseJournalRepository apply their own increments). They gate no
+      // entitlement — FREE_TRADE_LIMIT is Infinity — so a user can only distort
+      // their own reported statistics. Moving them server-side is tracked
+      // separately; until then this rule is deliberately no worse than before
+      // for those three fields, and strictly better for everything else.
+      function clientWritableUserFields() {
+        return [
+          // Profile
+          'email', 'firstName', 'lastName', 'displayName', 'photoURL', 'country',
+          'createdAt', 'updatedAt',
+          // Legal / consent
+          'agreedToTerms', 'agreedAt', 'proLegalAccepted', 'proLegalAcceptedAt',
+          'proLegalVersion', 'refundPolicyAcknowledged',
+          // Wallet preferences
+          'walletBalance', 'monthlyGoal',
+          // Client-maintained counters (see note above)
+          'totalTradesLogged', 'totalJournalsLogged', 'analytics', 'lastTradeTime'
+        ];
+      }
+
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(clientWritableUserFields());
+
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(clientWritableUserFields());
+
+      // Account deletion is a server-side operation; the client must not be
+      // able to drop the document that carries its own subscription state.
+      allow delete: if isAdmin();
+
       match /auditLogs/{logId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
         allow write: if false; // Only server-side admin writes allowed
       }
-      
+
       match /trades/{tradeId} {
         // Read: only the owner
-        allow read: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
         // Write: owner can write any valid trade doc
         // MT5 API writes happen via Firebase Admin SDK (bypasses these rules)
-        // VULN-09 FIX: Strict schema validation to prevent payload injection and stat manipulation
+        // Strict schema validation to prevent payload injection and stat manipulation
         function isValidTrade() {
           let data = request.resource.data;
           let entry = data.get('entry', 0.0);
@@ -40,7 +83,7 @@ service cloud.firestore {
           let swap = data.get('swap', 0.0);
           let direction = data.get('direction', 'BUY');
           let pnl = data.get('pnl', 0.0);
-          
+
           let diff = direction == 'BUY' ? (exit - entry) : (entry - exit);
           let expectedPnl = (diff * lots * 100.0) + (swap == null ? 0.0 : swap);
           let pnlDiff = pnl - expectedPnl;
@@ -78,32 +121,47 @@ service cloud.firestore {
             && absPnlDiff < 1.0; // Widened tolerance: floating-point safety + broker swap rounding
         }
 
-        allow update: if request.auth != null && request.auth.uid == userId && isValidTrade();
-        
-        allow create: if request.auth != null && request.auth.uid == userId && isValidTrade()
-          // VULN-10 FIX: Rate Limiting to prevent 10,000 trades/minute billing attacks (5-second cooldown)
+        allow update: if isOwner(userId) && isValidTrade();
+
+        allow create: if isOwner(userId) && isValidTrade()
+          // Rate limiting to prevent 10,000 trades/minute billing attacks (5-second cooldown)
           && getAfter(/databases/$(database)/documents/users/$(userId)).data.lastTradeTime == request.time
           && (
              get(/databases/$(database)/documents/users/$(userId)).data.get('lastTradeTime', null) == null ||
              request.time > get(/databases/$(database)/documents/users/$(userId)).data.lastTradeTime + duration.value(5, 's')
           );
-        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow delete: if isOwner(userId);
       }
 
       // Secure journals
       match /journals/{journalId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
+        // create/update only — `request.resource` is null on delete, so a
+        // schema check written as `allow write` would deny every deletion.
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['text', 'mood'])
+          && request.resource.data.get('text', '') is string
+          && request.resource.data.get('text', '').size() <= 20000;
+        allow delete: if isOwner(userId);
       }
 
       // Secure broker accounts
       match /brokerAccounts/{accountId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
         allow write: if false; // Server-managed queue and MetaApi metadata only
       }
     }
 
     match /reports/{reportId} {
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      // Bounded schema: this collection accepted arbitrary documents up to the
+      // ~1MiB Firestore limit from any signed-in caller.
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId', 'type', 'subject', 'body', 'tradeId', 'createdAt'])
+        && request.resource.data.get('subject', '') is string
+        && request.resource.data.get('subject', '').size() <= 200
+        && request.resource.data.get('body', '') is string
+        && request.resource.data.get('body', '').size() <= 5000;
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
       allow update, delete: if isAdmin();
     }
@@ -114,8 +172,17 @@ service cloud.firestore {
     match /coupons/{code} { allow read, write: if isAdmin(); }
     match /payments/{id} { allow read, write: if isAdmin(); }
     match /settings/{id} { allow read, write: if isAdmin(); }
-    // Secure API keys (server-only write/read)
+    // Secure API keys (server-only write/read). Document ids are SHA-256
+    // hashes of the key, never the key itself.
     match /apiKeys/{keyId} {
+      allow read, write: if false;
+    }
+    // Webhook replay-protection ledger — server-only.
+    match /webhookEvents/{eventId} {
+      allow read, write: if false;
+    }
+    // Contact form submissions are written by the server with the Admin SDK.
+    match /contactMessages/{messageId} {
       allow read, write: if false;
     }
   }

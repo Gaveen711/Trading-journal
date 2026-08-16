@@ -70,7 +70,7 @@ const BACKGROUND_SYNC_MIN_INTERVAL_MS = 5 * 60 * 1000;
 
 export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTrialExpired, totalTrades, setShowPricingModal, openPortal }) {
   const { isLightMode, toggleTheme, currentTemplate, setTemplate } = useAppTheme();
-  const { accounts, syncAccount } = useSessionBrokerAccounts();
+  const { accounts, syncAccount, hasSessionCredential } = useSessionBrokerAccounts();
   const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
@@ -169,6 +169,11 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
     if (accounts.length === 0) return;
     const activeAccount = accounts[0];
     if (activeAccount.requiresReconnect) return;
+    // Broker passwords are held for the tab session only, so a fresh browser
+    // session has nothing to sync with. Skip quietly and let the user trigger a
+    // manual sync — firing a request that is guaranteed to fail would just
+    // burn the throttle window.
+    if (!hasSessionCredential(activeAccount.id)) return;
 
     const storageKey = `xau-last-broker-sync-${activeAccount.id}`;
     const last = Number(sessionStorage.getItem(storageKey) || 0);

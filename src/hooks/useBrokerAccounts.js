@@ -1,6 +1,16 @@
-// Broker credentials are intentionally kept client-side and sent only for transient sync requests.
+// Broker credentials are kept client-side and sent only for transient sync
+// requests. Storage lives in ../lib/brokerCredentials.js, which splits durable
+// non-secret metadata (localStorage) from the password (sessionStorage, tab
+// lifetime only) — see that module for why.
 import { useEffect, useState } from 'react';
 import { useAppServices } from '../app/di/AppServicesContext.jsx';
+import {
+  readLocalAccounts,
+  readSessionPassword,
+  secretKey,
+  writeLocalAccounts,
+  writeSessionPassword,
+} from '../lib/brokerCredentials.js';
 
 const toIsoString = (value) => {
   if (!value) return null;
@@ -35,8 +45,7 @@ export function useBrokerAccounts() {
       setError(null);
       const publishAccounts = () => {
         try {
-          const localSaved = localStorage.getItem(`xau-broker-accounts-${user.uid}`);
-          const localList = localSaved ? JSON.parse(localSaved) : [];
+          const localList = readLocalAccounts(user.uid);
           const localById = new Map(localList.map((account) => [account.id, account]));
           const managed = serverAccounts.map((account) => ({
             ...(localById.get(account.id) || {}),
@@ -102,9 +111,10 @@ export function useBrokerAccounts() {
     if (!user) throw new Error('Not authenticated');
     try {
       const result = await repository.connectBroker({ accountId: login, password, server, platform: brokerType });
-      const localKey = `xau-broker-accounts-${user.uid}`;
-      const newAccount = { id: result.accountId, accountName, platform: brokerType, server, login, password, managedByWorker: true };
-      localStorage.setItem(localKey, JSON.stringify([newAccount]));
+      // Metadata is durable; the password is held only for this tab's session.
+      const newAccount = { id: result.accountId, accountName, platform: brokerType, server, login, managedByWorker: true };
+      writeLocalAccounts(user.uid, [newAccount]);
+      writeSessionPassword(user.uid, result.accountId, password);
       setAccounts([{
         ...newAccount,
         requiresReconnect: false,
@@ -120,20 +130,33 @@ export function useBrokerAccounts() {
     }
   }
 
-  async function syncAccount(accountId) {
+  /**
+   * `password` is optional: when omitted the credential held for this session
+   * is used. A new browser session has none, so the caller is told to
+   * reconnect rather than the request being sent without one.
+   */
+  async function syncAccount(accountId, password) {
     setError(null);
-    if (!auth.currentUser) throw new Error('Not authenticated');
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not authenticated');
     try {
       const account = accounts.find((item) => item.id === accountId);
       if (!account) throw new Error('Broker account not found.');
       if (account.managedByWorker !== true) throw new Error('Reconnect this broker account once to enable secure client-managed sync.');
-      if (!account.login || !account.password || !account.server || !account.platform) {
+
+      const secret = password || readSessionPassword(user.uid, accountId);
+      if (!account.login || !account.server || !account.platform) {
         throw new Error('Reconnect this broker account on this device to sync securely.');
       }
+      if (!secret) {
+        throw new Error('Enter your broker password to sync. Credentials are held for this browser session only.');
+      }
+      if (password) writeSessionPassword(user.uid, accountId, password);
+
       return await repository.syncBrokerTrades({
         accountId: account.id,
         login: account.login,
-        password: account.password,
+        password: secret,
         server: account.server,
         brokerType: account.platform,
       });
@@ -143,21 +166,26 @@ export function useBrokerAccounts() {
     }
   }
 
+  /** True when this tab still holds the credential needed for a silent sync. */
+  function hasSessionCredential(accountId) {
+    const user = auth.currentUser;
+    return Boolean(user && readSessionPassword(user.uid, accountId));
+  }
+
   async function removeAccount(accountId) {
     setError(null);
     const user = auth.currentUser;
     if (!user) throw new Error('Not authenticated');
     try {
-      const localKey = `xau-broker-accounts-${user.uid}`;
-      const localSaved = localStorage.getItem(localKey);
-      const localList = localSaved ? JSON.parse(localSaved) : [];
+      const localList = readLocalAccounts(user.uid);
       const account = accounts.find((item) => item.id === accountId);
       const result = account?.managedByWorker === true
         ? await repository.disconnectBroker(accountId)
         : { message: 'Legacy broker account removed locally.' };
       const remainingLocal = localList.filter((item) => item.id !== accountId);
-      if (remainingLocal.length) localStorage.setItem(localKey, JSON.stringify(remainingLocal));
-      else localStorage.removeItem(localKey);
+      writeLocalAccounts(user.uid, remainingLocal);
+      // The credential goes with the account it belonged to.
+      sessionStorage.removeItem(secretKey(user.uid));
       setAccounts((current) => current.filter((item) => item.id !== accountId));
       return result;
     } catch (operationError) {
@@ -166,5 +194,5 @@ export function useBrokerAccounts() {
     }
   }
 
-  return { accounts, loading, error, addAccount, syncAccount, removeAccount };
+  return { accounts, loading, error, addAccount, syncAccount, removeAccount, hasSessionCredential };
 }

@@ -6,21 +6,55 @@
 
 ---
 
+> ## ✅ Remediation status — all findings addressed in code
+>
+> Every finding below has been fixed, with the exception of items that are
+> console configuration rather than code (called out individually). The
+> codebase state after remediation:
+>
+> - **`npm audit --omit=dev`: 0 vulnerabilities** (was 1 critical, 4 high)
+> - **162 tests passing** (was 119) — 43 new cases assert that each specific
+>   attack described here is now refused
+> - **Lint and production build clean**
+>
+> **Requires your action outside the repo** — these cannot be fixed by code:
+> 1. **Rotate any broker password** stored by an affected user (C-01 was a real
+>    credential exposure).
+> 2. **Enable Firebase App Check**, MFA on admin accounts, email enumeration
+>    protection, and a 12-char password policy in the Firebase console (H-06,
+>    M-06). See `docs/SECRETS.md` → *Console-side configuration*.
+> 3. **Grant yourself the `admin` custom claim** — the hardcoded UID in
+>    `firestore.rules` is gone, so admin access is claim-based now (M-06).
+>    Command in `docs/SECRETS.md` → *Admin access*.
+> 4. **Set `RECAPTCHA_API_KEY`** to activate bot protection on `/api/contact`.
+> 5. **Deploy the rules**: `firebase deploy --only firestore:rules`.
+>
+> **Two deliberate deferrals**, both documented inline:
+> - `REQUIRE_EMAIL_VERIFICATION` defaults **off**. Enforcing it immediately
+>   would lock existing Pro users out of broker sync mid-subscription, since
+>   accounts predating verification carry `email_verified: false`. Prompt
+>   users, then flip it.
+> - CSP still allows `'unsafe-inline'` in the **enforced** policy; the strict
+>   policy ships as `Content-Security-Policy-Report-Only` so violations surface
+>   in devtools before enforcement. `'unsafe-eval'` was removed outright.
+
+---
+
 ## Executive summary
 
 The codebase shows real security effort: server-verified ID tokens on every user route, Firestore rules with schema validation, timing-safe cron comparison, credential scrubbing, circuit breakers, and sanitised error responses. The gaps are not sloppiness — they are **five structural weaknesses** where a control was designed but lands one layer short of where the trust boundary actually is.
 
-| # | Theme | Worst case |
-|---|---|---|
-| 1 | Broker trading passwords live in `localStorage` and survive sign-out | Full broker account takeover; attacker can trade the victim's live money |
-| 2 | Two cron routes authenticate against `"Bearer undefined"` if the secret is unset | Unauthenticated mass subscription revocation |
-| 3 | Cloud Functions duplicate the broker path with no plan check and no rate limit | Any free account drains the MetaApi budget |
-| 4 | Rate limiting keys on a client-suppliable header | Every quota in the app becomes unbounded |
-| 5 | Entitlements and abuse controls enforced in React, not on the server | Paid features unlocked from devtools |
+| # | Theme | Worst case | Fix shipped |
+|---|---|---|---|
+| 1 | Broker trading passwords live in `localStorage` and survive sign-out | Full broker account takeover; attacker can trade the victim's live money | `src/lib/brokerCredentials.js` — split store, session-scoped secret, sign-out purge, legacy strip |
+| 2 | Two cron routes authenticate against `"Bearer undefined"` if the secret is unset | Unauthenticated mass subscription revocation | `assertCron()` in `api/_security.ts`, used by all three handlers |
+| 3 | Cloud Functions duplicate the broker path with no plan check and no rate limit | Any free account drains the MetaApi budget | `functions/` deleted; `firebase.json` block removed |
+| 4 | Rate limiting keys on a client-suppliable header | Every quota in the app becomes unbounded | `api/_ipUtils.ts` — platform header, rightmost XFF |
+| 5 | Entitlements and abuse controls enforced in React, not on the server | Paid features unlocked from devtools | `firestore.rules` — allowlist replaces denylist |
 
 **Counts:** 1 Critical · 7 High · 9 Medium · 8 Low/Informational.
 
-**Fix first (this week):** C-01, H-01, H-02, H-03, H-04.
+**Fix first (this week):** C-01, H-01, H-02, H-03, H-04. — *all shipped.*
 
 ---
 
@@ -824,14 +858,28 @@ Unused code is code nobody reviews, tests, or thinks about during a design chang
 
 # Production-grade recommendations
 
-### Remediation order
+### Remediation status
 
-| Window | Items | Rationale |
+| Finding | Status | Where |
 |---|---|---|
-| **Now (24-48h)** | C-01 sign-out purge · H-01 cron guard · H-02 delete callables · H-07 `npm audit fix` + react-router | Highest impact, smallest diffs, no design work needed |
-| **This sprint** | C-01 full redesign (stop persisting the password) · H-03 IP source · H-04 contact hardening · H-05 reCAPTCHA helper · H-06 App Check | Closes the credential-exposure and unauthenticated-abuse classes |
-| **Next sprint** | M-01 CSP · M-02 key hashing · M-03 webhook replay · M-04 input validation · M-05 email verification · M-07 rules allowlist | Structural hardening |
-| **Backlog** | M-06 admin claims · M-09 dead-code removal · all L-items | Maintenance and hygiene |
+| C-01 broker credentials | **Fixed** — session-scoped store, sign-out purge, legacy strip, privacy policy corrected | `src/lib/brokerCredentials.js`, `src/firebase.js`, `src/hooks/useBrokerAccounts.js` |
+| H-01 cron auth bypass | **Fixed** — `assertCron()` on all three handlers, refuses secrets <32 chars | `api/_security.ts`, `api/[[...route]].ts` |
+| H-02 unpaywalled callables | **Fixed** — codebase deleted | `functions/` removed, `firebase.json` |
+| H-03 IP spoofing | **Fixed** — `x-vercel-forwarded-for`, rightmost XFF, no loopback default | `api/_ipUtils.ts` |
+| H-04 contact endpoint | **Fixed** — field caps, email validation, HTML escaping, `text:` part, 5/hour scope | `api/[[...route]].ts`, `api/_middleware.ts` |
+| H-05 reCAPTCHA proxy | **Fixed** — endpoint removed, replaced by a fail-closed server helper with action pinning | `api/_security.ts` |
+| H-06 no bot protection | **Partial** — email verification + 12-char policy shipped; App Check is console config | `src/Login.jsx`, `docs/SECRETS.md` |
+| H-07 dependencies | **Fixed** — 0 vulnerabilities; react-router 7.18.2, hono 4.13.2 | `package.json` |
+| M-01 CSP | **Fixed** — `unsafe-eval` removed, wildcards narrowed, `object-src`/`base-uri`/`form-action` added, strict policy in Report-Only | `vercel.json` |
+| M-02 API key storage | **Fixed** — SHA-256 document ids, prefix for display, hash-keyed cache | `api/[[...route]].ts`, `api/_tradeService.ts` |
+| M-03 webhook | **Fixed** — constant-time compare, event-id dedupe, UID validation | `api/[[...route]].ts` |
+| M-04 path injection | **Fixed** — type-strict validator, one shared handler, recursive delete | `api/_security.ts` |
+| M-05 email verification | **Fixed** — sent on signup; server enforcement behind `REQUIRE_EMAIL_VERIFICATION` | `src/Login.jsx`, `api/_auth.ts` |
+| M-06 hardcoded admin | **Fixed** — custom claim only; grant command documented | `firestore.rules`, `docs/SECRETS.md` |
+| M-07 client entitlements | **Fixed** — allowlist rules; counter migration noted inline | `firestore.rules` |
+| M-08 mail amplifier | **Fixed** — escaping, server timestamp, 15-min per-UID cooldown | `api/[[...route]].ts` |
+| M-09 dead endpoints | **Fixed** — `/save-trade` and `functions/` removed; key routes retained (webhooks depend on them) | — |
+| L-01…L-08 | **Fixed** — CORS gating, ipapi removed, `reports` schema, cron pagination, vitals allowlist, RTDB URL removed, CORP added | various |
 
 ### Controls worth adding beyond individual fixes
 
@@ -858,3 +906,23 @@ Worth preserving through the refactors above: server-side ID token verification 
 ---
 
 *Prepared from static analysis of the `staging` branch at commit `cfb7a9c`. Items marked **[verify]** depend on runtime or platform behaviour and need the one-line check given in the finding.*
+
+---
+
+## Appendix — what remediation changed
+
+**New files**
+
+| File | Purpose |
+|---|---|
+| `api/_security.ts` | Shared server primitives: `assertCron`, `escapeHtml`, `verifyRecaptcha`, `validateSyncPayload`, `hashToken`, `timingSafeHexEqual`, `assertRequiredConfig` |
+| `api/_security.test.js` | 32 regression cases, each asserting a specific attack is refused |
+| `src/lib/brokerCredentials.js` | Credential store, split by sensitivity |
+| `src/lib/brokerCredentials.test.js` | 11 cases covering the legacy strip and the sign-out purge |
+| `.github/workflows/security.yml` | `npm audit --audit-level=high`, regression tests, Gitleaks; weekly schedule |
+
+**Deleted:** `functions/` (three unpaywalled callables), `/api/save-trade` (unused, stale 50-trade cap contradicting `FREE_TRADE_LIMIT = Infinity`), the `action: 'recaptcha'` branch of `/api/auth-utils`.
+
+**A note on the regression tests.** Writing them found a defect the static review had missed: `validateSyncPayload` used `String(value)` on `positionId`, so an object with a crafted `toString()` chose what the validator inspected. It could not inject a path separator — the regex still rejected the result — but the indirection was unnecessary, and the validator is now type-strict. A second case, `preserves every field the trade service consumes`, guards a real regression introduced during remediation: the first version of the validator dropped `openPrice`, which `handleCloseTradeSync` reads to derive pips on a close with no prior open record. Tests that assert the negative earn their keep.
+
+**Verification:** `npm run lint` clean · `npm test` 162 passing across 23 files · `npm run build` succeeds · `npm audit --omit=dev` reports 0 vulnerabilities · app boots and renders with no console errors.

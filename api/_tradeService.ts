@@ -2,6 +2,7 @@ import { kv } from '@vercel/kv'
 // @ts-ignore
 import { admin, db, now } from './_firebase.js'
 import { isSyncAllowed } from './_auth.js'
+import { hashToken } from './_security.js'
 import { subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
 
 const analyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
@@ -13,13 +14,16 @@ const analyticsIncrements = (delta: Record<string, number>) => Object.fromEntrie
  * Utilizes Vercel KV to cache API key resolutions and user subscription check flags.
  */
 export async function resolveKey(apiKey: string): Promise<string | null> {
-  if (!apiKey) return null
+  if (!apiKey || typeof apiKey !== 'string' || !apiKey.startsWith('xau_')) return null
 
-  const apiCacheKey = `auth:apikey:${apiKey}`
+  // Look up and cache by hash, so the plaintext secret is never written to
+  // Firestore document ids or to the KV cache.
+  const keyId = hashToken(apiKey)
+  const apiCacheKey = `auth:apikey:${keyId}`
   let uid = await kv.get<string>(apiCacheKey)
 
   if (!uid) {
-    const doc = await db.collection('apiKeys').doc(apiKey).get()
+    const doc = await db.collection('apiKeys').doc(keyId).get()
     if (!doc.exists) return null
     uid = doc.data().uid
     if (!uid) return null
