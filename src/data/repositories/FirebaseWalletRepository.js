@@ -16,15 +16,19 @@ export class FirebaseWalletRepository extends WalletRepository {
       monthlyGoal = data.monthlyGoal;
     }
 
-    // Initialize defaults in firestore if not exists
+    // Backfill defaults in one write rather than two. This is a write on a read
+    // path, so it only runs for a user doc that has never had these fields.
+    const defaults = {};
     if (walletBalance === undefined) {
-      await setDoc(userRef, { walletBalance: 0 }, { merge: true });
+      defaults.walletBalance = 0;
       walletBalance = 0;
     }
-
     if (monthlyGoal === undefined) {
-      await setDoc(userRef, { monthlyGoal: 1000 }, { merge: true });
+      defaults.monthlyGoal = 1000;
       monthlyGoal = 1000;
+    }
+    if (Object.keys(defaults).length > 0) {
+      await setDoc(userRef, defaults, { merge: true });
     }
 
     return { walletBalance, monthlyGoal };

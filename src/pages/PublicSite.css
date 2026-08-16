@@ -1,0 +1,1465 @@
+/* ————————————————————————————————————————————————————————————————
+   xaujournal — public site design system: "Vitrine"
+
+   A dark showroom where the working product sits under museum glass.
+   Rules that hold everywhere:
+     · Newsreader (serif) for display headlines, Geist for everything
+       else a human reads, IBM Plex Mono for anything a machine produced.
+     · Amber is a SIGNAL, never decoration — live state, active state,
+       the one number being pointed at. If it is not reporting
+       something, it is not amber.
+     · Primary actions are bone, not amber, so amber keeps its meaning.
+     · Green and red are reserved for realised P&L. Nothing else.
+     · Sentence case. The site does not shout.
+     · Dark only. The showroom has no daylight setting.
+   ———————————————————————————————————————————————————————————————— */
+
+.xj {
+  /* ground */
+  --xj-ground: #08090b;
+  --xj-ground-2: #0d0f12;
+
+  /* ink */
+  --xj-ink: #eceae4;
+  --xj-ink-2: #8d939a;
+
+  /* hairlines */
+  --xj-edge: #23262b;
+
+  /* signal */
+  --xj-signal: #e2a63d;
+  --xj-signal-soft: rgba(226, 166, 61, 0.13);
+  --xj-signal-line: rgba(226, 166, 61, 0.34);
+
+  /* P&L only */
+  --xj-up: #4cc38a;
+  --xj-down: #e5484d;
+
+  /* museum glass — one recipe, consumed by .xj-panel/.xj-glass and the
+     scrolled nav so every pane of the vitrine matches */
+  --xj-glass-fill: rgba(255, 255, 255, 0.045);
+  --xj-glass-line: rgba(255, 255, 255, 0.11);
+  --xj-glass-highlight: rgba(255, 255, 255, 0.07);
+  --xj-glass-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+  --xj-glass-radius: 14px;
+  --xj-glass-solid: rgba(20, 22, 26, 0.92); /* no-backdrop-filter fallback */
+
+  /* Legacy aliases — every class below and the other public pages
+     (pricing, contact, legal, 404) still read these names; they resolve
+     to the Vitrine palette above so nothing else needs an edit. */
+  --xj-void: var(--xj-ground);
+  --xj-panel: var(--xj-ground-2);
+  --xj-raise: #14161a;
+  --xj-line: var(--xj-edge);
+  --xj-line-2: #2e3238;
+  --xj-bone: var(--xj-ink);
+  --xj-mute: var(--xj-ink-2);
+  --xj-faint: #5e646b;
+
+  /* Surfaces that are not a flat token: the CTA's hover face, and the
+     translucent scrims behind fixed chrome. */
+  --xj-cta-hover: #ffffff;
+  --xj-scrim: rgba(8, 9, 11, 0.82);
+  --xj-scrim-solid: rgba(13, 15, 18, 0.9);
+  --xj-wash: rgba(236, 234, 228, 0.045);
+  --xj-wash-line: rgba(236, 234, 228, 0.06);
+
+  --xj-serif: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+  --xj-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --xj-mono: 'IBM Plex Mono', ui-monospace, Consolas, 'SF Mono', monospace;
+
+  --xj-gutter: 20px;
+  --xj-radius: 4px;
+
+  /* app components rendered as siblings read this focus token */
+  --ring: 38 72% 56%;
+
+  min-width: 0;
+  overflow: clip;
+  background: var(--xj-ground);
+  color: var(--xj-ink);
+  font-family: var(--xj-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
+}
+
+@media (min-width: 720px) {
+  .xj { --xj-gutter: 32px; }
+}
+
+.xj *,
+.xj *::before,
+.xj *::after { box-sizing: border-box; }
+
+.xj a { color: inherit; text-decoration: none; }
+.xj img { display: block; max-width: 100%; }
+.xj main:focus { outline: none; }
+
+.xj :is(button, a, summary, label) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.xj :is(button, a, summary, input, textarea, select):focus-visible {
+  outline: 2px solid var(--xj-signal) !important;
+  outline-offset: 3px !important;
+  box-shadow: none !important;
+  border-radius: 2px;
+}
+
+.xj ::selection { background: var(--xj-signal); color: var(--xj-void); }
+
+.xj-shell {
+  position: relative;
+  z-index: 1;
+  width: min(100% - (var(--xj-gutter) * 2), 1200px);
+  margin-inline: auto;
+}
+
+/* Screen-reader-only, used for headings the layout expresses visually. */
+.xj-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ——————————————————————————————— type ——————————————————————————————— */
+
+.xj :is(h1, h2, h3, h4) {
+  margin: 0;
+  font-family: var(--xj-sans) !important;
+  font-weight: 500 !important;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+.xj-h1 {
+  font-size: clamp(2.75rem, 6vw, 5.25rem) !important;
+  line-height: 1.04 !important;
+  letter-spacing: normal;
+}
+
+.xj-h2 {
+  font-size: clamp(2rem, 4vw, 3.25rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: normal;
+}
+
+/* Display headings speak serif. `.xj :is(.xj-h1, .xj-h2)` outranks the
+   `.xj :is(h1, h2, h3, h4)` reset above, so the !important tie on family and
+   weight breaks toward Newsreader. Serifs need no negative tracking. */
+.xj :is(.xj-h1, .xj-h2) {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+}
+
+.xj-h3 {
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem) !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.017em;
+}
+
+/* The one emphasised word per headline — a real Newsreader italic, not a
+   colour. Amber stays a signal. */
+.xj :is(h1, h2, h3) em {
+  font-style: italic;
+  color: inherit;
+}
+
+.xj-lede {
+  margin: 22px 0 0;
+  max-width: 58ch;
+  color: var(--xj-mute);
+  font-size: clamp(1rem, 1.15vw, 1.09rem);
+  line-height: 1.68;
+}
+
+.xj-lede strong { color: var(--xj-bone); font-weight: 500; }
+
+/* Small uppercase mono label — the instrument's silkscreen. */
+.xj-label {
+  display: block;
+  margin: 0;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.67rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.xj-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 24px;
+  color: var(--xj-mute);
+  font-family: var(--xj-mono);
+  font-size: 0.67rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.xj-eyebrow::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 18px;
+  height: 1px;
+  background: var(--xj-signal);
+}
+
+.xj-num {
+  font-family: var(--xj-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.xj .is-up { color: var(--xj-up); }
+.xj .is-down { color: var(--xj-down); }
+
+/* ————————————————————————— actions ————————————————————————— */
+
+.xj-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1px solid var(--xj-bone);
+  border-radius: var(--xj-radius);
+  background: var(--xj-bone);
+  color: var(--xj-void);
+  font-family: var(--xj-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.xj-cta svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* A CTA can be a <button> or a <Link>. For the anchor version the reset above,
+   `.xj a { color: inherit }`, is more specific than `.xj-cta` — one class plus
+   an element beats one class — so every anchor CTA inherited the surrounding
+   bone text onto its own bone background and became unreadable. Naming the
+   element here puts the button's own colour back in charge. */
+a.xj-cta { color: var(--xj-void); }
+a.xj-cta--ghost { color: var(--xj-bone); }
+
+/* Hover states restate the colour rather than relying on it being inherited,
+   so the light and dark values stay visible together. */
+.xj-cta:hover {
+  background: var(--xj-cta-hover);
+  border-color: var(--xj-cta-hover);
+  color: var(--xj-void);
+}
+.xj-cta:hover svg { transform: translateX(3px); }
+.xj-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.xj-cta--ghost {
+  background: transparent;
+  border-color: var(--xj-line-2);
+  color: var(--xj-bone);
+}
+
+.xj-cta--ghost:hover {
+  background: transparent;
+  border-color: var(--xj-bone);
+  color: var(--xj-bone);
+}
+
+.xj-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--xj-bone);
+  font-size: 0.92rem;
+  font-weight: 450;
+  border-bottom: 1px solid var(--xj-line-2);
+  padding-bottom: 2px;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.xj-link svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.xj-link:hover { border-color: var(--xj-signal); color: var(--xj-signal); }
+
+.xj-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  margin-top: 34px;
+}
+
+.xj-actions small {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+/* ————————————————————————— panels ————————————————————————— */
+
+/* Museum glass. .xj-panel is the component class; .xj-glass is the same
+   recipe as a standalone utility for bespoke surfaces. */
+.xj-panel,
+.xj-glass {
+  position: relative;
+  border: 1px solid var(--xj-glass-line);
+  border-radius: var(--xj-glass-radius);
+  background: var(--xj-glass-fill);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow: inset 0 1px 0 var(--xj-glass-highlight), var(--xj-glass-shadow);
+}
+
+@supports not ((backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px))) {
+  .xj-panel,
+  .xj-glass,
+  .xj-nav.is-scrolled {
+    background: var(--xj-glass-solid);
+  }
+}
+
+.xj-panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--xj-glass-line);
+  background: rgba(255, 255, 255, 0.03);
+  /* the bar sits flush inside the glass, so it takes the pane's top radius */
+  border-radius: calc(var(--xj-glass-radius) - 1px) calc(var(--xj-glass-radius) - 1px) 0 0;
+  font-family: var(--xj-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--xj-faint);
+}
+
+.xj-panel-bar strong {
+  font-weight: 500;
+  color: var(--xj-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xj-panel-bar span { white-space: nowrap; }
+
+/* Live dot — the only element allowed to pulse. */
+.xj-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--xj-signal);
+  white-space: nowrap;
+}
+
+.xj-live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--xj-signal);
+  animation: xj-pulse 2.4s ease-in-out infinite;
+}
+
+.xj-live.is-idle { color: var(--xj-faint); }
+.xj-live.is-idle::before { background: var(--xj-faint); animation: none; }
+
+@keyframes xj-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.28; }
+}
+
+/* ————————————————————————— sections ————————————————————————— */
+
+.xj-section {
+  position: relative;
+  border-top: 1px solid var(--xj-line);
+  padding-block: clamp(72px, 9vw, 128px);
+}
+
+.xj-section--plain { border-top: 0; }
+
+.xj-head { max-width: 68ch; margin-bottom: clamp(44px, 5.5vw, 72px); }
+.xj-head .xj-lede { margin-top: 20px; }
+
+/* Two-column head: title left, lede right — used on wider sections. */
+.xj-head--split {
+  display: grid;
+  gap: 24px 64px;
+  max-width: none;
+  align-items: end;
+}
+
+@media (min-width: 900px) {
+  .xj-head--split { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+  .xj-head--split .xj-lede { margin-top: 0; padding-bottom: 6px; }
+}
+
+/* Cover: the top block on interior pages. */
+.xj-cover { padding-block: clamp(112px, 13vw, 168px) clamp(56px, 6vw, 84px); }
+
+/* ————————————————————————— rows ————————————————————————— */
+
+.xj-rows { border-top: 1px solid var(--xj-line); }
+
+.xj-row {
+  display: grid;
+  gap: 6px 40px;
+  align-items: baseline;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--xj-line);
+  color: var(--xj-mute);
+}
+
+.xj-row > span {
+  color: var(--xj-bone);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.xj-row p { margin: 0; font-size: 0.95rem; line-height: 1.6; }
+
+.xj-row > svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  color: var(--xj-faint);
+  transition: color 150ms ease, transform 200ms ease;
+}
+
+a.xj-row:hover { color: var(--xj-bone); }
+a.xj-row:hover > svg { color: var(--xj-signal); transform: translate(2px, -2px); }
+
+@media (min-width: 760px) {
+  .xj-row { grid-template-columns: 260px minmax(0, 1fr) auto; padding: 28px 0; }
+}
+
+/* ————————————————————————— FAQ ————————————————————————— */
+
+.xj-faq { display: grid; gap: 40px 64px; }
+
+@media (min-width: 900px) {
+  .xj-faq { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); align-items: start; }
+}
+
+.xj-faq-list { border-top: 1px solid var(--xj-line); }
+
+.xj-faq-list details { border-bottom: 1px solid var(--xj-line); }
+
+.xj-faq-list summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--xj-bone);
+  font-size: 1rem;
+  font-weight: 450;
+  letter-spacing: -0.012em;
+  transition: color 150ms ease;
+}
+
+.xj-faq-list summary::-webkit-details-marker { display: none; }
+.xj-faq-list summary:hover { color: var(--xj-signal); }
+
+.xj-faq-list summary span {
+  flex: 0 0 auto;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 200ms ease, color 150ms ease;
+}
+
+.xj-faq-list details[open] summary span { transform: rotate(45deg); color: var(--xj-signal); }
+
+.xj-faq-list p {
+  margin: 0;
+  padding: 0 48px 24px 0;
+  max-width: 62ch;
+  color: var(--xj-mute);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* ————————————————————————— plans ————————————————————————— */
+
+.xj-plans { display: grid; gap: 16px; }
+
+@media (min-width: 860px) {
+  .xj-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.xj-plan {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(26px, 3vw, 38px);
+  border: 1px solid var(--xj-line);
+  border-radius: var(--xj-radius);
+  background: var(--xj-panel);
+}
+
+.xj-plan--lead { border-color: var(--xj-signal-line); background: var(--xj-raise); }
+
+.xj-plan-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--xj-faint);
+}
+
+.xj-plan-tag mark {
+  padding: 4px 8px;
+  border-radius: 3px;
+  background: var(--xj-signal-soft);
+  color: var(--xj-signal);
+  font-size: 0.62rem;
+}
+
+.xj-plan h2 {
+  font-size: 1.35rem !important;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.xj-price { display: flex; align-items: baseline; gap: 9px; margin-bottom: 6px; }
+
+.xj-price strong {
+  font-family: var(--xj-sans);
+  font-size: clamp(2.5rem, 4.4vw, 3.3rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.xj-price span { color: var(--xj-faint); font-size: 0.9rem; }
+
+.xj-plan-note {
+  margin: 0 0 20px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.xj-plan-desc {
+  margin: 0 0 24px;
+  color: var(--xj-mute);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.xj-ledger { list-style: none; margin: 0 0 28px; padding: 0; display: grid; gap: 11px; }
+
+.xj-ledger li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  color: var(--xj-bone);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.xj-ledger svg { width: 16px; height: 16px; margin-top: 2px; color: var(--xj-signal); }
+.xj-ledger li.is-out { color: var(--xj-faint); }
+.xj-ledger li.is-out svg { color: var(--xj-line-2); }
+
+.xj-plan .xj-cta { margin-top: auto; width: 100%; }
+
+/* ————————————————————————— compare table ————————————————————————— */
+
+.xj-compare { border-top: 1px solid var(--xj-line); }
+
+.xj-compare-row {
+  display: grid;
+  gap: 4px 32px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--xj-line);
+  font-size: 0.93rem;
+  color: var(--xj-mute);
+}
+
+.xj-compare-row > strong { color: var(--xj-bone); font-weight: 500; }
+
+/* Header row is mono silkscreen; hidden on mobile where rows stack. */
+.xj-compare-row:first-child {
+  display: none;
+  font-family: var(--xj-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--xj-faint);
+}
+
+/* On mobile each value gets its plan name from a data attribute. */
+.xj-compare-row > span[data-plan]::before {
+  content: attr(data-plan);
+  display: block;
+  margin-bottom: 3px;
+  font-family: var(--xj-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--xj-faint);
+}
+
+@media (min-width: 800px) {
+  .xj-compare-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; }
+  .xj-compare-row:first-child { display: grid; }
+  .xj-compare-row > span[data-plan]::before { display: none; }
+}
+
+/* ————————————————————————— forms ————————————————————————— */
+
+.xj-field { display: block; margin-bottom: 18px; }
+
+.xj-field > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--xj-mute);
+}
+
+.xj-field > span em { font-style: normal; color: var(--xj-faint); font-size: 0.6rem; }
+
+.xj-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+  background: var(--xj-void);
+  color: var(--xj-bone);
+  font-family: var(--xj-sans);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: border-color 150ms ease;
+}
+
+.xj-input::placeholder { color: var(--xj-faint); }
+.xj-input:hover { border-color: var(--xj-faint); }
+.xj-input:focus { border-color: var(--xj-signal); outline: none; }
+textarea.xj-input { resize: vertical; min-height: 130px; }
+
+.xj-input[aria-invalid='true'] { border-color: var(--xj-down); }
+
+.xj-field-error {
+  display: block;
+  margin-top: 7px;
+  color: var(--xj-down);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+}
+
+/* ————————————————————————— navbar ————————————————————————— */
+
+.xj-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  border-bottom: 1px solid transparent;
+  transition: background-color 200ms ease, border-color 200ms ease, backdrop-filter 200ms ease;
+}
+
+/* Once content slides beneath it, the nav becomes another pane of glass. */
+.xj-nav.is-scrolled {
+  background: var(--xj-glass-fill);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+  border-bottom-color: var(--xj-glass-line);
+  box-shadow: inset 0 1px 0 var(--xj-glass-highlight), var(--xj-glass-shadow);
+}
+
+.xj-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(100% - (var(--xj-gutter) * 2), 1200px);
+  margin-inline: auto;
+  height: 66px;
+}
+
+.xj-wordmark {
+  font-family: var(--xj-sans);
+  font-size: 1.02rem;
+  font-weight: 500;
+  letter-spacing: -0.028em;
+  color: var(--xj-bone);
+  white-space: nowrap;
+}
+
+.xj-wordmark b { font-weight: 500; color: var(--xj-signal); }
+
+.xj-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.xj-nav-links { display: none; list-style: none; margin: 0; padding: 0; gap: 4px; }
+
+@media (min-width: 940px) {
+  .xj-nav-links { display: flex; }
+}
+
+.xj-nav-links a {
+  display: block;
+  padding: 8px 14px;
+  border-radius: var(--xj-radius);
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  font-weight: 450;
+  letter-spacing: -0.008em;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.xj-nav-links a:hover { color: var(--xj-bone); background: var(--xj-raise); }
+.xj-nav-links a.is-active { color: var(--xj-bone); }
+
+.xj-nav-cta { display: flex; align-items: center; gap: 10px; }
+.xj-nav-cta .xj-cta { min-height: 40px; padding: 0 16px; font-size: 0.87rem; }
+
+.xj-nav-signin {
+  display: none;
+  padding: 8px 12px;
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  font-weight: 450;
+  transition: color 150ms ease;
+}
+
+.xj-nav-signin:hover { color: var(--xj-bone); }
+
+@media (min-width: 640px) { .xj-nav-signin { display: block; } }
+
+.xj-burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+  background: transparent;
+  color: var(--xj-bone);
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+
+.xj-burger:hover { border-color: var(--xj-bone); }
+.xj-burger svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+
+@media (min-width: 940px) { .xj-burger { display: none; } }
+
+/* full-screen mobile menu */
+.xj-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  padding: 92px var(--xj-gutter) calc(28px + env(safe-area-inset-bottom));
+  background: var(--xj-void);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 220ms ease, transform 220ms ease, visibility 220ms;
+}
+
+.xj-menu.is-open { opacity: 1; visibility: visible; transform: none; }
+
+.xj-menu nav { display: flex; flex-direction: column; border-top: 1px solid var(--xj-line); }
+
+.xj-menu nav a {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--xj-line);
+  color: var(--xj-bone);
+  font-size: 1.45rem;
+  font-weight: 450;
+  letter-spacing: -0.028em;
+}
+
+.xj-menu nav a small {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+}
+
+.xj-menu nav a.is-active { color: var(--xj-signal); }
+.xj-menu nav a.is-active small { color: var(--xj-signal); }
+
+.xj-menu .xj-cta { margin-top: 28px; width: 100%; }
+
+.xj-menu-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 26px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* scroll-to-top */
+.xj-top {
+  position: fixed;
+  right: max(var(--xj-gutter), env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+  background: var(--xj-scrim-solid);
+  backdrop-filter: blur(8px);
+  color: var(--xj-bone);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 200ms ease, transform 200ms ease, visibility 200ms, border-color 150ms ease;
+}
+
+.xj-top.is-visible { opacity: 1; visibility: visible; transform: none; }
+.xj-top:hover { border-color: var(--xj-bone); }
+.xj-top svg { width: 16px; height: 16px; }
+
+/* ————————————————————————— footer ————————————————————————— */
+
+.xj-footer {
+  border-top: 1px solid var(--xj-line);
+  padding-block: clamp(56px, 6vw, 80px) 0;
+  background: var(--xj-void);
+}
+
+.xj-footer-grid { display: grid; gap: 40px; }
+
+@media (min-width: 760px) {
+  .xj-footer-grid { grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 48px 32px; }
+}
+
+.xj-footer-brand p {
+  margin: 16px 0 0;
+  max-width: 34ch;
+  color: var(--xj-mute);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.xj-footer-col ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+
+/* Links sit in a tight column, so the tap target comes from padding
+   rather than gap — 40px minimum on touch-sized screens. */
+.xj-footer-col a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--xj-mute);
+  font-size: 0.92rem;
+  transition: color 150ms ease;
+}
+
+.xj-footer-col a:hover { color: var(--xj-bone); }
+
+@media (min-width: 760px) {
+  .xj-footer-col ul { margin-top: 14px; gap: 4px; }
+  .xj-footer-col a { min-height: 28px; }
+}
+
+/* Session clocks — the footer's one piece of live instrumentation. */
+.xj-footer-clocks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(48px, 6vw, 72px);
+  border: 1px solid var(--xj-line);
+  border-radius: var(--xj-radius);
+  background: var(--xj-line);
+  overflow: hidden;
+}
+
+@media (min-width: 720px) {
+  .xj-footer-clocks { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+.xj-footer-clock {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px;
+  background: var(--xj-panel);
+}
+
+.xj-footer-clock small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.xj-footer-clock strong {
+  font-family: var(--xj-mono);
+  font-size: 1.02rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--xj-mute);
+}
+
+.xj-footer-clock.is-open small { color: var(--xj-signal); }
+.xj-footer-clock.is-open strong { color: var(--xj-bone); }
+
+.xj-footer-clock.is-open small::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--xj-signal);
+}
+
+.xj-footer-legal {
+  margin-top: clamp(44px, 5vw, 64px);
+  padding-block: 28px;
+  border-top: 1px solid var(--xj-line);
+}
+
+.xj-footer-legal p {
+  margin: 0 0 20px;
+  max-width: 92ch;
+  color: var(--xj-faint);
+  font-size: 0.79rem;
+  line-height: 1.65;
+}
+
+.xj-footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+}
+
+/* ————————————————————————— legal pages ————————————————————————— */
+
+.xj-legal-grid { display: grid; gap: 40px 64px; align-items: end; }
+
+@media (min-width: 960px) {
+  .xj-legal-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr); }
+}
+
+.xj-record dl { margin: 0; padding: 16px; display: grid; gap: 1px; }
+
+.xj-record div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--xj-line);
+}
+
+.xj-record div:last-child { border-bottom: 0; }
+
+.xj-record dt {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.xj-record dd {
+  margin: 0;
+  color: var(--xj-bone);
+  font-family: var(--xj-mono);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.xj-legal-body { display: grid; gap: 44px 64px; align-items: start; }
+
+@media (min-width: 960px) {
+  .xj-legal-body { grid-template-columns: 240px minmax(0, 1fr); }
+  .xj-legal-toc { position: sticky; top: 96px; }
+}
+
+.xj-legal-toc nav { display: grid; gap: 2px; margin-top: 14px; }
+
+.xj-legal-toc a {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  padding: 7px 0;
+  color: var(--xj-mute);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  transition: color 150ms ease;
+}
+
+.xj-legal-toc a span { color: var(--xj-faint); font-family: var(--xj-mono); font-size: 0.68rem; }
+.xj-legal-toc a:hover { color: var(--xj-bone); }
+.xj-legal-toc a:hover span { color: var(--xj-signal); }
+
+.xj-legal-summary {
+  padding: 22px;
+  border: 1px solid var(--xj-line);
+  border-left: 2px solid var(--xj-signal);
+  border-radius: var(--xj-radius);
+  background: var(--xj-panel);
+}
+
+.xj-legal-summary span {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--xj-signal);
+  font-family: var(--xj-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.xj-legal-summary p { margin: 0; color: var(--xj-bone); font-size: 0.95rem; line-height: 1.65; }
+
+.xj-legal-guarantee {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--xj-signal-line);
+  border-radius: var(--xj-radius);
+  background: var(--xj-signal-soft);
+}
+
+.xj-legal-guarantee svg { width: 20px; height: 20px; color: var(--xj-signal); }
+.xj-legal-guarantee span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--xj-signal);
+  font-family: var(--xj-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.xj-legal-guarantee strong { font-weight: 450; font-size: 0.94rem; line-height: 1.55; }
+
+.xj-legal-sections { margin-top: 40px; display: grid; gap: 36px; }
+
+.xj-legal-section { display: grid; gap: 6px 20px; scroll-margin-top: 92px; }
+
+@media (min-width: 620px) {
+  .xj-legal-section { grid-template-columns: 40px minmax(0, 1fr); }
+}
+
+.xj-legal-section > span {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.72rem;
+  padding-top: 5px;
+}
+
+.xj-legal-section h2 {
+  font-size: 1.12rem !important;
+  letter-spacing: -0.018em;
+  margin-bottom: 12px;
+}
+
+.xj-legal-section p {
+  margin: 0 0 13px;
+  max-width: 74ch;
+  color: var(--xj-mute);
+  font-size: 0.94rem;
+  line-height: 1.72;
+}
+
+.xj-legal-section p:last-child { margin-bottom: 0; }
+
+/* ————————————————————————— closing band ————————————————————————— */
+
+.xj-close-row { display: grid; gap: 32px; align-items: end; }
+
+@media (min-width: 860px) {
+  .xj-close-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .xj-close-row .xj-actions { margin-top: 0; justify-content: flex-end; }
+}
+
+/* ————————————————————————— study hub —————————————————————————
+   The Blogs library ("The study"): shelves of glass slide cards on the
+   index, and a 68ch reading column on the article page. xjs- prefixes the
+   shelf pieces, xja- the article pieces. */
+
+.xjs-shelf-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 16px;
+  margin-bottom: clamp(26px, 3.5vw, 40px);
+}
+
+.xj .xjs-shelf-head h2 {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.45rem, 2.4vw, 2.1rem) !important;
+  line-height: 1.1 !important;
+}
+
+.xjs-shelf-rule {
+  flex: 1 1 40px;
+  align-self: center;
+  height: 1px;
+  background: var(--xj-edge);
+}
+
+/* One slide of the shelf. The glass recipe comes from .xj-glass; this only
+   adds the slide's anatomy: spine on the left edge, body beside it. */
+.xjs-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px 22px 20px 56px;
+  color: var(--xj-ink);
+  transition: border-color 180ms ease, transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.xjs-card:hover { border-color: rgba(255, 255, 255, 0.22); transform: translateY(-3px); }
+
+/* Category spine — reads top-to-bottom along the card's left edge, the way a
+   book spine reads on the shelf. */
+.xjs-card-spine {
+  position: absolute;
+  inset: 1px auto 1px 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  border-right: 1px solid var(--xj-glass-line);
+  border-radius: calc(var(--xj-glass-radius) - 1px) 0 0 calc(var(--xj-glass-radius) - 1px);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+}
+
+.xj .xjs-card h3 {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: 1.26rem !important;
+  line-height: 1.22 !important;
+  margin-bottom: 10px;
+}
+
+.xjs-card-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 0 0 18px;
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.xjs-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: auto 0 0;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.xjs-card-meta svg {
+  width: 13px;
+  height: 13px;
+  margin-left: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  transition: color 150ms ease, transform 200ms ease;
+}
+
+.xjs-card:hover .xjs-card-meta svg { color: var(--xj-signal); transform: translateX(3px); }
+
+/* ————————————————————————— study article ————————————————————————— */
+
+.xja-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 22px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.67rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.xja-crumb a { color: var(--xj-mute); transition: color 150ms ease; }
+.xja-crumb a:hover { color: var(--xj-bone); }
+
+.xj .xja-title {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(2.05rem, 4.4vw, 3.3rem) !important;
+  line-height: 1.08 !important;
+}
+
+.xja-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin: 18px 0 0;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.xja-takeaways { margin-top: clamp(34px, 4vw, 48px); padding: 22px 24px; }
+
+.xja-takeaways ul {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.xja-takeaways li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 12px;
+  color: var(--xj-ink);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* The tick is silkscreen, not signal — nothing here is live. */
+.xja-takeaways li::before {
+  content: '—';
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+}
+
+.xja-body { margin-top: clamp(14px, 2vw, 26px); }
+
+.xj .xja-body h2 {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.4rem, 2.2vw, 1.7rem) !important;
+  line-height: 1.18 !important;
+  margin: clamp(38px, 4.5vw, 54px) 0 14px;
+}
+
+.xja-body p {
+  margin: 0 0 16px;
+  color: rgba(236, 234, 228, 0.84);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.xja-sources { list-style: none; display: grid; gap: 14px; margin: 18px 0 0; padding: 0; }
+
+.xja-pager { display: grid; gap: 14px; margin-top: clamp(44px, 5vw, 64px); }
+
+@media (min-width: 640px) {
+  .xja-pager { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.xja-pager a {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px 20px;
+  color: var(--xj-mute);
+  transition: border-color 180ms ease, color 150ms ease;
+}
+
+.xja-pager a:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--xj-bone); }
+.xja-pager a strong { font-weight: 450; font-size: 0.95rem; line-height: 1.45; letter-spacing: -0.01em; }
+.xja-pager a.xja-pager-next { text-align: right; align-items: flex-end; }
+
+.xja-cta {
+  display: grid;
+  gap: 20px 32px;
+  align-items: center;
+  margin-top: clamp(44px, 5vw, 64px);
+  padding: clamp(24px, 3.5vw, 36px);
+}
+
+@media (min-width: 720px) {
+  .xja-cta { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
+.xj .xja-cta h2 {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.45rem, 2.4vw, 1.9rem) !important;
+  line-height: 1.15 !important;
+}
+
+.xja-cta p { margin: 10px 0 0; color: var(--xj-mute); font-size: 0.94rem; line-height: 1.65; }
+
+/* ————————————————————————— load settle —————————————————————————
+   Supporting copy rises into place in reading order when a page mounts.
+
+   The headline is deliberately exempt. It is the largest text on the page and
+   therefore the Largest Contentful Paint element, so fading it in from zero
+   would push LCP out by the whole animation — the page would score worse for
+   looking busier. It paints immediately and the copy settles around it.
+
+   Transform and opacity only, so every line stays on the compositor. No
+   will-change is declared: a running animation is promoted automatically and
+   releases its layer when it finishes, which a standing will-change does not. */
+/* Starts faint rather than fully transparent. Copy must never depend on an
+   animation to become readable: a frozen timeline (background tab), a crawler
+   that snapshots early, or anything that stops the animation mid-flight would
+   otherwise leave blank space where the text should be. At 0.28 it still reads
+   as arriving, and the motion carries the effect either way. */
+@keyframes xj-settle {
+  from { opacity: 0.28; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+.xj-settle > * {
+  animation: xj-settle 540ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.xj-settle > :nth-child(2) { animation-delay: 60ms; }
+.xj-settle > :nth-child(3) { animation-delay: 120ms; }
+.xj-settle > :nth-child(4) { animation-delay: 180ms; }
+.xj-settle > :nth-child(5) { animation-delay: 240ms; }
+/* Anything past the fifth shares one delay, so a long page never ends up with
+   copy that arrives a noticeable beat after the reader reaches it. */
+.xj-settle > :nth-child(n + 6) { animation-delay: 300ms; }
+
+/* Never hidden, never delayed. */
+.xj-settle > .xj-h1,
+.xj-settle > .xj-settle-now {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The generic reduced-motion block below collapses duration but not delay,
+     which would still blank the copy for a third of a second. */
+  .xj-settle > * {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ————————————————————————— reveal ————————————————————————— */
+
+.xj-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 620ms cubic-bezier(0.2, 0.7, 0.3, 1), transform 620ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.xj-reveal.is-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .xj *,
+  .xj *::before,
+  .xj *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .xj-reveal { opacity: 1; transform: none; }
+}

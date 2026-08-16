@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, FileCheck2, Mail } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
-import './PublicEditorial.css';
+import { CTALink, Panel } from '../components/PublicSite';
+import './PublicSite.css';
 
 function usePolicySeo(seo) {
   useEffect(() => {
@@ -24,22 +24,16 @@ function usePolicySeo(seo) {
 
     setMeta('description', seo.description);
     setMeta('keywords', seo.keywords);
-    setMeta('robots', 'index, follow');
     setMeta('og:title', seo.title, true);
     setMeta('og:description', seo.description, true);
     setMeta('og:type', 'website', true);
-    setMeta('og:url', seo.canonical, true);
     setMeta('twitter:card', 'summary');
     setMeta('twitter:title', seo.title);
     setMeta('twitter:description', seo.description);
 
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.setAttribute('rel', 'canonical');
-      document.head.appendChild(canonical);
-    }
-    canonical.setAttribute('href', seo.canonical);
+    // Canonical and og:url are owned by PageSEO -> applyPageSEO(). This page's
+    // chunk resolves after that effect, so writing them here overwrote the
+    // shared policy with a different host.
 
     document.body.style.overflow = '';
     window.scrollTo(0, 0);
@@ -66,108 +60,96 @@ export function LegalPolicyPage({
   });
 
   return (
-    <div data-ux-skip="true">
+    <>
       <PublicNavbar />
-
-      <main className="xep-page xep-legal-page">
-        <header className="xep-legal-hero">
-          <div className="xep-shell">
-            <div className="xep-legal-hero-grid">
-              <div>
-                <p className="xep-kicker"><span>{code}</span>{eyebrow}</p>
-                <h1 className="xep-title">{title}<br /><em>{accent}</em></h1>
-                <p className="xep-lede">{lede}</p>
+      <div className='xj' data-ux-skip='true'>
+        <main data-ux-skip='true'>
+          <header className='xj-cover' aria-label={`${title} ${accent}`}>
+            <div className='xj-shell xj-legal-grid'>
+              <div className='xj-settle'>
+                <p className='xj-eyebrow'>{code} · {eyebrow}</p>
+                <h1 className='xj-h1'>{title} <em>{accent}</em></h1>
+                <p className='xj-lede'>{lede}</p>
               </div>
 
-              <aside className="xep-policy-card" aria-label="Policy record details">
-                <div className="xep-policy-card-head">
-                  <FileCheck2 aria-hidden="true" />
-                  <span>Public record</span>
-                </div>
+              <Panel className='xj-record' label='Public record' meta={code} aria-label='Policy record details'>
                 <dl>
                   <div><dt>Document</dt><dd>{code} / {new Date().getFullYear()}</dd></div>
                   <div><dt>Status</dt><dd>Active</dd></div>
                   <div><dt>Last updated</dt><dd>{updated}</dd></div>
-                  <div><dt>Owner</dt><dd>XAU Journal</dd></div>
+                  <div><dt>Owner</dt><dd>xaujournal</dd></div>
+                  <div><dt>Sections</dt><dd>{sections.length}</dd></div>
                 </dl>
-                <div className="xep-policy-card-foot">Plain-language register / effective immediately</div>
-              </aside>
+              </Panel>
             </div>
+          </header>
 
-            <div className="xep-casebar" aria-label="Policy filing details">
-              <span>Register / {code}</span>
-              <span>XAU Journal / Public record</span>
-              <span>{sections.length} sections</span>
-            </div>
-          </div>
-        </header>
+          <section className='xj-section'>
+            <div className='xj-shell'>
+              <div className='xj-legal-body'>
+                <aside className='xj-legal-toc'>
+                  <p className='xj-label'>Contents</p>
+                  <nav aria-label={`${title} ${accent} sections`}>
+                    {sections.map((section) => (
+                      <a key={section.id} href={`#${section.id}`}>
+                        <span>{section.title.split('.')[0].padStart(2, '0')}</span>
+                        {section.title.split('. ')[1] || section.title}
+                      </a>
+                    ))}
+                  </nav>
+                </aside>
 
-        <section className="xep-section xep-section--sheet">
-          <div className="xep-shell xep-legal-grid">
-            <aside className="xep-legal-toc">
-              <p className="xep-rule-label">Contents</p>
-              <nav aria-label={`${title} ${accent} sections`}>
-                {sections.map((section) => (
-                  <a key={section.id} href={`#${section.id}`}>
-                    <span>{section.title.split('.')[0].padStart(2, '0')}</span>
-                    {section.title.split('. ')[1] || section.title}
-                  </a>
-                ))}
-              </nav>
-            </aside>
-
-            <article className="xep-legal-document">
-              {guarantee && (
-                <div className="xep-legal-guarantee">
-                  <span className="xep-stamp">7 day<br />guarantee</span>
-                  <div>
-                    <p className="xep-rule-label">First Pro payment</p>
-                    <strong>{guarantee}</strong>
-                  </div>
-                </div>
-              )}
-
-              <div className="xep-legal-summary">
-                <span>In brief</span>
-                <p>{summary}</p>
-              </div>
-
-              <div className="xep-legal-sections">
-                {sections.map((section) => {
-                  const [number, heading = section.title] = section.title.split('. ');
-                  return (
-                    <section key={section.id} id={section.id} className="xep-legal-section">
-                      <span className="xep-legal-number">{number.padStart(2, '0')}</span>
+                <article>
+                  {guarantee ? (
+                    <div className='xj-legal-guarantee'>
+                      <ShieldCheck aria-hidden='true' />
                       <div>
-                        <h2>{heading}</h2>
-                        {section.content.split('\n\n').map((block, index) => (
-                          <p key={`${section.id}-${index}`}>{block}</p>
-                        ))}
+                        <span>First Pro payment — 7-day guarantee</span>
+                        <strong>{guarantee}</strong>
                       </div>
-                    </section>
-                  );
-                })}
-              </div>
-            </article>
-          </div>
-        </section>
+                    </div>
+                  ) : null}
 
-        <section className="xep-section xep-section--night xep-legal-help">
-          <div className="xep-shell">
-            <p className="xep-kicker"><span>?</span>Clarification desk</p>
-            <div>
-              <h2 className="xep-heading">Questions about<br /><em>this policy?</em></h2>
-              <p className="xep-lede">Ask before you connect an account, start a subscription, or share information with XAU Journal.</p>
-              <div className="xep-actions">
-                <Link className="xep-button xep-button--primary" to="/contact">Contact support <ArrowRight aria-hidden="true" /></Link>
-                <a className="xep-button xep-button--quiet" href="mailto:info@xaujournal.com"><Mail aria-hidden="true" /> info@xaujournal.com</a>
+                  <div className='xj-legal-summary' style={guarantee ? { marginTop: 20 } : undefined}>
+                    <span>In brief</span>
+                    <p>{summary}</p>
+                  </div>
+
+                  <div className='xj-legal-sections'>
+                    {sections.map((section) => {
+                      const [number, heading = section.title] = section.title.split('. ');
+                      return (
+                        <section key={section.id} id={section.id} className='xj-legal-section'>
+                          <span>{number.padStart(2, '0')}</span>
+                          <div>
+                            <h2>{heading}</h2>
+                            {section.content.split('\n\n').map((block, index) => (
+                              <p key={`${section.id}-${index}`}>{block}</p>
+                            ))}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                </article>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
 
+          <section className='xj-section' aria-label='Questions about this policy'>
+            <div className='xj-shell'>
+              <div className='xj-close-row'>
+                <h2 className='xj-h2'>Questions about <em>this policy?</em></h2>
+                <div className='xj-actions'>
+                  <CTALink to='/contact'>Contact support</CTALink>
+                  <a className='xj-link' href='mailto:info@xaujournal.com'>info@xaujournal.com</a>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
       <PublicFooter />
-    </div>
+    </>
   );
 }

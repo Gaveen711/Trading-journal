@@ -2,31 +2,61 @@ import { useState, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { todayStr } from '../lib/tradeUtils';
-import { PencilSquare, XLg, EmojiAngryFill, EmojiFrownFill, EmojiNeutralFill, EmojiSmileFill, EmojiSunglassesFill } from 'react-bootstrap-icons';
+import {
+  PencilSquare,
+  XLg,
+  EmojiAngryFill,
+  EmojiFrownFill,
+  EmojiNeutralFill,
+  EmojiSmileFill,
+  EmojiSunglassesFill,
+} from 'react-bootstrap-icons';
 import { DatePicker } from '../components/ui/DatePicker';
+import { SectionCard } from '../components/app/SectionCard';
+import { EmptyState } from '../components/app/EmptyState';
+import { Button } from '../components/ui/button';
+import { Textarea } from '../components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '../components/ui/alert-dialog';
+import { cn } from '../lib/utils';
+
+// Mood glyphs stay monochrome: color is reserved for P&L. The face carries
+// the sentiment; selection state carries the emphasis.
+const MOODS = [
+  { value: '1', label: 'Terrible', Icon: EmojiAngryFill },
+  { value: '2', label: 'Bad', Icon: EmojiFrownFill },
+  { value: '3', label: 'Neutral', Icon: EmojiNeutralFill },
+  { value: '4', label: 'Good', Icon: EmojiSmileFill },
+  { value: '5', label: 'Excellent', Icon: EmojiSunglassesFill },
+];
+
+const entryDateLabel = (date) =>
+  new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(
+    new Date(date + 'T00:00:00')
+  );
 
 export function JournalPage() {
   const { journals, saveJournalEntry, deleteEntry } = useOutletContext();
   const toast = useToast();
-  
+
   const [journalDate, setJournalDate] = useState(todayStr());
   const [journalText, setJournalText] = useState('');
   const [selectedMood, setSelectedMood] = useState(null);
   const [journalSaved, setJournalSaved] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const moods = [
-    null, 
-    <EmojiAngryFill key="1" className="text-red-500/80" />, 
-    <EmojiFrownFill key="2" className="text-orange-500/80" />, 
-    <EmojiNeutralFill key="3" className="text-yellow-500/80" />, 
-    <EmojiSmileFill key="4" className="text-green-500/80" />, 
-    <EmojiSunglassesFill key="5" className="text-emerald-500/80" />
-  ];
-  const moodLabels = ['Terrible', 'Bad', 'Neutral', 'Good', 'Excellent'];
   const entries = useMemo(() => {
     return Object.entries(journals).sort((a, b) => b[0].localeCompare(a[0]));
   }, [journals]);
-  const SUB_LIMITS = { freeJournals: 10 };
 
   useEffect(() => {
     const entry = journals[journalDate] || {};
@@ -36,9 +66,6 @@ export function JournalPage() {
 
   const onSaveJournal = async () => {
     if (!journalDate) return;
-    
-    // Unlimited journals allowed on free tier
-    
     try {
       await saveJournalEntry(journalDate, journalText, selectedMood);
       setJournalSaved(true);
@@ -49,143 +76,158 @@ export function JournalPage() {
     }
   };
 
-  const onDeleteEntry = async (date) => {
-    if (confirm('Delete this journal entry?')) {
-      try {
-        await deleteEntry(date);
-        if (journalDate === date) {
-          setJournalText(''); 
-          setSelectedMood(null);
-        }
-        toast('Entry deleted.', 'warn');
-      } catch {
-        toast('Storage error.', 'warn');
+  const onConfirmDelete = async () => {
+    const date = deleteTarget;
+    setDeleteTarget(null);
+    if (!date) return;
+    try {
+      await deleteEntry(date);
+      if (journalDate === date) {
+        setJournalText('');
+        setSelectedMood(null);
       }
+      toast('Entry deleted.', 'warn');
+    } catch {
+      toast('Storage error.', 'warn');
     }
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-black text-foreground uppercase tracking-tight">Journaling</h1>
-        <p className="text-muted-foreground text-sm font-medium">Reflect on your Journals and improve your trading strategies.</p>
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="font-mono text-lg font-medium text-foreground">Journal</h1>
+        <p className="text-sm text-muted-foreground">
+          The half of the record your broker never asked for.
+        </p>
       </header>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-6 animate-in slide-in-from-left-4 duration-700">
-          <div className="card-premium p-4 sm:p-8 space-y-6">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Daily Reflection
-            </h3>
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Entry Date</label>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <SectionCard surface title="Daily reflection" description="One honest note per session.">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="journal-date" className="text-xs font-medium text-muted-foreground">
+                  Entry date
+                </label>
                 <DatePicker name="date" value={journalDate} onChange={setJournalDate} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Market Mood</label>
-                <div className="flex justify-between bg-muted/40 rounded-[1.25rem] p-1.5 gap-1 border border-border/40">
-                  {moods.slice(1).map((emoji, index) => (
-                    <button 
-                      key={index} 
-                      title={moodLabels[index]}
-                      onClick={() => setSelectedMood(index + 1)}
-                      className={`flex-1 aspect-square rounded-xl text-xl flex items-center justify-center transition-all duration-300 active:scale-75 ${selectedMood === index + 1 ? 'bg-background shadow-lg scale-110 ring-1 ring-border/50' : 'hover:bg-background/30 opacity-40 hover:opacity-100'}`}
-                    >
-                      {emoji}
-                    </button>
+              <div className="flex flex-col gap-1.5">
+                <span id="journal-mood-label" className="text-xs font-medium text-muted-foreground">
+                  Session mood
+                </span>
+                <ToggleGroup
+                  spacing={0}
+                  aria-labelledby="journal-mood-label"
+                  className="w-full"
+                  value={selectedMood ? [String(selectedMood)] : []}
+                  onValueChange={([next]) => next && setSelectedMood(Number(next))}
+                >
+                  {MOODS.map(({ value, label, Icon }) => (
+                    <ToggleGroupItem key={value} value={value} size="sm" className="flex-1" aria-label={label} title={label}>
+                      <Icon aria-hidden="true" />
+                    </ToggleGroupItem>
                   ))}
-                </div>
+                </ToggleGroup>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/90 ml-1">Journal Notes</label>
-                <textarea 
-                  className="input-premium h-48 resize-none text-sm leading-relaxed p-4" 
-                  value={journalText} 
-                  onChange={e => setJournalText(e.target.value)}
-                  placeholder="Write down your thoughts, emotions, and lessons learned..." 
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="journal-notes" className="text-xs font-medium text-muted-foreground">
+                  Notes
+                </label>
+                <Textarea
+                  id="journal-notes"
+                  className="h-44 resize-none text-sm leading-relaxed"
+                  value={journalText}
+                  onChange={(e) => setJournalText(e.target.value)}
+                  placeholder="What you saw, what you did, what you'd repeat…"
                 />
               </div>
 
-              <button 
-                className={`btn-primary w-full h-12 text-sm font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 ${journalSaved ? 'bg-green-600 border-green-500' : ''}`}
-                onClick={onSaveJournal}
-              >
-                {journalSaved ? (
-                  <>
-                    <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin hidden" />
-                    ✓ Journal Saved
-                  </>
-                ) : 'Save Journal'}
-              </button>
-
-              {/* Capacity limit progress bar removed (journals are unlimited) */}
+              <Button className="w-full" onClick={onSaveJournal}>
+                {journalSaved ? 'Saved' : 'Save entry'}
+              </Button>
             </div>
-          </div>
+          </SectionCard>
         </div>
 
-        <div className="lg:col-span-2 space-y-6 animate-in slide-in-from-right-4 duration-700 delay-200">
-          <h3 className="text-lg font-bold flex items-center gap-3">
-            Saved Journals 
-            <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-black text-primary tracking-tight">{entries.length} Entries</span>
-          </h3>
-          
-          <div className="space-y-4">
+        <div className="lg:col-span-2">
+          <SectionCard title="Saved entries" meta={`${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`}>
             {entries.length === 0 ? (
-              <div className="card-premium p-20 flex flex-col items-center justify-center text-muted-foreground gap-6">
-                <div className="w-20 h-20 rounded-[2.5rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner rotate-3 hover:rotate-0 transition-transform duration-500">
-                  <PencilSquare className="w-8 h-8 text-muted-foreground/40" />
-                </div>
-                <div className="text-center space-y-1">
-                  <span className="text-sm font-bold text-foreground uppercase tracking-tight">No Journals Found</span>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground/75 leading-relaxed px-8">Write your first journal entry to get started.</p>
-                </div>
-              </div>
+              <EmptyState
+                title="Nothing kept yet"
+                description="The first entry takes about forty seconds. It is the part of the record the analytics end up reading."
+                action={
+                  <Button size="sm" variant="outline" onClick={() => document.getElementById('journal-notes')?.focus()}>
+                    <PencilSquare aria-hidden="true" data-icon="inline-start" />
+                    Write today's note
+                  </Button>
+                }
+              />
             ) : (
-              entries.map(([date, entry], idx) => (
-                <div 
-                  key={date} 
-                  className="card-premium p-4 sm:p-6 group hover:bg-muted/30 transition-all duration-500 ease-[var(--spring-bounce)] animate-in slide-in-from-bottom-2 fill-both"
-                  style={{ animationDelay: `${idx * 100}ms` }}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      {entry.mood ? (
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-muted/50 border border-border/50 flex items-center justify-center text-xl sm:text-2xl shadow-inner group-hover:scale-110 transition-transform duration-500">
-                          {moods[entry.mood]}
+              <ul className="flex flex-col gap-3">
+                {entries.map(([date, entry]) => {
+                  const mood = MOODS.find((m) => Number(m.value) === entry.mood);
+                  const MoodIcon = mood?.Icon;
+                  return (
+                    <li key={date} className="rounded-lg border border-border bg-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              'flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted',
+                              mood ? 'text-foreground' : 'text-muted-foreground'
+                            )}
+                            title={mood?.label}
+                            aria-hidden={mood ? undefined : 'true'}
+                          >
+                            {MoodIcon ? <MoodIcon aria-label={`Mood: ${mood.label}`} /> : '—'}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">{entryDateLabel(date)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' })}
+                            </p>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-center text-sm sm:text-lg text-muted-foreground">?</div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="text-xs sm:text-sm font-black tracking-tight text-foreground/95">
-                          {new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(date + 'T00:00:00'))}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] font-black text-foreground/75 uppercase tracking-[0.1em]">{new Date(date + 'T00:00:00').toLocaleString('en-US', { weekday: 'long' })}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeleteTarget(date)}
+                          aria-label={`Delete entry for ${entryDateLabel(date)}`}
+                        >
+                          <XLg aria-hidden="true" />
+                        </Button>
                       </div>
-                    </div>
-                    <button 
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-75 sm:opacity-0 group-hover:opacity-100" 
-                      onClick={() => onDeleteEntry(date)}
-                    >
-                      <XLg className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="text-sm font-medium text-foreground/95 leading-relaxed line-clamp-4 whitespace-pre-wrap italic border-l-2 border-primary/20 pl-4 sm:pl-5 py-1 group-hover:border-primary transition-colors">
-                    "{entry.text}"
-                  </div>
-                </div>
-              ))
+                      <p className="mt-3 border-l-2 border-border pl-4 text-sm leading-relaxed whitespace-pre-wrap text-foreground/90 line-clamp-4">
+                        {entry.text}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-          </div>
+          </SectionCard>
         </div>
       </div>
+
+      <AlertDialog open={deleteTarget != null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent overlayClassName="z-[70]" className="z-[80]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? `The note for ${entryDateLabel(deleteTarget)} will be removed. This cannot be undone.` : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={onConfirmDelete}>
+              Delete entry
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
-
-

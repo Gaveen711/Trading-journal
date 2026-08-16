@@ -337,55 +337,459 @@ aside.apple-glass-panel:active {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-.dashboard-shell {
+.dashboard-shell,
+body:has(.dashboard-shell) {
   isolation: isolate;
+  color-scheme: light;
+  --background: 210 28% 97%;
+  --foreground: 222 38% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 38% 8%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 38% 8%;
+  --primary: 94 76% 27%;
+  --primary-to: 181 88% 28%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 24% 92%;
+  --secondary-foreground: 222 38% 10%;
+  --muted: 210 22% 93%;
+  --muted-foreground: 218 14% 40%;
+  --accent: 181 88% 28%;
+  --accent-foreground: 0 0% 100%;
+  --border: 215 20% 84%;
+  --input: 215 20% 82%;
+  --ring: 94 76% 27%;
+  --sidebar: 210 26% 96%;
+  --sidebar-foreground: 218 14% 38%;
+  --sidebar-primary: 94 76% 27%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 210 24% 90%;
+  --sidebar-accent-foreground: 222 38% 8%;
+  --sidebar-border: 215 20% 83%;
+  --sidebar-ring: 94 76% 27%;
+  --chart-1: 94 76% 27%;
+  --chart-2: 181 88% 28%;
+  --chart-3: 220 16% 38%;
+  --chart-4: 220 14% 54%;
+  --chart-5: 220 14% 70%;
+  --win: 143 72% 31%;
+  --loss: 350 72% 44%;
+  min-height: 100dvh;
+  background: hsl(var(--background));
+  font-family: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.dark .dashboard-shell,
+.dark body:has(.dashboard-shell) {
+  color-scheme: dark;
+  --background: 222 38% 3%;
+  --foreground: 165 22% 96%;
+  --card: 222 27% 6%;
+  --card-foreground: 165 22% 96%;
+  --popover: 222 28% 6%;
+  --popover-foreground: 165 22% 96%;
+  --primary: 92 100% 64%;
+  --primary-to: 181 100% 55%;
+  --primary-foreground: 222 38% 3%;
+  --secondary: 222 22% 10%;
+  --secondary-foreground: 165 22% 96%;
+  --muted: 222 20% 9%;
+  --muted-foreground: 215 15% 66%;
+  --accent: 181 100% 62%;
+  --accent-foreground: 222 38% 3%;
+  --border: 220 18% 15%;
+  --input: 220 18% 16%;
+  --ring: 92 100% 64%;
+  --sidebar: 222 42% 3%;
+  --sidebar-foreground: 215 15% 66%;
+  --sidebar-primary: 92 100% 64%;
+  --sidebar-primary-foreground: 222 38% 3%;
+  --sidebar-accent: 222 22% 10%;
+  --sidebar-accent-foreground: 165 22% 96%;
+  --sidebar-border: 220 18% 14%;
+  --sidebar-ring: 92 100% 64%;
+  --chart-1: 92 100% 64%;
+  --chart-2: 181 100% 62%;
+  --chart-3: 220 14% 62%;
+  --chart-4: 220 14% 45%;
+  --chart-5: 220 14% 30%;
+  --win: 143 78% 55%;
+  --loss: 350 90% 66%;
 }
 
 .dashboard-main-shell {
   background:
-    linear-gradient(180deg, hsl(var(--background) / 0.02), hsl(var(--background) / 0.32)),
-    radial-gradient(circle at 18% 8%, hsl(var(--primary) / 0.08), transparent 28rem),
-    radial-gradient(circle at 90% 22%, hsl(var(--accent) / 0.045), transparent 26rem);
+    linear-gradient(90deg, hsl(var(--foreground) / 0.022) 1px, transparent 1px),
+    linear-gradient(180deg, hsl(var(--foreground) / 0.022) 1px, transparent 1px),
+    radial-gradient(circle at 12% 4%, hsl(var(--primary) / 0.09), transparent 30rem),
+    radial-gradient(circle at 92% 16%, hsl(var(--accent) / 0.065), transparent 28rem),
+    hsl(var(--background));
+  background-size: 72px 72px, 72px 72px, auto, auto, auto;
 }
 
 .dashboard-sidebar {
   contain: layout;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.68)),
-    radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.10), transparent 18rem);
-  border-right: 1px solid hsl(var(--border) / 0.38);
-  box-shadow:
-    18px 0 58px -46px hsl(var(--primary) / 0.42),
-    inset -1px 0 0 rgba(255, 255, 255, 0.55);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  backdrop-filter: blur(22px) saturate(150%);
+  background: linear-gradient(180deg, hsl(var(--sidebar)), hsl(var(--background)));
+  border-right: 1px solid hsl(var(--sidebar-border));
+  box-shadow: 18px 0 56px -42px hsl(var(--primary) / 0.24);
   will-change: width;
 }
 
 .dark .dashboard-sidebar {
-  background:
-    linear-gradient(180deg, rgba(17, 19, 24, 0.88), rgba(9, 11, 15, 0.88)),
-    radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.13), transparent 18rem);
-  border-right-color: hsl(var(--border) / 0.7);
-  box-shadow:
-    18px 0 55px -38px rgba(0, 0, 0, 0.58),
-    inset -1px 0 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, hsl(222 44% 2%), hsl(222 38% 3%));
+  border-right-color: hsl(var(--sidebar-border));
+  box-shadow: 18px 0 56px -42px hsl(var(--primary) / 0.28);
+}
+
+.theme-obsidian-teal .dashboard-shell,
+.theme-obsidian-teal body:has(.dashboard-shell) {
+  --primary: 181 88% 27%;
+  --primary-to: 194 84% 38%;
+  --ring: 181 88% 27%;
+  --sidebar-primary: 181 88% 27%;
+  --sidebar-ring: 181 88% 27%;
+  --chart-1: 181 88% 27%;
+}
+
+.theme-nordic-slate .dashboard-shell,
+.theme-nordic-slate body:has(.dashboard-shell) {
+  --primary: 204 84% 40%;
+  --primary-to: 181 84% 32%;
+  --ring: 204 84% 40%;
+  --sidebar-primary: 204 84% 40%;
+  --sidebar-ring: 204 84% 40%;
+  --chart-1: 204 84% 40%;
+}
+
+.theme-crimson-rust .dashboard-shell,
+.theme-crimson-rust body:has(.dashboard-shell) {
+  --primary: 12 78% 42%;
+  --primary-to: 34 88% 42%;
+  --ring: 12 78% 42%;
+  --sidebar-primary: 12 78% 42%;
+  --sidebar-ring: 12 78% 42%;
+  --chart-1: 12 78% 42%;
+}
+
+.theme-royal-gold .dashboard-shell,
+.theme-royal-gold body:has(.dashboard-shell) {
+  --primary: 42 92% 40%;
+  --primary-to: 29 92% 43%;
+  --primary-foreground: 222 38% 3%;
+  --ring: 42 92% 40%;
+  --sidebar-primary: 42 92% 40%;
+  --sidebar-primary-foreground: 222 38% 3%;
+  --sidebar-ring: 42 92% 40%;
+  --chart-1: 42 92% 40%;
+}
+
+.dark.theme-obsidian-teal .dashboard-shell,
+.dark.theme-obsidian-teal body:has(.dashboard-shell) {
+  --primary: 181 100% 58%;
+  --primary-to: 194 100% 64%;
+  --ring: 181 100% 58%;
+  --sidebar-primary: 181 100% 58%;
+  --sidebar-ring: 181 100% 58%;
+  --chart-1: 181 100% 58%;
+}
+
+.dark.theme-nordic-slate .dashboard-shell,
+.dark.theme-nordic-slate body:has(.dashboard-shell) {
+  --primary: 204 100% 68%;
+  --primary-to: 181 100% 62%;
+  --ring: 204 100% 68%;
+  --sidebar-primary: 204 100% 68%;
+  --sidebar-ring: 204 100% 68%;
+  --chart-1: 204 100% 68%;
+}
+
+.dark.theme-crimson-rust .dashboard-shell,
+.dark.theme-crimson-rust body:has(.dashboard-shell) {
+  --primary: 12 100% 67%;
+  --primary-to: 34 100% 65%;
+  --ring: 12 100% 67%;
+  --sidebar-primary: 12 100% 67%;
+  --sidebar-ring: 12 100% 67%;
+  --chart-1: 12 100% 67%;
+}
+
+.dark.theme-royal-gold .dashboard-shell,
+.dark.theme-royal-gold body:has(.dashboard-shell) {
+  --primary: 44 100% 64%;
+  --primary-to: 29 100% 61%;
+  --ring: 44 100% 64%;
+  --sidebar-primary: 44 100% 64%;
+  --sidebar-ring: 44 100% 64%;
+  --chart-1: 44 100% 64%;
+}
+
+.dashboard-shell :is(h1, h2, h3, h4, h5, h6) {
+  font-family: 'Geist Variable', 'Geist', system-ui, sans-serif !important;
+}
+
+.dashboard-command-bar,
+.dashboard-mobile-header {
+  background: hsl(var(--background) / 0.78);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: 0 18px 50px -42px hsl(var(--primary) / 0.32);
+}
+
+.dashboard-brand-mark {
+  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.08), 0 0 24px hsl(var(--primary) / 0.08);
+}
+
+.dashboard-command-chip,
+.dashboard-status-panel,
+.dashboard-profile-row {
+  background: linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted) / 0.72));
+  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.035);
 }
 
 .dashboard-nav-item {
+  position: relative;
   border: 1px solid transparent;
   transform: translateZ(0);
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, transform 180ms var(--apple-ease), box-shadow 180ms ease !important;
 }
 
-.dashboard-nav-item:hover {
-  transform: translate3d(0, -1px, 0);
+.dashboard-nav-item[data-active="true"] {
+  border-color: hsl(var(--primary) / 0.18);
+  color: hsl(var(--primary));
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.13), hsl(var(--accent) / 0.035));
+  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.04), 0 14px 32px -24px hsl(var(--primary) / 0.58);
 }
 
-.dashboard-nav-item-active {
-  border-color: hsl(var(--primary-to) / 0.18);
-  box-shadow:
-    0 14px 28px -18px hsl(var(--primary) / 0.62),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+.dashboard-nav-item[data-active="true"]::before {
+  position: absolute;
+  inset-block: 0.55rem;
+  left: -0.3rem;
+  width: 2px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 14px hsl(var(--primary) / 0.82);
+  content: '';
+}
+
+.dashboard-shell [data-slot="card"] {
+  position: relative;
+  background: linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted) / 0.42));
+  border-color: hsl(var(--border));
+  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.035), 0 22px 48px -42px hsl(var(--primary) / 0.2) !important;
+  transition: transform 200ms var(--apple-ease), border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease !important;
+}
+
+.dashboard-stat-card {
+  min-height: 7.75rem;
+}
+
+.dashboard-stat-card::before {
+  position: absolute;
+  top: 0;
+  right: 1rem;
+  left: 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.72), transparent);
+  opacity: 0.52;
+  content: '';
+}
+
+.dashboard-stat-card [data-slot="card-content"] {
+  justify-content: space-between;
+  min-height: 5.7rem;
+}
+
+.dashboard-section-card [data-slot="card-header"] {
+  background: linear-gradient(90deg, hsl(var(--foreground) / 0.018), transparent 56%);
+}
+
+.dashboard-section-card [data-slot="card-footer"] {
+  background: hsl(var(--muted) / 0.58);
+}
+
+.dashboard-trade-card [data-slot="card"] {
+  border-color: hsl(var(--primary) / 0.2);
+  box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.04), 0 22px 54px -34px hsl(var(--primary) / 0.24) !important;
+}
+
+.dashboard-trade-rail,
+.dashboard-trade-card,
+.dashboard-trade-card [data-slot="card"],
+.dashboard-trade-card [data-slot="card-content"],
+.dashboard-trade-fields,
+.dashboard-trade-fields > *,
+.dashboard-trade-field-grid > [data-slot="field"] {
+  min-width: 0;
+}
+
+.dashboard-trade-card [data-slot="tabs-list"] {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dashboard-trade-card [data-slot="tabs"],
+.dashboard-trade-card [data-slot="tabs-content"] {
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-trade-card [data-slot="tabs"] {
+  flex-direction: column;
+}
+
+.dashboard-trade-direction {
+  border-color: currentColor;
+  background: transparent;
+  opacity: 0.72;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease !important;
+}
+
+.dashboard-trade-direction-buy {
+  color: hsl(var(--win));
+}
+
+.dashboard-trade-direction-sell {
+  color: hsl(var(--loss));
+}
+
+.dashboard-trade-direction[data-selected="true"] {
+  opacity: 1;
+}
+
+.dashboard-trade-direction-buy[data-selected="true"] {
+  border-color: hsl(var(--win) / 0.48);
+  background: hsl(var(--win) / 0.14);
+  box-shadow: inset 0 0 0 1px hsl(var(--win) / 0.08), 0 0 20px hsl(var(--win) / 0.1);
+}
+
+.dashboard-trade-direction-sell[data-selected="true"] {
+  border-color: hsl(var(--loss) / 0.48);
+  background: hsl(var(--loss) / 0.14);
+  box-shadow: inset 0 0 0 1px hsl(var(--loss) / 0.08), 0 0 20px hsl(var(--loss) / 0.1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-trade-direction:hover {
+    opacity: 1;
+  }
+
+  .dashboard-trade-direction-buy:hover {
+    background: hsl(var(--win) / 0.1);
+  }
+
+  .dashboard-trade-direction-sell:hover {
+    background: hsl(var(--loss) / 0.1);
+  }
+}
+
+.dashboard-trade-card [data-slot="tabs-trigger"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-trade-card :is([data-slot="input"], [data-slot="select-trigger"]) {
+  width: 100%;
+  min-height: 2.625rem;
+}
+
+.dashboard-trade-fields [data-slot="field-label"] {
+  min-height: 1rem;
+  align-items: center;
+}
+
+.dashboard-shell :is(input, textarea, [data-slot="select-trigger"]) {
+  background: hsl(var(--background) / 0.64);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease !important;
+}
+
+.dashboard-shell :is(input, textarea, [data-slot="select-trigger"]):focus-visible {
+  border-color: hsl(var(--primary) / 0.64) !important;
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1), 0 0 24px hsl(var(--primary) / 0.075) !important;
+}
+
+.dashboard-mobile-nav {
+  background: hsl(var(--card) / 0.9);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: 0 18px 52px hsl(222 50% 1% / 0.72), 0 0 26px hsl(var(--primary) / 0.08);
+}
+
+.dashboard-mobile-nav-item[aria-current="page"] {
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2), 0 0 18px hsl(var(--primary) / 0.08);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-nav-item:hover {
+    transform: translate3d(3px, 0, 0) !important;
+    border-color: hsl(var(--primary) / 0.12);
+  }
+
+  .dashboard-shell [data-slot="card"]:hover {
+    transform: translate3d(0, -3px, 0) !important;
+    border-color: hsl(var(--primary) / 0.3) !important;
+    box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.055), 0 28px 62px -38px hsl(var(--primary) / 0.34), 0 0 24px hsl(var(--primary) / 0.045) !important;
+  }
+
+  .dashboard-shell :is(button, a[href]):not(:disabled):hover {
+    filter: brightness(1.06);
+  }
+
+  .dashboard-shell tbody tr:hover {
+    background: hsl(var(--primary) / 0.045);
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .dashboard-shell :is(button, a[href], [role="button"]):not(:disabled):active {
+    transform: scale(0.97) !important;
+    filter: brightness(1.1);
+  }
+
+  .dashboard-shell [data-slot="card"]:active {
+    transform: scale(0.992) !important;
+    border-color: hsl(var(--primary) / 0.32) !important;
+  }
+
+  .dashboard-shell :is(button, a[href], [role="button"]) {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-mobile-header {
+    min-height: calc(3.5rem + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .dashboard-content {
+    padding-top: calc(5rem + env(safe-area-inset-top));
+  }
+
+  .dashboard-page-heading {
+    align-items: flex-start;
+  }
+
+  .dashboard-stat-card {
+    min-height: 7rem;
+  }
+
+  .dashboard-shell [data-slot="card"]:hover {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 380px) {
+  .dashboard-trade-field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .desktop-profile-card,
@@ -412,7 +816,11 @@ aside.apple-glass-panel:active {
 @media (prefers-reduced-motion: reduce) {
   .dashboard-sidebar,
   .dashboard-main-shell,
-  .dashboard-nav-item {
+  .dashboard-nav-item,
+  .dashboard-shell [data-slot="card"],
+  .dashboard-shell :is(button, a[href], input, textarea, [role="button"]) {
+    animation: none !important;
+    transform: none !important;
     transition-duration: 0.01ms !important;
   }
 }

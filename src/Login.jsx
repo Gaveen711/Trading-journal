@@ -13,9 +13,11 @@ import { getFriendlyErrorMessage } from './lib/errorUtils';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from './hooks/useAppTheme';
 
+// Best-effort enrichment on the sign-in critical path, so it is time-boxed: a
+// slow or blocked ipapi.co must not hold up the account write.
 async function fetchCountry() {
   try {
-    const res = await fetch('https://ipapi.co/json/');
+    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2000) });
     if (!res.ok) return null;
     const data = await res.json();
     return data.country_code || null;
@@ -260,10 +262,11 @@ function Login() {
       const firstName = first || '';
       const lastName = last.join(' ') || '';
 
-      // Initialize/update their user doc in Firestore to ensure names are present
-      const country = await fetchCountry();
+      // Initialize/update their user doc in Firestore to ensure names are present.
+      // The geo lookup is independent of the user read, so they run together
+      // rather than the third-party call gating the Firestore round trip.
       const userRef = doc(db, "users", user.uid);
-      const existingUser = await getDoc(userRef);
+      const [country, existingUser] = await Promise.all([fetchCountry(), getDoc(userRef)]);
       const profileData = {
         email: user.email,
         firstName: firstName || 'Google',

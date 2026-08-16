@@ -2,10 +2,10 @@
 
 User-agent: *
 Allow: /
-Disallow: /app/
+# No trailing slash: "/app/" alone leaves bare "/app" crawlable, and it returns
+# 200 then client-redirects anonymous crawlers to /login.
+Disallow: /app
 Disallow: /api/
-Disallow: /checkout-success
-Disallow: /checkout-cancel
 
 # Crawl rate
 Crawl-delay: 1

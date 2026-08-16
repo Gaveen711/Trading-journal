@@ -1,27 +1,26 @@
 import { useState } from 'react';
-import { ArrowRight, Bug, Clock3, CreditCard, Mail, MessageCircle, PlugZap, ShieldCheck } from 'lucide-react';
-
+import { ShieldCheck } from 'lucide-react';
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
-import './PublicEditorial.css';
+import { CTAButton, Panel, SectionHead } from '../components/PublicSite';
+import { useDeskReveal } from '../lib/goldSessions';
+import './PublicSite.css';
+import './ContactPage.css';
 
 const CONTACT_ROUTES = [
   {
-    icon: Mail,
-    label: 'Email desk',
+    label: 'Email',
     value: 'info@xaujournal.com',
     helper: 'Account, billing, product and privacy questions.',
     href: 'mailto:info@xaujournal.com',
   },
   {
-    icon: Clock3,
-    label: 'Response window',
+    label: 'Response',
     value: 'Within one business day',
-    helper: 'Monday to Friday support for traders worldwide.',
+    helper: 'Monday to Friday, for traders in every timezone.',
   },
   {
-    icon: MessageCircle,
-    label: 'Trader community',
+    label: 'Community',
     value: 'Discord feedback channel',
     helper: 'Share an idea, report an issue or follow product updates.',
     href: 'https://discord.gg/smbNwBZC2',
@@ -29,18 +28,18 @@ const CONTACT_ROUTES = [
 ];
 
 const SUPPORT_TOPICS = [
-  { icon: Bug, label: 'Bug report', detail: 'Include the page, browser, device and the exact steps that caused the issue.', href: 'mailto:info@xaujournal.com?subject=Bug%20report' },
-  { icon: PlugZap, label: 'Broker sync', detail: 'Ask about MT4/MT5 connection status, MetaAPI or a missing trade import.', href: 'mailto:info@xaujournal.com?subject=Broker%20sync%20help' },
-  { icon: CreditCard, label: 'Billing and account', detail: 'Get help with Pro access, invoices, cancellation, refunds or account changes.', href: 'mailto:info@xaujournal.com?subject=Billing%20and%20account%20help' },
-  { icon: ShieldCheck, label: 'Privacy request', detail: 'Request data deletion or ask how account and broker data are handled.', href: '/privacy' },
+  { label: 'Bug report', detail: 'Include the page, browser, device and the exact steps that caused the issue.', href: 'mailto:info@xaujournal.com?subject=Bug%20report' },
+  { label: 'Broker sync', detail: 'Ask about MT4/MT5 connection status, MetaAPI or a missing trade import.', href: 'mailto:info@xaujournal.com?subject=Broker%20sync%20help' },
+  { label: 'Billing', detail: 'Get help with Pro access, invoices, cancellation, refunds or account changes.', href: 'mailto:info@xaujournal.com?subject=Billing%20and%20account%20help' },
+  { label: 'Privacy', detail: 'Request data deletion or ask how account and broker data are handled.', href: '/privacy' },
 ];
 
 function Field({ id, label, required = false, error, children }) {
   return (
-    <label className='xep-field' htmlFor={id}>
-      <span>{label}{required ? <em>Required</em> : <em>Optional</em>}</span>
+    <label className='xj-field' htmlFor={id}>
+      <span>{label}<em>{required ? 'Required' : 'Optional'}</em></span>
       {children}
-      {error ? <small className='xep-field-error' id={`${id}-error`} role='alert'>{error}</small> : null}
+      {error ? <small className='xj-field-error' id={`${id}-error`} role='alert'>{error}</small> : null}
     </label>
   );
 }
@@ -50,6 +49,7 @@ export function ContactPage() {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle');
   const [sentEmail, setSentEmail] = useState('');
+  useDeskReveal();
 
   const set = (key) => (event) => {
     const value = event.target.value;
@@ -98,102 +98,118 @@ export function ContactPage() {
   };
 
   return (
-    <div data-ux-skip='true'>
+    <>
       <PublicNavbar />
+      <div className='xj' data-ux-skip='true'>
+        <main data-ux-skip='true'>
+          <section className='xj-cover' aria-labelledby='contact-heading'>
+            <div className='xj-shell xjc-grid'>
+              <div className='xj-settle'>
+                <p className='xj-eyebrow'>Support line · human reply</p>
+                <h1 id='contact-heading' className='xj-h1'>Bring the <em>details.</em></h1>
+                <p className='xj-lede'>
+                  Questions about Pro, broker sync, billing, privacy or a bug? Send the evidence
+                  once. A real person reads it and routes it to the right place.
+                </p>
 
-      <main className='xep-page' data-ux-skip='true'>
-        <section className='xep-contact-hero' aria-labelledby='contact-heading'>
-          <div className='xep-shell xep-contact-grid'>
-            <div className='xep-contact-copy'>
-              <p className='xep-kicker'><span>01</span> Support docket / human reply</p>
-              <h1 id='contact-heading' className='xep-title'>Bring the details.<br /><em>We’ll trace the issue.</em></h1>
-              <p className='xep-lede'>Questions about Pro, broker sync, billing, privacy or a bug? Send the evidence once. A real person will read it and route it to the right place.</p>
+                <ul className='xjc-routes'>
+                  {CONTACT_ROUTES.map(({ label, value, helper, href }) => {
+                    const content = (
+                      <>
+                        <span className='xj-label'>{label}</span>
+                        <div><strong>{value}</strong><p>{helper}</p></div>
+                      </>
+                    );
+                    return (
+                      <li key={label}>
+                        {href ? (
+                          <a
+                            href={href}
+                            target={href.startsWith('http') ? '_blank' : undefined}
+                            rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                          >
+                            {content}
+                          </a>
+                        ) : (
+                          <div className='xjc-route-static'>{content}</div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
 
-              <ul className='xep-contact-routes'>
-                {CONTACT_ROUTES.map(({ icon: Icon, label, value, helper, href }) => {
-                  const content = (
-                    <div className='xep-contact-route'>
-                      <Icon aria-hidden='true' />
-                      <div><span>{label}</span><strong>{value}</strong><p>{helper}</p></div>
-                    </div>
-                  );
-                  return (
-                    <li key={label}>
-                      {href ? <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}>{content}</a> : content}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div className='xep-docket'>
-              {status === 'sent' ? (
-                <div className='xep-success' role='status' aria-live='polite'>
-                  <ShieldCheck aria-hidden='true' />
-                  <h2>Message logged.</h2>
-                  <p>We received your note and will reply to <strong>{sentEmail}</strong> as soon as possible.</p>
-                  <button className='xep-button xep-button--primary' type='button' onClick={() => setStatus('idle')}>Send another message <ArrowRight aria-hidden='true' /></button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} noValidate>
-                  <div className='xep-docket-head'>
-                    <div><span>Incoming request</span><strong>SUPPORT / NEW</strong></div>
-                    <span className='xep-stamp'>Reply<br />within 1 day</span>
+              <Panel className='xjc-form' label='Incoming · support' meta='Reply in 1 business day'>
+                {status === 'sent' ? (
+                  <div className='xjc-success' role='status' aria-live='polite'>
+                    <ShieldCheck aria-hidden='true' />
+                    <h2 className='xj-h3'>Message logged.</h2>
+                    <p>We received your note and will reply to <strong>{sentEmail}</strong> as soon as possible.</p>
+                    <CTAButton ghost onClick={() => setStatus('idle')}>Send another message</CTAButton>
                   </div>
-                  <div className='xep-docket-body'>
-                    <p>Include the account email, affected page and what you expected to happen. Specifics shorten the reply.</p>
+                ) : (
+                  <form onSubmit={handleSubmit} noValidate>
+                    <p className='xjc-hint'>
+                      Include the account email, the affected page and what you expected to happen.
+                      Specifics shorten the reply.
+                    </p>
 
-                    <div className='xep-field-grid'>
+                    <div className='xjc-field-grid'>
                       <Field id='contact-name' label='Name' required error={errors.name}>
-                        <input id='contact-name' className='xep-input' value={form.name} onChange={set('name')} autoComplete='name' aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'contact-name-error' : undefined} />
+                        <input id='contact-name' className='xj-input' value={form.name} onChange={set('name')} autoComplete='name' aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'contact-name-error' : undefined} />
                       </Field>
                       <Field id='contact-email' label='Email' required error={errors.email}>
-                        <input id='contact-email' className='xep-input' type='email' value={form.email} onChange={set('email')} autoComplete='email' aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'contact-email-error' : undefined} />
+                        <input id='contact-email' className='xj-input' type='email' value={form.email} onChange={set('email')} autoComplete='email' aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'contact-email-error' : undefined} />
                       </Field>
                     </div>
 
                     <Field id='contact-subject' label='Subject'>
-                      <input id='contact-subject' className='xep-input' value={form.subject} onChange={set('subject')} placeholder='Broker sync, billing, bug report…' />
+                      <input id='contact-subject' className='xj-input' value={form.subject} onChange={set('subject')} placeholder='Broker sync, billing, bug report…' />
                     </Field>
 
                     <Field id='contact-message' label='Message' required error={errors.message}>
-                      <textarea id='contact-message' className='xep-input' value={form.message} onChange={set('message')} rows='6' aria-invalid={Boolean(errors.message)} aria-describedby={errors.message ? 'contact-message-error' : undefined} placeholder='Page, account email, what happened, and what you already tried.' />
+                      <textarea id='contact-message' className='xj-input' value={form.message} onChange={set('message')} rows='6' aria-invalid={Boolean(errors.message)} aria-describedby={errors.message ? 'contact-message-error' : undefined} placeholder='Page, account email, what happened, and what you already tried.' />
                     </Field>
 
-                    {status === 'error' ? <p className='xep-form-error' role='alert'>The message did not send. Try again, or email info@xaujournal.com directly.</p> : null}
+                    {status === 'error' ? (
+                      <p className='xjc-form-error' role='alert'>
+                        The message did not send. Try again, or email info@xaujournal.com directly.
+                      </p>
+                    ) : null}
 
-                    <div className='xep-submit-row'>
+                    <div className='xjc-submit'>
                       <small>Your message is used only to answer this request.</small>
-                      <button className='xep-button xep-button--primary' type='submit' disabled={status === 'sending'}>
-                        {status === 'sending' ? 'Sending…' : 'Send the docket'} <ArrowRight aria-hidden='true' />
-                      </button>
+                      <CTAButton type='submit' disabled={status === 'sending'}>
+                        {status === 'sending' ? 'Sending…' : 'Send it'}
+                      </CTAButton>
                     </div>
-                  </div>
-                </form>
-              )}
+                  </form>
+                )}
+              </Panel>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className='xep-section xep-section--sheet' aria-labelledby='support-topics-heading'>
-          <div className='xep-shell'>
-            <p className='xep-kicker'><span>02</span> Route it faster</p>
-            <h2 id='support-topics-heading' className='xep-heading'>Choose the closest <em>support desk.</em></h2>
-            <div className='xep-support-list'>
-              {SUPPORT_TOPICS.map(({ icon: Icon, label, detail, href }, index) => (
-                <a className='xep-support-row' href={href} key={label}>
-                  <span>0{index + 1}</span>
-                  <h3>{label}</h3>
-                  <p>{detail}</p>
-                  <Icon aria-hidden='true' />
-                </a>
-              ))}
+          <section className='xj-section' aria-labelledby='support-topics-heading'>
+            <div className='xj-shell'>
+              <SectionHead
+                eyebrow='Faster if you pick a desk'
+                id='support-topics-heading'
+                title={<>Choose the closest <em>support desk.</em></>}
+              />
+              <div className='xj-rows xj-reveal'>
+                {SUPPORT_TOPICS.map(({ label, detail, href }) => (
+                  <a className='xj-row' href={href} key={label}>
+                    <span>{label}</span>
+                    <p>{detail}</p>
+                    <svg viewBox='0 0 14 14' aria-hidden='true'><path d='M3 11L11 3M11 3H5M11 3v6' /></svg>
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-      </main>
-
+          </section>
+        </main>
+      </div>
       <PublicFooter />
-    </div>
+    </>
   );
 }

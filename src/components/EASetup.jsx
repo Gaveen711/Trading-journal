@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { useBrokerAccounts } from '../hooks/useBrokerAccounts';
+import { useSessionBrokerAccounts } from '../app/di/AuthenticatedSessionContext.jsx';
 import { auth } from '../firebase';
 // connectBrokerCallable and syncBrokerTradesCallable removed in favor of Hono useBrokerAccounts hook
 import { getFriendlyErrorMessage } from '../lib/errorUtils';
@@ -763,7 +763,7 @@ export default function EASetup() {
   } = useOutletContext();
   
   const toast = useToast();
-  const { accounts, addAccount, syncAccount, removeAccount } = useBrokerAccounts();
+  const { accounts, addAccount, syncAccount, removeAccount } = useSessionBrokerAccounts();
 
   // Platform selection (used in modals)
   const [selectedPlatform, setSelectedPlatform] = useState('mt4'); 

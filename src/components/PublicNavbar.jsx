@@ -1,56 +1,59 @@
-import { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion as Motion } from 'framer-motion';
-import Logo from './Logo';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowUp } from 'lucide-react';
-import './PublicNavbar.css';
-import '../pages/PublicExperience.css';
+import { formatUtc, useUtcClock } from '../lib/goldSessions';
+import { Arrow, Wordmark } from './PublicSite';
+
+const NAV_LINKS = [
+  { to: '/', label: 'Product', index: '01' },
+  { to: '/blogs', label: 'Blog', index: '02' },
+  { to: '/pricing', label: 'Pricing', index: '03' },
+  { to: '/contact', label: 'Contact', index: '04' },
+];
+
+function MenuClock() {
+  const now = useUtcClock();
+  return <span className='xj-num'>{formatUtc(now, false)} UTC</span>;
+}
 
 export function PublicNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     let frameId = 0;
-    const updateNavigation = () => {
+    const update = () => {
       frameId = 0;
-      const nextScrolled = window.scrollY > 20;
-      const nextShowScrollTop = window.scrollY > 560;
-      setIsScrolled((current) => current === nextScrolled ? current : nextScrolled);
-      setShowScrollTop((current) => current === nextShowScrollTop ? current : nextShowScrollTop);
+      const nextScrolled = window.scrollY > 16;
+      const nextTop = window.scrollY > 620;
+      setIsScrolled((current) => (current === nextScrolled ? current : nextScrolled));
+      setShowScrollTop((current) => (current === nextTop ? current : nextTop));
     };
-    const handleScroll = () => {
-      if (!frameId) frameId = window.requestAnimationFrame(updateNavigation);
+    const onScroll = () => {
+      if (!frameId) frameId = window.requestAnimationFrame(update);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    updateNavigation();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', onScroll);
       if (frameId) window.cancelAnimationFrame(frameId);
     };
   }, []);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [mobileMenuOpen]);
+  }, [menuOpen]);
 
   useEffect(() => {
-    setMobileMenuOpen(false);
+    setMenuOpen(false);
   }, [location.pathname]);
-
-  const navLinks = [
-    { to: '/', label: 'How it works' },
-    { to: '/the-story', label: 'The Story' },
-    { to: '/pricing', label: 'Pricing' },
-    { to: '/contact', label: 'Contact' },
-  ];
 
   const scrollToTop = (event) => {
     event.currentTarget.blur();
@@ -58,135 +61,118 @@ export function PublicNavbar() {
     window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
   };
 
+  // Clicking the current route should return to the top rather than no-op.
+  const handleSamePath = (to) => (event) => {
+    if (to === location.pathname) {
+      event.preventDefault();
+      scrollToTop(event);
+    }
+  };
+
   return (
-    <>
+    <div className='xj' data-ux-skip='true'>
       <header>
-        <nav
-          data-public-nav
-          className={`fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-6xl z-[150] h-14 md:h-16 flex items-center justify-between px-5 md:px-8 backdrop-blur-xl border rounded-2xl md:rounded-full shadow-lg transition-all duration-300 will-change-transform ${isScrolled
-            ? 'bg-background/90 border-border/40 shadow-xl'
-            : 'bg-background/60 border-border/20 shadow-md'
-            }`}
-        >
-          <button
-            onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); navigate('/', { replace: true }); }}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity z-[151]"
-            aria-label="Go to XAU Journal home"
-          >
-            <Logo iconSize="w-6 h-6" />
-          </button>
+        <nav className={isScrolled ? 'xj-nav is-scrolled' : 'xj-nav'} aria-label='Site'>
+          <div className='xj-nav-inner'>
+            <NavLink to='/' aria-label='xaujournal — home' onClick={handleSamePath('/')}>
+              <Wordmark />
+            </NavLink>
 
-          <ul className="hidden lg:flex items-center gap-1 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2">
-            {navLinks.map(({ to, label }) => (
-              <Motion.li key={to} whileHover={{ y: -1 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                <NavLink
-                  to={to}
-                  onClick={(e) => {
-                    if (to === location.pathname) {
-                      e.preventDefault();
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    } else if (to.startsWith('/#')) {
-                      const hash = to.split('#')[1];
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        const el = document.getElementById(hash);
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                  className={({ isActive }) =>
-                    `text-[15px] font-semibold px-5 py-2.5 rounded-full transition-all duration-200 ${isActive
-                      ? 'text-foreground bg-foreground/5'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
-                    }`
-                  }
-                >
-                  {label}
-                </NavLink>
-              </Motion.li>
-            ))}
-          </ul>
+            <ul className='xj-nav-links'>
+              {NAV_LINKS.map(({ to, label }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={to === '/'}
+                    onClick={handleSamePath(to)}
+                    className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+                  >
+                    {label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
 
-          <div className="flex items-center gap-2.5 z-[151]">
-            <div className="hidden lg:block">
-              <button onClick={() => navigate('/login')} className="cta active:scale-95 transition-all duration-300">
-                <svg viewBox="0 0 24 24" className="arr-2" aria-hidden="true">
-                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-                </svg>
-                <span className="text">Get Started</span>
-                <span className="circle" aria-hidden="true" />
-                <svg viewBox="0 0 24 24" className="arr-1" aria-hidden="true">
-                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
+            <div className='xj-nav-cta'>
+              <NavLink className='xj-nav-signin' to='/login?mode=signin'>Sign in</NavLink>
+              <button className='xj-cta' type='button' onClick={() => navigate('/login?mode=signup')}>
+                Start free
+                <Arrow />
+              </button>
+              <button
+                className='xj-burger'
+                type='button'
+                onClick={() => setMenuOpen((open) => !open)}
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={menuOpen}
+                aria-controls='xj-mobile-menu'
+              >
+                <svg viewBox='0 0 24 24' aria-hidden='true'>
+                  {menuOpen ? <path d='M18 6L6 18M6 6l12 12' /> : <path d='M3 8h18M3 16h18' />}
                 </svg>
               </button>
             </div>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-full border border-border/30 hover:bg-foreground/5 transition-all duration-200 text-muted-foreground hover:text-foreground" aria-label="Toggle menu" aria-expanded={mobileMenuOpen} aria-controls="public-mobile-menu">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                {mobileMenuOpen ? <path d="M18 6L6 18M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
-              </svg>
-            </button>
           </div>
         </nav>
 
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <Motion.div
-              id="public-mobile-menu"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="lg:hidden fixed inset-0 bg-background/98 backdrop-blur-xl z-[140] flex flex-col items-center justify-center gap-8"
-              onClick={() => setMobileMenuOpen(false)}
+        <div id='xj-mobile-menu' className={menuOpen ? 'xj-menu is-open' : 'xj-menu'} aria-hidden={!menuOpen}>
+          <nav aria-label='Mobile'>
+            {NAV_LINKS.map(({ to, label, index }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                tabIndex={menuOpen ? 0 : -1}
+                onClick={(event) => {
+                  setMenuOpen(false);
+                  handleSamePath(to)(event);
+                }}
+                className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+              >
+                <small>{index}</small>
+                {label}
+              </NavLink>
+            ))}
+            <NavLink
+              to='/login?mode=signin'
+              tabIndex={menuOpen ? 0 : -1}
+              onClick={() => setMenuOpen(false)}
             >
-              <div className="flex flex-col items-center justify-center gap-8" onClick={(e) => e.stopPropagation()}>
-                {navLinks.map(({ to, label }) => (
-                  <NavLink key={to} to={to} onClick={(e) => {
-                    setMobileMenuOpen(false);
-                    if (to === location.pathname) {
-                      e.preventDefault();
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    } else if (to.startsWith('/#')) {
-                      const hash = to.split('#')[1];
-                      if (location.pathname === '/') {
-                        e.preventDefault();
-                        const el = document.getElementById(hash);
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }
-                  }} className={({ isActive }) =>
-                    `text-3xl font-bold tracking-tight transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'
-                    }`
-                  }>
-                    {label}
-                  </NavLink>
-                ))}
-                <button onClick={() => { setMobileMenuOpen(false); navigate('/login'); }} className="cta cta-mobile active:scale-95 transition-all duration-300">
-                  <svg viewBox="0 0 24 24" className="arr-2" aria-hidden="true">
-                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-                  </svg>
-                  <span className="text">Get Started</span>
-                  <span className="circle" aria-hidden="true" />
-                  <svg viewBox="0 0 24 24" className="arr-1" aria-hidden="true">
-                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z" />
-                  </svg>
-                </button>
-              </div>
-            </Motion.div>
-          )}
-        </AnimatePresence>
+              <small>05</small>
+              Sign in
+            </NavLink>
+          </nav>
+
+          <button
+            className='xj-cta'
+            type='button'
+            tabIndex={menuOpen ? 0 : -1}
+            onClick={() => {
+              setMenuOpen(false);
+              navigate('/login?mode=signup');
+            }}
+          >
+            Start free
+            <Arrow />
+          </button>
+
+          <div className='xj-menu-foot'>
+            <span>XAU/USD</span>
+            {menuOpen ? <MenuClock /> : <span aria-hidden='true' />}
+          </div>
+        </div>
       </header>
 
       <button
-        type="button"
-        className={'public-scroll-top' + (showScrollTop ? ' is-visible' : '')}
+        type='button'
+        className={showScrollTop ? 'xj-top is-visible' : 'xj-top'}
         onClick={scrollToTop}
-        aria-label="Scroll to top"
+        aria-label='Scroll to top'
         aria-hidden={!showScrollTop}
         tabIndex={showScrollTop ? 0 : -1}
       >
-        <ArrowUp aria-hidden="true" />
+        <ArrowUp aria-hidden='true' />
       </button>
-
-    </>
+    </div>
   );
 }

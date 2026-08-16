@@ -1,53 +1,177 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
-import { formatCurrencyCompact, formatCurrency } from '../lib/tradeUtils';
+import { formatCurrencyCompact, formatCurrency, formatSigned } from '../lib/tradeUtils';
 import { ANALYTICS_VERSION, getTradeOutcome, getTradeStrategyTags, tradePnlValue } from '../lib/tradeAnalytics.js';
-import { BarChartLine, ClockFill, ShieldExclamation, Share, Wallet2, ArrowUpRight, GraphUp, GraphDown, Award, Activity, LockFill } from 'react-bootstrap-icons';
+import { Share } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { ShareTradeModal } from '../components/ShareTradeModal';
+import { StatCard } from '../components/app/StatCard';
+import { SectionCard } from '../components/app/SectionCard';
+import { EmptyState } from '../components/app/EmptyState';
+import { DataTable } from '../components/app/DataTable';
+import { Button } from '../components/ui/button';
+import { Skeleton } from '../components/ui/skeleton';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
+// Pulls html2canvas (~48 kB gzip), and only ever renders behind an explicit
+// Share click — so it must not sit in this route's chunk.
+const ShareTradeModal = lazy(() =>
+  import('../components/ShareTradeModal').then((m) => ({ default: m.ShareTradeModal })));
+
+// Chart colors come from the live CSS tokens so every accent template and both
+// modes retint the charts without a per-theme color map (Phase 4 migrates the
+// chart internals; this phase migrates the colors).
+const cssHsl = (name, alpha) => {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return alpha != null ? `hsl(${v} / ${alpha})` : `hsl(${v})`;
+};
+
+// One source for the session series — the chart datasets, the legend, and the
+// summary grid all resolve through these tokens.
+const SESSION_TOKENS = {
+  London: '--chart-1',
+  NY: '--chart-2',
+  Asia: '--chart-3',
+  Overlap: '--chart-4',
+};
+
+// The theme args are unused except as reactivity keys: the token values change
+// when the .dark class or the theme-* template class flips on <html>, which
+// React cannot observe directly.
+const resolveChartColors = (_isLightMode, _currentTemplate) => ({
+  win: cssHsl('--win', 0.75),
+  winBorder: cssHsl('--win'),
+  loss: cssHsl('--loss', 0.75),
+  lossBorder: cssHsl('--loss'),
+  grid: cssHsl('--border', 0.5),
+  ticks: cssHsl('--muted-foreground'),
+  border: cssHsl('--border'),
+  tooltipBg: cssHsl('--popover'),
+  tooltipTitle: cssHsl('--muted-foreground'),
+  tooltipBody: cssHsl('--foreground'),
+  strategy: cssHsl('--chart-1', 0.8),
+  strategyBorder: cssHsl('--chart-1'),
+  sessions: Object.fromEntries(
+    Object.entries(SESSION_TOKENS).map(([session, token]) => [session, cssHsl(token)])
+  ),
+});
+
+// Compact currency with the Console sign treatment: always-signed, U+2212
+// minus (formatCurrencyCompact alone renders an ASCII hyphen, no plus).
+const signedCompact = (val) => {
+  if (val > 0) return `+${formatCurrencyCompact(val)}`;
+  if (val < 0) return `−${formatCurrencyCompact(Math.abs(val))}`;
+  return formatCurrencyCompact(val);
+};
+
+const chip = (text) => (
+  <span className="inline-flex h-[18px] items-center rounded-sm border border-border px-1.5 font-mono text-[11px] text-muted-foreground">
+    {text}
+  </span>
+);
+
+const pnlCell = (value) => (
+  <span className={value > 0 ? 'text-win' : value < 0 ? 'text-loss' : 'text-foreground'}>
+    {formatSigned(value)}
+  </span>
+);
+
+const SETUP_COLUMNS = [
+  {
+    id: 'setup',
+    header: 'Setup',
+    cell: (setup) => <span className="font-medium text-foreground">{setup.name}</span>,
+  },
+  { id: 'record', header: 'Record', numeric: true, cell: (setup) => `${setup.wins}W / ${setup.losses}L` },
+  { id: 'winRate', header: 'Win rate', numeric: true, cell: (setup) => `${setup.winRate}%` },
+  { id: 'pnl', header: 'Net P&L', numeric: true, cell: (setup) => pnlCell(setup.pnl) },
+];
+
+// Direction is form + word, never green/red — those belong to P&L alone.
+const signalColumns = (onShare) => [
+  { id: 'date', header: 'Date', cell: (t) => <span className="text-muted-foreground">{t.date}</span> },
+  {
+    id: 'direction',
+    header: 'Type',
+    cell: (t) => {
+      const isLong = t.direction === 'BUY' || t.direction === 'LONG';
+      return (
+        <span className="text-foreground">
+          <span aria-hidden="true">{isLong ? '▲' : '▼'}</span> {isLong ? 'Buy' : 'Sell'}
+        </span>
+      );
+    },
+  },
+  {
+    id: 'context',
+    header: 'Context',
+    hideBelow: 'md',
+    cell: (t) => {
+      const strategy = getTradeStrategyTags(t)[0];
+      if (!t.session && !strategy) return '—';
+      return (
+        <span className="inline-flex items-center gap-1">
+          {t.session ? chip(t.session) : null}
+          {strategy ? chip(strategy) : null}
+        </span>
+      );
+    },
+  },
+  { id: 'pnl', header: 'P&L', numeric: true, cell: (t) => pnlCell(tradePnlValue(t)) },
+  {
+    id: 'share',
+    header: <span className="sr-only">Share</span>,
+    align: 'end',
+    cell: (t) => (
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        aria-label={`Share trade from ${t.date}`}
+        onClick={() => onShare(t)}
+      >
+        <Share aria-hidden="true" />
+      </Button>
+    ),
+  },
+];
+
 const AnalyticsSkeleton = () => (
-  <div className="space-y-8 animate-pulse">
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      {[1, 2, 3, 4, 5, 6].map(i => (
-        <div key={i} className="h-24 bg-muted rounded-2xl"></div>
+  <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Skeleton key={i} className="h-24" />
       ))}
     </div>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="h-80 bg-muted rounded-2xl"></div>
-      <div className="h-80 bg-muted rounded-2xl"></div>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Skeleton className="h-80" />
+      <Skeleton className="h-80" />
     </div>
-    <div className="h-64 bg-muted rounded-2xl"></div>
+    <Skeleton className="h-64" />
   </div>
 );
 
-const PremiumOverlay = ({ title, description, onUpgrade }) => (
-  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[6px] border border-border/10 rounded-[2rem] p-6 text-center animate-in fade-in duration-300">
-    <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary mb-3 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
-      <LockFill className="w-5 h-5" />
-    </div>
-    <h4 className="text-sm font-black uppercase tracking-wider text-foreground mb-1">{title}</h4>
-    <p className="text-[10px] uppercase tracking-widest text-muted-foreground/80 max-w-[240px] leading-relaxed mb-4">{description}</p>
-    <button
-      onClick={onUpgrade}
-      className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-    >
-      Upgrade to Pro
-    </button>
-  </div>
+// Redaction, not blur: locked sections never put the real data in the DOM.
+const LockedSection = ({ description, onUpgrade }) => (
+  <EmptyState
+    title="Unlock with Pro"
+    description={description}
+    action={
+      <Button size="sm" onClick={onUpgrade}>
+        Upgrade to Pro
+      </Button>
+    }
+  />
 );
 
 export function AnalyticsPage() {
   const { trades, analytics, isLoadingTrades, isLoadingMore, hasMoreTrades, loadAllTrades, walletBalance, plan, isTrial, setShowPricingModal } = useOutletContext();
   const isFree = (plan === 'basic' || plan === 'free') && !isTrial;
   const navigate = useNavigate();
-  const { isLightMode } = useAppTheme();
+  const { isLightMode, currentTemplate } = useAppTheme();
 
   const [showExact, setShowExact] = useState({});
   const [sharingTrade, setSharingTrade] = useState(null);
@@ -174,18 +298,6 @@ export function AnalyticsPage() {
     const monthlyPnlLabels = monthsOrder.filter(m => monthsWithTrades.has(m));
     const monthlyPnlValues = monthlyPnlLabels.map(m => monthlyPnlMap[m] || 0);
 
-    const monthlyPnlChartData = {
-      labels: monthlyPnlLabels,
-      datasets: [{
-        label: 'Monthly P/L',
-        data: monthlyPnlValues,
-        backgroundColor: monthlyPnlValues.map(v => v >= 0 ? 'rgba(163, 230, 53, 0.6)' : 'rgba(248, 113, 113, 0.6)'),
-        borderColor: monthlyPnlValues.map(v => v >= 0 ? '#84cc16' : '#ef4444'),
-        borderWidth: 1.5,
-        borderRadius: 8,
-      }]
-    };
-
     // 3. Session Edge Analysis Grouped Bar Chart & Stats
     const getNormalizedSession = (s) => {
       if (!s) return 'Asia';
@@ -233,32 +345,11 @@ export function AnalyticsPage() {
       }
     });
 
-    const sessionColors = {
-      London: '#E5B80B',
-      NY: '#8b5cf6',
-      Asia: '#10b981',
-      Overlap: '#f97316'
-    };
-
-    const sessionWeeklyChartData = {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      datasets: ['London', 'NY', 'Asia', 'Overlap'].map(session => ({
-        label: session,
-        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => parseFloat(sessionWeeklyPnl[session][day].toFixed(2))),
-        backgroundColor: sessionColors[session],
-        borderRadius: 4,
-        borderWidth: 0,
-        barPercentage: 0.8,
-        categoryPercentage: 0.8,
-      }))
-    };
-
     const sessionSummary = ['Asia', 'London', 'Overlap', 'NY'].map(key => {
       const s = sessionSummaryMap[key];
       const winRate = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0;
       return {
         key,
-        label: key === 'NY' ? 'NY' : key.toUpperCase(),
         winRate,
         total: s.total
       };
@@ -267,18 +358,6 @@ export function AnalyticsPage() {
     // 5. Performance by Strategy
     const strategyLabels = Object.keys(strategyDataMap).sort((a, b) => strategyDataMap[b].pnl - strategyDataMap[a].pnl);
     const strategyValues = strategyLabels.map(l => strategyDataMap[l].pnl);
-
-    const performanceByStrategyChartData = {
-      labels: strategyLabels,
-      datasets: [{
-        label: 'Strategy Performance',
-        data: strategyValues,
-        backgroundColor: strategyValues.map(v => v >= 0 ? 'rgba(139, 92, 246, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
-        borderColor: strategyValues.map(v => v >= 0 ? '#8b5cf6' : '#ef4444'),
-        borderWidth: 1.5,
-        borderRadius: 8,
-      }]
-    };
 
     const totalPnl = hasAggregate ? Number(analytics.totalPnl) || 0 : tradesList.reduce((s, t) => s + tradePnlValue(t), 0);
     const currentWalletBalance = (walletBalance || 0) + totalPnl;
@@ -294,10 +373,12 @@ export function AnalyticsPage() {
       pf,
       sortedTrades,
       setupPerformanceList,
-      monthlyPnlChartData,
-      sessionWeeklyChartData,
+      monthlyPnlLabels,
+      monthlyPnlValues,
+      sessionWeeklyPnl,
       sessionSummary,
-      performanceByStrategyChartData,
+      strategyLabels,
+      strategyValues,
       currentWalletBalance,
       winRatePercent
     };
@@ -313,13 +394,20 @@ export function AnalyticsPage() {
     pf,
     sortedTrades,
     setupPerformanceList,
-    monthlyPnlChartData,
-    sessionWeeklyChartData,
+    monthlyPnlLabels,
+    monthlyPnlValues,
+    sessionWeeklyPnl,
     sessionSummary,
-    performanceByStrategyChartData,
+    strategyLabels,
+    strategyValues,
     currentWalletBalance,
     winRatePercent
   } = stats;
+
+  const chartColors = useMemo(
+    () => resolveChartColors(isLightMode, currentTemplate),
+    [isLightMode, currentTemplate]
+  );
 
   const chartOptions = useMemo(() => ({
     responsive: true,
@@ -329,505 +417,302 @@ export function AnalyticsPage() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(13, 13, 20, 0.9)',
+        backgroundColor: chartColors.tooltipBg,
+        titleColor: chartColors.tooltipTitle,
+        bodyColor: chartColors.tooltipBody,
+        borderColor: chartColors.border,
+        borderWidth: 1,
         padding: 12,
-        borderRadius: 8,
+        cornerRadius: 4,
         displayColors: false
       }
     },
     scales: {
-      y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } },
-      x: { grid: { display: false }, ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } } }
+      y: { grid: { color: chartColors.grid, drawBorder: false }, ticks: { color: chartColors.ticks, font: { size: 11 } } },
+      x: { grid: { display: false }, ticks: { color: chartColors.ticks, font: { size: 11 } } }
     }
-  }), [isLightMode]);
+  }), [chartColors]);
 
-  const monthlyPnlOptions = useMemo(() => ({
-    ...chartOptions,
-    scales: {
-      ...chartOptions.scales,
-      x: { ...chartOptions.scales.x, display: true }
-    }
-  }), [chartOptions]);
+  const chartData = useMemo(() => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return {
+      monthly: {
+        labels: monthlyPnlLabels,
+        datasets: [{
+          label: 'Monthly P/L',
+          data: monthlyPnlValues,
+          backgroundColor: monthlyPnlValues.map(v => v >= 0 ? chartColors.win : chartColors.loss),
+          borderColor: monthlyPnlValues.map(v => v >= 0 ? chartColors.winBorder : chartColors.lossBorder),
+          borderWidth: 1.5,
+          borderRadius: 2,
+        }]
+      },
+      sessionWeekly: {
+        labels: days,
+        datasets: Object.keys(SESSION_TOKENS).map(session => ({
+          label: session,
+          data: days.map(day => parseFloat(sessionWeeklyPnl[session][day].toFixed(2))),
+          backgroundColor: chartColors.sessions[session],
+          borderRadius: 2,
+          borderWidth: 0,
+          barPercentage: 0.8,
+          categoryPercentage: 0.8,
+        }))
+      },
+      strategy: {
+        labels: strategyLabels,
+        datasets: [{
+          label: 'Strategy performance',
+          data: strategyValues,
+          backgroundColor: chartColors.strategy,
+          borderColor: chartColors.strategyBorder,
+          borderWidth: 1.5,
+          borderRadius: 2,
+        }]
+      }
+    };
+  }, [chartColors, monthlyPnlLabels, monthlyPnlValues, sessionWeeklyPnl, strategyLabels, strategyValues]);
 
-  const sessionWeeklyOptions = useMemo(() => ({
-    ...chartOptions,
-    plugins: {
-      ...chartOptions.plugins,
-      legend: { display: false }
-    },
-    scales: {
-      ...chartOptions.scales,
-      x: { ...chartOptions.scales.x, display: true }
-    }
-  }), [chartOptions]);
-
-  const performanceByStrategyOptions = monthlyPnlOptions;
   const recentSignals = useMemo(() => sortedTrades.slice(-5).reverse(), [sortedTrades]);
 
   const statCards = useMemo(() => [
     {
-      label: 'Wallet Balance',
-      value: showExact[0] ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance),
-      sub: 'Current Liquidity',
-      color: 'text-primary',
-      isInteractive: true,
       index: 0,
-      Icon: Wallet2,
-      iconColor: 'text-primary',
-      iconBg: 'bg-primary/10',
-      iconBorder: 'border-primary/20',
-      glowBg: 'bg-primary/5',
-      glowHoverBg: 'group-hover:bg-primary/10',
-      subPrefix: '',
-      subPrefixColor: ''
+      label: 'Wallet balance',
+      value: showExact[0] ? formatCurrency(currentWalletBalance) : formatCurrencyCompact(currentWalletBalance),
+      hint: 'Current liquidity',
+      tone: 'neutral',
+      interactive: true,
     },
     {
-      label: 'Win Rate',
-      value: `${winRatePercent}%`,
-      sub: `${winsCount} successful`,
-      color: 'text-green-500',
-      isInteractive: false,
       index: 1,
-      Icon: ArrowUpRight,
-      iconColor: 'text-green-500',
-      iconBg: 'bg-green-500/10',
-      iconBorder: 'border-green-500/20',
-      glowBg: 'bg-green-500/5',
-      glowHoverBg: 'group-hover:bg-green-500/10',
-      subPrefix: '▲',
-      subPrefixColor: 'text-green-500'
+      label: 'Win rate',
+      value: `${winRatePercent}%`,
+      hint: `${winsCount} successful`,
+      tone: 'neutral',
+      interactive: false,
     },
     {
-      label: 'Expectancy',
-      value: totalCount ? (showExact[2] ? formatCurrency(expectancy) : formatCurrencyCompact(expectancy)) : '—',
-      sub: totalCount ? 'Average per trade' : 'Average per trade',
-      color: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : '',
-      isInteractive: totalCount > 0,
       index: 2,
-      Icon: totalCount ? (expectancy > 0 ? GraphUp : expectancy < 0 ? GraphDown : Activity) : Activity,
-      iconColor: totalCount ? (expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : 'text-muted-foreground') : 'text-muted-foreground',
-      iconBg: totalCount ? (expectancy > 0 ? 'bg-green-500/10' : expectancy < 0 ? 'bg-red-500/10' : 'bg-zinc-500/10') : 'bg-zinc-500/10',
-      iconBorder: totalCount ? (expectancy > 0 ? 'border-green-500/20' : expectancy < 0 ? 'border-red-500/20' : 'border-zinc-500/20') : 'border-zinc-500/20',
-      glowBg: totalCount ? (expectancy > 0 ? 'bg-green-500/5' : expectancy < 0 ? 'bg-red-500/5' : 'bg-zinc-500/5') : 'bg-zinc-500/5',
-      glowHoverBg: totalCount ? (expectancy > 0 ? 'group-hover:bg-green-500/10' : expectancy < 0 ? 'group-hover:bg-red-500/10' : 'group-hover:bg-zinc-500/10') : 'group-hover:bg-zinc-500/10',
-      subPrefix: totalCount ? (expectancy > 0 ? '▲' : expectancy < 0 ? '▼' : '') : '',
-      subPrefixColor: expectancy > 0 ? 'text-green-500' : expectancy < 0 ? 'text-red-500' : ''
+      label: 'Expectancy',
+      value: totalCount ? (showExact[2] ? formatSigned(expectancy) : signedCompact(expectancy)) : '—',
+      hint: 'Average per trade',
+      tone: expectancy > 0 ? 'positive' : expectancy < 0 ? 'negative' : 'neutral',
+      interactive: totalCount > 0,
     },
     {
-      label: 'Avg Win',
-      value: winsCount ? (showExact[3] ? formatCurrency(avgWin) : formatCurrencyCompact(avgWin)) : '—',
-      sub: `${winsCount} winners`,
-      color: 'text-green-500',
-      isInteractive: winsCount > 0,
       index: 3,
-      Icon: GraphUp,
-      iconColor: 'text-green-500',
-      iconBg: 'bg-green-500/10',
-      iconBorder: 'border-green-500/20',
-      glowBg: 'bg-green-500/5',
-      glowHoverBg: 'group-hover:bg-green-500/10',
-      subPrefix: winsCount ? '▲' : '',
-      subPrefixColor: 'text-green-500'
+      label: 'Average win',
+      value: winsCount ? (showExact[3] ? formatSigned(avgWin) : signedCompact(avgWin)) : '—',
+      hint: `${winsCount} winners`,
+      tone: winsCount && avgWin > 0 ? 'positive' : 'neutral',
+      interactive: winsCount > 0,
     },
     {
-      label: 'Avg Loss',
-      value: lossesCount ? (showExact[4] ? formatCurrency(avgLoss) : formatCurrencyCompact(avgLoss)) : '—',
-      sub: `${lossesCount} losers`,
-      color: 'text-red-500',
-      isInteractive: lossesCount > 0,
       index: 4,
-      Icon: GraphDown,
-      iconColor: 'text-red-500',
-      iconBg: 'bg-red-500/10',
-      iconBorder: 'border-red-500/20',
-      glowBg: 'bg-red-500/5',
-      glowHoverBg: 'group-hover:bg-red-500/10',
-      subPrefix: lossesCount ? '▼' : '',
-      subPrefixColor: 'text-red-500'
+      label: 'Average loss',
+      value: lossesCount ? (showExact[4] ? formatSigned(avgLoss) : signedCompact(avgLoss)) : '—',
+      hint: `${lossesCount} losers`,
+      tone: lossesCount && avgLoss < 0 ? 'negative' : 'neutral',
+      interactive: lossesCount > 0,
     },
     {
-      label: 'Profit Factor',
-      value: pf !== null ? pf.toFixed(2) : '—',
-      sub: 'Gross Profit / Loss',
-      color: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : '',
-      isInteractive: false,
       index: 5,
-      Icon: pf !== null ? (pf >= 1.5 ? Award : pf < 1 ? ShieldExclamation : Activity) : Activity,
-      iconColor: pf !== null ? (pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : 'text-amber-500') : 'text-muted-foreground',
-      iconBg: pf !== null ? (pf >= 1.5 ? 'bg-green-500/10' : pf < 1 ? 'bg-red-500/10' : 'bg-amber-500/10') : 'bg-zinc-500/10',
-      iconBorder: pf !== null ? (pf >= 1.5 ? 'border-green-500/20' : pf < 1 ? 'border-red-500/20' : 'border-amber-500/20') : 'border-zinc-500/20',
-      glowBg: pf !== null ? (pf >= 1.5 ? 'bg-green-500/5' : pf < 1 ? 'bg-red-500/5' : 'bg-amber-500/5') : 'bg-zinc-500/5',
-      glowHoverBg: pf !== null ? (pf >= 1.5 ? 'group-hover:bg-green-500/10' : pf < 1 ? 'group-hover:bg-red-500/10' : 'group-hover:bg-amber-500/10') : 'group-hover:bg-zinc-500/10',
-      subPrefix: pf !== null ? (pf >= 1.5 ? '▲' : pf < 1 ? '▼' : '▲') : '',
-      subPrefixColor: pf >= 1.5 ? 'text-green-500' : pf < 1 ? 'text-red-500' : 'text-amber-500'
+      label: 'Profit factor',
+      value: pf !== null ? pf.toFixed(2) : '—',
+      hint: 'Gross profit / gross loss',
+      tone: 'neutral',
+      interactive: false,
     },
   ], [avgLoss, avgWin, currentWalletBalance, expectancy, lossesCount, pf, showExact, totalCount, winRatePercent, winsCount]);
 
+  const recentSignalColumns = signalColumns(setSharingTrade);
+
   if (historyLoadError && hasMoreTrades) return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-black text-foreground">Analytics</h1>
+        <h1 className="font-mono text-lg font-medium text-foreground">Analytics</h1>
       </header>
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
-        <div className="flex items-start gap-3">
-          <ShieldExclamation className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-          <div>
-            <h2 className="font-bold text-foreground">Complete history could not be loaded</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Analytics are hidden so a partial trade history is never presented as authoritative.</p>
-            <button
-              type="button"
-              onClick={hydrateAllTrades}
-              className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
+      <SectionCard
+        surface
+        title="Complete history could not be loaded"
+        description="Analytics are hidden so a partial trade history is never presented as authoritative."
+      >
+        <Button size="sm" onClick={hydrateAllTrades}>
+          Retry
+        </Button>
+      </SectionCard>
     </div>
   );
 
   if (isLoadingTrades || isLoadingMore || hasMoreTrades) return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-black text-foreground">Analytics</h1>
+        <h1 className="font-mono text-lg font-medium text-foreground">Analytics</h1>
       </header>
       <AnalyticsSkeleton />
     </div>
   );
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-black text-foreground uppercase tracking-tight">Performance Analytics</h1>
-        <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest">Deep insights into your edge, consistency, and risk management.</p>
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="font-mono text-lg font-medium text-foreground">Analytics</h1>
+        <p className="text-sm text-muted-foreground">Where the edge holds and where it leaks.</p>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        {statCards.map((stat, i) => {
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {statCards.map((stat) => {
           const isLocked = isFree && stat.index > 1;
           return (
-            <div
-              key={i}
-              onMouseEnter={() => !isLocked && stat.isInteractive && setExact(stat.index, true)}
-              onMouseLeave={() => !isLocked && stat.isInteractive && setExact(stat.index, false)}
-              onFocus={() => !isLocked && stat.isInteractive && setExact(stat.index, true)}
-              onBlur={() => !isLocked && stat.isInteractive && setExact(stat.index, false)}
-              onClick={() => {
-                if (isLocked) {
-                  setShowPricingModal(true);
-                } else if (stat.isInteractive) {
-                  setExact(stat.index, !showExact[stat.index]);
-                }
-              }}
-              role={stat.isInteractive || isLocked ? 'button' : undefined}
-              tabIndex={stat.isInteractive || isLocked ? 0 : undefined}
-              aria-label={isLocked ? `Unlock ${stat.label} with Pro` : stat.isInteractive ? `${stat.label}: toggle exact value` : stat.label}
-              className={`apple-glass-panel p-4 sm:p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 active:scale-[0.98] transition-colors duration-200 border border-border/10 animate-in zoom-in-90 fill-both ${
-                stat.isInteractive || isLocked ? 'cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50' : ''
-              }`}
-              style={{ animationDelay: `${i * 75}ms` }}
-            >
-              <div className={`space-y-1 relative z-10 min-w-0 flex-1 transition-all duration-300 ${isLocked ? 'blur-[4px] select-none pointer-events-none opacity-50' : ''}`}>
-                <span className="text-[9px] font-black uppercase tracking-[0.12em] text-muted-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">{stat.label}</span>
-                <h2 className={`text-lg sm:text-2xl font-black tracking-tight mt-0.5 tabular-nums break-words ${stat.color}`}>{stat.value}</h2>
-                <div className="text-[9px] sm:text-[10px] font-black uppercase text-muted-foreground mt-0.5 flex items-center gap-1">
-                  {stat.subPrefix && <span className={stat.subPrefixColor}>{stat.subPrefix}</span>}
-                  <span className="truncate min-w-0">{stat.sub}</span>
-                </div>
-              </div>
-
-              <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ${stat.iconBg} ${stat.iconBorder} flex items-center justify-center ${stat.iconColor} relative z-10 shrink-0 ml-2 transition-all duration-300 ${isLocked ? 'blur-[4px] opacity-30' : ''}`}>
-                <stat.Icon className="w-4 h-4 sm:w-5 h-5" />
-              </div>
-
-              <div className={`absolute top-0 right-0 w-24 h-24 ${stat.glowBg} rounded-full blur-2xl pointer-events-none ${stat.glowHoverBg} transition-colors`} />
-
-              {isLocked && (
-                <div className="absolute inset-0 flex items-center justify-center z-20 bg-background/10 backdrop-blur-[2px] transition-colors group-hover:bg-primary/5">
-                  <LockFill className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] animate-in zoom-in-50 duration-300" />
-                </div>
-              )}
-            </div>
+            <StatCard
+              key={stat.index}
+              label={stat.label}
+              value={stat.value}
+              hint={stat.hint}
+              tone={isLocked ? 'neutral' : stat.tone}
+              interactive={stat.interactive}
+              onRevealChange={stat.interactive ? (revealed) => setExact(stat.index, revealed) : undefined}
+              locked={isLocked}
+              onLockedActivate={() => setShowPricingModal(true)}
+            />
           );
         })}
       </div>
 
-      {/* 2x2 Grid of Performance Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Setup Performance Card */}
-        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-left-4 duration-700 delay-300 flex flex-col relative overflow-hidden">
-          <div className={`flex flex-col flex-1 ${isFree ? 'blur-sm select-none pointer-events-none opacity-40' : ''}`}>
-            <div className="flex items-center gap-2 mb-1 shrink-0">
-              <span className="w-1.5 h-4 bg-[#10b981] rounded-full shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-foreground/80">
-                Setup Performance
-              </h3>
-            </div>
-            <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-6 shrink-0">
-              Win rate metrics and Net P&L distribution by playbook setup.
-            </p>
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-[256px] space-y-4">
-              {setupPerformanceList.map((setup) => {
-                // Custom map for strategy specific colors to give distinct identity to each playbook setup
-                const strategyColorsMap = {
-                  'Breakout': '#06b6d4', // Cyan
-                  'SMC': '#8b5cf6',      // Purple
-                  'ICT': '#f97316',      // Orange
-                  'Scalp': '#10b981',    // Emerald
-                  'Swing': '#6366f1',    // Indigo
-                  'S/R': '#E5B80B',      // Amber/Gold
-                };
-
-                // Fallback palette for any custom user strategies
-                const defaultPalette = ['#ec4899', '#f43f5e', '#a855f7', '#06b6d4'];
-                const pbColor = strategyColorsMap[setup.name] || defaultPalette[Math.abs(setup.name.charCodeAt(0) || 0) % defaultPalette.length];
-
-                return (
-                  <div key={setup.name} className="flex items-center justify-between gap-4 p-2 rounded-xl hover:bg-muted/10 transition-colors">
-                    {/* Setup Name */}
-                    <div className="w-24 sm:w-28 shrink-0">
-                      <span className="text-xs font-black tracking-tight text-foreground/80 truncate block">
-                        {setup.name}
-                      </span>
-                    </div>
-
-                    {/* Progress & Stats Bar */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-1">
-                      <div className="flex justify-between items-baseline text-[9px] font-black uppercase tracking-wider">
-                        <span className="text-muted-foreground/60">
-                          {setup.wins}W / {setup.losses}L
-                        </span>
-                        <span className="font-bold" style={{ color: pbColor }}>
-                          {setup.winRate}%
-                        </span>
-                      </div>
-
-                      {/* Horizontal Progress Bar */}
-                      <div className="w-full bg-muted/40 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${setup.winRate}%`,
-                            backgroundColor: pbColor
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Net P&L Far Right */}
-                    <div className="w-20 text-right shrink-0">
-                      <span className={`text-xs md:text-sm font-black tabular-nums ${
-                        setup.pnl >= 0 ? 'text-green-500' : 'text-red-500'
-                      }`}>
-                        {setup.pnl >= 0 ? '+' : ''}{formatCurrency(setup.pnl)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              {setupPerformanceList.length === 0 && (
-                <div className="text-center py-12 text-[10px] uppercase tracking-widest text-muted-foreground/50">
-                  No setup data found.
-                </div>
-              )}
-            </div>
-          </div>
-          {isFree && (
-            <PremiumOverlay
-              title="Setup Performance"
-              description="Unlock win rate metrics and net P&L distribution by playbook setup."
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Setup performance */}
+        <SectionCard
+          surface
+          padded={isFree}
+          title="Setup performance"
+          description="Win rate and net P&L by playbook setup."
+          meta={isFree ? undefined : `${setupPerformanceList.length} ${setupPerformanceList.length === 1 ? 'setup' : 'setups'}`}
+        >
+          {isFree ? (
+            <LockedSection
+              description="Win rate metrics and net P&L distribution by playbook setup."
               onUpgrade={() => setShowPricingModal(true)}
             />
+          ) : (
+            <DataTable
+              caption="Performance by playbook setup"
+              columns={SETUP_COLUMNS}
+              rows={setupPerformanceList}
+              getRowId={(setup) => setup.name}
+              empty={<EmptyState title="No setup data yet" className="py-8" />}
+            />
           )}
-        </div>
+        </SectionCard>
 
-        {/* Chart 2: Monthly P/L */}
-        <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-right-4 duration-700 delay-300">
-          <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-            <BarChartLine className="w-4 h-4 text-primary" />
-            Monthly P/L
-          </h3>
-          <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distribution across individual calendar months.</p>
+        {/* Monthly P&L */}
+        <SectionCard surface title="Monthly P&L" description="Net result by calendar month.">
           <div className="h-64">
-            <Bar data={monthlyPnlChartData} options={monthlyPnlOptions} />
+            <Bar data={chartData.monthly} options={chartOptions} />
           </div>
-        </div>
+        </SectionCard>
 
-        {/* Session Edge Analysis */}
-        <div className="card-premium p-4 sm:p-8 lg:col-span-2 animate-in slide-in-from-bottom-4 duration-700 delay-400 relative overflow-hidden">
-          <div className={`flex flex-col flex-1 ${isFree ? 'blur-sm select-none pointer-events-none opacity-40' : ''}`}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/80">
-                  <ClockFill className="w-4 h-4 text-primary" />
-                  Session Edge Analysis
-                </h3>
-                <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mt-1">
-                  Comparative weekly session edge analysis and win rates.
-                </p>
-              </div>
-
-              {/* Custom HTML Legend */}
-              <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-wider">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#E5B80B' }} />
-                  <span>London</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
-                  <span>NY</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                  <span>Asia</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f97316' }} />
-                  <span>Overlap</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-64 mb-8">
-              <Bar
-                data={sessionWeeklyChartData}
-                options={sessionWeeklyOptions}
-              />
-            </div>
-
-            {/* Session Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/40">
-              {sessionSummary.map((session) => {
-                const sessionColorsMap = {
-                  London: '#E5B80B',
-                  NY: '#8b5cf6',
-                  Asia: '#10b981',
-                  Overlap: '#f97316'
-                };
-                const pbColor = sessionColorsMap[session.key] || '#10b981';
-                return (
-                  <div key={session.key} className="p-3.5 rounded-xl bg-muted/20 border border-border/20 flex flex-col justify-between group hover:border-primary/20 transition-all duration-300">
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-foreground/80 group-hover:text-primary transition-colors">
-                      {session.label}
-                    </span>
-
-                    <div className="mt-2 mb-1 flex items-baseline justify-between">
-                      <span className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
-                        {session.winRate}%
-                      </span>
-                      <span className="text-[9px] text-muted-foreground/60 font-black uppercase tracking-tight">
-                        Win Rate
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden mt-1 mb-2">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${session.winRate}%`,
-                          backgroundColor: pbColor
-                        }}
-                      />
-                    </div>
-
-                    <span className="text-[10px] text-foreground/75 font-black uppercase tracking-tighter">
-                      {session.total} {session.total === 1 ? 'trade' : 'trades'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          {isFree && (
-            <PremiumOverlay
-              title="Session Edge Analysis"
-              description="Unlock comparative session edge analysis, win rates, and weekly performance."
+        {/* Session edge */}
+        <SectionCard
+          surface
+          className="lg:col-span-2"
+          title="Session edge"
+          description="Weekly P&L and win rates by session."
+        >
+          {isFree ? (
+            <LockedSection
+              description="Comparative session edge analysis, win rates, and weekly performance."
               onUpgrade={() => setShowPricingModal(true)}
             />
-          )}
-        </div>
-
-        {/* Chart 5: Performance by Strategy */}
-        <div className="card-premium p-4 sm:p-8 lg:col-span-2 animate-in slide-in-from-bottom-4 duration-700 delay-500 relative overflow-hidden">
-          <div className={`flex flex-col flex-1 ${isFree ? 'blur-sm select-none pointer-events-none opacity-40' : ''}`}>
-            <h3 className="text-sm font-black uppercase tracking-widest mb-1 flex items-center gap-2 text-foreground/80">
-              <BarChartLine className="w-4 h-4 text-primary" />
-              Performance by Strategy / Playbook
-            </h3>
-            <p className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-widest mb-8">Net profit and loss distributed across your custom strategies.</p>
-            <div className="h-64">
-              <Bar data={performanceByStrategyChartData} options={performanceByStrategyOptions} />
-            </div>
-          </div>
-          {isFree && (
-            <PremiumOverlay
-              title="Strategy Performance"
-              description="Unlock detailed reports and performance metrics across custom playbook setups."
-              onUpgrade={() => setShowPricingModal(true)}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="card-premium p-4 sm:p-8 animate-in slide-in-from-bottom-4 duration-700 delay-500">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-foreground/80">
-            <BarChartLine className="w-4 h-4 text-primary" />
-            Recent Signals
-          </h3>
-          <button
-            onClick={() => navigate('/app/history')}
-            className="min-h-11 px-3 -mr-3 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          >
-            View All History →
-          </button>
-        </div>
-        <div className="space-y-3">
-          {recentSignals.map((t) => (
-            <div key={t.id} className="flex justify-between items-center p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
-                <div className={`w-12 h-7 rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-widest ${t.direction === 'BUY' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-                  {t.direction}
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black tracking-tight">{t.date}</span>
-                  <span className="text-[9px] text-foreground/70 font-bold uppercase tracking-widest">
-                    {[t.session, getTradeStrategyTags(t)[0]].filter(Boolean).join(' / ') || 'Unclassified trade'}
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3">
+                {Object.entries(SESSION_TOKENS).map(([session, token]) => (
+                  <span
+                    key={session}
+                    className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="inline-block size-2 rounded-sm"
+                      style={{ backgroundColor: cssHsl(token) }}
+                    />
+                    {session}
                   </span>
-                </div>
+                ))}
               </div>
-              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <div className={`text-sm font-black tracking-tighter tabular-nums ${tradePnlValue(t) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {formatCurrency(tradePnlValue(t), true)}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSharingTrade(t)}
-                  aria-label={`Share trade from ${t.date}`}
-                  className="w-11 h-11 rounded-xl bg-muted/50 hover:bg-primary/20 hover:text-primary text-muted-foreground flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  <Share className="w-3.5 h-3.5" />
-                </button>
+
+              <div className="h-64">
+                <Bar data={chartData.sessionWeekly} options={chartOptions} />
               </div>
-            </div>
-          ))}
-          {sortedTrades.length === 0 && (
-            <div className="text-center py-8 text-[10px] uppercase tracking-widest text-muted-foreground/60">
-              No recent signals found.
+
+              <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {sessionSummary.map((session) => (
+                  <div key={session.key} className="flex flex-col gap-0.5 rounded-lg border border-border p-2.5">
+                    <dt className="text-xs text-muted-foreground">{session.key} win rate</dt>
+                    <dd className="figure m-0 text-lg font-medium text-foreground">{session.winRate}%</dd>
+                    <dd className="m-0 text-xs text-muted-foreground">
+                      {session.total} {session.total === 1 ? 'trade' : 'trades'}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           )}
-        </div>
+        </SectionCard>
+
+        {/* Strategy performance */}
+        <SectionCard
+          surface
+          className="lg:col-span-2"
+          title="Strategy performance"
+          description="Net P&L across playbook and custom strategies."
+        >
+          {isFree ? (
+            <LockedSection
+              description="Detailed reports and performance metrics across custom playbook setups."
+              onUpgrade={() => setShowPricingModal(true)}
+            />
+          ) : (
+            <div className="h-64">
+              <Bar data={chartData.strategy} options={chartOptions} />
+            </div>
+          )}
+        </SectionCard>
       </div>
+
+      {/* Recent signals */}
+      <SectionCard
+        surface
+        padded={false}
+        title="Recent signals"
+        meta={`${recentSignals.length} of ${sortedTrades.length}`}
+        actions={
+          <Button variant="ghost" size="sm" onClick={() => navigate('/app/history')}>
+            View all history
+          </Button>
+        }
+      >
+        <DataTable
+          caption="Five most recent signals"
+          columns={recentSignalColumns}
+          rows={recentSignals}
+          getRowId={(t, i) => t.id ?? `${t.date}-${i}`}
+          empty={
+            <EmptyState
+              title="No recent signals yet"
+              description="Log trades and the latest activity lands here."
+              className="py-8"
+            />
+          }
+        />
+      </SectionCard>
 
       {sharingTrade && (
-        <ShareTradeModal trade={sharingTrade} onClose={() => setSharingTrade(null)} />
+        <Suspense fallback={null}>
+          <ShareTradeModal trade={sharingTrade} onClose={() => setSharingTrade(null)} />
+        </Suspense>
       )}
     </div>
   );
 }
-
-
-

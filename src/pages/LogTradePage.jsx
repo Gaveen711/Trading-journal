@@ -1,19 +1,109 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { BarChartLine, CurrencyDollar, ArrowUpRight, AwardFill, Activity } from 'react-bootstrap-icons';
-import { formatCurrency } from '../lib/tradeUtils';
+import { formatSigned } from '../lib/tradeUtils';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { LiveMarketWidget } from '../components/LiveMarketWidget';
+import { StatCard } from '../components/app/StatCard';
+import { SectionCard } from '../components/app/SectionCard';
+import { EmptyState } from '../components/app/EmptyState';
+import { DataTable } from '../components/app/DataTable';
+import { StatusSquare } from '../components/app/StatusSquare';
+import { Button } from '../components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
+import { Plus, X } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+const FALLBACK_TOKEN = (alpha) => (alpha == null ? '#9cff57' : `rgba(156, 255, 87, ${alpha})`);
+
+// Theme arguments are reactivity keys; values are resolved from the scoped
+// dashboard tokens after the root theme or accent class changes.
+//
+// getPropertyValue is cheap, but the getComputedStyle that precedes it forces a
+// style recalc. This used to run per token — eight per call, and the call
+// happened in both the data and the options memo — so one accent change cost
+// ~16 recalcs. One style object, read eight times, costs one.
+const resolveDashboardChartColors = (_isLightMode, _currentTemplate) => {
+  if (typeof document === 'undefined') {
+    return {
+      primary: FALLBACK_TOKEN(), primaryFill: FALLBACK_TOKEN(0.22), primaryClear: FALLBACK_TOKEN(0),
+      grid: FALLBACK_TOKEN(0.55), ticks: FALLBACK_TOKEN(), tooltipBg: FALLBACK_TOKEN(0.96),
+      tooltipTitle: FALLBACK_TOKEN(), tooltipBody: FALLBACK_TOKEN(),
+    };
+  }
+  const shell = document.querySelector('.dashboard-shell');
+  const style = getComputedStyle(shell ?? document.documentElement);
+  const token = (name, alpha) => {
+    const value = style.getPropertyValue(name).trim();
+    return alpha == null ? `hsl(${value})` : `hsl(${value} / ${alpha})`;
+  };
+  return {
+    primary: token('--primary'),
+    primaryFill: token('--primary', 0.22),
+    primaryClear: token('--primary', 0),
+    grid: token('--border', 0.55),
+    ticks: token('--muted-foreground'),
+    tooltipBg: token('--popover', 0.96),
+    tooltipTitle: token('--muted-foreground'),
+    tooltipBody: token('--foreground'),
+  };
+};
+
+const chip = (text) => (
+  <span className="inline-flex h-[18px] items-center rounded-sm border border-border px-1.5 font-mono text-[11px] text-muted-foreground">
+    {text}
+  </span>
+);
+
+// Direction is form + word, never green/red — those belong to P&L alone.
+const RECENT_TRADE_COLUMNS = [
+  { id: 'date', header: 'Date', cell: (t) => <span className="text-muted-foreground">{t.date}</span> },
+  { id: 'market', header: 'Market', cell: (t) => <span className="font-medium text-foreground">{t.market || 'GOLD'}</span> },
+  {
+    id: 'direction',
+    header: 'Type',
+    cell: (t) => {
+      const isLong = t.direction === 'BUY' || t.direction === 'LONG';
+      return (
+        <span className="text-foreground">
+          <span aria-hidden="true">{isLong ? '▲' : '▼'}</span> {isLong ? 'Buy' : 'Sell'}
+        </span>
+      );
+    },
+  },
+  {
+    id: 'strategy',
+    header: 'Strategy',
+    hideBelow: 'md',
+    cell: (t) => {
+      const strategy = t.strategy || (t.strategies && t.strategies[0]) || t.setup;
+      return strategy ? chip(strategy) : '—';
+    },
+  },
+  { id: 'session', header: 'Session', hideBelow: 'lg', cell: (t) => (t.session ? chip(t.session) : '—') },
+  { id: 'entry', header: 'Entry', numeric: true, cell: (t) => t.entry },
+  { id: 'exit', header: 'Exit', numeric: true, cell: (t) => t.exit || '—' },
+  { id: 'lots', header: 'Lots', numeric: true, cell: (t) => t.lots },
+  {
+    id: 'pnl',
+    header: 'P&L',
+    numeric: true,
+    cell: (t) => (
+      <span className={t.pnl > 0 ? 'text-win' : t.pnl < 0 ? 'text-loss' : 'text-foreground'}>
+        {formatSigned(t.pnl)}
+      </span>
+    ),
+  },
+];
+
 export function LogTradePage() {
   const { trades, walletBalance, isExpanded, setIsExpanded } = useOutletContext();
-  const { isLightMode } = useAppTheme();
+  const { isLightMode, currentTemplate } = useAppTheme();
   const [equityPeriod, setEquityPeriod] = useState('all');
   const [activeTab, setActiveTab] = useState('history');
 
@@ -106,9 +196,12 @@ export function LogTradePage() {
   const [goldChange, setGoldChange] = useState(14.18);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchGoldPriceFallback = async () => {
+      // Polling a background tab helps nobody and still costs a request.
+      if (document.visibilityState === 'hidden') return;
       try {
-        const res = await fetch('/api/spot-price/XAU');
+        const res = await fetch('/api/spot-price/XAU', { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           if (data && data.price) {
@@ -120,13 +213,17 @@ export function LogTradePage() {
           }
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.warn('Error fetching fallback gold price:', err);
       }
     };
 
     fetchGoldPriceFallback();
     const interval = setInterval(fetchGoldPriceFallback, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      controller.abort();
+    };
   }, []);
 
   // Synchronized gold values (always preferred from liveTickers state)
@@ -238,26 +335,38 @@ export function LogTradePage() {
     return parseFloat((sum / tradesWithRR.length).toFixed(1));
   }, [trades]);
 
+  // Both chart memos sorted the same array independently; one sort feeds both.
+  const sortedTrades = useMemo(
+    () => [...trades].sort((a, b) => a.date.localeCompare(b.date)),
+    [trades],
+  );
+
+  // Resolved once per theme/accent change and shared by the data and options
+  // memos, so a recolor costs one style recalc instead of sixteen.
+  const chartColors = useMemo(
+    () => resolveDashboardChartColors(isLightMode, currentTemplate),
+    [isLightMode, currentTemplate],
+  );
+
   const chartVisibleTrades = useMemo(() => {
-    const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
     if (equityPeriod === '30') {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 30);
       const cutoffStr = cutoffDate.toISOString().split('T')[0];
-      return sortedForChart.filter(t => t.date >= cutoffStr);
+      return sortedTrades.filter(t => t.date >= cutoffStr);
     }
-    return sortedForChart;
-  }, [trades, equityPeriod]);
+    return sortedTrades;
+  }, [sortedTrades, equityPeriod]);
 
   const chartData = useMemo(() => {
-    const sortedForChart = [...trades].sort((a, b) => a.date.localeCompare(b.date));
+    const colors = chartColors;
     let initialBalanceForChart = walletBalance || 0;
 
     if (equityPeriod === '30') {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 30);
       const cutoffStr = cutoffDate.toISOString().split('T')[0];
-      const olderTrades = sortedForChart.filter(t => t.date < cutoffStr);
+      const olderTrades = sortedTrades.filter(t => t.date < cutoffStr);
       initialBalanceForChart += olderTrades.reduce((s, t) => s + (t.pnl || 0), 0);
     }
 
@@ -273,12 +382,12 @@ export function LogTradePage() {
       datasets: [{
         label: 'Equity',
         data: chartDataPoints,
-        borderColor: '#E5B80B',
+        borderColor: colors.primary,
         backgroundColor: (context) => {
           const ctx = context.chart.ctx;
           const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-          gradient.addColorStop(0, 'rgba(229, 184, 11, 0.15)');
-          gradient.addColorStop(1, 'rgba(229, 184, 11, 0)');
+          gradient.addColorStop(0, colors.primaryFill);
+          gradient.addColorStop(1, colors.primaryClear);
           return gradient;
         },
         fill: true,
@@ -288,382 +397,234 @@ export function LogTradePage() {
         borderWidth: 3,
       }]
     };
-  }, [trades, walletBalance, equityPeriod, chartVisibleTrades]);
+  }, [sortedTrades, walletBalance, equityPeriod, chartVisibleTrades, chartColors]);
 
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(13, 13, 20, 0.9)',
-        titleColor: '#94a3b8',
-        bodyColor: '#f1f5f9',
-        padding: 12,
-        borderRadius: 8,
-        displayColors: false,
-        mode: 'index',
-        intersect: false
+  const chartOptions = useMemo(() => {
+    const colors = chartColors;
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: colors.tooltipBg,
+          titleColor: colors.tooltipTitle,
+          bodyColor: colors.tooltipBody,
+          padding: 12,
+          borderRadius: 8,
+          displayColors: false,
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          grid: { color: colors.grid, drawBorder: false },
+          ticks: { color: colors.ticks, font: { size: 11 } }
+        }
       }
-    },
-    scales: {
-      x: { display: false },
-      y: {
-        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
-        ticks: { color: isLightMode ? '#64748b' : '#94a3b8', font: { size: 11 } }
-      }
-    }
-  }), [isLightMode]);
+    };
+  }, [chartColors]);
 
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-200 pb-6">
+    <div className="dashboard-overview flex flex-col gap-5 pb-6 md:gap-6">
 
-      {/* HEADER SECTION WITH TITLE AND NEW TRADE TOGGLE */}
-      <div className="flex justify-between items-center shrink-0">
-        <div>
-          <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider text-foreground">Dashboard</h1>
-          <p className="text-[10px] md:text-sm uppercase tracking-widest text-muted-foreground">Overview & Trade Intelligence</p>
+      {/* HEADER */}
+      <div className="dashboard-page-heading flex shrink-0 items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">Gold trading command center</p>
+          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-foreground sm:text-3xl">Performance, at a glance.</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Your edge, risk and execution in one live view.</p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Markets Open Badge */}
-          <div className="flex items-center gap-1.5 py-1.5 px-2 sm:px-3 rounded-xl border border-border/10 bg-muted/20 text-[9px] md:text-xs font-black uppercase tracking-widest select-none shrink-0">
-            <span className={`w-1.5 h-1.5 rounded-full ${isMarketOpen ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse' : 'bg-gray-500'} shrink-0`} />
-            <span className={isMarketOpen ? 'text-green-500' : 'text-muted-foreground'}>
-              {isMarketOpen ? 'Markets Open' : 'Markets Closed'}
-            </span>
-          </div>
+        <div className="flex items-center gap-3">
+          <StatusSquare state={isMarketOpen ? 'on' : 'off'} label={isMarketOpen ? 'Market open' : 'Market closed'}>
+            {isMarketOpen ? 'Market open' : 'Market closed'}
+          </StatusSquare>
 
-          <button
+          <Button
+            variant={isExpanded ? 'destructive' : 'default'}
+            size="sm"
+            className="hidden md:inline-flex"
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`hidden md:flex py-1.5 px-2.5 sm:px-3 rounded-xl font-black uppercase tracking-wider text-[10px] md:text-xs transition-all duration-300 items-center justify-center gap-1.5 active:scale-[0.96] cursor-pointer select-none shrink-0 shadow-md ${
-              isExpanded
-                ? 'bg-[#D1495B]/10 border border-[#D1495B]/30 text-[#D1495B] hover:bg-[#D1495B]/20 shadow-[#D1495B]/5'
-                : 'bg-[#EDAE49] hover:bg-[#D99A32] text-[#003D5B] border border-transparent shadow-[#EDAE49]/10'
-            }`}
-            title={isExpanded ? 'Close Trade' : 'New Trade'}
           >
-            {isExpanded ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span className="hidden sm:inline">Close Trade</span>
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 shrink-0">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-                </svg>
-                <span className="hidden sm:inline">New Trade</span>
-              </>
-            )}
-          </button>
+            {isExpanded ? <X data-icon="inline-start" aria-hidden="true" /> : <Plus data-icon="inline-start" aria-hidden="true" />}
+            {isExpanded ? 'Close trade form' : 'New trade'}
+          </Button>
         </div>
       </div>
 
-      {/* TOP TIER: METRICS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0">
-
-        {/* Metric 1: Net P&L (MTD) */}
-        <div className="apple-glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-colors border border-border/10">
-          <div className="space-y-1 relative z-10">
-            <span className="text-[11px] md:text-sm font-black uppercase tracking-widest text-muted-foreground">Net P&L (MTD)</span>
-            <h2 className="text-2xl font-black tracking-tight text-[#E5B80B] mt-1">
-              {mtdPnl >= 0 ? '+' : ''}{formatCurrency(mtdPnl)}
-            </h2>
-            <div className="flex items-center gap-1 text-[10px] md:text-xs font-black uppercase mt-1">
-              <span className="text-muted-foreground">vs last month</span>
-              <span className={pnlPercentChange >= 0 ? 'text-green-500' : 'text-red-500'}>
-                {pnlPercentChange >= 0 ? '▲' : '▼'} {Math.abs(pnlPercentChange)}%
-              </span>
-            </div>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 relative z-10 shrink-0">
-            <CurrencyDollar className="w-5 h-5" />
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none group-hover:bg-primary/10 transition-colors" />
-        </div>
-
-        {/* Metric 2: Win Rate */}
-        <div className="apple-glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-colors border border-border/10">
-          <div className="space-y-1 relative z-10">
-            <span className="text-[11px] md:text-sm font-black uppercase tracking-widest text-muted-foreground">Win Rate</span>
-            <h2 className="text-2xl font-black tracking-tight text-green-500 mt-1">
-              {winRateMtd}%
-            </h2>
-            <div className="text-[10px] md:text-xs font-black uppercase text-muted-foreground mt-1 flex items-center gap-1">
-              {totalCountMtd > 0 && <span className="text-green-500">▲</span>}
-              <span>{winCountMtd} of {totalCountMtd} trades</span>
-            </div>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-500 relative z-10 shrink-0">
-            <ArrowUpRight className="w-5 h-5" />
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-green-500/10 transition-colors" />
-        </div>
-
-        {/* Metric 3: Best Trade */}
-        <div className="apple-glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-colors border border-border/10">
-          <div className="space-y-1 relative z-10">
-            <span className="text-[11px] md:text-sm font-black uppercase tracking-widest text-muted-foreground">Best Trade</span>
-            <h2 className="text-2xl font-black tracking-tight text-purple-400 mt-1">
-              {bestTradeVal > 0 ? '+' : ''}{formatCurrency(bestTradeVal)}
-            </h2>
-            <div className="text-[10px] md:text-xs font-black uppercase text-muted-foreground mt-1 flex items-center gap-1">
-              {bestTradeVal > 0 && <span className="text-green-500">▲</span>}
-              <span>{bestTradeVal > 0 ? `${bestTradeMarket} - ${bestTradeSession}` : 'No Trades'}</span>
-            </div>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500 relative z-10 shrink-0">
-            <AwardFill className="w-5 h-5" />
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-purple-500/10 transition-colors" />
-        </div>
-
-        {/* Metric 4: Avg R:R */}
-        <div className="apple-glass-panel p-5 rounded-3xl flex items-center justify-between relative overflow-hidden group hover:border-primary/50 transition-colors border border-border/10">
-          <div className="space-y-1 relative z-10">
-            <span className="text-[11px] md:text-sm font-black uppercase tracking-widest text-muted-foreground">Avg R:R</span>
-            <h2 className="text-2xl font-black tracking-tight text-amber-500 mt-1">
-              1:{avgRRatio}
-            </h2>
-            <div className="text-[10px] md:text-xs font-black uppercase text-muted-foreground mt-1 flex items-center gap-1">
-              <span className="text-green-500">▲</span>
-              <span>Risk-adjusted</span>
-            </div>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 relative z-10 shrink-0">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-yellow-500/10 transition-colors" />
-        </div>
-
+      {/* KPI ROW */}
+      <div className="dashboard-kpi-grid grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        <StatCard
+          label="Net P&L, month to date"
+          value={formatSigned(mtdPnl)}
+          tone={mtdPnl > 0 ? 'positive' : mtdPnl < 0 ? 'negative' : 'neutral'}
+          delta={{
+            direction: pnlPercentChange > 0 ? 'up' : pnlPercentChange < 0 ? 'down' : 'flat',
+            value: `${Math.abs(pnlPercentChange)}% vs last month`,
+          }}
+        />
+        <StatCard
+          label="Win rate"
+          value={`${winRateMtd}%`}
+          hint={`${winCountMtd} of ${totalCountMtd} trades`}
+        />
+        <StatCard
+          label="Best trade"
+          value={bestTradeVal > 0 ? formatSigned(bestTradeVal) : '—'}
+          tone={bestTradeVal > 0 ? 'positive' : 'neutral'}
+          hint={bestTradeVal > 0 ? `${bestTradeMarket} · ${bestTradeSession}` : 'No trades yet'}
+        />
+        <StatCard
+          label="Average R:R"
+          value={`1:${avgRRatio}`}
+          hint="Risk-adjusted"
+        />
       </div>
 
       {/* MIDDLE TIER: LIVE MARKET WIDGET */}
-      <div className="shrink-0 w-full relative z-20">
+      <div className="dashboard-market-strip relative z-10 w-full shrink-0">
         <LiveMarketWidget onTickersUpdate={setLiveTickers} onIntervalChange={setMarketInterval} />
       </div>
 
       {/* BOTTOM TIER: BIAS GAUGE & PERFORMANCE GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 shrink-0">
+      <div className="dashboard-analysis-grid grid shrink-0 grid-cols-1 gap-4 lg:grid-cols-3">
 
-        {/* GOLD BIAS GAUGE CARD */}
-        <div className="apple-glass-panel rounded-3xl p-6 flex flex-col relative overflow-hidden border border-border/10 hover:border-primary/30 transition-colors">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6 text-left relative z-10">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-[4px] h-[16px] bg-[#facc15] rounded-full shrink-0" />
-              <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#9e9ea7]">GOLD BIAS GAUGE</span>
-            </div>
-            <span className="rounded-lg border border-border/40 bg-muted/30 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-              {marketInterval}
-            </span>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center items-center py-4 relative z-10">
-            <svg viewBox="0 0 200 145" className="w-full max-w-[220px] mx-auto overflow-visible">
-              <defs>
-                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#ff4b55" />
-                  <stop offset="40%" stopColor="#facc15" />
-                  <stop offset="70%" stopColor="#a3e635" />
-                  <stop offset="100%" stopColor="#10b981" />
-                </linearGradient>
-              </defs>
-              {/* Background Track (240-degree arc) */}
+        {/* GOLD BIAS GAUGE */}
+        <SectionCard surface title="Gold bias" meta={marketInterval} divided={false} contentClassName="flex flex-col">
+          <div className="flex flex-1 flex-col items-center justify-center py-2">
+            <svg viewBox="0 0 200 145" className="mx-auto w-full max-w-[220px] overflow-visible" role="img" aria-label={`Gold bias ${biasPercentage}% — ${biasPercentage >= 60 ? 'bullish' : biasPercentage <= 40 ? 'bearish' : 'neutral'}`}>
+              {/* Track */}
               <path
                 d="M 46.31,106 A 62,62 0 1,1 153.69,106"
                 fill="none"
-                stroke="rgba(255,255,255,0.06)"
-                strokeWidth="8"
+                className="stroke-border"
+                strokeWidth="6"
                 strokeLinecap="round"
               />
-              {/* Filled Arc (240-degree arc) */}
+              {/* Fill — the one accent, driven by the theme */}
               <path
                 d="M 46.31,106 A 62,62 0 1,1 153.69,106"
                 fill="none"
-                stroke="url(#gaugeGrad)"
-                strokeWidth="8"
+                className="stroke-primary transition-all duration-700 ease-out"
+                strokeWidth="6"
                 strokeLinecap="round"
                 strokeDasharray="259.7"
                 strokeDashoffset={259.7 - (259.7 * biasPercentage) / 100}
-                className="transition-all duration-1000 ease-out"
               />
-              {/* Labels */}
-              <text x="62" y="80" className="text-[10px] md:text-xs font-black fill-[#ff4b55] uppercase tracking-wider" textAnchor="middle">BEAR</text>
-              <text x="138" y="80" className="text-[10px] md:text-xs font-black fill-[#10b981] uppercase tracking-wider" textAnchor="middle">BULL</text>
+              {/* Direction labels: P&L semantics, so win/loss tokens apply */}
+              <text x="62" y="80" className="fill-loss font-mono text-[10px]" textAnchor="middle">Bear</text>
+              <text x="138" y="80" className="fill-win font-mono text-[10px]" textAnchor="middle">Bull</text>
 
-              {/* Center percentage and text */}
-              <text x="100" y="108" className={`text-3xl font-black tracking-tight ${biasPercentage >= 60 ? 'fill-[#10b981]' : biasPercentage <= 40 ? 'fill-[#ff4b55]' : 'fill-[#facc15]'}`} textAnchor="middle">
+              <text x="100" y="108" className="figure fill-foreground text-2xl font-medium" textAnchor="middle">
                 {biasPercentage}%
               </text>
-              <text x="100" y="124" className={`text-xs md:text-sm font-black uppercase tracking-[0.22em] ${biasPercentage >= 60 ? 'fill-[#10b981]' : biasPercentage <= 40 ? 'fill-[#ff4b55]' : 'fill-[#facc15]'}`} textAnchor="middle">
-                {biasPercentage >= 60 ? 'BULLISH' : biasPercentage <= 40 ? 'BEARISH' : 'NEUTRAL'}
+              <text x="100" y="124" className="fill-muted-foreground font-mono text-[10px]" textAnchor="middle">
+                {biasPercentage >= 60 ? 'Bullish' : biasPercentage <= 40 ? 'Bearish' : 'Neutral'}
               </text>
 
-              {/* Needle */}
               <line
                 x1="100"
                 y1="75"
                 x2={needleX}
                 y2={needleY}
-                className="stroke-[#facc15] stroke-[2.2] stroke-round transition-all duration-1000 ease-out"
+                className="stroke-foreground transition-all duration-700 ease-out"
+                strokeWidth="2"
                 strokeLinecap="round"
               />
-              {/* Pivot */}
-              <circle cx="100" cy="75" r="4.5" className="fill-[#13131a] stroke-[#facc15] stroke-[2.2]" />
+              <circle cx="100" cy="75" r="4" className="fill-card stroke-foreground" strokeWidth="2" />
             </svg>
           </div>
 
-          {/* Bottom sub-panel (left-aligned cards with dividers) */}
-          <div className="grid grid-cols-3 gap-1 bg-[#0b0b0f]/40 border border-white/5 rounded-2xl p-3.5 mt-4 relative z-10 text-left">
-            <div className="flex flex-col pl-1">
-              <span className="text-[10px] md:text-xs font-black uppercase text-[#9e9ea7]/60 tracking-wider">XAU/USD</span>
-              <span className="text-sm md:text-base font-black text-[#facc15] mt-1">
+          <dl className="mt-3 grid grid-cols-3 divide-x divide-border rounded-lg border border-border">
+            <div className="flex flex-col gap-0.5 p-2.5">
+              <dt className="text-xs text-muted-foreground">XAU/USD</dt>
+              <dd className="figure m-0 text-sm text-foreground">
                 {goldPriceValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+              </dd>
             </div>
-            <div className="flex flex-col border-l border-white/10 pl-4">
-              <span className="text-[10px] md:text-xs font-black uppercase text-[#9e9ea7]/60 tracking-wider">24H Change</span>
-              <span className={`text-sm md:text-base font-black mt-1 ${goldChangeValue >= 0 ? 'text-[#10b981]' : 'text-[#ff4b55]'}`}>
-                {goldChangeValue >= 0 ? '+' : ''}{goldChangeValue.toFixed(2)}
-              </span>
+            <div className="flex flex-col gap-0.5 p-2.5">
+              <dt className="text-xs text-muted-foreground">24h change</dt>
+              <dd className={`figure m-0 text-sm ${goldChangeValue >= 0 ? 'text-win' : 'text-loss'}`}>
+                {goldChangeValue >= 0 ? '+' : '−'}{Math.abs(goldChangeValue).toFixed(2)}
+              </dd>
             </div>
-            <div className="flex flex-col border-l border-white/10 pl-4">
-              <span className="text-[10px] md:text-xs font-black uppercase text-[#9e9ea7]/60 tracking-wider">Trend</span>
-              <span className="text-sm md:text-base font-black text-purple-400 mt-1 flex items-center gap-1 select-none">
-                {goldChangeValue >= 0 ? '▲ Uptrend' : '▼ Downtrend'}
-              </span>
+            <div className="flex flex-col gap-0.5 p-2.5">
+              <dt className="text-xs text-muted-foreground">Trend</dt>
+              <dd className="m-0 text-sm text-foreground">
+                <span aria-hidden="true">{goldChangeValue >= 0 ? '▲' : '▼'}</span> {goldChangeValue >= 0 ? 'Up' : 'Down'}
+              </dd>
             </div>
-          </div>
-        </div>
+          </dl>
+        </SectionCard>
 
-        {/* Performance Chart (Equity Curve) */}
-        <div className="apple-glass-panel rounded-3xl flex flex-col relative overflow-hidden border border-border/10 hover:border-primary/30 transition-colors lg:col-span-2">
-          <div className="p-5 flex justify-between items-center border-b border-border/10 relative z-20">
-            <div className="flex items-center gap-3 border-l-4 border-yellow-500 pl-3">
-              <div className="w-8 h-8 rounded-full bg-[#E5B80B]/20 flex items-center justify-center text-[#E5B80B] font-bold text-xs md:text-sm">Au</div>
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Equity Curve</h3>
-                <p className="text-[10px] md:text-sm uppercase tracking-widest text-muted-foreground">Historical Performance</p>
-              </div>
-            </div>
-            <div className="flex bg-muted/50 rounded-xl p-1">
-              <button onClick={() => setEquityPeriod('30')} className={`px-3 py-1.5 text-[10px] md:text-xs font-black uppercase rounded-lg transition-colors ${equityPeriod === '30' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>30D</button>
-              <button onClick={() => setEquityPeriod('all')} className={`px-3 py-1.5 text-[10px] md:text-xs font-black uppercase rounded-lg transition-colors ${equityPeriod === 'all' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>All</button>
-            </div>
-          </div>
-          <div className="flex-1 w-full p-4 relative z-10 min-h-[300px]">
+        {/* EQUITY CURVE */}
+        <SectionCard
+          surface
+          title="Equity curve"
+          description="Historical performance"
+          className="lg:col-span-2"
+          actions={
+            <ToggleGroup
+              spacing={0}
+              value={[equityPeriod]}
+              onValueChange={([next]) => next && setEquityPeriod(next)}
+            >
+              <ToggleGroupItem value="30" size="sm">30d</ToggleGroupItem>
+              <ToggleGroupItem value="all" size="sm">All</ToggleGroupItem>
+            </ToggleGroup>
+          }
+        >
+          <div className="min-h-[300px] w-full">
             {trades.length > 0 ? (
               <Line data={chartData} options={chartOptions} />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-6">
-                <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner">
-                  <BarChartLine className="w-7 h-7 text-muted-foreground/40" />
-                </div>
-                <div className="text-center space-y-1">
-                  <span className="text-sm font-bold text-foreground opacity-80">No Performance Data</span>
-                  <p className="text-[10px] md:text-xs uppercase tracking-widest opacity-40 px-8 leading-relaxed">Log trades to see your performance curve.</p>
-                </div>
-              </div>
+              <EmptyState
+                title="No performance data"
+                description="Log the first trade and the curve starts here."
+                className="h-full"
+              />
             )}
           </div>
-          <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        </div>
+        </SectionCard>
 
       </div>
 
-      {/* BOTTOM TIER: HISTORY TABLE */}
-      <div className="w-full shrink-0">
-        <div className="apple-glass-panel rounded-3xl flex flex-col overflow-hidden min-h-[300px]">
-          <div className="p-5 flex gap-6 border-b border-border/10">
-            <button
-              className={`text-xs md:text-sm font-black uppercase tracking-[0.2em] pb-1 border-b-2 -mb-[21px] transition-colors ${activeTab === 'history' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}
-              onClick={() => setActiveTab('history')}
-            >
-              Positions / History
-            </button>
-            <button
-              className={`text-xs md:text-sm font-black uppercase tracking-[0.2em] pb-1 border-b-2 -mb-[21px] transition-colors ${activeTab === 'orders' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent'}`}
-              onClick={() => setActiveTab('orders')}
-            >
-              Orders
-            </button>
+      {/* RECENT ACTIVITY */}
+      <SectionCard className="dashboard-activity" surface padded={false} title="Recent activity" meta={`${Math.min(trades.length, 10)} of ${trades.length}`}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="px-4 pt-1">
+            <TabsList activateOnFocus>
+              <TabsTrigger value="history">Positions</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+            </TabsList>
           </div>
-
-          {activeTab === 'history' ? (
-            <div className="flex-1 overflow-x-auto p-2">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-border/10 text-muted-foreground uppercase text-[10px] md:text-xs font-black tracking-wider">
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Market</th>
-                    <th className="py-3 px-4">Type</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Strategy</th>
-                    <th className="py-3 px-4 hidden lg:table-cell">Session</th>
-                    <th className="py-3 px-4">Entry</th>
-                    <th className="py-3 px-4">Exit</th>
-                    <th className="py-3 px-4">Lots</th>
-                    <th className="py-3 px-4 text-right">PnL</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/5">
-                  {trades.slice(0, 10).map((t, idx) => (
-                    <tr key={idx} className="hover:bg-muted/10 font-medium text-foreground/80 transition-colors">
-                      <td className="py-3 px-4 text-muted-foreground">{t.date}</td>
-                      <td className="py-3 px-4 font-bold text-foreground flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#E5B80B]" />
-                        {t.market || 'GOLD'}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] md:text-xs font-black tracking-widest ${t.direction === 'BUY' || t.direction === 'LONG' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                          }`}>{t.direction}</span>
-                      </td>
-                      <td className="py-3 px-4 hidden md:table-cell">
-                        {t.strategy || (t.strategies && t.strategies[0]) || t.setup ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-black tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                            {t.strategy || (t.strategies && t.strategies[0]) || t.setup}
-                          </span>
-                        ) : '-'}
-                      </td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">
-                        {t.session ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] md:text-xs font-black tracking-widest bg-muted text-muted-foreground border border-border/30">
-                            {t.session}
-                          </span>
-                        ) : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">{t.entry}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{t.exit || '-'}</td>
-                      <td className="py-3 px-4">{t.lots}</td>
-                      <td className={`py-3 px-4 text-right font-black ${t.pnl >= 0 ? 'text-green-500' : 'text-red-500'
-                        }`}>{t.pnl >= 0 ? '+' : ''}{formatCurrency(t.pnl)}</td>
-                    </tr>
-                  ))}
-                  {trades.length === 0 && (
-                    <tr>
-                      <td colSpan="9" className="py-8 text-center text-muted-foreground text-xs md:text-sm font-bold uppercase tracking-widest">No positions logged yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-muted-foreground gap-4">
-              <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center shadow-inner">
-                <svg className="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-sm font-bold text-foreground opacity-80">No Active Orders</p>
-                <p className="text-xs md:text-sm uppercase tracking-widest opacity-40 leading-relaxed">Limit and Stop orders will appear here.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          <TabsContent value="history">
+            <DataTable
+              caption="Ten most recent trades"
+              columns={RECENT_TRADE_COLUMNS}
+              rows={trades.slice(0, 10)}
+              getRowId={(t, i) => `${t.date}-${i}`}
+              empty={
+                <EmptyState
+                  title="No positions logged yet"
+                  description="Log a trade or connect MT4/MT5 and the fills arrive on their own."
+                  className="py-8"
+                />
+              }
+            />
+          </TabsContent>
+          <TabsContent value="orders">
+            <EmptyState
+              title="No active orders"
+              description="Limit and stop orders will appear here."
+              className="py-12"
+            />
+          </TabsContent>
+        </Tabs>
+      </SectionCard>
 
     </div>
   );

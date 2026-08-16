@@ -32,6 +32,16 @@ export const formatCurrency = (val, showPlusSign = false, decimals = 2) => {
   return `$${formatted}`;
 };
 
+// Signed currency for Console figures: always-signed, U+2212 minus (aligns in
+// tabular-nums where ASCII hyphen does not), em dash for missing data.
+export const formatSigned = (val, decimals = 2) => {
+  if (val === null || val === undefined || isNaN(val) || val === '') return '—';
+  const num = Number(val);
+  if (num === 0) return formatCurrency(0, false, decimals);
+  const abs = formatCurrency(Math.abs(num), false, decimals);
+  return num > 0 ? `+${abs}` : `−${abs}`;
+};
+
 export const formatPrice = (val) => {
   if (val === null || val === undefined || isNaN(val) || val === '') return '—';
   const num = Number(val);

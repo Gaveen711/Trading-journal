@@ -1,17 +1,35 @@
 import { PRO_MONTHLY_PRICE, PRO_MONTHLY_DISPLAY, PRO_YEARLY_PRICE } from './pricing';
 
-export const SITE_URL = 'https://xaujournal.com';
+// Must match the host in public/sitemap.xml, public/robots.txt and index.html.
+// This module is the single source of truth for canonical URLs; when it said
+// non-www while every other source said www, each page was claimed under two
+// hosts at once.
+export const SITE_URL = 'https://www.xaujournal.com';
 export const SITE_NAME = 'xaujournal';
+
+// Mirrors index.html. Re-applied on every route because a page that wrote a
+// plainer value used to leave it downgraded for the rest of the SPA session.
+export const DEFAULT_ROBOTS =
+  'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 export const SITE_TAGLINE = 'Xaujournal — Gold (XAUUSD) Trading Journal';
 
 export const DEFAULT_TITLE =
   'Xaujournal | Best Gold Trading Journal for XAUUSD — MT4/MT5 Broker Sync';
 
 export const DEFAULT_DESCRIPTION =
-  'xaujournal is the XAU journal built for gold traders. Auto-sync MT4/MT5 trades, track XAUUSD P&L, session analytics, trade calendar, and journaling — free to start.';
+  'xaujournal is the XAU journal built for gold traders. Auto-sync MT4/MT5 trades, track XAUUSD P&L, session analytics, trade calendar and journaling free to start.';
 
 export const DEFAULT_KEYWORDS =
   'xau journal, XAU journal, gold trading journal, XAUUSD trading journal, XAU USD journal, MT5 trading journal, MT4 trading journal, gold trader journal, XAUUSD analytics, MT4/MT5 broker sync, forex gold journal';
+
+/**
+ * Routes that render another route's content. Without an entry here they
+ * self-canonicalize and Google sees an exact duplicate with no preferred
+ * version — '/home' renders the same LandingPage as '/'.
+ */
+export const CANONICAL_ALIASES = {
+  '/home': '/',
+};
 
 /** Per-route titles & descriptions (public marketing pages) */
 export const ROUTE_SEO = {
@@ -34,12 +52,6 @@ export const ROUTE_SEO = {
     description:
       'Contact the xaujournal team for help with your XAU gold trading journal, MT4/MT5 broker sync, or billing.',
   },
-  '/the-story': {
-    title: `The Story - ${SITE_NAME} XAU Trading Journal`,
-    description:
-      'The founder story behind XAU Journal: a SaaS trading journal built by a developer and XAUUSD trader to turn trade review into better execution.',
-  },
-
   '/privacy': {
     title: `Privacy Policy — ${SITE_NAME}`,
     description: 'How xaujournal collects, stores, and protects your XAUUSD trading journal data.',
@@ -51,6 +63,11 @@ export const ROUTE_SEO = {
   '/refund-policy': {
     title: `Refund Policy — ${SITE_NAME}`,
     description: 'Refund and cancellation policy for xaujournal Pro subscriptions.',
+  },
+  '/blogs': {
+    title: `Trading Study Materials & Blog — ${SITE_NAME}`,
+    description:
+      'Free study materials for beginner gold traders — spot XAUUSD basics, lots and pips, sessions, candlestick charts, risk management and trading psychology.',
   },
 };
 
@@ -76,39 +93,85 @@ function setCanonical(href) {
   el.setAttribute('href', href);
 }
 
-/** Update document head for the current public route */
-export function applyPageSEO(pathname) {
-  const base = pathname.split('?')[0];
-  const config = ROUTE_SEO[base] || ROUTE_SEO['/'];
-  const url = `${SITE_URL}${base === '/' ? '' : base}`;
+/** Full head treatment shared by the route-table path and the article path. */
+function applyHeadTags({ title, description, url, ogType = 'website' }) {
   const ogImage = `${SITE_URL}/favicon.png`;
 
-  document.title = config.title;
-  setMeta('name', 'description', config.description);
+  document.title = title;
+  setMeta('name', 'description', description);
   setMeta('name', 'keywords', DEFAULT_KEYWORDS);
+  setMeta('name', 'robots', DEFAULT_ROBOTS);
 
   // Open Graph
-  setMeta('property', 'og:type', 'website', true);
-  setMeta('property', 'og:title', config.title, true);
-  setMeta('property', 'og:description', config.description, true);
+  setMeta('property', 'og:type', ogType, true);
+  setMeta('property', 'og:title', title, true);
+  setMeta('property', 'og:description', description, true);
   setMeta('property', 'og:url', url, true);
   setMeta('property', 'og:image', ogImage, true);
   setMeta('property', 'og:site_name', SITE_NAME, true);
 
   // Twitter
   setMeta('name', 'twitter:card', 'summary_large_image');
-  setMeta('name', 'twitter:title', config.title);
-  setMeta('name', 'twitter:description', config.description);
+  setMeta('name', 'twitter:title', title);
+  setMeta('name', 'twitter:description', description);
   setMeta('name', 'twitter:image', ogImage);
 
   setCanonical(url);
+}
+
+/** Update document head for the current public route */
+export function applyPageSEO(pathname) {
+  // Strip the query and any trailing slash so '/pricing/' and '/pricing' resolve
+  // to one canonical instead of self-canonicalizing as two distinct pages.
+  const base = pathname.split('?')[0].replace(/\/+$/, '') || '/';
+  const config = ROUTE_SEO[base] || ROUTE_SEO['/'];
+  // Routes that duplicate another page point at the original.
+  const canonicalPath = CANONICAL_ALIASES[base] ?? base;
+  const url = `${SITE_URL}${canonicalPath === '/' ? '' : canonicalPath}`;
+
+  applyHeadTags({ title: config.title, description: config.description, url });
+}
+
+/** Article JSON-LD for one study article at its canonical URL. */
+export function buildArticleSchema(article) {
+  const url = `${SITE_URL}/blogs/${article.slug}`;
+  const organization = { '@type': 'Organization', name: SITE_NAME, url: SITE_URL };
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.summary,
+    dateModified: article.updated,
+    author: organization,
+    publisher: {
+      ...organization,
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.png` },
+    },
+    mainEntityOfPage: url,
+  };
+}
+
+/**
+ * Head treatment for one study article: title/description from the article
+ * itself, canonical at /blogs/<slug>, and Article JSON-LD. The caller owns
+ * cleanup — removeJsonLd('article-schema') on unmount — so the schema never
+ * leaks onto the next route.
+ */
+export function applyArticleSEO(article) {
+  applyHeadTags({
+    title: `${article.title} — ${SITE_NAME} study`,
+    description: article.summary,
+    url: `${SITE_URL}/blogs/${article.slug}`,
+    ogType: 'article',
+  });
+  injectJsonLd('article-schema', buildArticleSchema(article));
 }
 
 /** FAQ targets “xau journal” / gold journal search queries */
 export const LANDING_FAQ = [
   {
     q: 'What is an XAU trading journal?',
-    a: 'An XAU trading journal records every gold (XAUUSD) trade — entry, exit, lot size, P&L, session, and notes — so you can review performance and improve discipline. xaujournal is built only for gold traders, not generic forex pairs.',
+    a: 'An XAU trading journal records every gold (XAUUSD) trade entry, exit, lot size, P&L, session, and notes so you can review performance and improve discipline. xaujournal is built only for gold traders, not generic forex pairs.',
   },
   {
     q: 'Is xaujournal the best gold trading journal for MT4/MT5?',

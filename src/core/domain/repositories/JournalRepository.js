@@ -10,4 +10,8 @@ export class JournalRepository {
   deleteEntry(_userId, _date, _wasPresent) {
     throw new Error('deleteEntry not implemented');
   }
+
+  deleteEntries(_userId, _dates) {
+    throw new Error('deleteEntries not implemented');
+  }
 }

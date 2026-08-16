@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { calcPnl, formatNumber, formatCurrency, formatPrice, formatCompact } from './tradeUtils';
+import { calcPnl, formatNumber, formatCurrency, formatPrice, formatCompact, formatSigned } from './tradeUtils';
+
+describe('formatSigned', () => {
+  it('signs both directions and uses U+2212 minus, not the ASCII hyphen', () => {
+    expect(formatSigned(1240.5)).toBe('+$1,240.50');
+    expect(formatSigned(-337)).toBe('−$337.00');
+    expect(formatSigned(-337)).not.toContain('-'); // no ASCII hyphen anywhere
+  });
+
+  it('renders zero unsigned and missing data as an em dash', () => {
+    expect(formatSigned(0)).toBe('$0.00');
+    expect(formatSigned(null)).toBe('—');
+    expect(formatSigned(undefined)).toBe('—');
+    expect(formatSigned('')).toBe('—');
+    expect(formatSigned(Number.NaN)).toBe('—');
+  });
+
+  it('honors the decimals parameter', () => {
+    expect(formatSigned(12.345, 1)).toBe('+$12.3');
+    expect(formatSigned(-12.4, 0)).toBe('−$12');
+  });
+});
 
 describe('Trade Logic (calcPnl)', () => {
   it('calculates correct P&L for a BUY trade (diff * lots * 100)', () => {

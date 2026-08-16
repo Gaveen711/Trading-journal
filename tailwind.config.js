@@ -10,8 +10,6 @@ export default {
         border: "hsl(var(--border))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        surface: "hsl(var(--surface))",
-        "surface-raised": "hsl(var(--surface-raised))",
         card: "hsl(var(--card))",
         "card-foreground": "hsl(var(--card-foreground))", 
         popover: "hsl(var(--popover))",
@@ -30,18 +28,42 @@ export default {
         input: "hsl(var(--input))",
         win: "hsl(var(--win))",
         loss: "hsl(var(--loss))",
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+        },
       },
       fontFamily: {
-        'sans': ['Inter', 'Roboto', 'Outfit', 'Poppins', 'Segoe UI', 'sans-serif'],
-        'mono': ['"Roboto Mono"', 'Consolas', 'Monaco', 'monospace'],
+        // Inter and Roboto Mono were never loaded by index.html; the app has
+        // always fallen back to Roboto / platform monospace. Say what ships:
+        // Roboto for UI, IBM Plex Mono (loaded, weights 400-600) for figures.
+        'sans': ['Roboto', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        'mono': ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
       },
+      // Console radius: one knob, three perceptible steps. Controls sit at
+      // --radius (4px), surfaces at 1.5x (6px), micro chips at a fixed 2px.
+      // The six Tailwind names stay valid so all existing call sites land
+      // on the collapsed scale without per-site edits.
       borderRadius: {
-        sm: "calc(var(--radius) * 0.5)",
-        md: "calc(var(--radius) * 0.75)",
+        sm: "2px",
+        md: "var(--radius)",
         lg: "var(--radius)",
-        xl: "calc(var(--radius) * 1.25)",
+        xl: "calc(var(--radius) * 1.5)",
         "2xl": "calc(var(--radius) * 1.5)",
-        "3xl": "calc(var(--radius) * 2)",
+        "3xl": "calc(var(--radius) * 1.5)",
       }
     },
   },

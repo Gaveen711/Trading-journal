@@ -13,10 +13,70 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.xaujournal.com/the-story</loc>
-    <lastmod>2026-07-09</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://www.xaujournal.com/blogs</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/what-spot-gold-trading-is</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/pips-points-lots-gold-position-size</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/order-types-and-execution</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/why-keep-a-trading-journal</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/what-moves-the-gold-price</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/gold-trading-sessions-explained</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/reading-gold-candlestick-charts</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/risk-per-trade-position-sizing-gold</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/risk-reward-win-rate-expectancy</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.xaujournal.com/blogs/trading-psychology-revenge-overtrading-fomo</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.xaujournal.com/login</loc>

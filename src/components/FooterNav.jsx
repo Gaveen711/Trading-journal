@@ -1,204 +1,127 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Discord, TwitterX, Facebook, Instagram } from 'react-bootstrap-icons';
-import { Mail, Globe, Clock } from 'lucide-react';
-import Logo from './Logo';
-import FooterBackgroundGradient from './footer-background-gradient';
-import { TextHoverEffect } from './text-hover-effect';
+import { Link } from 'react-router-dom';
+import { GOLD_SESSIONS, formatUtc, isMarketClosed, isSessionOpen, useUtcClock } from '../lib/goldSessions';
+import { Wordmark } from './PublicSite';
 
-const FOOTER_LINKS = [
-  { to: '/privacy', label: 'Privacy' },
-  { to: '/terms-and-conditions', label: 'Terms' },
-  { to: '/refund-policy', label: 'Refunds' },
-  { to: '/the-story', label: 'The Story' },
+const PRODUCT_LINKS = [
+  { to: '/', label: 'Product' },
+  { to: '/blogs', label: 'Blog' },
+  { to: '/pricing', label: 'Pricing' },
   { to: '/contact', label: 'Contact' },
 ];
 
-const SOCIAL_LINKS = [
-  {
-    id: 'x',
-    label: 'X',
-    href: 'https://x.com/xau_journal',
-    Icon: TwitterX,
-  },
-  {
-    id: 'discord',
-    label: 'Discord',
-    href: 'https://discord.gg/smbNwBZC2',
-    Icon: Discord,
-  },
+const LEGAL_LINKS = [
+  { to: '/privacy', label: 'Privacy policy' },
+  { to: '/terms-and-conditions', label: 'Terms of service' },
+  { to: '/refund-policy', label: 'Refund policy' },
 ];
 
-function normalizePath(pathname) {
-  if (pathname.length > 1 && pathname.endsWith('/')) {
-    return pathname.slice(0, -1);
-  }
-  return pathname;
+const SUPPORT_LINKS = [
+  { href: 'mailto:info@xaujournal.com', label: 'info@xaujournal.com' },
+  { href: 'https://discord.gg/smbNwBZC2', label: 'Discord' },
+  { href: 'https://x.com/xau_journal', label: 'X / @xau_journal' },
+];
+
+// Built once per desk. Constructing Intl.DateTimeFormat is expensive and a fresh
+// options object defeats V8's constructor cache, so doing it inline meant four
+// new formatters on every tick.
+const CITY_FORMATTERS = new Map(
+  GOLD_SESSIONS.map((session) => [
+    session.tz,
+    new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: session.tz }),
+  ]),
+);
+
+function cityTime(now, timeZone) {
+  return CITY_FORMATTERS.get(timeZone).format(now);
 }
 
-export function FooterNav({ className, linkClassName, style }) {
-  const location = useLocation();
-  const currentPath = normalizePath(location.pathname);
-  const links = FOOTER_LINKS.filter((link) => normalizePath(link.to) !== currentPath);
+/** The footer's one live instrument: four desks and the UTC reference. */
+function SessionClocks() {
+  // Minute resolution — these read HH:MM, so a 1s tick re-rendered 60× per
+  // visible change.
+  const now = useUtcClock(30000);
+  const closed = isMarketClosed(now);
 
   return (
-    <nav className={className} style={style} aria-label="Footer navigation">
-      {links.map((link) => (
-        <Link key={link.to} to={link.to} className={linkClassName}>
-          {link.label}
-        </Link>
+    <div className='xj-footer-clocks' role='group' aria-label='Session clocks'>
+      {GOLD_SESSIONS.map((session) => (
+        <div key={session.id} className={isSessionOpen(session, now) ? 'xj-footer-clock is-open' : 'xj-footer-clock'}>
+          <small>{session.city}</small>
+          <strong>{cityTime(now, session.tz)}</strong>
+        </div>
       ))}
-    </nav>
-  );
-}
-
-export function SocialLinks({ className = '' }) {
-  return (
-    <ul className={`example-2 ${className}`} aria-label="Social links">
-      {SOCIAL_LINKS.map(({ id, label, href, Icon }) => (
-        <li key={id} className="icon-content">
-          <a data-social={id} aria-label={label} href={href} target="_blank" rel="noopener noreferrer">
-            <div className="filled" />
-            <Icon />
-          </a>
-        </li>
-      ))}
-    </ul>
+      <div className='xj-footer-clock'>
+        <small>{closed ? 'At rest' : 'Reference'}</small>
+        <strong>{formatUtc(now, false)} UTC</strong>
+      </div>
+    </div>
   );
 }
 
 export function PublicFooter({ className = '', style }) {
   return (
-    <footer className={`bg-[#0F0F11]/10 relative h-fit rounded-3xl overflow-hidden m-4 md:m-8 border border-border/5 ${className}`} style={style}>
-      <div className="max-w-7xl mx-auto p-8 md:p-14 z-[60] relative text-muted-foreground">
-        {/* Main grid for the footer content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-8 lg:gap-16 pb-12">
-
-          {/* Section 1: Social Media Icons */}
-          <div className="flex flex-col space-y-4">
-            <h4 className="text-white text-lg font-semibold mb-6">Follow Us</h4>
-            <div className="xau-footer-social-wrapper">
-              <a
-                href="https://x.com/xau_journal"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Twitter X"
-              >
-                <TwitterX className="icons-social-media" id="x" />
-              </a>
-
-              <a
-                href="https://discord.gg/smbNwBZC2"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Discord"
-              >
-                <Discord className="icons-social-media" id="discord" />
-              </a>
-
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-              >
-                <Facebook className="icons-social-media" id="facebook" />
-              </a>
-
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-              >
-                <Instagram className="icons-social-media" id="instagram" />
-              </a>
-            </div>
+    <footer className={`xj xj-footer ${className}`.trim()} style={style} data-ux-skip='true'>
+      <div className='xj-shell'>
+        <div className='xj-footer-grid'>
+          <div className='xj-footer-brand'>
+            <Wordmark />
+            <p>
+              A trade journal built for one instrument. Every fill recorded, every
+              reason kept, every session measured.
+            </p>
           </div>
 
-          {/* Section 2: Explore links */}
-          <div>
-            <h4 className="text-white text-lg font-semibold mb-6">Explore</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link to="/the-story" className="xau-footer-link">
-                  The Story
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="xau-footer-link">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="xau-footer-link">
-                  Pricing Plans
-                </Link>
-              </li>
+          <div className='xj-footer-col'>
+            <p className='xj-label'>Product</p>
+            <ul>
+              {PRODUCT_LINKS.map(({ to, label }) => (
+                <li key={to}><Link to={to}>{label}</Link></li>
+              ))}
             </ul>
           </div>
 
-          {/* Section 3: Legal & Help */}
-          <div>
-            <h4 className="text-white text-lg font-semibold mb-6">Legal & Help</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link to="/privacy" className="xau-footer-link">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms-and-conditions" className="xau-footer-link">
-                  Terms & Conditions
-                </Link>
-              </li>
-              <li>
-                <Link to="/refund-policy" className="xau-footer-link">
-                  Refund Policy
-                </Link>
-              </li>
+          <div className='xj-footer-col'>
+            <p className='xj-label'>Legal</p>
+            <ul>
+              {LEGAL_LINKS.map(({ to, label }) => (
+                <li key={to}><Link to={to}>{label}</Link></li>
+              ))}
             </ul>
           </div>
 
-          {/* Section 4: Contact Us */}
-          <div>
-            <h4 className="text-white text-lg font-semibold mb-6">Get Support</h4>
-            <ul className="space-y-4 text-sm">
-              <li className="flex items-center space-x-3">
-                <Mail size={18} className="text-primary shrink-0" />
-                <a
-                  href="mailto:info@xaujournal.com"
-                  className="xau-footer-link break-all"
-                >
-                  info@xaujournal.com
-                </a>
-              </li>
-              <li className="flex items-center space-x-3">
-                <Clock size={18} className="text-primary shrink-0" />
-                <span>Response within 1 day</span>
-              </li>
+          <div className='xj-footer-col'>
+            <p className='xj-label'>Support</p>
+            <ul>
+              {SUPPORT_LINKS.map(({ href, label }) => (
+                <li key={href}>
+                  <a
+                    href={href}
+                    target={href.startsWith('http') ? '_blank' : undefined}
+                    rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        {/* Separator line */}
-        <hr className="border-t border-border/10 my-8" />
+        <SessionClocks />
 
-        {/* Bottom section: copyright */}
-        <div className="flex justify-center items-center text-sm">
-          {/* Copyright text */}
-          <div className="text-center">
-            <p>&copy; {new Date().getFullYear()} Xau Journal. All rights reserved.</p>
+        <div className='xj-footer-legal'>
+          <p>
+            Trading gold and other leveraged products carries substantial risk of loss and is not
+            suitable for every investor. xaujournal is a record-keeping and analytics tool — it does
+            not execute trades, hold funds, or provide investment advice. Results recorded in a
+            journal are not a guarantee of future performance.
+          </p>
+          <div className='xj-footer-meta'>
+            <span>© {new Date().getFullYear()} xaujournal</span>
+            <span>XAU/USD spot · session times UTC</span>
           </div>
         </div>
       </div>
-
-      {/* Animated Text Effect */}
-      <div className="w-full flex h-[10rem] sm:h-[18rem] md:h-[24rem] lg:h-[30rem] -mt-16 sm:-mt-28 md:-mt-40 lg:-mt-52 -mb-8 sm:-mb-16 md:-mb-24 lg:-mb-36 overflow-hidden">
-        <TextHoverEffect text="xaujournal" className="z-10" />
-      </div>
-
-      <FooterBackgroundGradient />
     </footer>
   );
 }

@@ -113,7 +113,11 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
 
   // Fetch actual prices on mount to sync simulated prices with TradingView charts
   useEffect(() => {
+    const controller = new AbortController();
     const fetchRealPrices = async () => {
+      // Eight requests per tick (4 assets × spot + chart). Skip entirely while
+      // the tab is hidden rather than polling into the void.
+      if (document.visibilityState === 'hidden') return;
       const assets = [
         { id: 'xauusd', spotSymbol: 'XAU', yahooSymbol: 'GC=F' },
         { id: 'xagusd', spotSymbol: 'XAG', yahooSymbol: 'SI=F' },
@@ -125,14 +129,14 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
           assets.map(async (asset) => {
             try {
               // Fetch spot price directly from Gold-API (supports CORS!)
-              const spotPromise = fetch(`/api/spot-price/${asset.spotSymbol}`)
+              const spotPromise = fetch(`/api/spot-price/${asset.spotSymbol}`, { signal: controller.signal })
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null);
 
               // Fetch yahoo chart change via proxy (if it fails/404s, we fall back gracefully)
               const yahooInterval = YAHOO_INTERVALS[interval] || YAHOO_INTERVALS['1'];
               const yahooRange = interval === 'D' ? '1mo' : interval === 'W' ? '6mo' : ['60', '240'].includes(interval) ? '5d' : '1d';
-              const yahooPromise = fetch(`/api/yahoo-chart/${asset.yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`)
+              const yahooPromise = fetch(`/api/yahoo-chart/${asset.yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`, { signal: controller.signal })
                 .then(r => r.ok ? r.json() : null)
                 .catch(() => null);
 
@@ -189,13 +193,21 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
           return next;
         });
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error fetching real-time prices:', err);
       }
     };
 
     fetchRealPrices();
     const intervalId = window.setInterval(fetchRealPrices, TIMEFRAME_UPDATE_MS[interval] || TIMEFRAME_UPDATE_MS['1']);
-    return () => clearInterval(intervalId);
+    // Catch up as soon as the tab comes back, instead of waiting a full period.
+    const onVisibility = () => { if (document.visibilityState === 'visible') fetchRealPrices(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+      controller.abort();
+    };
   }, [interval]);
 
   useEffect(() => {

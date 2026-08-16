@@ -3,22 +3,22 @@ import { useLocation } from 'react-router-dom';
 import { AuthSyncFailure } from './app/components/AuthSyncFailure.jsx';
 import { ScrollProgress } from './app/experience/ScrollProgress.jsx';
 import { useRouteExperience } from './app/experience/useRouteExperience.js';
-import { AppRoutes, PUBLIC_NAVBAR_PATHS } from './app/routing/AppRoutes.jsx';
+import { AppRoutes, isPublicNavbarPath } from './app/routing/AppRoutes.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { PageLoader } from './components/PageLoader.jsx';
 import { PageSEO } from './components/PageSEO.jsx';
-import { PublicNavbar } from './components/PublicNavbar.jsx';
+import { PublicNavSkeleton } from './components/PublicNavSkeleton.jsx';
 import { hasPersistedAuthHint, useAuthSession } from './features/auth/hooks/useAuthSession.js';
 
 /** Root UI shell. Session policy, routing and route effects live in dedicated modules. */
 function App() {
   const location = useLocation();
   const { user, isLoading, hasError } = useAuthSession();
-  const isPublicRoute = PUBLIC_NAVBAR_PATHS.has(location.pathname);
+  const isPublicRoute = isPublicNavbarPath(location.pathname);
   useRouteExperience(location.pathname);
 
   const publicLoader = (text) => (
-    <><PublicNavbar /><PageLoader text={text} /></>
+    <><PublicNavSkeleton /><PageLoader text={text} /></>
   );
   const fallback = isPublicRoute ? publicLoader() : <PageLoader />;
 

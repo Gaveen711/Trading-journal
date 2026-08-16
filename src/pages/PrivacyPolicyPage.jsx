@@ -6,7 +6,6 @@ const SEO = {
     'Read the XAU Journal privacy policy. We only collect what is needed to run your XAUUSD trading journal. Your trade data belongs to you — we never sell it.',
   keywords:
     'xaujournal privacy policy, gold trading journal privacy, XAUUSD trade data security, forex journal app privacy, trading journal data protection, MetaTrader journal privacy, xau journal terms',
-  canonical: 'https://www.xaujournal.com/privacy',
 };
 
 const SECTIONS = [

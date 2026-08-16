@@ -6,7 +6,6 @@ const SEO = {
     'Read the XAU Journal terms of service. Understand your rights and responsibilities when using our XAUUSD gold trading journal platform, broker connection via Meta API, and Pro subscription.',
   keywords:
     'xaujournal terms of service, gold trading journal terms, XAUUSD journal user agreement, xau journal legal, forex trading app terms, Meta API broker connection terms, xaujournal subscription terms, gold trader app terms and conditions',
-  canonical: 'https://www.xaujournal.com/terms-and-conditions',
 };
 
 const SECTIONS = [

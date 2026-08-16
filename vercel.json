@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "xaujournal.com" }],
+      "destination": "https://www.xaujournal.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/|@|src/|node_modules/|.*\\.[a-zA-Z0-9]+).*)",

@@ -5,6 +5,7 @@ import { useToast } from '../components/ToastContext.jsx';
 const FREE_SUBSCRIPTION = {
   plan: 'free', expiry: null, isTrial: false, isTrialExpired: false,
   totalTrades: 0, totalJournals: 0, analytics: null, agreedToTerms: false,
+  isFromCache: false,
 };
 
 /** Maps subscription persistence into UI-ready entitlement state and actions. */
@@ -29,6 +30,11 @@ export function useSubscription(user) {
       }
 
       const data = docSnap.data();
+      // With the persistent cache the first snapshot can come off disk before
+      // the server confirms. Harmless for counters and the plan badge, which
+      // self-correct a moment later — but the consent gate must not act on a
+      // stale value, so it waits for a server-backed read.
+      const isFromCache = docSnap.metadata?.fromCache ?? false;
       const expiryDate = data.planExpiry ? new Date(data.planExpiry) : null;
       const now = new Date();
       const graceMs = data.isTrial ? 0 : 4 * 24 * 60 * 60 * 1000;
@@ -41,6 +47,7 @@ export function useSubscription(user) {
         analytics: data.analytics || null,
         agreedToTerms: data.agreedToTerms || false,
         isLoading: false,
+        isFromCache,
       };
       if (isPastCutoff) {
         setSubscription({ ...common, plan: 'free', isTrial: false, isTrialExpired: data.isTrial || false });

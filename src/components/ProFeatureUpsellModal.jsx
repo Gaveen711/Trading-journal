@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { XLg, ArrowClockwise, CheckCircleFill } from 'react-bootstrap-icons';
+import { CheckCircleFill } from 'react-bootstrap-icons';
 import { ProTermsModal } from './ProTermsModal';
+import { AppDialog } from './app/AppDialog';
+import { Button } from './ui/button';
+import { DialogClose } from './ui/dialog';
 import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY, PRO_YEARLY_MONTHLY_DISPLAY, PRO_YEARLY_SAVINGS } from '../lib/pricing';
 
 const FEATURE_COPY = {
@@ -31,84 +34,53 @@ export function ProFeatureUpsellModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto flex items-start sm:items-center justify-center p-4 sm:p-6">
-      <div className="fixed inset-0 bg-background/85 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
-
-      <div
-        className="relative w-full max-w-md my-8 card-premium p-6 sm:p-8 z-10 animate-in zoom-in-95 duration-300 shadow-2xl shadow-primary/15 border-primary/20"
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-all active:scale-75"
-          aria-label="Close"
-        >
-          <XLg className="w-5 h-5" />
-        </button>
-
-        <div className="flex flex-col items-center text-center space-y-4 pt-2">
-          <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20">
-            <ArrowClockwise className="w-7 h-7 text-primary" />
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Pro required</p>
-            <h2 className="text-xl sm:text-2xl font-black text-foreground leading-tight">{copy.title}</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
-              {copy.description}
-            </p>
-          </div>
-
-          <div className="w-full rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/15 via-background to-background p-5 space-y-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-primary">Pro plan</p>
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-4xl font-black text-primary">{PRO_MONTHLY_DISPLAY}</span>
-              <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">/ month</span>
-            </div>
-            <p className="text-[10px] text-muted-foreground/70 mt-1">or {PRO_YEARLY_DISPLAY}/year ({PRO_YEARLY_MONTHLY_DISPLAY}/mo) — <span className="text-primary font-black">save ${PRO_YEARLY_SAVINGS}</span></p>
-            <p className="text-[10px] text-muted-foreground">Cancel anytime from billing.</p>
-          </div>
-
-          <ul className="w-full space-y-2 text-left">
-            {copy.highlights.map((item) => (
-              <li key={item} className="text-xs flex items-center gap-2.5 font-medium text-foreground/90">
-                <CheckCircleFill className="text-primary w-4 h-4 shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-
+    <AppDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title={copy.title}
+      description={copy.description}
+      size="md"
+      footer={
+        <>
+          <DialogClose render={<Button variant="outline" />}>Maybe later</DialogClose>
           {plan === 'pro' ? (
-            <button
-              type="button"
-              disabled
-              className="w-full py-3.5 rounded-xl bg-primary/10 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20"
-            >
-              Pro active
-            </button>
+            <Button disabled>Pro active</Button>
           ) : (
-            <button
-              type="button"
-              onClick={() => setShowTerms(true)}
-              className="btn-primary w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all"
-            >
-              Upgrade to Pro
-            </button>
+            <Button onClick={() => setShowTerms(true)}>Upgrade to Pro</Button>
           )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-          >
-            Maybe later
-          </button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1 rounded-md bg-muted p-3">
+          <span className="inline-flex h-[18px] w-fit items-center rounded-sm border border-foreground px-1.5 font-mono text-[11px] leading-none text-foreground">
+            Pro
+          </span>
+          <div className="flex items-baseline gap-1.5 pt-1">
+            <span className="figure text-2xl font-medium text-foreground">{PRO_MONTHLY_DISPLAY}</span>
+            <span className="font-mono text-[11px] text-muted-foreground">/ month</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            or {PRO_YEARLY_DISPLAY}/year ({PRO_YEARLY_MONTHLY_DISPLAY}/mo) — save ${PRO_YEARLY_SAVINGS}
+          </p>
+          <p className="text-xs text-muted-foreground">Cancel anytime from billing.</p>
         </div>
+
+        <ul className="flex flex-col gap-2">
+          {copy.highlights.map((item) => (
+            <li key={item} className="flex items-center gap-2 text-xs text-foreground">
+              <CheckCircleFill className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {showTerms && (
         <ProTermsModal onAccept={handleAcceptTerms} onClose={() => setShowTerms(false)} />
       )}
-    </div>
+    </AppDialog>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { initGA, trackPageview } from '../../lib/ga.js';
 import { observeRouteWebVitals } from '../../lib/webVitals.js';
 
 const SKIP_SELECTOR = 'header, footer, [role="dialog"], .Toastify, .dashboard-sidebar, .story-page, .xau-page, .xjs-page, .qgs-page, .xau-scroll-top, .site-scroll-top, [data-ux-skip="true"]';
@@ -14,10 +15,23 @@ const clearUxState = (element) => {
 
 /** Owns telemetry, scroll, focus and progressive-reveal behavior shared by routes. */
 export function useRouteExperience(pathname) {
+  useEffect(() => { initGA(); }, []);
+  // App's own effects flush after its children's, so the page's SEO effect has
+  // already set document.title by the time this page_view reads it.
+  useEffect(() => { trackPageview(pathname); }, [pathname]);
   useEffect(() => observeRouteWebVitals(pathname), [pathname]);
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    // The dashboard manages its own scroll positions (dense layout, persistent
+    // shell); resetting on every /app navigation fights it.
+    if (!pathname.startsWith('/app')) window.scrollTo(0, 0);
+  }, [pathname]);
 
   useEffect(() => {
+    // The reveal/card/control pass is a marketing-page treatment. The Console
+    // dashboard opts out wholesale — same precedent as ScrollProgress, which
+    // already returns null on /app. Without this guard, new tables and
+    // sections under /app mount at opacity 0 + blur until observed.
+    if (pathname.startsWith('/app')) return undefined;
     if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
     let observer;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

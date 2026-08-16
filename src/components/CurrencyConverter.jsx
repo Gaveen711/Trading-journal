@@ -1,4 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+
+// Rate tables are shared across mounts and survive remounts. Keyed by base
+// currency; the API updates these roughly daily, so ten minutes is generous.
+const RATES_TTL_MS = 10 * 60 * 1000;
+const ratesCache = new Map();
 import { ChevronDown } from 'lucide-react';
 import { useToast } from '../components/ToastContext';
 import { formatNumber } from '../lib/tradeUtils';
@@ -945,66 +950,85 @@ export function CurrencyConverter() {
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('EUR');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
 
-  const fetchRate = useCallback(async () => {
-    const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) {
-      toast("Please enter a valid amount.", "error");
-      return;
-    }
-
-    if (from === to) {
-      setResult(val);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Primary: User's private API key
-      // Primary: User's private API key
-      const apiKey = import.meta.env.VITE_CURRENCY_API_KEY;
-      let res = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${from}`);
-      let data;
-
-      if (res.ok) {
-        data = await res.json();
-      }
-
-      // Fallback: Public API if private fails
-      if (!res.ok || data?.result !== 'success') {
-        console.warn('Private API failed or limit reached, trying fallback...');
-        res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
-        data = await res.json();
-      }
-
-      if (!data || (!data.conversion_rates && !data.rates)) {
-        throw new Error("Invalid rate data received");
-      }
-
-      const rates = data.conversion_rates || data.rates;
-      const currentRate = rates[to];
-
-      if (!currentRate) throw new Error("Target currency not found in rates");
-
-      setResult(val * currentRate);
-    } catch (error) {
-      console.error('Currency Conversion Error:', error);
-      toast("Connection error. Using estimated rates.", "error");
-      // Basic fallback result to prevent "Calculating..." being stuck
-      setResult(val * 1.0);
-    } finally {
-      setLoading(false);
-    }
-  }, [amount, from, to, toast]);
+  // The endpoint returns a whole rate table for `from`, so the response depends
+  // on `from` alone. Keying the fetch on `amount` meant one request to a
+  // third-party API per keystroke, with no abort and no ordering guarantee —
+  // a slow early response could overwrite a newer one.
+  const [rates, setRates] = useState(null);
+  const [rateError, setRateError] = useState(false);
 
   useEffect(() => {
-    fetchRate();
-  }, [fetchRate]);
+    const cached = ratesCache.get(from);
+    if (cached && Date.now() - cached.at < RATES_TTL_MS) {
+      setRates(cached.rates);
+      setRateError(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let active = true;
+    setLoading(true);
+    setRateError(false);
+
+    (async () => {
+      try {
+        // Primary: user's private API key. Fallback: public API.
+        const apiKey = import.meta.env.VITE_CURRENCY_API_KEY;
+        let res = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${from}`, { signal: controller.signal });
+        let data;
+        if (res.ok) data = await res.json();
+
+        if (!res.ok || data?.result !== 'success') {
+          console.warn('Private API failed or limit reached, trying fallback...');
+          res = await fetch(`https://open.er-api.com/v6/latest/${from}`, { signal: controller.signal });
+          data = await res.json();
+        }
+
+        const table = data?.conversion_rates || data?.rates;
+        if (!table) throw new Error('Invalid rate data received');
+
+        ratesCache.set(from, { rates: table, at: Date.now() });
+        if (active) setRates(table);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error('Currency Conversion Error:', error);
+        if (active) {
+          setRates(null);
+          setRateError(true);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [from]);
+
+  // Pure arithmetic — typing an amount costs no network at all.
+  const result = useMemo(() => {
+    const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0) return null;
+    if (from === to) return val;
+    if (rateError) return val;              // degraded 1:1, matches previous fallback
+    const rate = rates?.[to];
+    return rate ? val * rate : null;
+  }, [amount, from, to, rates, rateError]);
+
+  const notifiedErrorFor = useRef(null);
+  useEffect(() => {
+    if (rateError && notifiedErrorFor.current !== from) {
+      notifiedErrorFor.current = from;
+      toast('Connection error. Using estimated rates.', 'error');
+    }
+    if (!rateError) notifiedErrorFor.current = null;
+  }, [rateError, from, toast]);
 
   const handleConvert = (e) => {
     e.preventDefault();
-    fetchRate();
   };
 
   return (

@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, increment, limit, onSnapshot, orderBy, query,
-  runTransaction, serverTimestamp, startAfter, writeBatch,
+  runTransaction, serverTimestamp, startAfter, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { TradeRepository } from '../../core/domain/repositories/TradeRepository.js';
@@ -36,6 +36,23 @@ export class FirebaseTradeRepository extends TradeRepository {
       cursor: snapshot.docs.at(-1) || null,
       hasMore: snapshot.size === pageSize,
     };
+  }
+
+  /**
+   * Live window over a single date range, for views that render one period
+   * rather than the whole history. The range field is the sort field, so this
+   * needs no composite index.
+   */
+  subscribeToTradesInRange(userId, startDate, endDate, onUpdate, onError) {
+    const rangeQuery = query(
+      collection(db, 'users', userId, 'trades'),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+      orderBy('date', 'desc'),
+    );
+    return onSnapshot(rangeQuery, (snapshot) => {
+      onUpdate(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+    }, onError);
   }
 
   async addTrade(userId, tradeData) {

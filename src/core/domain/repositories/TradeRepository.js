@@ -7,6 +7,10 @@ export class TradeRepository {
     throw new Error('getTradesPage not implemented');
   }
 
+  subscribeToTradesInRange(_userId, _startDate, _endDate, _onUpdate, _onError) {
+    throw new Error('subscribeToTradesInRange not implemented');
+  }
+
   addTrade(_userId, _tradeData) {
     throw new Error('addTrade not implemented');
   }

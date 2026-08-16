@@ -41,5 +41,13 @@ export function useJournals(user) {
     setJournals(nextJournals);
   };
 
-  return { journals, isLoading, saveJournalEntry, deleteEntry, refreshJournals: loadJournals };
+  /** Clears every entry in one batched pass and a single state update. */
+  const deleteAllEntries = async () => {
+    const dates = Object.keys(journals);
+    if (!dates.length) return;
+    await repository.deleteEntries(user.uid, dates);
+    setJournals({});
+  };
+
+  return { journals, isLoading, saveJournalEntry, deleteEntry, deleteAllEntries, refreshJournals: loadJournals };
 }

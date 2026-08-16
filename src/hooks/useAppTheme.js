@@ -14,6 +14,7 @@ export function ThemeProvider({ children }) {
 
   const [pathname, setPathname] = useState(window.location.pathname);
   const isInitialMount = useRef(true);
+  const prevTheme = useRef({ isLightMode: null, currentTemplate: null });
 
   // ── Track location changes for theme scoping ────────────────────────────
   useEffect(() => {
@@ -48,6 +49,15 @@ export function ThemeProvider({ children }) {
     const root = window.document.documentElement;
     const isAppPath = pathname.startsWith('/app');
 
+    // Suppress transitions only when the theme actually changed. This effect
+    // also runs on every route change (pathname dep scopes template classes),
+    // and suppressing document-wide transitions for 250ms on navigation kills
+    // popup enter/exit animations opened right after a route change.
+    const themeChanged =
+      prevTheme.current.isLightMode !== isLightMode ||
+      prevTheme.current.currentTemplate !== currentTemplate;
+    prevTheme.current = { isLightMode, currentTemplate };
+
     let css;
     if (isInitialMount.current) {
       // Disable transitions on initial mount to avoid flash
@@ -65,7 +75,7 @@ export function ThemeProvider({ children }) {
         )
       );
       document.head.appendChild(css);
-    } else {
+    } else if (themeChanged) {
       root.classList.add('theme-toggling');
     }
 
@@ -99,7 +109,7 @@ export function ThemeProvider({ children }) {
       window.getComputedStyle(root).opacity;
       document.head.removeChild(css);
       isInitialMount.current = false;
-    } else {
+    } else if (themeChanged) {
       timer = setTimeout(() => {
         root.classList.remove('theme-toggling');
       }, 250);

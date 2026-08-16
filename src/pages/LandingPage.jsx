@@ -1,12 +1,31 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowDown, ArrowRight, Check, Target } from 'lucide-react';
-
-import { XauEmblem } from '../components/Logo';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
+import { Arrow, CTALink, SectionHead, TextLink } from '../components/PublicSite';
+import {
+  GOLD_SESSIONS,
+  formatUtc,
+  formatWait,
+  getNextOpen,
+  isMarketClosed,
+  isSessionOpen,
+  useDeskReveal,
+  useUtcClock,
+} from '../lib/goldSessions';
+import {
+  DEMO_TRADES,
+  bestHour,
+  equityCurve,
+  formatR,
+  formatR2,
+  hourWindow,
+  sessionSplit,
+  summarise,
+} from '../lib/deskDemo';
 import {
   LANDING_FAQ,
+  applyPageSEO,
   buildFAQSchema,
   buildOrganizationSchema,
   buildSoftwareSchema,
@@ -14,10 +33,701 @@ import {
   injectJsonLd,
   removeJsonLd,
 } from '../lib/seo';
+import { PRO_MONTHLY_DISPLAY } from '../lib/pricing';
+import { getArticle } from '../data/study';
 import './LandingPage.css';
 
+/* ————————————————————————————————————————————————————————————————
+   xaujournal — landing page, "Vitrine" direction.
+
+   The page is a dark showroom: the working product sits under museum
+   glass, tilted on a plinth, and every number on display is derived
+   from the one sample record in src/lib/deskDemo.js. Amber appears
+   only as a signal — live dots, the active session tab, the one
+   figure being pointed at. P&L alone may be green or red.
+   ———————————————————————————————————————————————————————————————— */
+
+/* ————————————————————— derived exhibits —————————————————————
+   Everything below is computed once at module scope from DEMO_TRADES.
+   Nothing is hand-written per metric, so the plates and their captions
+   can never quote two figures that disagree. */
+
+const STATS = summarise(DEMO_TRADES);
+const CURVE = equityCurve(DEMO_TRADES, 520, 150, 12);
+const BEST_HOUR = bestHour(DEMO_TRADES);
+const SPLIT = sessionSplit();
+const SPLIT_WIDEST = Math.max(...SPLIT.map((s) => Math.abs(s.net)), 1);
+
+const DESK_NAMES = { asia: 'Asia', london: 'London', ny: 'New York' };
+
+/** Rail city → the deskDemo session its window belongs to (for highlights). */
+const RAIL_TO_DESK = { syd: 'asia', tok: 'asia', lon: 'london', ny: 'ny' };
+
+/** Net R per sample day — feeds the calendar heatmap in the analytics plate. */
+const DAY_NET = new Map();
+for (const trade of DEMO_TRADES) DAY_NET.set(trade.day, (DAY_NET.get(trade.day) ?? 0) + trade.r);
+
+let strongestDay = { day: 0, net: -Infinity };
+for (const [day, net] of DAY_NET) {
+  if (net > strongestDay.net) strongestDay = { day, net };
+}
+const BEST_DAY = strongestDay;
+
+/* Sample days are numbered so day 1 is a Monday and weekends are absent —
+   six calendar weeks cover the whole record. */
+const CAL_CELLS = Array.from({ length: 42 }, (_, index) => {
+  const day = index + 1;
+  return { day, net: DAY_NET.has(day) ? DAY_NET.get(day) : null };
+});
+
+const LAST_DAY = DEMO_TRADES[DEMO_TRADES.length - 1].day;
+const LAST_IMPORT = DEMO_TRADES.filter((t) => t.day === LAST_DAY).length;
+
+/* The last four fills of the record, with the note field a broker never
+   stores. The notes are prose, not figures — the figures come from RECORD. */
+const LOG_NOTES = [
+  'Faded London late without the sweep. Rule broken, filed.',
+  'Second stop in NY and the size was revenge. Logged it.',
+  'Open drive, waited for the retest. By the book.',
+  'NY continuation off the London high. Clean.',
+];
+const LOG_ROWS = DEMO_TRADES.slice(-4).map((trade, index) => ({ ...trade, note: LOG_NOTES[index] }));
+
+const pad2 = (value) => String(value).padStart(2, '0');
+const windowLabel = (session) => `${pad2(session.open)}:00–${pad2(session.close)}:00`;
+
+/** The four rail sessions, each carrying the sample figures for its UTC window. */
+const RAIL = GOLD_SESSIONS.map((session) => ({
+  ...session,
+  figures: summarise(
+    DEMO_TRADES.filter((t) =>
+      session.open < session.close
+        ? t.hour >= session.open && t.hour < session.close
+        : t.hour >= session.open || t.hour < session.close,
+    ),
+  ),
+}));
+
+/* ————————————————————— live instruments ————————————————————— */
+
+/** One reading of the desk clock: which city is open, or what opens next. */
+function useLiveLabel(tickMs = 1000) {
+  const now = useUtcClock(tickMs);
+  const open = GOLD_SESSIONS.find((session) => isSessionOpen(session, now));
+  let label;
+  if (open) {
+    label = `${open.city} is open`;
+  } else {
+    const next = getNextOpen(now);
+    label = next ? `${next.city} opens in ${formatWait(next.minutes)}` : 'The desk is ready';
+  }
+  return { now, open: Boolean(open), label };
+}
+
+/** The hero microline: one live fact in mono, nothing decorative. */
+function LiveFact() {
+  const { now, open, label } = useLiveLabel();
+  return (
+    <p className='xv-fact'>
+      <span className={open ? 'xj-live' : 'xj-live is-idle'}>{label}</span>
+      <b className='xj-num'>{formatUtc(now)} UTC</b>
+    </p>
+  );
+}
+
+/** The floating session chip above the vitrine. */
+function LiveChip() {
+  const now = useUtcClock();
+  const open = GOLD_SESSIONS.find((session) => isSessionOpen(session, now));
+  const closed = isMarketClosed(now);
+  return (
+    <>
+      <span className={closed ? 'xj-live is-idle' : 'xj-live'}>
+        {closed ? 'At rest' : open ? `${open.city} open` : 'Between sessions'}
+      </span>
+      <b className='xj-num'>{formatUtc(now)}</b>
+    </>
+  );
+}
+
+/* ————————————————————— the vitrine (hero) ————————————————————— */
+
+/** The dashboard plate under glass: stats, equity curve, one pointed figure. */
+function DashboardPlate() {
+  return (
+    <div className='xj-glass xv-plate'>
+      <div className='xj-panel-bar'>
+        <strong>xaujournal · desk</strong>
+        <span>XAU/USD · {DEMO_TRADES.length} trades</span>
+      </div>
+
+      <div className='xv-plate-body'>
+        <dl className='xv-stats'>
+          {[
+            ['Win rate', `${STATS.winRate}%`, ''],
+            ['Expectancy', formatR2(STATS.expectancy), STATS.expectancy >= 0 ? 'is-up' : 'is-down'],
+            ['Profit factor', STATS.profitFactor ? STATS.profitFactor.toFixed(2) : '—', ''],
+            ['Net', formatR(STATS.net), STATS.net >= 0 ? 'is-up' : 'is-down'],
+          ].map(([label, value, tone]) => (
+            <div key={label}>
+              <dt className='xj-label'>{label}</dt>
+              <dd className={`xj-num ${tone}`.trim()}>{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className='xv-curve'>
+          <svg
+            viewBox={`0 0 ${CURVE.width} ${CURVE.height}`}
+            role='img'
+            aria-label={`Cumulative R across the sample record, finishing at ${formatR(CURVE.final)}.`}
+          >
+            <line className='xv-curve-zero' x1='0' y1={CURVE.zeroY} x2={CURVE.width} y2={CURVE.zeroY} />
+            <path className='xv-curve-area' d={CURVE.area} />
+            <path className='xv-curve-line' d={CURVE.line} />
+          </svg>
+          <span className='xv-curve-tag xj-num is-up'>{formatR(CURVE.final)}</span>
+        </div>
+      </div>
+
+      {/* The one figure the plate points at: the hour is amber (a signal),
+          the R it made stays green (P&L). */}
+      <p className='xv-plate-foot'>
+        Strongest hour <b className='xj-num is-signal'>{hourWindow(BEST_HOUR.hour)} UTC</b>
+        <b className='xj-num is-up'>{formatR(BEST_HOUR.net)}</b>
+        <span>across {BEST_HOUR.count} trades</span>
+      </p>
+    </div>
+  );
+}
+
+function HeroSection() {
+  const heroRef = useRef(null);
+  const stageRef = useRef(null);
+
+  /* The plate rights itself on scroll, and the floating panes track the
+     pointer by a few pixels. Both write straight to the DOM — no re-renders —
+     and neither is wired up under reduced motion or on coarse pointers. */
+  useEffect(() => {
+    const hero = heroRef.current;
+    const stage = stageRef.current;
+    if (!hero || !stage) return undefined;
+
+    let bounds = null;
+    const onScroll = () => {
+      bounds = null;
+      stage.classList.toggle('is-flat', window.scrollY > 140);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    const fine = window.matchMedia('(pointer: fine)').matches;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const onMove = (event) => {
+      if (event.pointerType !== 'mouse') return;
+      if (!bounds) bounds = hero.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+      const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+      stage.style.setProperty('--par-x', x.toFixed(3));
+      stage.style.setProperty('--par-y', y.toFixed(3));
+    };
+    const onLeave = () => {
+      stage.style.setProperty('--par-x', '0');
+      stage.style.setProperty('--par-y', '0');
+    };
+
+    if (fine && !reduce) {
+      hero.addEventListener('pointermove', onMove);
+      hero.addEventListener('pointerleave', onLeave);
+    }
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      hero.removeEventListener('pointermove', onMove);
+      hero.removeEventListener('pointerleave', onLeave);
+    };
+  }, []);
+
+  return (
+    <section ref={heroRef} className='xv-hero' aria-labelledby='hero-heading'>
+      <div className='xj-shell grid items-center gap-14 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]'>
+        <div className='xj-settle'>
+          <p className='xj-eyebrow'>Gold only · XAU/USD · MT4 &amp; MT5</p>
+
+          <h1 id='hero-heading' className='xj-h1'>
+            The record your broker <em>never</em> kept.
+          </h1>
+
+          <p className='xj-lede'>
+            xaujournal files every gold trade with its chart, its session and the reason you took
+            it — then shows which hours of the day actually pay you. London opens at 07:00 UTC;
+            your journal already knows what you do there.
+          </p>
+
+          <div className='xj-actions'>
+            <CTALink to='/login?mode=signup'>Start free</CTALink>
+            <Link className='xj-link' to='/pricing'>See pricing</Link>
+          </div>
+
+          <LiveFact />
+        </div>
+
+        <div ref={stageRef} className='xv-stage' aria-label='The product, on display'>
+          <div className='xv-plate3d'>
+            <DashboardPlate />
+
+            {/* museum glass over the plate — a slow specular sweep, nothing else */}
+            <div className='xv-glasspane' aria-hidden='true' />
+
+            <div className='xj-glass xv-float xv-float--live'>
+              <LiveChip />
+            </div>
+
+            <div className='xj-glass xv-float xv-float--pnl'>
+              <span className='xj-label'>Net · {DEMO_TRADES.length} trades</span>
+              <strong className={`xj-num ${STATS.net >= 0 ? 'is-up' : 'is-down'}`}>
+                {formatR(STATS.net)}
+              </strong>
+            </div>
+          </div>
+
+          <div className='xv-plinth' aria-hidden='true' />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— the session rail ————————————————————— */
+
+/**
+ * Four sessions as a real tablist: roving tabindex, arrow keys, and the
+ * selection refilters every plate caption in the chapters below through
+ * that session's UTC window of the sample record.
+ */
+function SessionRail({ selectedId, onSelect }) {
+  const now = useUtcClock(30000);
+  const tabRefs = useRef([]);
+
+  const moveTo = (index) => {
+    const next = (index + RAIL.length) % RAIL.length;
+    onSelect(RAIL[next].id);
+    tabRefs.current[next]?.focus();
+  };
+
+  const onKeyDown = (event, index) => {
+    if (event.key === 'ArrowRight') { event.preventDefault(); moveTo(index + 1); }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); moveTo(index - 1); }
+    else if (event.key === 'Home') { event.preventDefault(); moveTo(0); }
+    else if (event.key === 'End') { event.preventDefault(); moveTo(RAIL.length - 1); }
+  };
+
+  return (
+    <section className='xv-rail-band' aria-label='The trading day, four sessions'>
+      <div className='xj-shell'>
+        <div className='xv-rail' role='tablist' aria-label='Read the sample record through a session'>
+          {RAIL.map((session, index) => {
+            const selected = session.id === selectedId;
+            const open = isSessionOpen(session, now);
+            return (
+              <button
+                key={session.id}
+                ref={(el) => { tabRefs.current[index] = el; }}
+                type='button'
+                role='tab'
+                id={`rail-tab-${session.id}`}
+                aria-selected={selected}
+                aria-controls='vitrine-chapters'
+                tabIndex={selected ? 0 : -1}
+                className='xv-rail-tab'
+                onClick={() => onSelect(session.id)}
+                onKeyDown={(event) => onKeyDown(event, index)}
+              >
+                <span className='xv-rail-city'>{session.city}</span>
+                <span className='xv-rail-hours xj-num'>{windowLabel(session)} UTC</span>
+                {open ? (
+                  <span className='xv-rail-meta xj-live'>Open now</span>
+                ) : (
+                  <span className='xv-rail-meta'>{session.figures.count} trades</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— product chapters ————————————————————— */
+
+function JournalPlate() {
+  return (
+    <div className='xj-glass xv-plate'>
+      <div className='xj-panel-bar'>
+        <strong>Trade log</strong>
+        <span>day {LOG_ROWS[0].day}–{LAST_DAY}</span>
+      </div>
+      <ul className='xv-log'>
+        {LOG_ROWS.map((row) => (
+          <li key={`${row.day}-${row.hour}`} className='xv-log-row'>
+            <span className='xv-log-time xj-num'>D{row.day} · {pad2(row.hour)}:00</span>
+            <span className='xv-log-session'>{DESK_NAMES[row.session]}</span>
+            <b className={`xv-log-r xj-num ${row.r > 0 ? 'is-up' : row.r < 0 ? 'is-down' : ''}`.trim()}>
+              {formatR(row.r)}
+            </b>
+            <span className='xv-log-note'>{row.note}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function AnalyticsPlate({ session }) {
+  const deskId = RAIL_TO_DESK[session.id];
+  return (
+    <div className='xj-glass xv-plate'>
+      <div className='xj-panel-bar'>
+        <strong>Analytics</strong>
+        <span>sessions · calendar</span>
+      </div>
+      <div className='xv-ana'>
+        <div className='xv-ana-split'>
+          {SPLIT.map((desk) => (
+            <div key={desk.id} className={desk.id === deskId ? 'xv-split-row is-here' : 'xv-split-row'}>
+              <span className='xv-split-name'>{desk.label}</span>
+              <i
+                className={desk.net >= 0 ? 'is-up' : 'is-down'}
+                style={{ '--w': `${Math.max((Math.abs(desk.net) / SPLIT_WIDEST) * 100, 6)}%` }}
+                aria-hidden='true'
+              />
+              <b className={`xj-num ${desk.net >= 0 ? 'is-up' : 'is-down'}`}>{formatR(desk.net)}</b>
+            </div>
+          ))}
+        </div>
+        <div className='xv-ana-cal'>
+          <div className='xv-cal' aria-hidden='true'>
+            {CAL_CELLS.map((cell) => {
+              let tone = 'is-rest';
+              if (cell.net !== null) {
+                if (cell.net >= 2) tone = 'is-up-2';
+                else if (cell.net > 0) tone = 'is-up-1';
+                else if (cell.net <= -2) tone = 'is-down-2';
+                else if (cell.net < 0) tone = 'is-down-1';
+                else tone = 'is-even';
+              }
+              return (
+                <i
+                  key={cell.day}
+                  className={cell.day === BEST_DAY.day ? `${tone} is-best` : tone}
+                />
+              );
+            })}
+          </div>
+          <p className='xv-cal-note'>
+            Best day <b className='xj-num is-signal'>D{BEST_DAY.day}</b>
+            <b className='xj-num is-up'>{formatR(BEST_DAY.net)}</b>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SyncPlate() {
+  return (
+    <div className='xj-glass xv-plate'>
+      <div className='xj-panel-bar'>
+        <strong>Broker sync</strong>
+        <span className='xj-live'>Live</span>
+      </div>
+      <div className='xv-sync'>
+        <div className='xv-sync-flow'>
+          <span>MT4 / MT5</span>
+          <i aria-hidden='true' />
+          <span>Encrypted bridge</span>
+          <i aria-hidden='true' />
+          <span className='is-dest'>Your journal</span>
+        </div>
+        <dl className='xv-sync-rows'>
+          <div>
+            <dt className='xj-label'>Last import</dt>
+            <dd className='xj-num'>{LAST_IMPORT} fills · 0 duplicates</dd>
+          </div>
+          <div>
+            <dt className='xj-label'>History</dt>
+            <dd className='xj-num'>{DEMO_TRADES.length} trades · XAU/USD only</dd>
+          </div>
+          <div>
+            <dt className='xj-label'>Typed by hand</dt>
+            <dd className='xj-num'>0</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+const CHAPTERS = [
+  {
+    id: 'journal',
+    spec: 'XJ-01 · trade log',
+    title: <>The log that keeps the <em>reason</em></>,
+    copy: 'Each fill arrives with its session, its R and space for the one honest line: what you saw, and whether you followed the plan. Forty seconds at the close beats an hour of remembering on Sunday.',
+    Visual: JournalPlate,
+  },
+  {
+    id: 'analytics',
+    spec: 'XJ-02 · session analytics',
+    title: <>Sessions and the calendar, read from your <em>record</em></>,
+    copy: 'The split shows which desk pays you; the calendar shows how often you let it. Both are computed from your fills, not your memory.',
+    Visual: AnalyticsPlate,
+  },
+  {
+    id: 'sync',
+    spec: 'XJ-03 · broker sync',
+    title: <>MT4 and MT5 fills file <em>themselves</em></>,
+    copy: 'Connect once and closed trades arrive on their own — deduplicated, timestamped, zero retyping. Your part of the work starts at the review.',
+    Visual: SyncPlate,
+  },
+];
+
+/** Plate caption, refiltered by the rail: same record, one session's window. */
+function ChapterCaption({ id, session }) {
+  const f = session.figures;
+  const win = `${session.city} · ${windowLabel(session)} UTC`;
+  if (id === 'journal') {
+    return (
+      <p className='xv-caption'>
+        <span>{win}</span>
+        <span>{f.count} trades on record</span>
+        <span>{f.wins}W · {f.losses}L</span>
+      </p>
+    );
+  }
+  if (id === 'analytics') {
+    return (
+      <p className='xv-caption'>
+        <span>{win}</span>
+        <span>net <b className={`xj-num ${f.net >= 0 ? 'is-up' : 'is-down'}`}>{formatR(f.net)}</b></span>
+        <span>
+          expectancy{' '}
+          <b className={`xj-num ${f.expectancy >= 0 ? 'is-up' : 'is-down'}`}>{formatR2(f.expectancy)}</b>
+        </span>
+      </p>
+    );
+  }
+  return (
+    <p className='xv-caption'>
+      <span>{win}</span>
+      <span>{f.count} fills auto-filed</span>
+      <span>0 typed by hand</span>
+    </p>
+  );
+}
+
+function ChaptersSection({ session }) {
+  return (
+    <section className='xj-section' aria-labelledby='chapters-heading'>
+      <div className='xj-shell'>
+        <SectionHead
+          id='chapters-heading'
+          eyebrow='The product'
+          title={<>Three instruments, <em>one</em> record.</>}
+          lede={`Pick a session on the rail above — every caption below re-reads the same ${DEMO_TRADES.length}-trade sample through that window.`}
+        />
+
+        <div
+          id='vitrine-chapters'
+          role='tabpanel'
+          aria-labelledby={`rail-tab-${session.id}`}
+          className='xv-chapters'
+        >
+          {CHAPTERS.map(({ id, spec, title, copy, Visual }, index) => (
+            <article key={id} className='xv-chapter xj-reveal grid items-center gap-10 lg:grid-cols-2 lg:gap-16'>
+              <div className={index % 2 ? 'lg:order-2' : undefined}>
+                <p className='xv-spec'>{spec}</p>
+                <h3>{title}</h3>
+                <p className='xv-chapter-copy'>{copy}</p>
+              </div>
+              <div className={index % 2 ? 'lg:order-1' : undefined}>
+                <Visual session={session} />
+                <ChapterCaption id={id} session={session} />
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— the study teaser ————————————————————— */
+
+const STUDY_PICKS = [
+  'why-keep-a-trading-journal',
+  'gold-trading-sessions-explained',
+  'risk-per-trade-position-sizing-gold',
+].map(getArticle).filter(Boolean);
+
+function StudySection() {
+  return (
+    <section className='xj-section' aria-labelledby='study-heading'>
+      <div className='xj-shell'>
+        <SectionHead
+          id='study-heading'
+          eyebrow='The study'
+          title={<>Study materials for the <em>gold</em> desk.</>}
+          lede='Short reads that take a beginner from a raw XAUUSD quote to a position sized on purpose. Free, no login.'
+        />
+
+        <div className='xj-reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          {STUDY_PICKS.map((article) => (
+            <Link key={article.slug} className='xj-glass xjs-card' to={`/blogs/${article.slug}`}>
+              <span className='xjs-card-spine' aria-hidden='true'>{article.category}</span>
+              <h3>{article.title}</h3>
+              <p className='xjs-card-meta'>
+                <span>{article.readMinutes} min</span>
+                <Arrow />
+              </p>
+            </Link>
+          ))}
+        </div>
+
+        <div className='mt-10'>
+          <TextLink to='/blogs'>Browse the study</TextLink>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— proof strip ————————————————————— */
+
+const PROOF = ['XAUUSD only', 'MT4 / MT5 auto-sync', 'Free plan — no card', 'P&L calendar'];
+
+function ProofStrip() {
+  return (
+    <section className='xv-proof-band' aria-label='Plain facts'>
+      <div className='xj-shell'>
+        <ul className='xv-proof'>
+          {PROOF.map((fact) => <li key={fact}>{fact}</li>)}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— pricing bridge ————————————————————— */
+
+const TIERS = [
+  {
+    id: 'free',
+    name: 'Free',
+    mark: null,
+    price: '$0',
+    per: 'forever',
+    items: ['Manual trade journal', 'P&L calendar', 'Core statistics'],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    mark: 'MT4 / MT5 sync',
+    price: PRO_MONTHLY_DISPLAY,
+    per: '/ month',
+    items: ['Broker auto-sync', 'Full session analytics', 'TradingView webhooks'],
+  },
+];
+
+function PricingBridge() {
+  return (
+    <section className='xj-section' aria-labelledby='pricing-heading'>
+      <div className='xj-shell'>
+        <SectionHead
+          id='pricing-heading'
+          eyebrow='Pricing'
+          title={<>Free to keep. Paid to <em>automate</em>.</>}
+          lede='Manual journaling never costs anything. Pro pays for itself the first week you stop retyping fills.'
+        />
+
+        <div className='xj-reveal grid gap-4 md:grid-cols-2'>
+          {TIERS.map((tier) => (
+            <Link key={tier.id} className='xj-glass xv-tier' to='/pricing'>
+              <p className='xv-tier-name'>
+                <span>{tier.name}</span>
+                {tier.mark ? <mark>{tier.mark}</mark> : null}
+              </p>
+              <p className='xv-tier-price'>
+                <strong>{tier.price}</strong>
+                <span>{tier.per}</span>
+              </p>
+              <ul>
+                {tier.items.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+              <span className='xv-tier-more'>Full pricing <Arrow /></span>
+            </Link>
+          ))}
+        </div>
+
+        <div className='xj-actions'>
+          <CTALink to='/login?mode=signup'>Start free</CTALink>
+          <small>No card · cancel any time</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— FAQ ————————————————————— */
+
+function FAQSection() {
+  return (
+    <section className='xj-section' aria-labelledby='faq-heading'>
+      <div className='xj-shell'>
+        <div className='xj-faq xj-reveal'>
+          <div>
+            <p className='xj-eyebrow'>Direct answers</p>
+            <h2 id='faq-heading' className='xj-h2'>Asked before <em>the first login.</em></h2>
+          </div>
+          <div className='xj-faq-list'>
+            {LANDING_FAQ.map((item) => (
+              <details key={item.q}>
+                <summary>{item.q}<span aria-hidden='true'>+</span></summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— final CTA ————————————————————— */
+
+function FinalSection() {
+  const { label } = useLiveLabel(60000);
+  return (
+    <section className='xj-section xv-final' aria-labelledby='final-heading'>
+      <div className='xj-shell xj-reveal'>
+        <p className='xj-eyebrow'>{label}</p>
+        <h2 id='final-heading' className='xv-final-title'>
+          Your next session is <em>journaled</em> before you sit down.
+        </h2>
+        <div className='xj-actions'>
+          <CTALink to='/login?mode=signup'>Start free</CTALink>
+          <small>No card · no trial clock</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ————————————————————— page ————————————————————— */
+
 function useLandingSchemas() {
-  useLayoutEffect(() => {
+  useEffect(() => {
     injectJsonLd('ld-organization', buildOrganizationSchema());
     injectJsonLd('ld-website', buildWebSiteSchema());
     injectJsonLd('ld-software', buildSoftwareSchema());
@@ -32,521 +742,40 @@ function useLandingSchemas() {
   }, []);
 }
 
-/**
- * One night, told on scroll. The scrollbar is the clock:
- * 14:32 close → 18:05 replay → 22:47 note → 01:15 build → 06:58 next open.
- */
-function useNightScroll(chartRef, clockRef) {
-  const [clock, setClock] = useState('14:32');
+export function LandingPage() {
+  const location = useLocation();
+  useLandingSchemas();
+  useDeskReveal();
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    applyPageSEO(location.pathname);
+  }, [location.pathname]);
 
-    const revealTargets = document.querySelectorAll('.xnl-reveal');
-    let revealObserver;
-    if (reduceMotion) {
-      revealTargets.forEach((el) => el.classList.add('is-in'));
-    } else {
-      revealObserver = new IntersectionObserver(
-        (entries) => entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-in');
-            revealObserver.unobserve(entry.target);
-          }
-        }),
-        { threshold: 0.18 },
-      );
-      revealTargets.forEach((el) => revealObserver.observe(el));
-    }
-
-    const chapterObserver = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => {
-        if (entry.isIntersecting) setClock(entry.target.dataset.time);
-      }),
-      { rootMargin: '-42% 0px -42% 0px' },
-    );
-    document.querySelectorAll('[data-time]').forEach((el) => chapterObserver.observe(el));
-
-    const chartEl = chartRef.current;
-    const path = chartEl?.querySelector('.xnl-chart-path');
-    let frameId = 0;
-
-    const paint = () => {
-      frameId = 0;
-      const doc = document.documentElement;
-      const total = doc.scrollHeight - window.innerHeight;
-      clockRef.current?.style.setProperty('--p', total > 0 ? String(window.scrollY / total) : '0');
-
-      if (!chartEl || !path) return;
-      if (reduceMotion) {
-        path.style.strokeDashoffset = '0';
-        chartEl.classList.add('show-entry', 'show-exit');
-        return;
-      }
-      const rect = chartEl.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const p = Math.min(1, Math.max(0, (vh * 0.92 - rect.top) / (vh * 0.62)));
-      path.style.strokeDashoffset = String(1 - p);
-      chartEl.classList.toggle('show-entry', p > 0.42);
-      chartEl.classList.toggle('show-exit', p > 0.92);
-    };
-
-    const onScroll = () => {
-      if (!frameId) frameId = window.requestAnimationFrame(paint);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    paint();
-
-    return () => {
-      revealObserver?.disconnect();
-      chapterObserver.disconnect();
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (frameId) window.cancelAnimationFrame(frameId);
-    };
-  }, [chartRef, clockRef]);
-
-  return clock;
-}
-
-function ActionLink({ to, children, secondary = false }) {
-  return (
-    <Link className={secondary ? 'xnl-action xnl-action--secondary' : 'xnl-action xnl-action--primary'} to={to}>
-      <ArrowRight className='xnl-arr xnl-arr--in' aria-hidden='true' />
-      <span>{children}</span>
-      <ArrowRight className='xnl-arr xnl-arr--out' aria-hidden='true' />
-      <i className='xnl-action-fill' aria-hidden='true' />
-    </Link>
-  );
-}
-
-function Kicker({ time, children }) {
-  return (
-    <p className='xnl-kicker'>
-      {time ? <span className='xnl-kicker-time'>{time}</span> : null}
-      {children}
-    </p>
-  );
-}
-
-/* ——— 14:32 — the close ——— */
-
-function FillTicket() {
-  return (
-    <article className='xnl-ticket' aria-label='Broker fill confirmation for the trade this story is about'>
-      <header>
-        <span>FILL CONFIRMATION</span>
-        <strong>MT5 / 8842107</strong>
-      </header>
-      <div className='xnl-ticket-rows'>
-        <div><span>Instrument</span><strong>XAU / USD</strong></div>
-        <div><span>Side</span><strong>BUY 0.50</strong></div>
-        <div><span>Entry</span><strong>2,387.44</strong></div>
-        <div><span>Exit</span><strong>2,394.18</strong></div>
-        <div><span>Session</span><strong>London</strong></div>
-        <div><span>Result</span><strong className='is-positive'>+1.18R</strong></div>
-      </div>
-      <footer>
-        <span className='xnl-ticket-barcode' aria-hidden='true' />
-        <span>CLOSED 14:32:07 GMT</span>
-      </footer>
-      <span className='xnl-ticket-stamp' aria-hidden='true'>PROFIT<i>reason unrecorded</i></span>
-    </article>
-  );
-}
-
-const TICKER_ITEMS = [
-  'XAU/USD 2,394.18 ▲ +1.18R',
-  'London — closed 14:32 GMT',
-  'Free plan — no card',
-  'MT4 / MT5 sync on Pro',
-  'Private by default',
-  'The trade is closed — the lesson isn’t',
-];
-
-function TickerRow({ hidden = false }) {
-  return (
-    <span className='xnl-ticker-group' aria-hidden={hidden || undefined}>
-      {TICKER_ITEMS.map((item) => (
-        <span key={item}>{item}<i aria-hidden='true'>◆</i></span>
-      ))}
-    </span>
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className='xnl-hero' data-time='14:32' aria-labelledby='landing-hero-heading'>
-      <div className='xnl-shell xnl-hero-inner'>
-        <header className='xnl-mast'>
-          <span>Case file 001</span>
-          <span className='xnl-mast-mid'>A true story from one gold desk</span>
-          <span>XAU / USD — London</span>
-        </header>
-        <h1 id='landing-hero-heading' className='xnl-h'>
-          <span className='xnl-h-line'><span>The best trade</span></span>
-          <span className='xnl-h-line xnl-h-line--hollow'><span>I ever took</span></span>
-          <span className='xnl-h-line'><span>was a <em>mistake.</em></span></span>
-        </h1>
-        <div className='xnl-hero-foot'>
-          <p className='xnl-lede'>
-            XAU/USD, London session, closed +1.18R. This page is that night — and the gold trading
-            journal it forced me to build.
-          </p>
-          <div className='xnl-hero-actions'>
-            <ActionLink to='/login?mode=signup'>Start the free journal</ActionLink>
-            <a className='xnl-scroll-cue' href='#replay'>
-              <ArrowDown aria-hidden='true' /> The night starts at 18:05
-            </a>
-          </div>
-        </div>
-        <FillTicket />
-      </div>
-      <div className='xnl-ticker' aria-label='Product facts ticker'>
-        <div className='xnl-ticker-track'>
-          <TickerRow />
-          <TickerRow hidden />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ——— 18:05 — the replay ——— */
-
-function ReplayChart({ chartRef }) {
-  return (
-    <figure className='xnl-chart xnl-reveal' ref={chartRef}>
-      <svg viewBox='0 0 680 260' role='img' aria-labelledby='replay-title replay-desc'>
-        <title id='replay-title'>Replay of the XAUUSD trade</title>
-        <desc id='replay-desc'>Price runs up after an entry taken six minutes before the plan allowed. The planned entry sits later, after the confirmation close.</desc>
-        <g className='xnl-chart-grid' aria-hidden='true'>
-          <path d='M0 52H680M0 104H680M0 156H680M0 208H680' />
-          <path d='M97 0V260M194 0V260M291 0V260M388 0V260M485 0V260M582 0V260' />
-        </g>
-        <path
-          className='xnl-chart-path'
-          pathLength='1'
-          d='M0 178 C36 172 58 204 92 190 S148 128 184 150 S238 202 272 168 S316 118 348 132 S398 168 432 120 S492 44 540 66 S632 70 680 32'
-        />
-        <line className='xnl-chart-plan-line' x1='348' y1='132' x2='432' y2='120' aria-hidden='true' />
-        <g className='xnl-pin xnl-pin--entry'>
-          <circle cx='272' cy='168' r='7' />
-          <text x='150' y='226'>my entry — 6 min early</text>
-        </g>
-        <g className='xnl-pin xnl-pin--plan'>
-          <circle cx='348' cy='132' r='7' />
-          <text x='362' y='158'>planned entry — after the close</text>
-        </g>
-        <g className='xnl-pin xnl-pin--exit'>
-          <circle cx='680' cy='32' r='7' />
-          <text x='588' y='24'>exit +1.18R</text>
-        </g>
-      </svg>
-      <figcaption>
-        <span>2394.18</span>
-        <span>Replay, 18:05 — the confirmation candle never closed.</span>
-        <span>2387.44</span>
-      </figcaption>
-    </figure>
-  );
-}
-
-function ReplaySection({ chartRef }) {
-  return (
-    <section id='replay' className='xnl-chapter xnl-chapter--replay' data-time='18:05' aria-labelledby='replay-heading'>
-      <span className='xnl-watermark' aria-hidden='true'>18:05</span>
-      <div className='xnl-shell'>
-        <div className='xnl-chapter-head'>
-          <Kicker time='18:05'>The replay</Kicker>
-          <h2 id='replay-heading'>The win was real.<br /><em>The entry wasn’t earned.</em></h2>
-          <p>
-            That evening I replayed the session candle by candle. My plan said: wait for the five-minute close
-            back inside the range. My fill said 14:26 — six minutes early. The confirmation I was waiting for
-            never arrived. The market simply forgave me.
-          </p>
-        </div>
-        <ReplayChart chartRef={chartRef} />
-        <dl className='xnl-two-truths xnl-reveal'>
-          <div>
-            <dt>The broker recorded</dt>
-            <dd>Entry 2,387.44. Exit 2,394.18. +1.18R. Closed 14:32.</dd>
-          </div>
-          <div>
-            <dt>It could not record</dt>
-            <dd>The rule. The hesitation. The six minutes that made this luck, not process.</dd>
-          </div>
-        </dl>
-        <p className='xnl-pull xnl-reveal'>A profitable mistake is still a mistake. <em>It’s just better disguised.</em></p>
-      </div>
-    </section>
-  );
-}
-
-/* ——— 22:47 — the note ——— */
-
-function NoteSection() {
-  return (
-    <section className='xnl-chapter xnl-chapter--night' data-time='22:47' aria-labelledby='note-heading'>
-      <span className='xnl-watermark' aria-hidden='true'>22:47</span>
-      <div className='xnl-shell xnl-note-grid'>
-        <div className='xnl-note-copy'>
-          <Kicker time='22:47'>The desk note</Kicker>
-          <h2 id='note-heading'>“The P&amp;L says green.<br /><em>The replay says I was early.”</em></h2>
-          <p>
-            I’m Gaveen Perera — developer by profession, gold trader after hours. That night, the evidence of my
-            own trade lived in three places: the fill in MT5, the screenshot in a folder, the reason only in my
-            head. Rebuilding one trade honestly took twenty minutes. So most nights, I didn’t.
-          </p>
-          <p>
-            A week later the same early entry appeared inside another winning trade. Once is a slip. Twice,
-            recorded nowhere, is a pattern with a future.
-          </p>
-          <div className='xnl-signature'>
-            <strong>Gaveen Perera</strong>
-            <span>Founder — developer and gold trader</span>
-          </div>
-        </div>
-        <figure className='xnl-note-photo xnl-reveal'>
-          <img
-            src='/founder-trader-session.webp'
-            width='1536'
-            height='1024'
-            loading='lazy'
-            alt='Gaveen Perera reviewing a gold trading session at his desk late at night'
-          />
-          <figcaption>22:47 — after the session, not in a pitch meeting.</figcaption>
-        </figure>
-      </div>
-    </section>
-  );
-}
-
-/* ——— 01:15 — the build ——— */
-
-function BuildSection() {
-  return (
-    <section className='xnl-chapter xnl-chapter--night xnl-chapter--build' data-time='01:15' aria-labelledby='build-heading'>
-      <span className='xnl-watermark' aria-hidden='true'>01:15</span>
-      <div className='xnl-shell xnl-build-grid'>
-        <div className='xnl-chapter-head'>
-          <Kicker time='01:15'>The build</Kicker>
-          <h2 id='build-heading'>So I did what developers do<br /><em>at one in the morning.</em></h2>
-          <p>
-            I stopped waiting for someone else to build it. One screen for the fill, the chart, the reason and
-            one rule for tomorrow. Capture is automatic so the thinking doesn’t have to be. That small nightly
-            tool ran every session for months before it had a name.
-          </p>
-        </div>
-        <div className='xnl-terminal xnl-reveal' role='img' aria-label='Terminal showing the first commit of XAU Journal'>
-          <header><i /><i /><i /><span>gaveen@desk — 01:15</span></header>
-          <pre>
-            <code>
-              <span className='xnl-t-dim'>$</span> touch review.jsx{'\n'}
-              <span className='xnl-t-dim'>$</span> git commit -m <span className='xnl-t-gold'>"one screen: fill, chart, reason, rule"</span>{'\n'}
-              <span className='xnl-t-dim'>#</span> 1 file changed.{'\n'}
-              <span className='xnl-t-dim'>#</span> <em>Everything else did too.</em>
-            </code>
-          </pre>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ——— 06:58 — the next session ——— */
-
-const MARGIN_NOTES = [
-  ['Capture', 'Save the trade before memory edits it — chart, session, risk, screenshot, reason.'],
-  ['Context', 'The reason sits beside the result, so a profitable mistake can’t hide.'],
-  ['Compare', 'Read setups and sessions together and find the process that repeats.'],
-  ['Carry', 'Every review ends as one sentence you take into the next open.'],
-];
-
-function ProductWindow() {
-  return (
-    <div className='xnl-product-window xnl-reveal' aria-label='Sample XAU Journal weekly review workspace'>
-      <div className='xnl-product-topbar'>
-        <div><XauEmblem className='xnl-product-emblem' /><strong>XAU Journal</strong></div>
-        <span>Week 27 — review before London</span>
-      </div>
-      <div className='xnl-product-metrics'>
-        <div><span>Net result</span><strong>+8.4R</strong><small>9 closed trades</small></div>
-        <div><span>Plan followed</span><strong>7 / 9</strong><small>Two early entries</small></div>
-        <div><span>Best session</span><strong>London</strong><small>+6.1R this week</small></div>
-      </div>
-      <div className='xnl-product-body'>
-        <div className='xnl-product-trades'>
-          <header>LAST DECISIONS</header>
-          <div><span className='is-buy'>BUY</span><p><strong>London sweep</strong><small>Waited for confirmation</small></p><b className='is-positive'>+3.2R</b></div>
-          <div><span className='is-sell'>SELL</span><p><strong>NY continuation</strong><small>Plan followed</small></p><b className='is-positive'>+2.1R</b></div>
-          <div><span className='is-buy'>BUY</span><p><strong>Late impulse</strong><small>Entered before retest</small></p><b className='is-negative'>−1.0R</b></div>
-        </div>
-        <aside className='xnl-product-rule'>
-          <Target aria-hidden='true' />
-          <span>NEXT-SESSION RULE</span>
-          <strong>Do not take the first London impulse.</strong>
-          <small><Check aria-hidden='true' /> Saved for tomorrow</small>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function ProductSection() {
-  return (
-    <section className='xnl-chapter xnl-chapter--dawn' data-time='06:58' aria-labelledby='product-heading'>
-      <span className='xnl-watermark' aria-hidden='true'>06:58</span>
-      <div className='xnl-shell'>
-        <div className='xnl-chapter-head'>
-          <Kicker time='06:58'>The next London open</Kicker>
-          <h2 id='product-heading'>One night’s tool<br /><em>became XAU Journal.</em></h2>
-          <p>
-            The screen from that night grew into a full desk — calendar, sessions, risk, screenshots — but it
-            still does exactly four jobs, in the same order I needed them at 01:15.
-          </p>
-        </div>
-        <div className='xnl-product-grid'>
-          <ProductWindow />
-          <ol className='xnl-margin-notes'>
-            {MARGIN_NOTES.map(([title, body], i) => (
-              <li className='xnl-reveal' key={title}>
-                <span>0{i + 1}</span>
-                <div><h3>{title}</h3><p>{body}</p></div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ——— every desk ——— */
-
-function AudienceSection() {
-  return (
-    <section className='xnl-chapter xnl-chapter--audience' data-time='TONIGHT' aria-labelledby='audience-heading'>
-      <div className='xnl-shell'>
-        <div className='xnl-chapter-head'>
-          <Kicker>For every desk that trades gold</Kicker>
-          <h2 id='audience-heading'>Beginners build the habit.<br /><em>Professionals defend it.</em></h2>
-        </div>
-        <div className='xnl-audience-rows'>
-          <article className='xnl-reveal'>
-            <span>STARTING OUT</span>
-            <h3>Your first hundred trades write your habits.</h3>
-            <p>Log them manually on Free and learn your own patterns while the size is still small enough to forgive you.</p>
-          </article>
-          <article className='xnl-reveal'>
-            <span>TRADING FOR A LIVING</span>
-            <h3>Keep prop-firm discipline visible.</h3>
-            <p>Sync MT4/MT5 on Pro and review London and New York with the same rigor you demand of the entry itself.</p>
-          </article>
-        </div>
-        <p className='xnl-pull xnl-reveal'>Gold trades through every timezone. <em>So do its mistakes.</em></p>
-      </div>
-    </section>
-  );
-}
-
-/* ——— the rate card + close ——— */
-
-function RateCardSection() {
-  return (
-    <section className='xnl-chapter xnl-chapter--rates' data-time='TONIGHT' aria-labelledby='rates-heading'>
-      <div className='xnl-shell xnl-rates-grid'>
-        <div>
-          <Kicker>The rate card</Kicker>
-          <h2 id='rates-heading'>Start free.<br /><em>Upgrade when automation earns it.</em></h2>
-          <p>Manual journaling is free for as long as you want it. Pro exists for one reason: to give your review time back.</p>
-          <div className='xnl-hero-actions'>
-            <ActionLink to='/login?mode=signup'>Start the free journal</ActionLink>
-            <Link className='xnl-inline-link' to='/pricing'>Compare Free and Pro <ArrowRight aria-hidden='true' /></Link>
-          </div>
-        </div>
-        <div className='xnl-plans' aria-label='Free and Pro plan overview'>
-          <div className='xnl-reveal'>
-            <span>FREE</span>
-            <strong>Unlimited manual journaling</strong>
-            <p>Every trade, the calendar and core P&amp;L. No card required to begin.</p>
-          </div>
-          <div className='xnl-reveal'>
-            <span>PRO</span>
-            <strong>MT4 / MT5 sync + full analytics</strong>
-            <p>Trades import themselves. You keep the ten minutes for the thinking.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CloseSection() {
-  return (
-    <section className='xnl-chapter xnl-chapter--close' data-time='TONIGHT' aria-labelledby='close-heading'>
-      <div className='xnl-shell'>
-        <Kicker>Tonight, after your last trade</Kicker>
-        <h2 id='close-heading'>Give it ten<br /><em>honest minutes.</em></h2>
-        <p>One review is enough to begin. The rest of the habit follows the first honest one.</p>
-        <div className='xnl-hero-actions'>
-          <ActionLink to='/login?mode=signup'>Start the free journal</ActionLink>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FAQSection() {
-  return (
-    <section className='xnl-faq' aria-labelledby='faq-heading'>
-      <div className='xnl-shell xnl-faq-grid'>
-        <div>
-          <Kicker>Before you begin</Kicker>
-          <h2 id='faq-heading'>Direct answers.</h2>
-        </div>
-        <div className='xnl-faq-list'>
-          {LANDING_FAQ.slice(0, 4).map((item) => (
-            <details key={item.q}>
-              <summary>{item.q}<span aria-hidden='true'>+</span></summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function LandingPage() {
-  useLandingSchemas();
-  const chartRef = useRef(null);
-  const clockRef = useRef(null);
-  const clock = useNightScroll(chartRef, clockRef);
+  /* The rail opens on whichever desk is live when the visitor arrives;
+     London — the record's edge — when the market is at rest. */
+  const [railId, setRailId] = useState(() => {
+    const now = new Date();
+    const open = GOLD_SESSIONS.find((session) => isSessionOpen(session, now));
+    return open ? open.id : 'lon';
+  });
+  const railSession = RAIL.find((session) => session.id === railId) ?? RAIL[2];
 
   return (
     <>
       <PublicNavbar />
-      <div className='xnl-site' data-ux-skip='true'>
-        <main className='xnl-page' data-ux-skip='true'>
+      <div className='xj xv' data-ux-skip='true'>
+        <main data-ux-skip='true'>
           <HeroSection />
-          <ReplaySection chartRef={chartRef} />
-          <NoteSection />
-          <BuildSection />
-          <ProductSection />
-          <AudienceSection />
-          <RateCardSection />
-          <CloseSection />
+          <SessionRail selectedId={railId} onSelect={setRailId} />
+          <ChaptersSection session={railSession} />
+          <StudySection />
+          <ProofStrip />
+          <PricingBridge />
           <FAQSection />
+          <FinalSection />
         </main>
-        <div className='xnl-clock' ref={clockRef} aria-hidden='true'>
-          <span>SESSION</span>
-          <strong>{clock}</strong>
-          <i className='xnl-clock-bar' />
-        </div>
       </div>
-      <PublicFooter className='qgs-footer' />
+      <PublicFooter />
     </>
   );
 }

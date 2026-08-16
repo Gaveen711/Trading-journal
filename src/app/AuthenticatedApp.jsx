@@ -4,22 +4,24 @@ import { ErrorBoundary } from '../components/ErrorBoundary.jsx';
 import { PageLoader } from '../components/PageLoader.jsx';
 import { useToast } from '../components/ToastContext.jsx';
 import { useSubscription } from '../hooks/useSubscription.js';
-import { useWallet } from '../hooks/useWallet.js';
 import { useOnboarding } from '../features/onboarding/hooks/useOnboarding.js';
 import { AppServicesProvider } from './di/AppServicesContext.jsx';
+import { AuthenticatedSessionProvider, useSessionWallet } from './di/AuthenticatedSessionContext.jsx';
 import { AuthenticatedOverlays } from './components/AuthenticatedOverlays.jsx';
 import { AuthenticatedRoutes } from './routing/AuthenticatedRoutes.jsx';
 import '../styles/auth.css';
 
 const PUBLIC_LEGAL_PATHS = new Set([
-  '/privacy', '/pricing', '/contact', '/terms-and-conditions', '/refund-policy', '/the-story',
+  '/privacy', '/pricing', '/contact', '/terms-and-conditions', '/refund-policy',
 ]);
 
 /** Lazily creates the authenticated dependency graph after the protected chunk loads. */
 export function AuthenticatedApp({ user }) {
   return (
     <AppServicesProvider>
-      <AuthenticatedAppContent user={user} />
+      <AuthenticatedSessionProvider user={user}>
+        <AuthenticatedAppContent user={user} />
+      </AuthenticatedSessionProvider>
     </AppServicesProvider>
   );
 }
@@ -29,7 +31,9 @@ function AuthenticatedAppContent({ user }) {
   const [pricing, setPricing] = useState(false);
   const [brokerSyncUpsell, setBrokerSyncUpsell] = useState(false);
   const subscription = useSubscription(user);
-  const { updateBalance } = useWallet(user);
+  // Same wallet instance the dashboard renders — onboarding's write must be the
+  // balance the sidebar shows.
+  const { updateBalance } = useSessionWallet();
   const toast = useToast();
   const location = useLocation();
   const onboarding = useOnboarding({ updateBalance, toast });
@@ -43,7 +47,12 @@ function AuthenticatedAppContent({ user }) {
     openPricing: () => setPricing(true),
     openBrokerSyncUpsell: () => setBrokerSyncUpsell(true),
   };
-  const showConsent = !subscription.agreedToTerms && !subscription.isLoading && !PUBLIC_LEGAL_PATHS.has(location.pathname);
+  // `isFromCache` keeps the modal from flashing at a user who already agreed on
+  // another device: a disk-cached `agreedToTerms: false` is not proof.
+  const showConsent = !subscription.agreedToTerms
+    && !subscription.isLoading
+    && !subscription.isFromCache
+    && !PUBLIC_LEGAL_PATHS.has(location.pathname);
 
   return (
     <>

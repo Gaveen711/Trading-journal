@@ -1,79 +1,63 @@
-import { useState } from 'react';
-import { XLg } from 'react-bootstrap-icons';
+import { useState, useRef } from 'react';
+import { AppDialog } from './app/AppDialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 export function OnboardingModal({ onClose, onComplete }) {
   const [val, setVal] = useState('');
+  const inputRef = useRef(null);
 
   const complete = () => {
     onComplete(parseFloat(val) || 0);
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-4">
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-md animate-in fade-in duration-500" onClick={onClose}></div>
-
-      <div
-        className="relative w-full max-w-md my-8 card-premium p-10 z-10 animate-in zoom-in-95 slide-in-from-bottom-8 duration-500 shadow-2xl border-primary/10"
-      >
-        {/* Close button */}
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-all active:scale-75 z-20" aria-label="Close modal">
-          <XLg className="w-4 h-4" />
-        </button>
-        <header className="text-center space-y-3 mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-purple-400 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-primary/20 rotate-3">
-            XAU
-          </div>
-          <h2 className="text-2xl font-black text-foreground pt-2">Welcome to XAU Journal</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Let's set a baseline for your equity curve calculation.
-          </p>
-        </header>
-
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Starting Portfolio Balance</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">$</span>
-              <input
-                id="onboard-wallet"
-                type="text"
-                inputMode="decimal"
-                value={val}
-                onChange={e => {
-                  const v = e.target.value;
-                  if (v === '' || /^[0-9]*[.,]?[0-9]*$/.test(v)) {
-                    setVal(v.replace(',', '.'));
-                  }
-                }}
-                placeholder="0.00"
-                autoFocus
-                className="input-premium pl-8 text-lg font-bold"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <button
-              className="btn-secondary h-11 text-xs font-bold"
-              onClick={onClose}
-            >
-              Skip Setup
-            </button>
-            <button
-              className="btn-primary h-11 text-xs font-bold"
-              onClick={complete}
-            >
-              Start Journaling
-            </button>
+    <AppDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title="Welcome to XAU Journal"
+      description="Set a baseline for your equity curve calculation."
+      size="md"
+      initialFocus={inputRef}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Skip setup
+          </Button>
+          <Button onClick={complete}>Start journaling</Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="onboard-wallet" className="text-xs font-medium text-muted-foreground">
+            Starting portfolio balance
+          </label>
+          <div className="relative">
+            <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 font-mono text-[11px] text-muted-foreground">
+              $
+            </span>
+            <Input
+              ref={inputRef}
+              id="onboard-wallet"
+              type="text"
+              inputMode="decimal"
+              value={val}
+              onChange={e => {
+                const v = e.target.value;
+                if (v === '' || /^[0-9]*[.,]?[0-9]*$/.test(v)) {
+                  setVal(v.replace(',', '.'));
+                }
+              }}
+              placeholder="0.00"
+              className="figure pl-7"
+            />
           </div>
         </div>
-
-        <p className="text-[10px] text-center text-muted-foreground mt-8 uppercase tracking-widest font-medium opacity-50">
-          You can change this anytime in settings
-        </p>
+        <p className="text-xs text-muted-foreground">You can change this anytime in settings.</p>
       </div>
-    </div>
+    </AppDialog>
   );
 }
-
-

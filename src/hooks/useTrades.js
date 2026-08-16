@@ -2,10 +2,24 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppServices } from '../app/di/AppServicesContext.jsx';
 
 const PAGE_SIZE = 100;
+// Bigger pages only for the "load everything" path. Same billed reads, a fifth
+// of the serial round trips; first paint still uses PAGE_SIZE.
+const HYDRATE_PAGE_SIZE = 500;
+
+// Dates are ISO 'YYYY-MM-DD', so plain string comparison orders them exactly
+// like localeCompare at a fraction of the cost — and this runs on every
+// snapshot over the whole accumulated array.
+const byDateDesc = (a, b) => {
+  const left = a.date || '';
+  const right = b.date || '';
+  if (left === right) return 0;
+  return left < right ? 1 : -1;
+};
+
 const mergeTrades = (...groups) => {
   const byId = new Map();
   groups.flat().forEach((trade) => byId.set(trade.id, trade));
-  return Array.from(byId.values()).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  return Array.from(byId.values()).sort(byDateDesc);
 };
 
 /** Coordinates real-time trades, cursor pagination and trade application use cases. */
@@ -90,7 +104,7 @@ export function useTrades(user) {
     setIsLoadingMore(true);
     const operation = (async () => {
       while (hasMoreRef.current) {
-        const page = await repository.getTradesPage(userId, cursorRef.current, PAGE_SIZE);
+        const page = await repository.getTradesPage(userId, cursorRef.current, HYDRATE_PAGE_SIZE);
         if (activeUserIdRef.current !== userId) return mergeTrades(recentRef.current, olderRef.current);
         olderRef.current = mergeTrades(olderRef.current, page.trades);
         cursorRef.current = page.cursor;

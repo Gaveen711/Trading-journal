@@ -1,0 +1,88 @@
+/* Contact page surfaces — "Instrument" system. Prefix: xjc- */
+
+.xjc-grid { display: grid; gap: 48px 64px; align-items: start; }
+
+@media (min-width: 960px) {
+  .xjc-grid { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); }
+}
+
+.xjc-routes { list-style: none; margin: 40px 0 0; padding: 0; border-top: 1px solid var(--xj-line); }
+
+.xjc-routes li { border-bottom: 1px solid var(--xj-line); }
+
+.xjc-routes :is(a, .xjc-route-static) {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px 20px;
+  padding: 18px 0;
+  transition: color 150ms ease;
+}
+
+.xjc-routes .xj-label { padding-top: 3px; }
+
+.xjc-routes strong {
+  display: block;
+  color: var(--xj-bone);
+  font-size: 0.98rem;
+  font-weight: 450;
+  letter-spacing: -0.012em;
+}
+
+.xjc-routes p { margin: 5px 0 0; color: var(--xj-mute); font-size: 0.88rem; line-height: 1.55; }
+.xjc-routes a:hover strong { color: var(--xj-signal); }
+
+/* the form */
+
+.xjc-form form,
+.xjc-success { padding: clamp(20px, 2.6vw, 30px); }
+
+.xjc-hint {
+  margin: 0 0 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--xj-line);
+  color: var(--xj-mute);
+  font-size: 0.89rem;
+  line-height: 1.6;
+}
+
+.xjc-field-grid { display: grid; gap: 0 18px; }
+
+@media (min-width: 560px) {
+  .xjc-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.xjc-form-error {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--xj-down);
+  border-radius: var(--xj-radius);
+  color: var(--xj-down);
+  font-size: 0.86rem;
+}
+
+.xjc-submit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--xj-line);
+}
+
+.xjc-submit small { max-width: 30ch; color: var(--xj-faint); font-size: 0.76rem; line-height: 1.5; }
+
+.xjc-success { text-align: center; }
+.xjc-success svg { width: 30px; height: 30px; margin: 12px auto 18px; color: var(--xj-signal); }
+.xjc-success h2 { margin-bottom: 10px; }
+
+.xjc-success p {
+  margin: 0 auto 26px;
+  max-width: 42ch;
+  color: var(--xj-mute);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.xjc-success strong { color: var(--xj-bone); font-weight: 500; }

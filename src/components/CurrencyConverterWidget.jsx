@@ -10,7 +10,8 @@ export function CurrencyConverterWidget() {
   const [toCurr, setToCurr] = useState('EUR');
 
   useEffect(() => {
-    fetch('https://open.er-api.com/v6/latest/USD')
+    const controller = new AbortController();
+    fetch('https://open.er-api.com/v6/latest/USD', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (data && data.rates) {
@@ -27,9 +28,11 @@ export function CurrencyConverterWidget() {
         }
       })
       .catch(err => {
+        if (controller.signal.aborted) return;
         console.error("Failed to load currency rates", err);
         setLoading(false);
       });
+    return () => controller.abort();
   }, []);
 
   const handleSwap = () => {

@@ -6,7 +6,6 @@ const SEO = {
     'XAU Journal offers a 7-day money-back guarantee. If you are not satisfied with your Pro subscription within 7 days of purchase, contact us for a full refund — no questions asked.',
   keywords:
     'xaujournal refund policy, gold trading journal refund, 7 day money back guarantee trading app, xau journal subscription refund, forex journal refund, cancel xaujournal subscription, payment subscription refund',
-  canonical: 'https://www.xaujournal.com/refund-policy',
 };
 
 const SECTIONS = [
