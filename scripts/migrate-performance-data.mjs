@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { admin, initAdmin } from '../api/_firebase.js'
 import { ANALYTICS_VERSION, emptyTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
+import { ACCOUNT_CREDENTIAL_FIELDS, deletionPatch } from '../api/_credentialFields.js'
 
 const args = new Map(process.argv.slice(2).map((arg) => {
   const [key, ...rest] = arg.replace(/^--/, '').split('=')
@@ -120,12 +121,8 @@ async function migrateBrokerJobs(db) {
         && !Object.prototype.hasOwnProperty.call(data, 'metaApiAccountId')
       if (alreadyClientManaged) continue
 
-      const remove = admin.firestore.FieldValue.delete()
       const update = {
-        login: remove,
-        password: remove,
-        brokerLogin: remove,
-        metaApiAccountId: remove,
+        ...deletionPatch(ACCOUNT_CREDENTIAL_FIELDS, () => admin.firestore.FieldValue.delete()),
         credentialStorage: 'client-local',
         syncJobState: 'client-managed',
         nextSyncAt: null,

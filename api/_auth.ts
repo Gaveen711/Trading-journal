@@ -2,31 +2,17 @@ import { Context } from 'hono'
 // @ts-ignore
 import { admin } from './_firebase.js'
 
+import { hasPaidAccess } from '../src/lib/entitlements.js'
+
 /**
  * Checks if a user is permitted to perform broker trade synchronization.
- * Supports both standard 'pro' and active 'grace' plan states.
+ *
+ * Delegates to the shared entitlements predicate so the client and the API
+ * can never disagree about who has paid access — the exact drift that used
+ * to show Pro UI whose broker calls then 403'd.
  */
 export function isSyncAllowed(userData: any): boolean {
-  const { plan, planExpiry, graceUntil } = userData || {}
-
-  if (plan === 'pro' || plan === 'grace') {
-    // If Pro and no expiry (infinite/lifetime), allowed
-    if (plan === 'pro' && !planExpiry) return true
-
-    // Check if the plan is active based on expiry date
-    if (planExpiry) {
-      const expiry = new Date(planExpiry)
-      if (expiry.getTime() > Date.now()) return true
-    }
-
-    // Check if within grace period
-    if (graceUntil) {
-      const grace = new Date(graceUntil)
-      if (grace.getTime() > Date.now()) return true
-    }
-  }
-
-  return false
+  return hasPaidAccess(userData)
 }
 
 /**

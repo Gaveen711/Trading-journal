@@ -1,5 +1,7 @@
+import { isPaidPlan } from '../lib/entitlements.js';
+
 export function isProPlan(plan) {
-  return plan === 'pro' || plan === 'grace';
+  return isPaidPlan(plan);
 }
 
 export function getRemainingFreeTrades() {

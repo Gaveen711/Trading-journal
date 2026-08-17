@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
-import { formatCurrencyCompact, formatCurrency, formatSigned } from '../lib/tradeUtils';
+import { formatCurrencyCompact, formatCurrency, formatSigned, formatSignedCompact, pnlToneClass } from '../lib/tradeUtils';
 import { ANALYTICS_VERSION, getTradeOutcome, getTradeStrategyTags, tradePnlValue } from '../lib/tradeAnalytics.js';
+import { DirectionCell } from '../components/app/DirectionCell';
 import { Share } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { StatCard } from '../components/app/StatCard';
@@ -60,13 +61,7 @@ const resolveChartColors = (_isLightMode, _currentTemplate) => ({
   ),
 });
 
-// Compact currency with the Console sign treatment: always-signed, U+2212
-// minus (formatCurrencyCompact alone renders an ASCII hyphen, no plus).
-const signedCompact = (val) => {
-  if (val > 0) return `+${formatCurrencyCompact(val)}`;
-  if (val < 0) return `−${formatCurrencyCompact(Math.abs(val))}`;
-  return formatCurrencyCompact(val);
-};
+const signedCompact = formatSignedCompact;
 
 const chip = (text) => (
   <span className="inline-flex h-[18px] items-center rounded-sm border border-border px-1.5 font-mono text-[11px] text-muted-foreground">
@@ -75,7 +70,7 @@ const chip = (text) => (
 );
 
 const pnlCell = (value) => (
-  <span className={value > 0 ? 'text-win' : value < 0 ? 'text-loss' : 'text-foreground'}>
+  <span className={pnlToneClass(value)}>
     {formatSigned(value)}
   </span>
 );
@@ -97,14 +92,7 @@ const signalColumns = (onShare) => [
   {
     id: 'direction',
     header: 'Type',
-    cell: (t) => {
-      const isLong = t.direction === 'BUY' || t.direction === 'LONG';
-      return (
-        <span className="text-foreground">
-          <span aria-hidden="true">{isLong ? '▲' : '▼'}</span> {isLong ? 'Buy' : 'Sell'}
-        </span>
-      );
-    },
+    cell: (t) => <DirectionCell direction={t.direction} />,
   },
   {
     id: 'context',

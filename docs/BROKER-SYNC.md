@@ -397,7 +397,7 @@ src/
   ├── components/
   │   ├── MT5SyncSetup.jsx       # Sync settings UI
   │   ├── BrokerLoginSync.jsx    # Broker account mgmt UI
-  │   └── EASetup.jsx            # Updated to include both
+  │   └── BrokerSync.jsx            # Updated to include both
   └── hooks/
       └── useBrokerAccounts.js   # React hook for accounts
 

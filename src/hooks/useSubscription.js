@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppServices } from '../app/di/AppServicesContext.jsx';
 import { useToast } from '../components/ToastContext.jsx';
+import { getEntitlements } from '../lib/entitlements.js';
 
 const FREE_SUBSCRIPTION = {
   plan: 'free', expiry: null, isTrial: false, isTrialExpired: false,
@@ -37,9 +38,10 @@ export function useSubscription(user) {
       const isFromCache = docSnap.metadata?.fromCache ?? false;
       const expiryDate = data.planExpiry ? new Date(data.planExpiry) : null;
       const now = new Date();
-      const graceMs = data.isTrial ? 0 : 4 * 24 * 60 * 60 * 1000;
-      const isPro = data.plan === 'pro';
-      const isPastCutoff = isPro && expiryDate && now > new Date(expiryDate.getTime() + graceMs);
+      // Server fields are interpreted verbatim: the webhook writes
+      // plan/planExpiry/graceUntil, and hasPaidAccess is the same predicate
+      // the API enforces — so the UI never promises access a route will 403.
+      const entitlements = getEntitlements(data);
       const common = {
         expiry: data.planExpiry || null,
         totalTrades: data.totalTradesLogged || 0,
@@ -49,15 +51,19 @@ export function useSubscription(user) {
         isLoading: false,
         isFromCache,
       };
-      if (isPastCutoff) {
-        setSubscription({ ...common, plan: 'free', isTrial: false, isTrialExpired: data.isTrial || false });
-      } else if (isPro && expiryDate) {
-        setSubscription({ ...common, plan: 'pro', isTrial: data.isTrial || false, isTrialExpired: false, isGracePeriod: now > expiryDate });
+      if (entitlements.isPaid) {
+        setSubscription({
+          ...common,
+          plan: data.plan,
+          isTrial: data.isTrial || false,
+          isTrialExpired: false,
+          isGracePeriod: entitlements.isGrace,
+        });
       } else {
         setSubscription({
           ...common,
-          plan: data.plan || 'free',
-          isTrial: data.isTrial || false,
+          plan: 'free',
+          isTrial: false,
           isTrialExpired: Boolean(data.isTrial && expiryDate && now > expiryDate),
         });
       }

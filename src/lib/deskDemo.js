@@ -11,6 +11,8 @@
    pattern the product exists to make visible.
    ———————————————————————————————————————————————————————————— */
 
+import { pad2 } from './tradeUtils.js';
+
 export const DEMO_SESSIONS = [
   { id: 'all', label: 'All sessions', window: '24h · UTC' },
   { id: 'london', label: 'London', window: '07:00–16:00 UTC' },
@@ -97,8 +99,6 @@ export function bestHour(trades) {
   return ranked[0];
 }
 
-const pad2 = (value) => String(value).padStart(2, '0');
-
 export function hourWindow(hour) {
   return `${pad2(hour)}:00–${pad2((hour + 1) % 24)}:00`;
 }
@@ -168,8 +168,7 @@ export function sessionSplit() {
     .sort((a, b) => b.net - a.net);
 }
 
-export const formatR = (value) =>
-  `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(1)}R`;
+export const formatR = (value, decimals = 1) =>
+  `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(decimals)}R`;
 
-export const formatR2 = (value) =>
-  `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(2)}R`;
+export const formatR2 = (value) => formatR(value, 2);

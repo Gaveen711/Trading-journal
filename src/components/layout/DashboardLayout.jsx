@@ -56,6 +56,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { cn } from '../../lib/utils';
+import { isPaidPlan } from '../../lib/entitlements.js';
 
 const ACCENT_TEMPLATES = [
   { id: 'sage-modern', name: 'Honey teal', desc: 'Bronze, teal & deep blue' },
@@ -124,7 +125,7 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
   };
 
   const [trialTimeLeft, setTrialTimeLeft] = useState('');
-  const hasActivePaidAccess = plan === 'pro' || plan === 'grace';
+  const hasActivePaidAccess = isPaidPlan(plan);
   const hasLegacyTrial = !hasActivePaidAccess && isTrial;
   const computedIsTrialActive = hasLegacyTrial && expiry && new Date(expiry) > new Date();
   const computedIsTrialExpired = hasLegacyTrial && expiry && new Date(expiry) < new Date();
@@ -215,10 +216,19 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
     };
   }, []);
 
-  const { trades, isLoading: isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync } = useTrades(user);
+  const { trades, isLoading: isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync, error: tradesError, reload: reloadTrades } = useTrades(user);
 
-  const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry, deleteAllEntries } = useJournals(user);
-  const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet } = useSessionWallet();
+  const { journals, isLoading: isLoadingJournals, saveJournalEntry, deleteEntry, deleteAllEntries, error: journalsError, reload: reloadJournals } = useJournals(user);
+  const { walletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, error: walletError, reload: reloadWallet } = useSessionWallet();
+
+  // Surface load failures explicitly: a dead listener rendered as an empty
+  // trade list or a $0 balance reads as data loss to a trader.
+  const dataLoadError = tradesError || journalsError || walletError;
+  const retryDataLoads = () => {
+    if (tradesError) reloadTrades();
+    if (journalsError) reloadJournals();
+    if (walletError) reloadWallet();
+  };
 
   // Load permissions from localStorage
   const [syncPermissions, setSyncPermissions] = useState(() => {
@@ -592,6 +602,16 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
         {/* CONTENT GRID */}
         <div className="dashboard-content mx-auto flex w-full max-w-[1850px] min-w-0 flex-1 flex-col-reverse overflow-x-hidden px-3 pt-20 pb-32 sm:px-4 md:px-6 md:py-6 md:pb-8 lg:flex-row lg:px-8">
           <div className="relative w-full min-w-0 flex-1 overflow-x-hidden">
+            {dataLoadError && (
+              <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+                <span>
+                  Some of your data didn't load. Your trades and journals are safe on the server — this is a connection problem, not data loss.
+                </span>
+                <Button variant="outline" size="sm" onClick={retryDataLoads}>
+                  Retry
+                </Button>
+              </div>
+            )}
             <Outlet context={{
               user, plan, expiry, isTrial, isTrialExpired, totalTrades, analytics, setShowPricingModal, openPortal,
               trades: displayedTrades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, addTrade, removeTrade, editTrade, resetTrades,

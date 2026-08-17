@@ -8,7 +8,7 @@ const CalendarPage = lazy(() => import('../../pages/CalendarPage.jsx').then((m) 
 const AnalyticsPage = lazy(() => import('../../pages/AnalyticsPage.jsx').then((m) => ({ default: m.AnalyticsPage })));
 const JournalPage = lazy(() => import('../../pages/JournalPage.jsx').then((m) => ({ default: m.JournalPage })));
 const SettingsPage = lazy(() => import('../../pages/SettingsPage.jsx').then((m) => ({ default: m.SettingsPage })));
-const EASetup = lazy(() => import('../../components/EASetup.jsx'));
+const BrokerSync = lazy(() => import('../../components/BrokerSync.jsx'));
 const CheckoutSuccess = lazy(() => import('../../pages/CheckoutSuccess.jsx').then((m) => ({ default: m.CheckoutSuccess })));
 const CheckoutCancel = lazy(() => import('../../pages/CheckoutCancel.jsx').then((m) => ({ default: m.CheckoutCancel })));
 
@@ -36,7 +36,7 @@ export function AuthenticatedRoutes({ user, subscription, actions }) {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="journal" element={<JournalPage />} />
-        <Route path="sync" element={<EASetup />} />
+        <Route path="sync" element={<BrokerSync />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="checkout-success" element={<CheckoutSuccess />} />
         <Route path="checkout-cancel" element={<CheckoutCancel />} />

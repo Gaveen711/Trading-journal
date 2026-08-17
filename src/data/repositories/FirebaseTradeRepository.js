@@ -4,12 +4,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase.js';
 import { TradeRepository } from '../../core/domain/repositories/TradeRepository.js';
-import { subtractTradeAnalytics, tradeAnalyticsDelta } from '../../lib/tradeAnalytics.js';
+import { analyticsUpdate, subtractTradeAnalytics, tradeAnalyticsDelta } from '../../lib/tradeAnalytics.js';
 
 const DEFAULT_PAGE_SIZE = 100;
-const analyticsIncrements = (delta) => Object.fromEntries(
-  Object.entries(delta).map(([key, value]) => ['analytics.' + key, increment(value)])
-);
 
 export class FirebaseTradeRepository extends TradeRepository {
   subscribeToTrades(userId, onUpdate, onError, pageSize = DEFAULT_PAGE_SIZE) {
@@ -61,9 +58,10 @@ export class FirebaseTradeRepository extends TradeRepository {
     const delta = tradeAnalyticsDelta(tradeData);
     batch.set(tradeRef, { ...tradeData, id: tradeRef.id });
     batch.update(doc(db, 'users', userId), {
-      totalTradesLogged: increment(delta.tradeCount),
+      // firestore.rules' 5-second cooldown requires lastTradeTime in the
+      // same batch as the trade write.
       lastTradeTime: serverTimestamp(),
-      ...analyticsIncrements(delta),
+      ...analyticsUpdate(delta, increment),
     });
     await batch.commit();
     return tradeRef;
@@ -76,10 +74,7 @@ export class FirebaseTradeRepository extends TradeRepository {
       if (!snapshot.exists()) return;
       const delta = tradeAnalyticsDelta(snapshot.data(), -1);
       transaction.delete(tradeRef);
-      transaction.update(doc(db, 'users', userId), {
-        totalTradesLogged: increment(delta.tradeCount),
-        ...analyticsIncrements(delta),
-      });
+      transaction.update(doc(db, 'users', userId), analyticsUpdate(delta, increment));
     });
   }
 
@@ -92,10 +87,7 @@ export class FirebaseTradeRepository extends TradeRepository {
       const nextTrade = { ...snapshot.data(), ...safeData };
       transaction.update(tradeRef, safeData);
       const delta = subtractTradeAnalytics(snapshot.data(), nextTrade);
-      transaction.update(doc(db, 'users', userId), {
-        totalTradesLogged: increment(delta.tradeCount),
-        ...analyticsIncrements(delta),
-      });
+      transaction.update(doc(db, 'users', userId), analyticsUpdate(delta, increment));
     });
   }
 

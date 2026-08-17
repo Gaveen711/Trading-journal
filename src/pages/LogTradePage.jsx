@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { formatSigned } from '../lib/tradeUtils';
+import { formatSigned, pnlToneClass } from '../lib/tradeUtils';
+import { DirectionCell } from '../components/app/DirectionCell';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { LiveMarketWidget } from '../components/LiveMarketWidget';
 import { StatCard } from '../components/app/StatCard';
@@ -67,14 +68,7 @@ const RECENT_TRADE_COLUMNS = [
   {
     id: 'direction',
     header: 'Type',
-    cell: (t) => {
-      const isLong = t.direction === 'BUY' || t.direction === 'LONG';
-      return (
-        <span className="text-foreground">
-          <span aria-hidden="true">{isLong ? '▲' : '▼'}</span> {isLong ? 'Buy' : 'Sell'}
-        </span>
-      );
-    },
+    cell: (t) => <DirectionCell direction={t.direction} />,
   },
   {
     id: 'strategy',
@@ -94,7 +88,7 @@ const RECENT_TRADE_COLUMNS = [
     header: 'P&L',
     numeric: true,
     cell: (t) => (
-      <span className={t.pnl > 0 ? 'text-win' : t.pnl < 0 ? 'text-loss' : 'text-foreground'}>
+      <span className={pnlToneClass(t.pnl)}>
         {formatSigned(t.pnl)}
       </span>
     ),

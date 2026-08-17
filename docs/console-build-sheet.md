@@ -223,7 +223,7 @@ Call sites (Phase 3):
 | DashboardRightSidebar widgets (LiveMarketWidget ×2, converter) | `surface` | contained panels carry meaning in the rail |
 | SettingsPage.jsx:148/175/213/255/286/315/334 (7 `card-premium rounded-[2rem]` panels) | default | radius arbitraries die with the class |
 | CalendarPage.jsx:471/558, AnalyticsPage sections, JournalPage list frame | default | |
-| EASetup.jsx panels | `surface` for the credential forms, default elsewhere | |
+| BrokerSync.jsx panels | `surface` for the credential forms, default elsewhere | |
 
 **Does not fit:** DashboardLayout.jsx:625/:809 (mobile header/nav glass) — shell chrome, rebuilt in Phase 2 on the Sidebar primitives, not SectionCard. ImageViewerModal/ShareTradeModal glass shells — those are AppDialog surfaces (§2.3).
 
@@ -238,7 +238,7 @@ Call sites (Phase 3):
  * @param {'neutral'|'positive'|'negative'} [props.tone='neutral']   foreground | text-win | text-loss.
  *        There is NO 'accent'. A figure is P&L or it is foreground — no third decorative tone.
  * @param {'stacked'|'inline'} [props.layout='stacked']
- * @param {React.ComponentType} [props.icon]       layout="inline" ONLY (EASetup). Stacked cards get no icon.
+ * @param {React.ComponentType} [props.icon]       layout="inline" ONLY (BrokerSync). Stacked cards get no icon.
  * @param {boolean} [props.interactive=false]
  * @param {(revealed: boolean) => void} [props.onRevealChange]  hover/focus/click/Enter/Space. Page owns revealed state.
  * @param {boolean} [props.locked=false]
@@ -265,7 +265,7 @@ Call sites (Phase 3):
 ```
 
 - Label: `text-xs font-medium text-muted-foreground`, sentence case, above the value.
-- `layout="inline"`: `flex items-center gap-3`, icon `size-4 text-muted-foreground shrink-0` left, label+value stacked right, no hint (the EASetup shape, EASetup.jsx:1134-1176; the `bg-card/20 backdrop-blur-md` dies here).
+- `layout="inline"`: `flex items-center gap-3`, icon `size-4 text-muted-foreground shrink-0` left, label+value stacked right, no hint (the BrokerSync shape, BrokerSync.jsx:1134-1176; the `bg-card/20 backdrop-blur-md` dies here).
 - `interactive`/`locked`: Card root `relative`; a **stretched real button** — `<button type="button" className="absolute inset-0 rounded-xl" aria-label={…}>` — is the interaction surface. Never `div role="button" tabIndex` (the current AnalyticsPage.jsx:523-524 pattern). Handlers: mouseenter/leave, focus/blur → `onRevealChange(bool)`; click/Enter/Space → toggle via `onRevealChange`, or `onLockedActivate()` when locked.
 - `locked`: **redaction, not blur.** Value slot renders `••••` (`figure`); the real value is never in the DOM (blur-as-paywall leaks to a screenshot-and-sharpen). `aria-label` = `` `${lockLabel}: ${label}` ``.
 - `loading`: `<Skeleton className="h-8 w-24" />` in the value slot.
@@ -277,7 +277,7 @@ Call sites — 18 cards, all map:
 | LogTradePage.jsx:368-440 | 4 | stacked. Card 1 delta `{direction:'up', value:'x%'}` + `hint="vs last month"`. Purple (:410-411), amber (:428), decorative green all collapse to `tone` — purple is banned; green here is not P&L. |
 | HistoryPage.jsx:333-404 | 4 | stacked. Card 1 hint is a fragment (`Avg $X / trade`). Glow divs :351/:368/:385/:402 deleted. |
 | AnalyticsPage.jsx:367-464 + :506-553 | 6 | The proving ground. Delete the seven presentation keys (`color`, `iconColor`, `iconBg`, `iconBorder`, `glowBg` (:379-459), `glowHoverBg`, `subPrefixColor`); keep `label`/`value`/`sub→hint`, add `tone`. `isInteractive`→`interactive`+`onRevealChange` (handlers :512-525, state `setExact` :56). `isLocked` (:508) → `locked` + `onLockedActivate={() => setShowPricingModal(true)}`; the `blur-[4px]` + `LockFill` overlay (:531+) is replaced by redaction. |
-| EASetup.jsx:1132-1189 | 4 | `layout="inline"`. Static. `text-emerald-400` "Encrypted" (:1179-1180) is a security status, not P&L → value slot gets `<StatusSquare state="on" label="Encrypted">Encrypted</StatusSquare>`, not green text. |
+| BrokerSync.jsx:1132-1189 | 4 | `layout="inline"`. Static. `text-emerald-400` "Encrypted" (:1179-1180) is a security status, not P&L → value slot gets `<StatusSquare state="on" label="Encrypted">Encrypted</StatusSquare>`, not green text. |
 
 ### 2.3 `AppDialog` — `src/components/app/AppDialog.jsx`
 
@@ -337,10 +337,10 @@ Call sites — migration order per the corrected dependency graph (ProTermsModal
 | 5 | EditTradeModal.jsx:143 | `lg` | title "Edit trade" (not "MODIFY OPERATION"). Submit moves to `footer` via `<Button form="edit-trade">` + `<form id="edit-trade">`. Nested ImageViewerModal at :362-366 — remove the `<AnimatePresence>`, rely on Base UI nesting. |
 | 6 | ImageViewerModal.jsx:13 | **`full`** | `titleHidden`, `title="Image preview"`. Also mounted from DashboardRightSidebar.jsx:924-928 (plain, not nested) — remove that AnimatePresence too. Escape comes free; today this z-[200] overlay closes only by click. |
 | 7 | DashboardLayout.jsx:847-913 theme picker | `sm` | `title="Accent theme"`. The five buttons (:886-908) are a single-select — use the ToggleGroup recipe (§2.8) inside the dialog (`radio-group` is NOT installed; do not import it). Must NOT close on select (current behavior, `setTemplate` at :888). |
-| 8 | EASetup.jsx:1459 and :1708 | `lg` | the two modals the original spec never inventoried. `backdrop-blur-xl` scrims die. |
+| 8 | BrokerSync.jsx:1459 and :1708 | `lg` | the two modals the original spec never inventoried. `backdrop-blur-xl` scrims die. |
 | 9 | ShareTradeModal.jsx:68 | `lg` | **LAST — does not fit as written.** `html2canvas` runs in a mount effect (:12-31) against a node the modal renders; inside a Base UI Popup that node is portaled and carries `data-starting-style` transforms on the opening frame. Refactor: the page mounts the capture node off-screen (`<div aria-hidden className="fixed -left-[10000px] top-0"><TradeShareCard …/></div>`) and capture fires from `onOpenChangeComplete`, not on mount. |
 
-**Destructive confirmation — recipe, not a wrapper.** The wrapper spec defines no `AppAlertDialog`, so none is built; but three native `confirm()` sites exist and get this Phase-3 recipe using the installed `alert-dialog.tsx` exports directly: `AlertDialog`, `AlertDialogContent` (post-§0.3: `overlayClassName="z-[70]"`, `className="z-[80] border border-border ring-0"`), `AlertDialogHeader`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogAction` (`<AlertDialogAction variant="destructive">Delete trade</AlertDialogAction>` — the tinted intent, never a solid red fill), `AlertDialogCancel` (defaults `variant="outline"`). Map: HistoryPage.jsx:294 (`confirm('Delete this trade?')`), JournalPage.jsx:53 (`confirm('Delete this journal entry?')`), EASetup.jsx:999 (`window.confirm('Remove this broker account?…')`). A loss is red; a delete confirmation is destructive — the two never share a token.
+**Destructive confirmation — recipe, not a wrapper.** The wrapper spec defines no `AppAlertDialog`, so none is built; but three native `confirm()` sites exist and get this Phase-3 recipe using the installed `alert-dialog.tsx` exports directly: `AlertDialog`, `AlertDialogContent` (post-§0.3: `overlayClassName="z-[70]"`, `className="z-[80] border border-border ring-0"`), `AlertDialogHeader`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter`, `AlertDialogAction` (`<AlertDialogAction variant="destructive">Delete trade</AlertDialogAction>` — the tinted intent, never a solid red fill), `AlertDialogCancel` (defaults `variant="outline"`). Map: HistoryPage.jsx:294 (`confirm('Delete this trade?')`), JournalPage.jsx:53 (`confirm('Delete this journal entry?')`), BrokerSync.jsx:999 (`window.confirm('Remove this broker account?…')`). A loss is red; a delete confirmation is destructive — the two never share a token.
 
 ### 2.4 `DataTable` — `src/components/app/DataTable.jsx`
 
@@ -437,7 +437,7 @@ No ui/ primitive behind it — it is a `<span>`; wrapping one would be ceremony.
 
 No `pulse` prop, no tone→hue map (`positive`/`negative`/`warning` are gone: green/red belong to P&L, amber collides with the accents). Never color-alone: the word is always present.
 
-Call sites: LogTradePage.jsx:329-335 market badge (`on` + `Open` / `off` + `Closed · opens 22:00 UTC` — derive from `isMarketClosed`/`getNextOpen`; kill `animate-pulse` + the green glow shadow at :331); DashboardLayout.jsx:386 broker-sync (`on Synced 14:22` / `attn Last sync 18m ago` / `off Not connected`; kill pulse); DashboardRightSidebar.jsx:293 (kill `shadow-[0_0_6px_rgba(229,184,11,0.6)]`) and :375; EASetup.jsx:1313/:1324 sync dots; EASetup.jsx:1180 "Encrypted" (`on`, inside StatCard inline value); plan-tier expiring chip (§1.4). All 14 `animate-pulse` uses in /app .jsx are removed across Phase 3.
+Call sites: LogTradePage.jsx:329-335 market badge (`on` + `Open` / `off` + `Closed · opens 22:00 UTC` — derive from `isMarketClosed`/`getNextOpen`; kill `animate-pulse` + the green glow shadow at :331); DashboardLayout.jsx:386 broker-sync (`on Synced 14:22` / `attn Last sync 18m ago` / `off Not connected`; kill pulse); DashboardRightSidebar.jsx:293 (kill `shadow-[0_0_6px_rgba(229,184,11,0.6)]`) and :375; BrokerSync.jsx:1313/:1324 sync dots; BrokerSync.jsx:1180 "Encrypted" (`on`, inside StatCard inline value); plan-tier expiring chip (§1.4). All 14 `animate-pulse` uses in /app .jsx are removed across Phase 3.
 
 ### 2.7 `SessionRail` + `SessionGlyph` — `src/components/app/SessionRail.jsx`
 

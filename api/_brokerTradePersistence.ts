@@ -1,5 +1,5 @@
 import { chunkedDbGetAll } from './_firestoreUtils.js'
-import { analyticsDeltaForTrades, subtractTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
+import { analyticsDeltaForTrades, analyticsUpdate, subtractTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
 
 const FIRESTORE_BATCH_WRITE_LIMIT = 450
 
@@ -55,11 +55,7 @@ export async function persistBrokerTrades({
 
     const hasAggregateChanges = Object.values(aggregateDelta).some((value) => value !== 0)
     if (hasAggregateChanges && incrementFactory) {
-      const update: any = { totalTradesLogged: incrementFactory(aggregateDelta.tradeCount) }
-      Object.entries(aggregateDelta).forEach(([key, value]) => {
-        update['analytics.' + key] = incrementFactory(value as number)
-      })
-      batch.update(db.collection('users').doc(userId), update)
+      batch.update(db.collection('users').doc(userId), analyticsUpdate(aggregateDelta, incrementFactory))
     }
     if (chunk.length) commitPromises.push(batch.commit())
   }

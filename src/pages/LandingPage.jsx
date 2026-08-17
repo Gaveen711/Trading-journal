@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { pad2 } from '../lib/tradeUtils';
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 import { Arrow, CTALink, SectionHead, TextLink } from '../components/PublicSite';
@@ -93,7 +94,6 @@ const LOG_NOTES = [
 ];
 const LOG_ROWS = DEMO_TRADES.slice(-4).map((trade, index) => ({ ...trade, note: LOG_NOTES[index] }));
 
-const pad2 = (value) => String(value).padStart(2, '0');
 const windowLabel = (session) => `${pad2(session.open)}:00–${pad2(session.close)}:00`;
 
 /** The four rail sessions, each carrying the sample figures for its UTC window. */

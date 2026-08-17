@@ -16,6 +16,7 @@
     "admin:grant": "node scripts/grant-admin.mjs",
     "admin:list": "node scripts/grant-admin.mjs --list",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit && tsc -p api --noEmit",
     "preview": "vite preview",
     "test": "vitest run"
   },

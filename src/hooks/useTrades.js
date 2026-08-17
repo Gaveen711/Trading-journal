@@ -29,6 +29,11 @@ export function useTrades(user) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreTrades, setHasMoreTrades] = useState(false);
   const [lastMT5Sync, setLastMT5Sync] = useState(null);
+  // A failed listener must be distinguishable from an empty account — an
+  // outage rendered as "no trades" reads as data loss to the user.
+  const [error, setError] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  const reload = useCallback(() => setAttempt((value) => value + 1), []);
   const cursorRef = useRef(null);
   const recentRef = useRef([]);
   const olderRef = useRef([]);
@@ -52,6 +57,7 @@ export function useTrades(user) {
     }
 
     setIsLoading(true);
+    setError(null);
     return repository.subscribeToTrades(user.uid, (recentTrades, triggerSync, page) => {
       recentRef.current = recentTrades;
       if (olderRef.current.length === 0) {
@@ -61,12 +67,14 @@ export function useTrades(user) {
       }
       setTrades(mergeTrades(recentTrades, olderRef.current));
       setIsLoading(false);
+      setError(null);
       if (triggerSync) setLastMT5Sync(new Date());
-    }, (error) => {
-      console.error('Real-time trade listener error:', error);
+    }, (listenerError) => {
+      console.error('Real-time trade listener error:', listenerError);
+      setError(listenerError);
       setIsLoading(false);
     }, PAGE_SIZE);
-  }, [user, repository]);
+  }, [user, repository, attempt]);
 
   const loadMoreTrades = useCallback(async () => {
     if (!user?.uid || !hasMoreRef.current) return mergeTrades(recentRef.current, olderRef.current);
@@ -151,6 +159,6 @@ export function useTrades(user) {
 
   return {
     trades, isLoading, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades,
-    addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync,
+    addTrade, removeTrade, editTrade, resetTrades, lastMT5Sync, error, reload,
   };
 }

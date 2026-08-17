@@ -5,6 +5,9 @@ import { useAppServices } from '../app/di/AppServicesContext.jsx';
 export function useJournals(user) {
   const [journals, setJournals] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  // A failed load must be distinguishable from "no journals yet" — the old
+  // silent catch rendered outages as an empty journal.
+  const [error, setError] = useState(null);
   const { journalRepository: repository } = useAppServices();
 
   const loadJournals = useCallback(async () => {
@@ -14,8 +17,11 @@ export function useJournals(user) {
     }
     try {
       setIsLoading(true);
+      setError(null);
       setJournals(await repository.loadJournals(user.uid));
-    } catch {
+    } catch (loadError) {
+      console.error('Journal load error:', loadError);
+      setError(loadError);
       setJournals({});
     } finally {
       setIsLoading(false);
@@ -49,5 +55,5 @@ export function useJournals(user) {
     setJournals({});
   };
 
-  return { journals, isLoading, saveJournalEntry, deleteEntry, deleteAllEntries, refreshJournals: loadJournals };
+  return { journals, isLoading, saveJournalEntry, deleteEntry, deleteAllEntries, refreshJournals: loadJournals, error, reload: loadJournals };
 }

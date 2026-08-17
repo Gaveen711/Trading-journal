@@ -35,6 +35,7 @@ import { getClientIp } from './_ipUtils.js'
 import { persistBrokerTrades } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
 import { emptyTradeAnalytics } from '../src/lib/tradeAnalytics.js'
+import { USER_CREDENTIAL_FIELDS, ACCOUNT_CREDENTIAL_FIELDS, deletionPatch } from './_credentialFields.js'
 
 // Ensure Firebase is initialized before any routes execute
 initAdmin()
@@ -56,14 +57,14 @@ function handleRouteError(route: string, err: any, c: any, customErrName = 'Inte
   return c.json({ error: customErrName, message: safeMsg }, 500)
 }
 
+const credentialDeleteSentinel = () => admin.firestore.FieldValue.delete()
+
 /** Removes credential fields written by deployments that predate client-managed sync. */
 async function scrubLegacyBrokerCredentials(uid: string) {
-  const remove = admin.firestore.FieldValue.delete()
-  await db.collection('users').doc(uid).set({
-    brokerLogin: remove,
-    brokerPassword: remove,
-    metaApiAccountId: remove,
-  }, { merge: true })
+  await db.collection('users').doc(uid).set(
+    deletionPatch(USER_CREDENTIAL_FIELDS, credentialDeleteSentinel),
+    { merge: true },
+  )
 }
 
 type Env = {}
@@ -285,10 +286,9 @@ async function consolidateBrokerConnect({
       // Firestore stores only metadata needed to display and identify the account.
       credentialStorage: 'client-local',
       // Merge writes also remove sensitive fields left by older deployments.
-      login: admin.firestore.FieldValue.delete(),
-      password: admin.firestore.FieldValue.delete(),
-      brokerLogin: admin.firestore.FieldValue.delete(),
-      metaApiAccountId: admin.firestore.FieldValue.delete(),
+      // The shared list covers all 7 legacy fields — the inline version here
+      // had drifted to deleting only 4 of them.
+      ...deletionPatch(ACCOUNT_CREDENTIAL_FIELDS, credentialDeleteSentinel),
       isActive: true,
       lastSyncStatus: 'running',
       lastSyncError: null,
@@ -768,6 +768,7 @@ app.post('/lemon-squeezy-webhook', async (c) => {
       const userDocRef = db.collection('users').doc(userId)
       let plan = 'free'
       let planExpiry: string | null = null
+      let graceUntil: string | null = null
 
       const endsAt = attributes?.ends_at
       const renewsAt = attributes?.renews_at
@@ -783,9 +784,28 @@ app.post('/lemon-squeezy-webhook', async (c) => {
         }
       }
 
+      // Server-authored post-lapse grace. This replaces the 4-day window the
+      // client used to synthesize on its own — which the API never honored,
+      // so lapsed users saw Pro UI whose broker calls 403'd. Trials get no
+      // grace (same rule the client applied). The revoke-expired cron already
+      // queries plan=='grace' and downgrades once graceUntil passes.
+      const GRACE_DAYS = 4
+      if (plan === 'free') {
+        const existingSnap = await Promise.resolve(userDocRef.get()).catch(() => null)
+        const existing = existingSnap?.exists ? existingSnap.data() : null
+        const hadPaidPlan = existing?.plan === 'pro' || existing?.plan === 'grace'
+        if (hadPaidPlan && existing?.isTrial !== true) {
+          plan = 'grace'
+          graceUntil = new Date(Date.now() + GRACE_DAYS * 24 * 60 * 60 * 1000).toISOString()
+        }
+      }
+
       await userDocRef.set({
         plan,
         planExpiry,
+        // Cleared on every non-grace transition so a stale window can never
+        // extend access after a later lapse.
+        graceUntil,
         lemonSqueezySubscriptionId: String(subscriptionId),
         lemonSqueezyStatus: status,
         updatedAt: now(),
@@ -870,7 +890,9 @@ app.post('/reset-trades', async (c) => {
     uid = await getUidFromContext(c)
   } catch (err: any) {
     console.error('[reset-trades] verifyIdToken failed:', err.message)
-    return c.json({ error: 'Invalid or expired token', details: err.message }, 401)
+    // Verifier internals stay in the server log — the 401 body is uniform
+    // across routes so error text can't leak token-validation details.
+    return c.json({ error: 'Invalid or expired token' }, 401)
   }
 
   try {
@@ -966,14 +988,14 @@ const handleBrokerSyncPoller = async (c: any) => {
 
     for (const accountDoc of activeAccounts) {
       const uid = accountDoc.ref.parent.parent.id
-      uniqueUsers.add(uid)
-      await scrubLegacyBrokerCredentials(uid)
+      // Scrub each user once, not once per account.
+      if (!uniqueUsers.has(uid)) {
+        uniqueUsers.add(uid)
+        await scrubLegacyBrokerCredentials(uid)
+      }
       await accountDoc.ref.update({
         credentialStorage: 'client-local',
-        login: admin.firestore.FieldValue.delete(),
-        password: admin.firestore.FieldValue.delete(),
-        brokerLogin: admin.firestore.FieldValue.delete(),
-        metaApiAccountId: admin.firestore.FieldValue.delete(),
+        ...deletionPatch(ACCOUNT_CREDENTIAL_FIELDS, credentialDeleteSentinel),
         syncJobState: 'client-managed',
         nextSyncAt: null,
         updatedAt: new Date().toISOString(),

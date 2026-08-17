@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { auth, storage } from '../../firebase';
-import { calcPnl, todayStr, formatCurrency, formatSigned } from '../../lib/tradeUtils';
+import { calcPnl, todayStr, formatCurrency, formatSigned, pnlToneClass } from '../../lib/tradeUtils';
+import { isPaidPlan } from '../../lib/entitlements.js';
 import { submitTrade } from '../../services/tradeService';
 import { CurrencyConverter } from '../CurrencyConverter';
 import { SectionCard } from '../app/SectionCard';
@@ -299,7 +300,7 @@ export function DashboardRightSidebar({
 
   const previewPnl = pnlData?.pnl || 0;
   const previewPips = pnlData?.pips || 0;
-  const pnlTone = previewPnl > 0 ? 'text-win' : previewPnl < 0 ? 'text-loss' : 'text-muted-foreground';
+  const pnlTone = pnlToneClass(previewPnl, { zero: 'text-muted-foreground' });
 
   return (
     <div className="dashboard-trade-rail flex w-full flex-col gap-4">
@@ -599,14 +600,14 @@ export function DashboardRightSidebar({
             <Field>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Analysis screenshots</span>
-                {plan !== 'pro' && (
+                {!isPaidPlan(plan) && (
                   <span className="inline-flex h-[18px] items-center rounded-sm border border-border px-1.5 font-mono text-[11px] leading-none text-muted-foreground">
                     Pro
                   </span>
                 )}
               </div>
 
-              {plan === 'pro' ? (
+              {isPaidPlan(plan) ? (
                 <div className="flex flex-col gap-2">
                   <input
                     ref={fileInputRef}
@@ -688,7 +689,7 @@ export function DashboardRightSidebar({
             {/* Live pip count */}
             <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2">
               <span className="text-xs font-medium text-muted-foreground">Pip count</span>
-              <span className={cn('figure text-sm', previewPips > 0 ? 'text-win' : previewPips < 0 ? 'text-loss' : 'text-muted-foreground')}>
+              <span className={cn('figure text-sm', pnlToneClass(previewPips, { zero: 'text-muted-foreground' }))}>
                 {previewPips !== 0
                   ? `${previewPips > 0 ? '+' : '−'}${Math.abs(previewPips).toFixed(1)} pips`
                   : '— pips'}

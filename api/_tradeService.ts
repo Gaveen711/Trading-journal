@@ -3,11 +3,8 @@ import { kv } from '@vercel/kv'
 import { admin, db, now } from './_firebase.js'
 import { isSyncAllowed } from './_auth.js'
 import { hashToken } from './_security.js'
-import { subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
-
-const analyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
-  Object.entries(delta).map(([key, value]) => ['analytics.' + key, admin.firestore.FieldValue.increment(value)])
-)
+import { analyticsUpdate, subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
+import { computePips, outcomeForPnl } from '../src/lib/goldContract.js'
 
 /**
  * Resolves an API key to a user UID.
@@ -115,7 +112,9 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     const openPrice = Number(previous?.openPrice ?? payload.openPrice)
     if (Number.isFinite(openPrice)) {
       const diff = direction === 'BUY' ? closePrice - openPrice : openPrice - closePrice
-      pips = Math.round(diff / 0.1)
+      // Shared pip rule (one decimal). This path used to round to integers
+      // while manual logging kept a decimal — same move, two stored values.
+      pips = computePips(diff)
     }
 
     const tradeData: any = {
@@ -131,7 +130,7 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
       swap,
       netPnl,
       pips,
-      outcome: netPnl > 0.01 ? 'WIN' : netPnl < -0.01 ? 'LOSS' : 'BE',
+      outcome: outcomeForPnl(netPnl),
       status: 'closed',
       source,
       updatedAt: now(),
@@ -146,10 +145,10 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     const delta = subtractTradeAnalytics(previous, nextTrade)
     transaction.set(tradeRef, tradeData, { merge: true })
     if (Object.values(delta).some((value) => value !== 0)) {
-      transaction.update(tradeRef.parent.parent, {
-        totalTradesLogged: admin.firestore.FieldValue.increment(delta.tradeCount),
-        ...analyticsIncrements(delta),
-      })
+      transaction.update(
+        tradeRef.parent.parent,
+        analyticsUpdate(delta, (value: number) => admin.firestore.FieldValue.increment(value)),
+      )
     }
   })
 

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppServices } from '../app/di/AppServicesContext.jsx';
-
-const pad2 = (value) => String(value).padStart(2, '0');
+import { pad2 } from '../lib/tradeUtils';
 
 /**
  * Live trades for a single calendar month.

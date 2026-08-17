@@ -1,6 +1,7 @@
 // MetaApi.cloud — MT4/MT5 broker login & deal history (server-side only)
 
 import MetaApi from 'metaapi.cloud-sdk/esm-node';
+import { computePips, outcomeForPnl, isGoldSymbol } from '../src/lib/goldContract.js';
 
 let apiClient = null;
 
@@ -46,7 +47,9 @@ function normalizeDeal(deal, ctx, entryDeal = null) {
       ? validDate(deal.openTime, closeTime).toISOString()
       : null;
   const diff = openPrice == null ? null : (isBuy ? price - openPrice : openPrice - price);
-  const pips = diff == null ? null : Math.round(diff / 0.1);
+  // Gold pip math only applies to gold: a EURUSD deal on the same account
+  // used to get pips wrong by orders of magnitude.
+  const pips = diff == null || !isGoldSymbol(deal.symbol || 'XAUUSD') ? null : computePips(diff);
 
   return {
     positionId,
@@ -70,7 +73,7 @@ function normalizeDeal(deal, ctx, entryDeal = null) {
     brokerType: ctx.brokerType,
     brokerServer: ctx.server,
     market: 'GOLD',
-    outcome: netPnl > 0.01 ? 'WIN' : netPnl < -0.01 ? 'LOSS' : 'BE',
+    outcome: outcomeForPnl(netPnl),
   };
 }
 

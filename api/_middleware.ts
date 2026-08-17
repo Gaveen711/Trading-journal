@@ -53,7 +53,10 @@ export const secureHeadersMiddleware = secureHeaders()
 const RATE_LIMIT_SCOPES: Array<{ scope: string; limit: number; windowSeconds: number; match: (path: string) => boolean }> = [
   { scope: 'contact', limit: 5, windowSeconds: 3600, match: (p) => p.includes('/contact') },
   { scope: 'auth', limit: 20, windowSeconds: 3600, match: (p) => p.includes('/auth-utils') },
-  { scope: 'webhook', limit: 500, windowSeconds: 60, match: (p) => p.includes('/tv-webhook') },
+  // /sync-trade (MT5 EA) shares the handler AND the traffic profile of
+  // /tv-webhook: many users' EAs can sit behind one prop-firm VPS IP, so the
+  // generic 100/min bucket drops real trade events.
+  { scope: 'webhook', limit: 500, windowSeconds: 60, match: (p) => p.includes('/tv-webhook') || p.includes('/sync-trade') },
   { scope: 'broker', limit: 10, windowSeconds: 60, match: (p) => p.includes('/broker-') || p.includes('/connect-broker') },
   { scope: 'market', limit: 120, windowSeconds: 60, match: (p) => p.includes('/yahoo-chart') || p.includes('/spot-price') },
   { scope: 'vitals', limit: 60, windowSeconds: 60, match: (p) => p.includes('/vitals') },

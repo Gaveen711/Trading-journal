@@ -11,12 +11,10 @@ import {
   writeLocalAccounts,
   writeSessionPassword,
 } from '../lib/brokerCredentials.js';
-
-const toIsoString = (value) => {
-  if (!value) return null;
-  const date = value.toDate ? value.toDate() : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-};
+// Shared ladder also covers the serialized {seconds} timestamp shape, which
+// the local coercion here used to miss (lastSyncTime rendered as null after
+// a JSON round-trip through the local cache).
+import { toIsoString } from '../lib/tradeUtils';
 
 /** Coordinates authenticated broker metadata and secure server-side sync commands. */
 export function useBrokerAccounts() {
