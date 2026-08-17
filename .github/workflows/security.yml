@@ -1,0 +1,51 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+  schedule:
+    # Advisories are published continuously, so a weekly run catches the ones
+    # that land between deploys. Six accumulated before the first audit because
+    # nothing was watching.
+    - cron: '0 6 * * 1'
+
+jobs:
+  dependencies:
+    name: Dependency advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Fails the build on high or critical advisories in shipped dependencies.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  regression:
+    name: Security regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Each case asserts that a specific attack from the audit is refused.
+      - run: npx vitest run api/_security.test.js
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan history for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

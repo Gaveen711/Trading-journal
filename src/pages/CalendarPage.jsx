@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useMonthTrades } from '../hooks/useMonthTrades';
-import { pad2, formatNumber, formatSigned } from '../lib/tradeUtils';
+import { pad2, formatNumber, formatSigned, pnlToneClass } from '../lib/tradeUtils';
+import { DirectionCell } from '../components/app/DirectionCell';
 import { ChevronLeft, ChevronRight } from 'react-bootstrap-icons';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatCard } from '../components/app/StatCard';
@@ -12,7 +13,7 @@ import { cn } from '../lib/utils';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WEEKDAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-const pnlTone = (pnl) => (pnl > 0.01 ? 'text-win' : pnl < -0.01 ? 'text-loss' : 'text-foreground');
+const pnlTone = pnlToneClass;
 
 export function CalendarPage() {
   const { user, plan } = useOutletContext();
@@ -377,8 +378,6 @@ export function CalendarPage() {
                 <p className="text-xs font-medium text-muted-foreground">Executions</p>
                 <ul className="flex max-h-[280px] flex-col overflow-y-auto">
                   {selectedTrades.map((trade, idx) => {
-                    const dir = (trade.direction || '').toUpperCase();
-                    const isLong = dir === 'BUY' || dir === 'LONG';
                     return (
                       <li
                         key={trade.id || idx}
@@ -386,7 +385,7 @@ export function CalendarPage() {
                       >
                         <div className="flex min-w-0 flex-col gap-0.5">
                           <span className="text-xs text-foreground">
-                            <span aria-hidden="true">{isLong ? '▲' : '▼'}</span> {isLong ? 'Buy' : 'Sell'}
+                            <DirectionCell direction={trade.direction} />
                             <span className="text-muted-foreground"> · XAU/USD</span>
                           </span>
                           <span className="truncate font-mono text-[11px] text-muted-foreground">
@@ -394,7 +393,7 @@ export function CalendarPage() {
                           </span>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-0.5">
-                          <span className={cn('figure text-xs', trade.pnl > 0 ? 'text-win' : trade.pnl < 0 ? 'text-loss' : 'text-foreground')}>
+                          <span className={cn('figure text-xs', pnlToneClass(trade.pnl))}>
                             {formatSigned(trade.pnl)}
                           </span>
                           <span className="font-mono text-[11px] text-muted-foreground">{trade.session || '—'}</span>

@@ -9,6 +9,7 @@ import { AppServicesProvider } from './di/AppServicesContext.jsx';
 import { AuthenticatedSessionProvider, useSessionWallet } from './di/AuthenticatedSessionContext.jsx';
 import { AuthenticatedOverlays } from './components/AuthenticatedOverlays.jsx';
 import { AuthenticatedRoutes } from './routing/AuthenticatedRoutes.jsx';
+import { VerifyEmailBanner } from '../components/VerifyEmailBanner.jsx';
 import '../styles/auth.css';
 
 const PUBLIC_LEGAL_PATHS = new Set([
@@ -56,6 +57,7 @@ function AuthenticatedAppContent({ user }) {
 
   return (
     <>
+      <VerifyEmailBanner user={user} />
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <AuthenticatedRoutes user={user} subscription={subscription} actions={actions} />

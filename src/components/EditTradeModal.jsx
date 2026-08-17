@@ -8,6 +8,7 @@ import { auth, storage } from '../firebase';
 import { useToast } from './ToastContext';
 import { ImageViewerModal } from './ImageViewerModal';
 import { requireProFeature } from '../services/featureGate';
+import { isPaidPlan } from '../lib/entitlements.js';
 
 export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClose }) {
   const [formData, setFormData] = useState({ ...trade });
@@ -286,10 +287,10 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
           <div className="space-y-2 text-left">
             <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1 flex justify-between">
               <span>Analysis Screenshots</span>
-              {plan !== 'pro' && <span className="text-[8px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
+              {!isPaidPlan(plan) && <span className="text-[8px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
             </label>
 
-            {plan === 'pro' ? (
+            {isPaidPlan(plan) ? (
               <div className="space-y-3">
                 <div className="relative border border-dashed border-border/60 hover:border-primary/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-300 bg-muted/10 group hover:bg-muted/20">
                   <input

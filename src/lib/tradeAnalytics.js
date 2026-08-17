@@ -1,3 +1,5 @@
+import { outcomeForPnl } from './goldContract.js';
+
 export const ANALYTICS_VERSION = 2;
 
 const number = (value) => {
@@ -27,9 +29,14 @@ export function tradePnlValue(trade) {
 export function getTradeOutcome(trade) {
   const provided = String(trade?.outcome || '').toUpperCase();
   if (['WIN', 'LOSS', 'BE'].includes(provided)) return provided;
-  const pnl = tradePnlValue(trade);
-  return pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
+  return outcomeForPnl(tradePnlValue(trade));
 }
+/** Owns the LONG/SHORT/BUY/SELL vocabulary across current and legacy trades. */
+export function isLongDirection(direction) {
+  const normalized = String(direction || '').toUpperCase();
+  return normalized === 'BUY' || normalized === 'LONG';
+}
+
 const emptyDelta = () => ({
   tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0,
   breakEven: 0, longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
@@ -48,11 +55,9 @@ export function tradeAnalyticsDelta(trade, multiplier = 1) {
   const delta = emptyDelta();
   if (!isTradeAnalyticsEligible(trade)) return delta;
   const pnl = tradePnlValue(trade);
-  const inferredOutcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
-  const providedOutcome = String(trade.outcome || '').toUpperCase();
-  const outcome = ['WIN', 'LOSS', 'BE'].includes(providedOutcome) ? providedOutcome : inferredOutcome;
+  const outcome = getTradeOutcome(trade);
   const direction = String(trade.direction || trade.type || '').toUpperCase();
-  const isLong = direction === 'BUY' || direction === 'LONG';
+  const isLong = isLongDirection(direction);
   const isShort = direction === 'SELL' || direction === 'SHORT';
   delta.tradeCount = multiplier;
   delta.totalPnl = pnl * multiplier;
@@ -65,6 +70,21 @@ export function tradeAnalyticsDelta(trade, multiplier = 1) {
   delta.grossProfit = (pnl > 0 ? pnl : 0) * multiplier;
   delta.grossLoss = (pnl < 0 ? Math.abs(pnl) : 0) * multiplier;
   return delta;
+}
+
+/**
+ * Firestore update payload for an analytics delta — the write-shaping that
+ * used to be hand-copied by every aggregate writer (client repository, trade
+ * webhook, broker persistence). `incrementFactory` is the SDK's increment:
+ * FieldValue.increment server-side, firestore/lite increment client-side.
+ */
+export function analyticsUpdate(delta, incrementFactory) {
+  return {
+    totalTradesLogged: incrementFactory(delta.tradeCount),
+    ...Object.fromEntries(
+      Object.entries(delta).map(([key, value]) => ['analytics.' + key, incrementFactory(value)]),
+    ),
+  };
 }
 
 export function subtractTradeAnalytics(previous, next) {

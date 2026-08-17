@@ -88,7 +88,7 @@ Broker-synced docs use id `broker_{accountId}_{dealTicket}` and fields aligned w
 | `connectBroker` | Create/reuse MetaApi account, save `metaApiAccountId` on user doc, initial sync |
 | `syncBrokerTrades` | Re-pull closed deals (last 90 days) |
 
-Client: `BrokerConnect.jsx` → `httpsCallable('connectBroker')` — **never** sends `META_API_TOKEN`.
+Client: `src/lib/brokerSync.js` → `POST /api/connect-broker` — **never** sends `METAAPI_TOKEN`.
 
 Legacy Vercel routes (`/api/connect-broker`) still exist but are not used when Functions are deployed.
 
@@ -96,7 +96,7 @@ Legacy Vercel routes (`/api/connect-broker`) still exist but are not used when F
 
 ```bash
 # Server only (Vercel + Firebase Functions)
-META_API_TOKEN=...
+METAAPI_TOKEN=...   # Vercel env var; see docs/SECRETS.md
 
 # Client (Vite)
 VITE_FIREBASE_API_KEY=...
@@ -109,7 +109,7 @@ VITE_FIREBASE_PROJECT_ID=xaujournal-0429
 1. [MetaApi](https://app.metaapi.cloud) — create token, enable API access.
 2. Vercel — add `METAAPI_TOKEN` to project env, redeploy.
 3. Firebase Console — Auth authorized domains: `xaujournal.com`, `www.xaujournal.com`, `localhost`.
-4. (Optional) Deploy Functions: `cd functions && npm i && firebase deploy --only functions`.
+4. Set `METAAPI_TOKEN` in Vercel and redeploy. The Firebase Functions codebase was removed in the 2026-08 security audit (H-02): it duplicated this path without the subscription check.
 5. Cron: `api/cron/broker-sync-poller.js` for periodic re-sync (Vercel cron).
 
 ## Code map
@@ -120,4 +120,4 @@ VITE_FIREBASE_PROJECT_ID=xaujournal-0429
 | MetaApi logic | `api/metaapi-broker.js` |
 | Connect API | `api/connect-broker.js` |
 | Ongoing sync | `api/broker-login-sync.js` |
-| Firebase CF | `functions/index.js` — `connectBroker`, `syncBrokerTrades` |
+| Vercel route | `api/[[...route]].ts` — `/connect-broker`, `/broker-login-sync` |

@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
 } from 'firebase/auth';
@@ -13,16 +14,17 @@ import { getFriendlyErrorMessage } from './lib/errorUtils';
 import { NeatGradient } from '@firecms/neat';
 import { useAppTheme } from './hooks/useAppTheme';
 
-// Best-effort enrichment on the sign-in critical path, so it is time-boxed: a
-// slow or blocked ipapi.co must not hold up the account write.
-async function fetchCountry() {
-  try {
-    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2000) });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.country_code || null;
-  } catch { return null; }
-}
+// Country enrichment previously called ipapi.co from the browser, which sent
+// every signing-in user's IP to a third party we do not disclose as a
+// processor — and which the production CSP `connect-src` blocks, so the value
+// was always null in production anyway. The server can derive this from the
+// request geo headers the platform already provides, with no third party and
+// no extra round trip. Until that lands, the field is simply not set.
+const fetchCountry = async () => null;
+
+// Firebase enforces a 6-character minimum by default, which is well below any
+// reasonable floor for an account holding trading history and broker access.
+const MIN_PASSWORD_LENGTH = 12;
 
 function Login() {
   const location = useLocation();
@@ -159,13 +161,25 @@ function Login() {
         if (!firstName.trim() || !lastName.trim()) {
           throw new Error('auth/missing-name');
         }
+        if (password.length < MIN_PASSWORD_LENGTH) {
+          setError(`Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`);
+          setLoading(false);
+          return;
+        }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const country = await fetchCountry();
-        
+
         await updateProfile(user, { displayName: `${firstName} ${lastName}` });
-        
+
+        // Without this, anyone can register an address they do not control:
+        // email stops being a trustworthy identifier for support and recovery,
+        // and fabricated addresses hard-bounce our transactional mail.
+        sendEmailVerification(user, { url: `${window.location.origin}/app` })
+          .then(() => setMessage('Check your inbox to verify your email address.'))
+          .catch((verifyErr) => console.error('Failed to send verification email:', verifyErr));
+
         // Write profile details immediately to Firestore without sensitive subscription info
         await setDoc(doc(db, "users", user.uid), {
           email: user.email,

@@ -1,24 +1,17 @@
 import 'dotenv/config'
 import { admin, initAdmin } from '../api/_firebase.js'
+import {
+  USER_CREDENTIAL_FIELDS,
+  ACCOUNT_CREDENTIAL_FIELDS,
+  deletionPatch as buildDeletionPatch,
+} from '../api/_credentialFields.js'
 
 const apply = process.argv.includes('--apply')
 const PAGE_SIZE = 200
-const USER_CREDENTIAL_FIELDS = ['brokerLogin', 'brokerPassword', 'metaApiAccountId']
-const ACCOUNT_CREDENTIAL_FIELDS = [
-  'login',
-  'password',
-  'brokerLogin',
-  'brokerPassword',
-  'metaApiAccountId',
-  'providerAccountId',
-  'credentialFingerprint',
-]
 
 const ownsAny = (data, fields) => fields.some((field) => Object.prototype.hasOwnProperty.call(data, field))
 
-const deletionPatch = (fields) => Object.fromEntries(
-  fields.map((field) => [field, admin.firestore.FieldValue.delete()])
-)
+const deletionPatch = (fields) => buildDeletionPatch(fields, () => admin.firestore.FieldValue.delete())
 
 async function scrubUsers(db) {
   let cursor = null

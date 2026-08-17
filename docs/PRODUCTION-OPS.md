@@ -39,11 +39,11 @@ If you suspect the Firebase deployment key is compromised:
 3. Update Vercel environment variables: Set `METAAPI_TOKEN` to the new token.
 4. Update Firebase Cloud Functions secrets:
    ```bash
-   firebase functions:secrets:set META_API_TOKEN="new_token_here"
+   vercel env rm METAAPI_TOKEN production && vercel env add METAAPI_TOKEN production
    ```
 5. Deploy functions to apply the secret change:
    ```bash
-   firebase deploy --only functions
+   vercel --prod
    ```
 
 ---
@@ -61,7 +61,7 @@ To ensure 99.9% uptime, configure active logging, performance monitoring, and in
 Firestore reads, writes, and Firebase Cloud Function invocations are logged inside the **Google Cloud Logging (Winston/Stackdriver)** suite.
 * Go to the GCP console under **Logging** → **Log Explorer**.
 * Filter for `resource.type="cloud_function"` to view broker sync logs.
-* Monitor function execution times and timeout alerts. (Note: MetaApi RPC calls have a timeout configuration of **540 seconds** in `functions/index.js` to accommodate heavy MT4/MT5 historical sync operations).
+* Monitor function execution times and timeout alerts. (Note: MetaApi calls are bounded by `withRetryBudget` in `api/_resilience.ts` — a 25s budget per broker sync request).
 
 ### 🔔 Alerting Thresholds
 Create alert notifications (via Email or Slack) in Google Cloud and Vercel dashboards for the following thresholds:
@@ -119,5 +119,5 @@ npm install -g firebase-tools
 
 # Login and deploy
 firebase login
-firebase deploy --only functions,firestore:rules,storage
+vercel --prod   # then: firebase deploy --only firestore:rules,storage
 ```

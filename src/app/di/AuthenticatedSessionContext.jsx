@@ -10,7 +10,7 @@ const BrokerAccountsContext = createContext(null);
  * session.
  *
  * Both hooks used to be instantiated twice — useWallet in AuthenticatedApp and
- * DashboardLayout, useBrokerAccounts in DashboardLayout and EASetup. Each copy
+ * DashboardLayout, useBrokerAccounts in DashboardLayout and BrokerSync. Each copy
  * kept its own state, so onboarding's updateBalance moved one balance while the
  * sidebar rendered the other, and the broker hooks opened duplicate onSnapshot
  * listeners on users/{uid} plus a second auth.onAuthStateChanged.

@@ -10,6 +10,7 @@ import { Eye, EyeSlash } from 'react-bootstrap-icons';
 import { auth } from '../firebase';
 import { useToast } from '../components/ToastContext';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { isPaidPlan } from '../lib/entitlements.js';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatusSquare } from '../components/app/StatusSquare';
 import { Button } from '../components/ui/button';
@@ -305,7 +306,7 @@ export function SettingsPage() {
                 <Button variant="outline" onClick={openPortal}>
                   Billing portal
                 </Button>
-                {plan !== 'pro' && (
+                {!isPaidPlan(plan) && (
                   <Button onClick={() => setShowPricingModal?.(true)}>Upgrade</Button>
                 )}
               </div>

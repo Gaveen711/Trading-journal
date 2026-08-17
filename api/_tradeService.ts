@@ -2,24 +2,25 @@ import { kv } from '@vercel/kv'
 // @ts-ignore
 import { admin, db, now } from './_firebase.js'
 import { isSyncAllowed } from './_auth.js'
-import { subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
-
-const analyticsIncrements = (delta: Record<string, number>) => Object.fromEntries(
-  Object.entries(delta).map(([key, value]) => ['analytics.' + key, admin.firestore.FieldValue.increment(value)])
-)
+import { hashToken } from './_security.js'
+import { analyticsUpdate, subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
+import { computePips, outcomeForPnl } from '../src/lib/goldContract.js'
 
 /**
  * Resolves an API key to a user UID.
  * Utilizes Vercel KV to cache API key resolutions and user subscription check flags.
  */
 export async function resolveKey(apiKey: string): Promise<string | null> {
-  if (!apiKey) return null
+  if (!apiKey || typeof apiKey !== 'string' || !apiKey.startsWith('xau_')) return null
 
-  const apiCacheKey = `auth:apikey:${apiKey}`
+  // Look up and cache by hash, so the plaintext secret is never written to
+  // Firestore document ids or to the KV cache.
+  const keyId = hashToken(apiKey)
+  const apiCacheKey = `auth:apikey:${keyId}`
   let uid = await kv.get<string>(apiCacheKey)
 
   if (!uid) {
-    const doc = await db.collection('apiKeys').doc(apiKey).get()
+    const doc = await db.collection('apiKeys').doc(keyId).get()
     if (!doc.exists) return null
     uid = doc.data().uid
     if (!uid) return null
@@ -111,7 +112,9 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     const openPrice = Number(previous?.openPrice ?? payload.openPrice)
     if (Number.isFinite(openPrice)) {
       const diff = direction === 'BUY' ? closePrice - openPrice : openPrice - closePrice
-      pips = Math.round(diff / 0.1)
+      // Shared pip rule (one decimal). This path used to round to integers
+      // while manual logging kept a decimal — same move, two stored values.
+      pips = computePips(diff)
     }
 
     const tradeData: any = {
@@ -127,7 +130,7 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
       swap,
       netPnl,
       pips,
-      outcome: netPnl > 0.01 ? 'WIN' : netPnl < -0.01 ? 'LOSS' : 'BE',
+      outcome: outcomeForPnl(netPnl),
       status: 'closed',
       source,
       updatedAt: now(),
@@ -142,10 +145,10 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     const delta = subtractTradeAnalytics(previous, nextTrade)
     transaction.set(tradeRef, tradeData, { merge: true })
     if (Object.values(delta).some((value) => value !== 0)) {
-      transaction.update(tradeRef.parent.parent, {
-        totalTradesLogged: admin.firestore.FieldValue.increment(delta.tradeCount),
-        ...analyticsIncrements(delta),
-      })
+      transaction.update(
+        tradeRef.parent.parent,
+        analyticsUpdate(delta, (value: number) => admin.firestore.FieldValue.increment(value)),
+      )
     }
   })
 

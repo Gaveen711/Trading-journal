@@ -1,4 +1,38 @@
+import { OUTCOME_EPSILON, XAUUSD_OZ_PER_LOT, computePips } from './goldContract.js';
+
 export const pad2 = n => String(n).padStart(2, '0');
+
+/**
+ * The only sanctioned P&L color rule, on the same break-even band as the
+ * stored WIN/LOSS/BE outcome — so color always agrees with the ledger.
+ * Pass { zero } to override the neutral class (the trade form dims zeros).
+ */
+export const pnlToneClass = (value, { zero = 'text-foreground' } = {}) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return zero;
+  if (num > OUTCOME_EPSILON) return 'text-win';
+  if (num < -OUTCOME_EPSILON) return 'text-loss';
+  return zero;
+};
+
+/**
+ * One coercion ladder for every timestamp shape this app stores or caches:
+ * Firestore Timestamp (.toDate), Date, ISO string, epoch millis, and the
+ * serialized {seconds} form that survives JSON round-trips.
+ */
+export const toDate = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value?.toDate === 'function') return value.toDate();
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === 'object' && typeof value.seconds === 'number') {
+    return new Date(value.seconds * 1000);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+export const toMillis = (value) => toDate(value)?.getTime() ?? null;
+export const toIsoString = (value) => toDate(value)?.toISOString() ?? null;
 
 export const todayStr = () => {
   const today = new Date();
@@ -82,6 +116,29 @@ export const formatCurrencyCompact = (val) => {
   return `$${formatted}`;
 };
 
+// Compact currency with the Console sign treatment: always-signed, U+2212
+// minus (formatCurrencyCompact alone renders an ASCII hyphen, no plus).
+export const formatSignedCompact = (val) => {
+  if (val > 0) return `+${formatCurrencyCompact(val)}`;
+  if (val < 0) return `−${formatCurrencyCompact(Math.abs(val))}`;
+  return formatCurrencyCompact(val);
+};
+
+// Signed plain number (no currency symbol): always-signed, U+2212 minus,
+// em dash for missing. For measurements like pips that are not P&L.
+export const formatSignedNumber = (val, decimals) => {
+  const num = Number(val);
+  if (val === null || val === undefined || val === '' || isNaN(num)) return '—';
+  const options =
+    decimals !== undefined
+      ? { minimumFractionDigits: decimals, maximumFractionDigits: decimals }
+      : undefined;
+  const abs = Math.abs(num).toLocaleString('en-US', options);
+  if (num > 0) return `+${abs}`;
+  if (num < 0) return `−${abs}`;
+  return abs;
+};
+
 // ─── XAUUSD (Gold) Trading Math ─────────────────────────────────────────────
 //
 //  Gold is traded in OUNCES via lots:
@@ -103,9 +160,6 @@ export const formatCurrencyCompact = (val) => {
 //    PnL    = $25 × 1 oz = $25  ✓
 //    points = $25 / $0.01 = 2500 pts  ✓
 
-const XAUUSD_OZ_PER_LOT  = 100;   // ounces per 1.0 standard lot
-const XAUUSD_PIP_SIZE  = 0.1;   // 1 pip = $0.10 price move
-
 export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap = 0) => {
   if (!entry || !exit || !dir) return { pnl: null, rr: null, pips: null };
 
@@ -114,7 +168,7 @@ export const calcPnl = (entry, exit, lots, actualPnl, sl, tp, dir = null, swap =
 
   // Pips (displayed in the UI): price move / pip size
   // e.g. $25.00 move → 25 / 0.1 = 250 pips
-  const pips = parseFloat((diff / XAUUSD_PIP_SIZE).toFixed(1));
+  const pips = computePips(diff);
 
   // If actual broker P&L is provided, trust it directly
   let pnl;

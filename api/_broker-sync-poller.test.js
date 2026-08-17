@@ -164,7 +164,9 @@ import { fetchBrokerTrades } from './_metaapi-broker.js';
 import { app } from './[[...route]].ts';
 
 describe('Broker Sync Poller Cron Job', () => {
-  const cronSecret = 'test_cron_secret';
+  // assertCron() refuses to run on a secret shorter than 32 chars, so the
+  // fixture reflects the production requirement rather than working around it.
+  const cronSecret = 'test_cron_secret_0123456789abcdef';
 
   beforeEach(() => {
     vi.clearAllMocks();

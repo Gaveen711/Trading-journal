@@ -141,6 +141,7 @@ describe('Lemon Squeezy Webhook', () => {
     expect(db.__mocks.mockDocSet).toHaveBeenCalledWith({
       plan: 'pro',
       planExpiry: '2026-10-10T12:00:00Z',
+      graceUntil: null,
       lemonSqueezySubscriptionId: 'sub_ls_9999',
       lemonSqueezyStatus: 'active',
       updatedAt: 'MOCK_TIMESTAMP',
@@ -170,10 +171,12 @@ describe('Lemon Squeezy Webhook', () => {
     expect(res.statusCode).toBe(200);
     expect(res.jsonData.ok).toBe(true);
 
-    // Should write plan = 'free' and planExpiry = null
+    // No prior paid plan on the user doc (mock get resolves empty), so no
+    // grace window — straight to free.
     expect(db.__mocks.mockDocSet).toHaveBeenCalledWith({
       plan: 'free',
       planExpiry: null,
+      graceUntil: null,
       lemonSqueezySubscriptionId: 'sub_ls_9999',
       lemonSqueezyStatus: 'expired',
       updatedAt: 'MOCK_TIMESTAMP',
@@ -207,6 +210,7 @@ describe('Lemon Squeezy Webhook', () => {
     expect(db.__mocks.mockDocSet).toHaveBeenCalledWith({
       plan: 'pro',
       planExpiry: payload.data.attributes.ends_at,
+      graceUntil: null,
       lemonSqueezySubscriptionId: 'sub_ls_9999',
       lemonSqueezyStatus: 'cancelled',
       updatedAt: 'MOCK_TIMESTAMP',
@@ -236,13 +240,75 @@ describe('Lemon Squeezy Webhook', () => {
     expect(res.statusCode).toBe(200);
     expect(res.jsonData.ok).toBe(true);
 
-    // Should set plan = 'free' with planExpiry = null
+    // No prior paid plan on the user doc (mock get resolves empty), so no
+    // grace window — straight to free.
     expect(db.__mocks.mockDocSet).toHaveBeenCalledWith({
       plan: 'free',
       planExpiry: null,
+      graceUntil: null,
       lemonSqueezySubscriptionId: 'sub_ls_9999',
       lemonSqueezyStatus: 'cancelled',
       updatedAt: 'MOCK_TIMESTAMP',
     }, { merge: true });
+  });
+
+  it('grants a server-authored grace window when a paid non-trial subscription lapses', async () => {
+    // First get() is the webhookEvents dedupe check, second is the user doc.
+    db.__mocks.mockDocGet
+      .mockResolvedValueOnce({ exists: false })
+      .mockResolvedValueOnce({ exists: true, data: () => ({ plan: 'pro', isTrial: false }) });
+
+    const payload = {
+      meta: {
+        event_name: 'subscription_expired',
+        custom_data: { user_id: 'user_12345' },
+      },
+      data: {
+        id: 'sub_ls_9999',
+        attributes: { status: 'expired', renews_at: null, ends_at: '2026-06-20T10:00:00Z' },
+      },
+    };
+
+    const res = await executeWebhook(payload);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.jsonData.ok).toBe(true);
+
+    expect(db.__mocks.mockDocSet).toHaveBeenCalledWith(expect.objectContaining({
+      plan: 'grace',
+      graceUntil: expect.any(String),
+      lemonSqueezyStatus: 'expired',
+    }), { merge: true });
+
+    const written = db.__mocks.mockDocSet.mock.calls.at(-1)[0];
+    const graceMs = new Date(written.graceUntil).getTime() - Date.now();
+    // ~4 days out (allow a minute of test execution slack)
+    expect(graceMs).toBeGreaterThan(4 * 86400000 - 60000);
+    expect(graceMs).toBeLessThanOrEqual(4 * 86400000);
+  });
+
+  it('gives trials no grace window on lapse', async () => {
+    db.__mocks.mockDocGet
+      .mockResolvedValueOnce({ exists: false })
+      .mockResolvedValueOnce({ exists: true, data: () => ({ plan: 'pro', isTrial: true }) });
+
+    const payload = {
+      meta: {
+        event_name: 'subscription_expired',
+        custom_data: { user_id: 'user_12345' },
+      },
+      data: {
+        id: 'sub_ls_9999',
+        attributes: { status: 'expired', renews_at: null, ends_at: '2026-06-20T10:00:00Z' },
+      },
+    };
+
+    const res = await executeWebhook(payload);
+
+    expect(res.statusCode).toBe(200);
+    expect(db.__mocks.mockDocSet).toHaveBeenCalledWith(expect.objectContaining({
+      plan: 'free',
+      graceUntil: null,
+    }), { merge: true });
   });
 });

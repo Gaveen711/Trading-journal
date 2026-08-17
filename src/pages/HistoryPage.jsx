@@ -6,8 +6,10 @@ import { AnimatePresence } from 'framer-motion';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { EditTradeModal } from '../components/EditTradeModal';
 import { ImageViewerModal } from '../components/ImageViewerModal';
-import { formatSigned, formatPrice } from '../lib/tradeUtils';
+import { formatSigned, formatSignedNumber, formatPrice, pnlToneClass, toDate, toMillis } from '../lib/tradeUtils';
 import { getTradeStrategyTags } from '../lib/tradeAnalytics.js';
+import { isPaidPlan } from '../lib/entitlements.js';
+import { DirectionCell } from '../components/app/DirectionCell';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatCard } from '../components/app/StatCard';
 import { EmptyState } from '../components/app/EmptyState';
@@ -59,53 +61,15 @@ const chip = (text, key) => (
 );
 
 const formatTradeTime = (timestamp) => {
-  if (!timestamp) return '';
-  let dateObj = null;
-  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-    dateObj = timestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    dateObj = timestamp;
-  } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
-    dateObj = new Date(timestamp);
-  } else if (timestamp.seconds !== undefined) {
-    dateObj = new Date(timestamp.seconds * 1000);
-  }
-  if (!dateObj || isNaN(dateObj.getTime())) return '';
-
+  const dateObj = toDate(timestamp);
+  if (!dateObj) return '';
   return dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 };
 
-const getTimestampMs = (t) => {
-  if (!t.timestamp) return 0;
-  if (t.timestamp.toDate && typeof t.timestamp.toDate === 'function') {
-    return t.timestamp.toDate().getTime();
-  }
-  if (t.timestamp instanceof Date) {
-    return t.timestamp.getTime();
-  }
-  if (typeof t.timestamp === 'string' || typeof t.timestamp === 'number') {
-    return new Date(t.timestamp).getTime();
-  }
-  if (t.timestamp.seconds !== undefined) {
-    return t.timestamp.seconds * 1000;
-  }
-  return 0;
-};
+const getTimestampMs = (t) => toMillis(t.timestamp) ?? 0;
 
-// Signed pips figure: always-signed, U+2212 minus, em dash for missing.
 // Pips are a measurement, not P&L — the digits stay foreground.
-const formatPips = (val, decimals) => {
-  const num = Number(val);
-  if (val === null || val === undefined || val === '' || isNaN(num)) return '—';
-  const options =
-    decimals !== undefined
-      ? { minimumFractionDigits: decimals, maximumFractionDigits: decimals }
-      : undefined;
-  const abs = Math.abs(num).toLocaleString('en-US', options);
-  if (num > 0) return `+${abs}`;
-  if (num < 0) return `−${abs}`;
-  return abs;
-};
+const formatPips = formatSignedNumber;
 
 // The page's sort select and the sortable column headers drive the same
 // filterSort state — one source of truth, two controls.
@@ -126,14 +90,7 @@ const HISTORY_COLUMNS = [
   {
     id: 'direction',
     header: 'Direction',
-    cell: (t) => {
-      const isLong = t.direction === 'BUY' || t.direction === 'LONG';
-      return (
-        <span className="text-foreground">
-          <span aria-hidden="true">{isLong ? '▲' : '▼'}</span> {isLong ? 'Buy' : 'Sell'}
-        </span>
-      );
-    },
+    cell: (t) => <DirectionCell direction={t.direction} />,
   },
   {
     id: 'date',
@@ -162,7 +119,7 @@ const HISTORY_COLUMNS = [
     numeric: true,
     sortable: true,
     cell: (t) => (
-      <span className={t.pnl > 0 ? 'text-win' : t.pnl < 0 ? 'text-loss' : 'text-foreground'}>
+      <span className={pnlToneClass(t.pnl)}>
         {formatSigned(t.pnl)}
       </span>
     ),
@@ -364,7 +321,7 @@ export function HistoryPage() {
   if (isLoadingTrades) return <HistorySkeleton />;
 
   const onExportCSV = (tradesToExport = trades) => {
-    if (plan !== 'pro') {
+    if (!isPaidPlan(plan)) {
       setShowPricingModal(true);
       return toast('Upgrade to Pro to export your trade data.', 'warn');
     }
@@ -400,7 +357,7 @@ export function HistoryPage() {
         setDownloadState('ready');
       }, 3900); // 3.9 seconds (0.4s delay + 3s rotating animation + transition buffer)
     } else if (downloadState === 'ready') {
-      if (plan !== 'pro') {
+      if (!isPaidPlan(plan)) {
         setShowPricingModal(true);
         toast('Upgrade to Pro to export your trade data.', 'warn');
         setDownloadState('idle');
