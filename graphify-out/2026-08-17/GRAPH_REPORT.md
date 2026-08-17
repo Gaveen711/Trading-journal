@@ -5,8 +5,8 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1435 nodes · 2837 edges · 118 communities (82 shown, 36 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 19 edges (avg confidence: 0.55)
+- 1431 nodes · 2825 edges · 113 communities (75 shown, 38 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 20 edges (avg confidence: 0.56)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
@@ -17,29 +17,29 @@
 ## Community Hubs (Navigation)
 - [[...route]].ts
 - BrokerSync.jsx
-- button.tsx
+- PricingPage.jsx
 - tradeAnalytics.js
 - cn
 - devDependencies
-- DashboardLayout.jsx
+- sidebar.tsx
 - _security.ts
-- tradeUtils.js
+- AnalyticsPage.jsx
 - overrides
-- PricingPage.jsx
+- BlogsPage.jsx
 - LandingPage.jsx
 - AppRoutes.jsx
 - JournalPage.jsx
 - compilerOptions
 - seo.js
-- AuthenticatedSessionContext.jsx
+- app/AuthenticatedApp.jsx
 - components.json
 - FooterNav.jsx
 - HistoryPage.jsx
 - field.tsx
 - DataTable.jsx
 - FirebaseBrokerRepository.js
-- AnalyticsPage.jsx
-- dropdown-menu.tsx
+- CalendarPage.jsx
+- DashboardLayout.jsx
 - _middleware.ts
 - MEDIUM
 - LogTradePage.jsx
@@ -52,12 +52,12 @@
 - JournalRepository
 - firebase.js
 - class-variance-authority
-- utils.ts
+- EmptyState.jsx
 - alert.tsx
 - 2. Wrappers — `src/components/app/*.jsx`
 - firebase-admin
 - SectionCard.jsx
-- app/AuthenticatedApp.jsx
+- db
 - FirebaseWalletRepository.js
 - check-bundle-budget.mjs
 - vite.config.js
@@ -92,7 +92,6 @@
 - @vercel/speed-insights
 - consolidateBrokerConnect
 - HIGH
-- compilerOptions
 - migrate-broker-credential-privacy.mjs
 - EditTradeModal.jsx
 - SECURITY-AUDIT-2026-08.md
@@ -103,20 +102,17 @@
 - XAU Journal Architecture
 - BrokerRepository
 - grant-admin.mjs
-- ToastContext.jsx
-- BrokerSync
-- useTrades.js
 - rules/graphify.md
 - workflows/graphify.md
 - C-01 — Broker MT4/MT5 passwords stored in plaintext `localStorage`, never cleared at sign-out
 - H-01 — Cron routes authenticate successfully against `"Bearer undefined"` when `CRON_SECRET` is unset
-- chart.js
+- clsx
 - html2canvas
 - H-04 — Unauthenticated `/api/contact` writes to Firestore, sends email, and injects raw HTML into the ops inbox
 - metaapi.cloud-sdk
 - H-03 — Rate limiting keys on a client-suppliable header
 - M-03 — Lemon Squeezy webhook: non-constant-time signature check, no replay protection
-- bento-grid.tsx
+- utils.ts
 - @fontsource-variable/newsreader
 - @google-cloud/firestore
 - @google-cloud/recaptcha-enterprise
@@ -128,8 +124,8 @@
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 196 edges
 2. `Button()` - 25 edges
-3. `useToast()` - 19 edges
-4. `MT4/MT5 Broker Login Sync Implementation` - 19 edges
+3. `MT4/MT5 Broker Login Sync Implementation` - 19 edges
+4. `useToast()` - 19 edges
 5. `overrides` - 18 edges
 6. `isPaidPlan()` - 18 edges
 7. `compilerOptions` - 18 edges
@@ -144,95 +140,95 @@
   scripts/migrate-broker-credential-privacy.mjs → api/_credentialFields.js
 - `migrateBrokerJobs()` --calls--> `deletionPatch()`  [EXTRACTED]
   scripts/migrate-performance-data.mjs → api/_credentialFields.js
-- `main()` --calls--> `initAdmin()`  [EXTRACTED]
-  scripts/migrate-performance-data.mjs → api/_firebase.js
 - `handleCloseTradeSync()` --calls--> `computePips()`  [EXTRACTED]
+  api/_tradeService.ts → src/lib/goldContract.js
+- `handleCloseTradeSync()` --calls--> `outcomeForPnl()`  [EXTRACTED]
   api/_tradeService.ts → src/lib/goldContract.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (118 total, 36 thin omitted)
+## Communities (113 total, 38 thin omitted)
 
 ### Community 0 - "[[...route]].ts"
 Cohesion: 0.16
 Nodes (20): isSyncAllowed(), now(), resend, DELETE, Env, GET, handleRevokeExpired(), handleTradeWebhook() (+12 more)
 
 ### Community 1 - "BrokerSync.jsx"
-Cohesion: 0.23
-Nodes (9): BrokerLogo(), BROKER_CARD_STYLES, BROKER_CATALOG_FILTERS, BROKER_PRESETS, BROKERS, getBrokerLogoUrl(), LOCAL_BROKER_LOGO_FILES, POPULAR_BROKER_IDS (+1 more)
+Cohesion: 0.12
+Nodes (17): Login, BrokerLogo(), BrokerSync(), handleConnect(), handleManualSync(), handleRemove(), BROKER_CARD_STYLES, BROKER_CATALOG_FILTERS (+9 more)
 
-### Community 2 - "button.tsx"
-Cohesion: 0.09
-Nodes (28): AuthenticatedOverlays(), AppDialog(), SIZE_CLASS, VETO_REASONS, ConsentModal(), ImageViewerModal(), OnboardingModal(), PricingModal() (+20 more)
+### Community 2 - "PricingPage.jsx"
+Cohesion: 0.08
+Nodes (33): AuthenticatedOverlays(), AppDialog(), SIZE_CLASS, VETO_REASONS, ConsentModal(), OnboardingModal(), PricingModal(), FEATURE_COPY (+25 more)
 
 ### Community 3 - "tradeAnalytics.js"
 Cohesion: 0.08
 Nodes (25): persistBrokerTrades(), baseTrade, chunkedDbGetAll(), apply, args, main(), maxUsers, migrateAnalytics() (+17 more)
 
 ### Community 4 - "cn"
-Cohesion: 0.07
-Nodes (32): Avatar(), AvatarBadge(), AvatarFallback(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), Checkbox(), CustomSelect() (+24 more)
+Cohesion: 0.08
+Nodes (30): Avatar(), AvatarBadge(), AvatarFallback(), AvatarGroup(), AvatarGroupCount(), AvatarImage(), PopoverContent(), PopoverDescription() (+22 more)
 
 ### Community 5 - "devDependencies"
 Cohesion: 0.04
 Nodes (47): autoprefixer, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, devDependencies (+39 more)
 
-### Community 6 - "DashboardLayout.jsx"
-Cohesion: 0.06
-Nodes (45): useSessionBrokerAccounts(), ACCENT_TEMPLATES, DashboardLayout(), Logo(), buttonVariants, Sheet(), SheetContent(), SheetDescription() (+37 more)
+### Community 6 - "sidebar.tsx"
+Cohesion: 0.08
+Nodes (29): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle(), Sidebar() (+21 more)
 
 ### Community 7 - "_security.ts"
 Cohesion: 0.17
 Nodes (13): handleRemindExpiry(), assertCron(), assertRequiredConfig(), escapeHtml(), isRecaptchaConfigured(), isValidAccountId(), isValidUid(), RecaptchaResult (+5 more)
 
-### Community 8 - "tradeUtils.js"
-Cohesion: 0.19
-Nodes (11): CurrencyConverter(), ratesCache, DatePicker(), CURRENCIES, formatCompact(), formatCurrencyCompact(), formatNumber(), formatPrice() (+3 more)
+### Community 8 - "AnalyticsPage.jsx"
+Cohesion: 0.13
+Nodes (26): CurrencyConverter(), ratesCache, DashboardRightSidebar(), TradeShareCard, CURRENCIES, getTradeStrategyTags(), calcPnl(), formatCompact() (+18 more)
 
 ### Community 9 - "overrides"
 Cohesion: 0.05
 Nodes (38): author, description, name, overrides, axios, braces, cross-spawn, crypto-js (+30 more)
 
-### Community 10 - "PricingPage.jsx"
+### Community 10 - "BlogsPage.jsx"
 Cohesion: 0.13
-Nodes (18): BlogsPage, PricingPage, PublicFooter(), NAV_LINKS, PublicNavbar(), Arrow(), CTAButton(), CTALink() (+10 more)
+Nodes (17): BlogsPage, ContactPage, PublicFooter(), NAV_LINKS, PublicNavbar(), Arrow(), CTAButton(), Panel() (+9 more)
 
 ### Community 11 - "LandingPage.jsx"
 Cohesion: 0.07
 Nodes (35): bestHour(), DEMO_SESSIONS, DEMO_TRADES, equityCurve(), formatR(), formatR2(), hourWindow(), RECORD (+27 more)
 
 ### Community 12 - "AppRoutes.jsx"
-Cohesion: 0.09
-Nodes (16): AuthenticatedApp, BlogArticlePage, ContactPage, LandingPage, Login, NotFoundPage, PrivacyPolicyPage, PUBLIC_NAVBAR_PATHS (+8 more)
+Cohesion: 0.10
+Nodes (18): AppRoutes(), BlogArticlePage, LandingPage, NotFoundPage, PricingPage, PrivacyPolicyPage, PUBLIC_NAVBAR_PATHS, RefundPolicyPage (+10 more)
 
 ### Community 13 - "JournalPage.jsx"
 Cohesion: 0.17
-Nodes (18): SectionCard(), AlertDialog(), AlertDialogAction(), AlertDialogCancel(), AlertDialogContent(), AlertDialogDescription(), AlertDialogFooter(), AlertDialogHeader() (+10 more)
+Nodes (17): SectionCard(), AlertDialog(), AlertDialogAction(), AlertDialogCancel(), AlertDialogContent(), AlertDialogDescription(), AlertDialogFooter(), AlertDialogHeader() (+9 more)
 
 ### Community 14 - "compilerOptions"
-Cohesion: 0.08
-Nodes (23): DOM, DOM.Iterable, src, compilerOptions, allowJs, allowSyntheticDefaultImports, checkJs, esModuleInterop (+15 more)
+Cohesion: 0.05
+Nodes (37): compilerOptions, allowJs, checkJs, lib, noEmit, paths, strict, types (+29 more)
 
 ### Community 15 - "seo.js"
-Cohesion: 0.09
-Nodes (30): PageSEO(), useDeskReveal(), PRO_MONTHLY_PRICE, PRO_YEARLY_PRICE, applyArticleSEO(), applyHeadTags(), applyPageSEO(), buildArticleSchema() (+22 more)
+Cohesion: 0.11
+Nodes (26): PageSEO(), PRO_MONTHLY_PRICE, PRO_YEARLY_PRICE, applyArticleSEO(), applyHeadTags(), applyPageSEO(), buildArticleSchema(), buildFAQSchema() (+18 more)
 
-### Community 16 - "AuthenticatedSessionContext.jsx"
-Cohesion: 0.23
-Nodes (17): AuthenticatedSessionProvider(), BrokerAccountsContext, WalletContext, useBrokerAccounts(), addAccount(), hasSessionCredential(), removeAccount(), syncAccount() (+9 more)
+### Community 16 - "app/AuthenticatedApp.jsx"
+Cohesion: 0.09
+Nodes (36): AuthenticatedApp(), AuthenticatedAppContent(), PUBLIC_LEGAL_PATHS, AppServicesContext, AppServicesProvider(), useAppServices(), AuthenticatedSessionProvider(), BrokerAccountsContext (+28 more)
 
 ### Community 17 - "components.json"
 Cohesion: 0.09
 Nodes (21): aliases, components, hooks, lib, ui, utils, iconLibrary, menuAccent (+13 more)
 
 ### Community 18 - "FooterNav.jsx"
-Cohesion: 0.13
-Nodes (29): listCities(), normalizeSession(), RAIL_FILL, segmentState(), SessionGlyph(), SessionRail(), SATURDAY_1200_UTC, TUESDAY_0800_UTC (+21 more)
+Cohesion: 0.14
+Nodes (28): listCities(), normalizeSession(), RAIL_FILL, segmentState(), SessionGlyph(), SessionRail(), SATURDAY_1200_UTC, TUESDAY_0800_UTC (+20 more)
 
 ### Community 19 - "HistoryPage.jsx"
 Cohesion: 0.15
-Nodes (15): TradeShareCard, Input(), getTradeStrategyTags(), formatSignedNumber(), toDate(), toMillis(), ShareTradeModal, chip() (+7 more)
+Nodes (12): CustomSelect(), formatSignedNumber(), toDate(), toMillis(), ShareTradeModal, chip(), DetailField(), formatTradeTime() (+4 more)
 
 ### Community 20 - "field.tsx"
 Cohesion: 0.15
@@ -246,13 +242,13 @@ Nodes (14): DataTable(), hideClass(), isEnd(), baseProps, columns, rows, Table()
 Cohesion: 0.30
 Nodes (5): FirebaseBrokerRepository, callBrokerApi(), connectBrokerCallable(), disconnectBrokerCallable(), syncBrokerTradesCallable()
 
-### Community 23 - "AnalyticsPage.jsx"
-Cohesion: 0.14
-Nodes (17): AnalyticsPage, DirectionCell(), StatCard(), isLongDirection(), formatSigned(), pnlToneClass(), AnalyticsPage(), chip() (+9 more)
+### Community 23 - "CalendarPage.jsx"
+Cohesion: 0.23
+Nodes (10): CalendarPage, DirectionCell(), StatCard(), DatePicker(), useMonthTrades(), isLongDirection(), pad2(), CalendarPage() (+2 more)
 
-### Community 24 - "dropdown-menu.tsx"
-Cohesion: 0.16
-Nodes (12): DropdownMenu(), DropdownMenuCheckboxItem(), DropdownMenuContent(), DropdownMenuGroup(), DropdownMenuItem(), DropdownMenuLabel(), DropdownMenuRadioItem(), DropdownMenuSeparator() (+4 more)
+### Community 24 - "DashboardLayout.jsx"
+Cohesion: 0.08
+Nodes (24): SQUARE_STATE, StatusSquare(), ACCENT_TEMPLATES, DropdownMenu(), DropdownMenuCheckboxItem(), DropdownMenuContent(), DropdownMenuGroup(), DropdownMenuItem() (+16 more)
 
 ### Community 25 - "_middleware.ts"
 Cohesion: 0.28
@@ -264,19 +260,15 @@ Nodes (16): Fix, Fix, Fix, Fix, Fix, Fix, Fix, M-01 — CSP permits `'unsafe-inl
 
 ### Community 27 - "LogTradePage.jsx"
 Cohesion: 0.14
-Nodes (16): SQUARE_STATE, StatusSquare(), LiveMarketWidget(), TIMEFRAME_UPDATE_MS, TIMEFRAMES, YAHOO_INTERVALS, ToggleGroup(), ToggleGroupContext (+8 more)
+Nodes (16): LiveMarketWidget(), TIMEFRAME_UPDATE_MS, TIMEFRAMES, YAHOO_INTERVALS, Tabs(), TabsContent(), TabsList(), tabsListVariants (+8 more)
 
 ### Community 28 - "BlogArticlePage.jsx"
-Cohesion: 0.21
-Nodes (10): TextLink(), articles, articles, getArticle(), studyArticles, studyCategories, articles, removeJsonLd() (+2 more)
-
-### Community 29 - "createAppServices.js"
-Cohesion: 0.16
-Nodes (3): SubscriptionRepository, ResetTradesUseCase, FirebaseSubscriptionRepository
+Cohesion: 0.23
+Nodes (9): articles, articles, getArticle(), studyArticles, studyCategories, articles, removeJsonLd(), BlogArticlePage() (+1 more)
 
 ### Community 30 - "AuthenticatedRoutes.jsx"
-Cohesion: 0.16
-Nodes (9): AuthenticatedRoutes(), BrokerSync, CalendarPage, CheckoutCancel, CheckoutSuccess, HistoryPage, JournalPage, LogTradePage (+1 more)
+Cohesion: 0.18
+Nodes (8): AnalyticsPage, BrokerSync, CheckoutCancel, CheckoutSuccess, HistoryPage, JournalPage, LogTradePage, SettingsPage
 
 ### Community 31 - "MT4/MT5 Broker Login Sync Implementation"
 Cohesion: 0.04
@@ -291,12 +283,12 @@ Cohesion: 0.17
 Nodes (11): vite.config.js, compilerOptions, allowJs, allowSyntheticDefaultImports, composite, module, moduleResolution, noEmit (+3 more)
 
 ### Community 35 - "firebase.js"
-Cohesion: 0.29
-Nodes (8): db, app, auth, facebookProvider, firebaseConfig, googleProvider, fetchCountry(), Login()
+Cohesion: 0.43
+Nodes (5): app, auth, facebookProvider, firebaseConfig, googleProvider
 
-### Community 37 - "utils.ts"
-Cohesion: 0.22
-Nodes (10): EmptyState(), Badge(), badgeVariants, Empty(), EmptyContent(), EmptyDescription(), EmptyHeader(), EmptyMedia() (+2 more)
+### Community 37 - "EmptyState.jsx"
+Cohesion: 0.31
+Nodes (8): EmptyState(), Empty(), EmptyContent(), EmptyDescription(), EmptyHeader(), EmptyMedia(), emptyMediaVariants, EmptyTitle()
 
 ### Community 38 - "alert.tsx"
 Cohesion: 0.40
@@ -307,12 +299,8 @@ Cohesion: 0.08
 Nodes (24): 0.1 Fix `--win` / `--loss` (still the old, failing values), 0.2 Scope the heading rules, 0.3 Sanctioned primitive edits — the complete list, 0. Prerequisites — land these before the first wrapper, 1.1 Surfaces, 1.2 Type roles, 1.3 Spacing and density, 1.4 State encoding (+16 more)
 
 ### Community 41 - "SectionCard.jsx"
-Cohesion: 0.21
-Nodes (11): DELTA_CLASS, DELTA_SIGN, TONE_CLASS, Card(), CardAction(), CardContent(), CardDescription(), CardFooter() (+3 more)
-
-### Community 42 - "app/AuthenticatedApp.jsx"
 Cohesion: 0.18
-Nodes (14): AuthenticatedApp(), AuthenticatedAppContent(), PUBLIC_LEGAL_PATHS, AppServicesContext, AppServicesProvider(), useAppServices(), useSessionWallet(), createAppServices() (+6 more)
+Nodes (11): DELTA_CLASS, DELTA_SIGN, TONE_CLASS, Card(), CardAction(), CardContent(), CardDescription(), CardFooter() (+3 more)
 
 ### Community 44 - "check-bundle-budget.mjs"
 Cohesion: 0.25
@@ -335,12 +323,12 @@ Cohesion: 0.40
 Nodes (4): crons, headers, redirects, rewrites
 
 ### Community 51 - "DashboardRightSidebar.jsx"
-Cohesion: 0.12
-Nodes (16): CONFIDENCE_SCALE, CONFLUENCE, GRADES, MOODS, SESSION_OPTIONS, STRATEGY_OPTIONS, STRUCTURES, TABS (+8 more)
+Cohesion: 0.13
+Nodes (13): ImageViewerModal(), CONFIDENCE_SCALE, CONFLUENCE, GRADES, MOODS, SESSION_OPTIONS, STRATEGY_OPTIONS, STRUCTURES (+5 more)
 
 ### Community 55 - "dependencies"
 Cohesion: 0.22
-Nodes (9): @base-ui/react, clsx, dotenv, firebase-functions, dependencies, @base-ui/react, clsx, dotenv (+1 more)
+Nodes (9): @base-ui/react, chart.js, dotenv, firebase-functions, dependencies, @base-ui/react, chart.js, dotenv (+1 more)
 
 ### Community 58 - "_metaapi-broker.js"
 Cohesion: 0.13
@@ -348,7 +336,7 @@ Nodes (22): combineEntryDeals(), deleteMetaApiAccount(), fetchBrokerTrades(), fe
 
 ### Community 59 - "App.jsx"
 Cohesion: 0.08
-Nodes (24): App(), AuthSyncFailure(), ScrollProgress(), clearUxState(), shouldSkip(), useRouteExperience(), AppRoutes(), isPublicNavbarPath() (+16 more)
+Nodes (26): App(), AuthSyncFailure(), ScrollProgress(), clearUxState(), shouldSkip(), useRouteExperience(), AppProviders(), isPublicNavbarPath() (+18 more)
 
 ### Community 60 - "Production Operations & Maintenance Guide — xaujournal"
 Cohesion: 0.11
@@ -370,17 +358,13 @@ Nodes (13): deletionPatch(), AccountLockResult, cachedJson(), inflight, sleep(),
 Cohesion: 0.18
 Nodes (11): Attack scenario, Attack scenario, Fix, Fix, Fix, Fix, H-02 — Cloud Functions expose the broker path with no subscription check and no rate limit, H-05 — Unauthenticated reCAPTCHA proxy burns billable assessment quota (+3 more)
 
-### Community 85 - "compilerOptions"
-Cohesion: 0.12
-Nodes (15): compilerOptions, allowJs, checkJs, lib, noEmit, paths, strict, types (+7 more)
-
 ### Community 86 - "migrate-broker-credential-privacy.mjs"
 Cohesion: 0.35
 Nodes (9): ACCOUNT_CREDENTIAL_FIELDS, USER_CREDENTIAL_FIELDS, initAdmin(), apply, deletionPatch(), main(), ownsAny(), scrubBrokerAccounts() (+1 more)
 
 ### Community 87 - "EditTradeModal.jsx"
-Cohesion: 0.29
-Nodes (10): EditTradeModal(), DashboardRightSidebar(), storage, getEntitlements(), hasPaidAccess(), isPaidPlan(), NOW, calcPnl() (+2 more)
+Cohesion: 0.28
+Nodes (10): EditTradeModal(), ToastContext, useToast(), FREE_SUBSCRIPTION, useSubscription(), getEntitlements(), hasPaidAccess(), isPaidPlan() (+2 more)
 
 ### Community 88 - "SECURITY-AUDIT-2026-08.md"
 Cohesion: 0.22
@@ -410,18 +394,6 @@ Nodes (7): Backend structure, Dependency rule, Extension rules, Frontend structu
 Cohesion: 0.33
 Nodes (4): args, list, revoke, uid
 
-### Community 96 - "ToastContext.jsx"
-Cohesion: 0.31
-Nodes (5): AppProviders(), ToastContext, ToastProvider(), ThemeContext, ThemeProvider()
-
-### Community 97 - "BrokerSync"
-Cohesion: 0.36
-Nodes (5): BrokerSync(), handleConnect(), handleManualSync(), handleRemove(), getFriendlyErrorMessage()
-
-### Community 98 - "useTrades.js"
-Cohesion: 0.83
-Nodes (3): byDateDesc(), mergeTrades(), useTrades()
-
 ### Community 101 - "C-01 — Broker MT4/MT5 passwords stored in plaintext `localStorage`, never cleared at sign-out"
 Cohesion: 0.50
 Nodes (4): Attack scenarios, C-01 — Broker MT4/MT5 passwords stored in plaintext `localStorage`, never cleared at sign-out, CRITICAL, Fix
@@ -442,29 +414,29 @@ Nodes (3): Attack scenario, Fix, H-03 — Rate limiting keys on a client-supplia
 Cohesion: 0.67
 Nodes (3): Attack scenario, Fix, M-03 — Lemon Squeezy webhook: non-constant-time signature check, no replay protection
 
-### Community 109 - "bento-grid.tsx"
-Cohesion: 0.40
-Nodes (3): BentoCard(), BentoGrid(), BentoIcon
+### Community 109 - "utils.ts"
+Cohesion: 0.15
+Nodes (10): Badge(), badgeVariants, BentoCard(), BentoGrid(), BentoIcon, Checkbox(), ToggleGroupContext, ToggleGroupItem() (+2 more)
 
 ## Knowledge Gaps
-- **444 isolated node(s):** `checks`, `checks`, `Env`, `Variables`, `WEB_VITAL_NAMES` (+439 more)
+- **444 isolated node(s):** `Env`, `Variables`, `WEB_VITAL_NAMES`, `WEB_VITAL_RATINGS`, `GET` (+439 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **36 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **38 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `cn` to `button.tsx`, `utils.ts`, `DashboardLayout.jsx`, `alert.tsx`, `SectionCard.jsx`, `JournalPage.jsx`, `bento-grid.tsx`, `FooterNav.jsx`, `DashboardRightSidebar.jsx`, `field.tsx`, `DataTable.jsx`, `EditTradeModal.jsx`, `AnalyticsPage.jsx`, `dropdown-menu.tsx`, `HistoryPage.jsx`, `LogTradePage.jsx`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
-- **Why does `auth` connect `firebase.js` to `BrokerSync.jsx`, `DashboardLayout.jsx`, `PricingPage.jsx`, `JournalPage.jsx`, `DashboardRightSidebar.jsx`, `FirebaseBrokerRepository.js`, `EditTradeModal.jsx`, `App.jsx`, `createAppServices.js`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **Why does `computePips()` connect `_metaapi-broker.js` to `[[...route]].ts`, `tradeUtils.js`, `EditTradeModal.jsx`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **What connects `checks`, `checks`, `Env` to the rest of the system?**
+- **Why does `cn()` connect `cn` to `PricingPage.jsx`, `EmptyState.jsx`, `alert.tsx`, `sidebar.tsx`, `AnalyticsPage.jsx`, `SectionCard.jsx`, `JournalPage.jsx`, `utils.ts`, `app/AuthenticatedApp.jsx`, `FooterNav.jsx`, `DashboardRightSidebar.jsx`, `HistoryPage.jsx`, `DataTable.jsx`, `field.tsx`, `CalendarPage.jsx`, `DashboardLayout.jsx`, `LogTradePage.jsx`?**
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
+- **Why does `computePips()` connect `_metaapi-broker.js` to `[[...route]].ts`, `AnalyticsPage.jsx`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `Button()` connect `PricingPage.jsx` to `cn`, `sidebar.tsx`, `AnalyticsPage.jsx`, `utils.ts`, `JournalPage.jsx`, `DashboardRightSidebar.jsx`, `HistoryPage.jsx`, `DataTable.jsx`, `CalendarPage.jsx`, `DashboardLayout.jsx`, `LogTradePage.jsx`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **What connects `Env`, `Variables`, `WEB_VITAL_NAMES` to the rest of the system?**
   _444 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `button.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09494949494949495 - nodes in this community are weakly interconnected._
+- **Should `BrokerSync.jsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.1225071225071225 - nodes in this community are weakly interconnected._
+- **Should `PricingPage.jsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.07910014513788098 - nodes in this community are weakly interconnected._
 - **Should `tradeAnalytics.js` be split into smaller, more focused modules?**
   _Cohesion score 0.07755102040816327 - nodes in this community are weakly interconnected._
-- **Should `cn` be split into smaller, more focused modules?**
-  _Cohesion score 0.07123034227567067 - nodes in this community are weakly interconnected._
