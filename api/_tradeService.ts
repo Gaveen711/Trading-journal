@@ -3,8 +3,10 @@ import { kv } from '@vercel/kv'
 import { admin, db, now } from './_firebase.js'
 import { isSyncAllowed } from './_auth.js'
 import { hashToken } from './_security.js'
-import { analyticsUpdate, subtractTradeAnalytics } from '../src/lib/tradeAnalytics.js'
+import { analyticsUpdate, subtractTradeAnalytics, subtractSessionAnalytics, sessionAnalyticsUpdate } from '../src/lib/tradeAnalytics.js'
 import { computePips, outcomeForPnl } from '../src/lib/goldContract.js'
+// sessionEngine.js, not goldSessions.js — goldSessions.js imports React.
+import { SESSION_ENGINE_VERSION, resolveSessionAt } from '../src/lib/sessionEngine.js'
 
 /**
  * Resolves an API key to a user UID.
@@ -59,6 +61,17 @@ export async function invalidateApiKeyCache(apiKey: string, uid: string): Promis
 }
 
 /**
+ * Canonical ISO form of an EA/TV payload time. openTime/closeTime keep the
+ * payload value verbatim (old clients read them); entryTimestampUtc is the
+ * normalized instant, null rather than a fabricated time when unparseable.
+ */
+function isoOrNull(value: any): string | null {
+  if (value === null || value === undefined || value === '') return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+/**
  * Unified trade open sync helper. Works for MT5 and TradingView.
  */
 export async function handleOpenTradeSync(tradeRef: any, payload: any, defaultSource: 'mt5' | 'tradingview') {
@@ -81,6 +94,14 @@ export async function handleOpenTradeSync(tradeRef: any, payload: any, defaultSo
     swap: isTv ? 0 : (Number(payload.swap) || 0),
     comment: payload.comment || '',
     source,
+    // Session tag (§2.2): resolved from the open event's time. 'Unknown' is an
+    // analytics bucket, never a stored sessionCode — hence resolve ?? null.
+    // No aggregate write here: open trades are analytics-ineligible.
+    entryTimestampUtc: isoOrNull(payload.time),
+    sessionCode: resolveSessionAt(payload.time)?.code ?? null,
+    sessionSource: 'webhook',
+    sessionEngineVersion: SESSION_ENGINE_VERSION,
+    sessionResolvedAt: now(),
     createdAt: now(),
     updatedAt: now(),
   })
@@ -138,17 +159,34 @@ export async function handleCloseTradeSync(tradeRef: any, payload: any, defaultS
     if (!previous) {
       tradeData.partial = true
       tradeData.createdAt = now()
+      // A close that creates the doc is its only timing record: resolve the
+      // session from closeTime exactly like normalizeDeal (§2.2). When a
+      // previous doc exists, tradeData carries NO session field — close events
+      // never overwrite the open event's tag.
+      tradeData.entryTimestampUtc = isoOrNull(payload.time)
+      tradeData.sessionCode = resolveSessionAt(payload.time)?.code ?? null
+      tradeData.sessionSource = 'webhook'
+      tradeData.sessionEngineVersion = SESSION_ENGINE_VERSION
+      tradeData.sessionResolvedAt = now()
     }
     if (!isTv && payload.ticket) tradeData.closeDealTicket = payload.ticket
 
     const nextTrade = { ...(previous || {}), ...tradeData }
     const delta = subtractTradeAnalytics(previous, nextTrade)
+    // Open trades are analytics-ineligible, so this subtract is what moves an
+    // open→closed trade into its session bucket (previous side is all zeros).
+    const sessionDelta = subtractSessionAnalytics(previous, nextTrade)
     transaction.set(tradeRef, tradeData, { merge: true })
-    if (Object.values(delta).some((value) => value !== 0)) {
-      transaction.update(
-        tradeRef.parent.parent,
-        analyticsUpdate(delta, (value: number) => admin.firestore.FieldValue.increment(value)),
-      )
+    const increment = (value: number) => admin.firestore.FieldValue.increment(value)
+    // One update call: 'analytics.*' and 'sessionAnalytics.buckets.*' dot
+    // paths (plus 'totalTradesLogged') cannot collide. sessionAnalyticsUpdate
+    // drops zero counters, so an all-zero session delta contributes nothing.
+    const userUpdate: any = Object.values(delta).some((value) => value !== 0)
+      ? analyticsUpdate(delta, increment)
+      : {}
+    Object.assign(userUpdate, sessionAnalyticsUpdate(sessionDelta, increment))
+    if (Object.keys(userUpdate).length) {
+      transaction.update(tradeRef.parent.parent, userUpdate)
     }
   })
 

@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'react-bootstrap-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
+// One market-data access layer for the app: the proxy→direct fallback, the
+// in-flight dedupe (both loops below poll the same four spot URLs), and the
+// weekend gate all live in ../lib/marketData now.
+import { fetchSpotPrice, fetchYahooChart, isSpotPollingPaused } from '../lib/marketData';
 
 const TIMEFRAMES = [
   { id: '1', label: '1m' },
@@ -35,6 +39,137 @@ const YAHOO_INTERVALS = {
   W: '1wk',
 };
 
+const SPOT_SYMBOLS = { xauusd: 'XAU', xagusd: 'XAG', xptusd: 'XPT', xpdusd: 'XPD' };
+
+/** How many live samples the sparkline keeps. Push-then-trim, so it never grows. */
+const HISTORY_LIMIT = 12;
+
+/**
+ * `/spot-price` answers with `Cache-Control: public, s-maxage=10` (see
+ * api/[[...route]].ts), so for ten seconds after any request the CDN hands back a
+ * byte-identical body without touching the origin. Polling faster than that TTL
+ * buys exactly zero freshness — it just spends requests and churns React state
+ * with values that did not change. 12s is the first cadence that clears the TTL
+ * on every hop.
+ *
+ * Long timeframes back off further: a 12s tick under a 1-day candle is noise. The
+ * cadence is one poll per ~1/30th of a candle, clamped to [12s, 60s]:
+ *   1m, 5m → 12s (floor)    15m → 30s    30m and longer → 60s (ceiling), incl. 1D/1W.
+ *
+ * Written against the candle length rather than
+ * `Math.min(TIMEFRAME_UPDATE_MS[interval], 60000)` because that form floors every
+ * timeframe at the 60s ceiling — a 1m candle is itself 60000ms — which would turn
+ * the live tick off on precisely the timeframes it exists for.
+ */
+const SPOT_CACHE_TTL_MS = 10000; // s-maxage on /spot-price
+const MIN_TICK_POLL_MS = SPOT_CACHE_TTL_MS + 2000;
+const MAX_TICK_POLL_MS = 60000;
+const TICKS_PER_CANDLE = 30;
+
+function tickPollMs(interval) {
+  const candleMs = TIMEFRAME_UPDATE_MS[interval] ?? TIMEFRAME_UPDATE_MS['1'];
+  return Math.max(MIN_TICK_POLL_MS, Math.min(candleMs / TICKS_PER_CANDLE, MAX_TICK_POLL_MS));
+}
+
+/**
+ * The reference price a % change is measured from.
+ *
+ * `history[0]` is NOT a baseline: the tick loop shifts the oldest sample off once
+ * the window is full, so reading the baseline out of the array walks it forward
+ * every HISTORY_LIMIT ticks and decays the reported change toward zero. Whatever
+ * this resolves to is pinned onto the ticker as `base` by the first writer, and
+ * every later tick reuses it.
+ */
+function baselineOf(ticker) {
+  if (Number.isFinite(ticker?.base) && ticker.base > 0) return ticker.base;
+  const seed = ticker?.history?.[0];
+  if (Number.isFinite(seed) && seed > 0) return seed;
+  return Number.isFinite(ticker?.price) && ticker.price > 0 ? ticker.price : 0;
+}
+
+function percentChange(price, base) {
+  if (!Number.isFinite(price) || !Number.isFinite(base) || base <= 0) return 0;
+  return Number((((price - base) / base) * 100).toFixed(2));
+}
+
+/**
+ * One live spot tick applied to a ticker. Pure, and returns the SAME object when
+ * the tick carries nothing new — a fresh identity on every poll would re-run
+ * `onTickersUpdate` and every memo hanging off it downstream, and with a 10s CDN
+ * TTL an unchanged consecutive read is the common case, not the exception.
+ */
+function applyTick(ticker, price) {
+  if (!ticker || !Number.isFinite(price) || price <= 0 || price === ticker.price) return ticker;
+  const base = baselineOf(ticker);
+  const history = [...ticker.history, price];
+  while (history.length > HISTORY_LIMIT) history.shift();
+  return { ...ticker, price, base, change: percentChange(price, base), history };
+}
+
+/**
+ * `{price, change}` from a Yahoo chart payload; either half is null when the
+ * payload does not actually carry it.
+ *
+ * Yahoo returns `regularMarketPrice: null` between sessions and omits
+ * `chartPreviousClose` on partial payloads. `Number(null)` is 0 and
+ * `Number(undefined)` is NaN, and the un-validated arithmetic those fed produced
+ * a NaN change that was written straight into `base` and `history[0]` — after
+ * which every tick computed `(price - NaN) / NaN`, the badge read "NaN%", and the
+ * sparkline emitted `d="M NaN NaN …"` and silently vanished until a reload.
+ * Unknown is null here so callers keep the last real value instead of publishing
+ * a fabricated 0.00%.
+ */
+function readYahooQuote(payload) {
+  const meta = payload?.chart?.result?.[0]?.meta;
+  if (!meta) return { price: null, change: null };
+  const raw = Number(meta.regularMarketPrice);
+  const prevClose = Number(meta.chartPreviousClose);
+  const price = Number.isFinite(raw) && raw > 0 ? raw : null;
+  const change =
+    price !== null && Number.isFinite(prevClose) && prevClose > 0
+      ? Number((((price - prevClose) / prevClose) * 100).toFixed(2))
+      : null;
+  return { price, change };
+}
+
+/**
+ * An authoritative price (+ optional previous-close change) applied to a ticker.
+ * Rescales the accumulated tick history onto the new price so the sparkline keeps
+ * its shape across the splice, and pins `base` — always to a finite number, so the
+ * tick loop never has to fall back to the moving `history[0]` again.
+ *
+ * Deliberately no longer overwrites `history[0]` with the baseline: with `base`
+ * stored on the ticker the % maths does not need it, and it meant the oldest
+ * sample was sometimes yesterday's close and sometimes a real tick (whichever the
+ * window had not shifted off yet) — an outlier that skewed the sparkline's range
+ * and every consumer that averages the history.
+ *
+ * Pure; returns the SAME object when nothing moved.
+ */
+function applyRealPrice(ticker, quote) {
+  if (!ticker || !Number.isFinite(quote?.price) || quote.price <= 0) return ticker;
+  const multiplier = Number.isFinite(ticker.price) && ticker.price > 0 ? quote.price / ticker.price : 1;
+  const history =
+    multiplier === 1 ? ticker.history : ticker.history.map((h) => Number((h * multiplier).toFixed(3)));
+
+  const hasChange = quote.change !== null && quote.change !== undefined && Number.isFinite(quote.change);
+  const change = hasChange ? quote.change : ticker.change;
+  let base = hasChange
+    ? Number((quote.price / (1 + quote.change / 100)).toFixed(3))
+    : baselineOf({ ...ticker, history });
+  if (!Number.isFinite(base) || base <= 0) base = quote.price;
+
+  if (
+    history === ticker.history &&
+    ticker.price === quote.price &&
+    ticker.change === change &&
+    ticker.base === base
+  ) {
+    return ticker;
+  }
+  return { ...ticker, price: quote.price, base, change, history };
+}
+
 export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
   const { isLightMode } = useAppTheme();
   const [interval, setIntervalState] = useState('1');
@@ -48,64 +183,69 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
     xpdusd: { id: 'xpdusd', name: 'XPD/USD', desc: 'Palladium Spot / US Dollar (OANDA)', tvSymbol: 'OANDA:XPDUSD', symbol: 'Pd', color: 'slate-500', price: 1028.100, change: -0.02, history: [1029.000, 1028.500, 1027.000, 1028.000, 1028.600, 1027.400, 1028.300, 1027.800, 1028.100] }
   });
 
-  // Ticks updater loop
+  // The tick loop owns no reactive deps, so it reads the selected timeframe off a
+  // ref instead of listing it: making `interval` a dep would tear the loop down
+  // and rebuild it on every timeframe click, restarting the poll clock each time.
+  const intervalRef = useRef(interval);
+  useEffect(() => { intervalRef.current = interval; }, [interval]);
+
+  // Live ticks loop — polls real spot prices so ticks match TradingView.
+  //
+  // Self-scheduling rather than setInterval: the cadence depends on the timeframe
+  // (see tickPollMs) and is re-read at every hop, and scheduling the next poll only
+  // once the previous one has settled makes "one request in flight" structural
+  // instead of a flag that has to be reset on every exit path.
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      // Check if market is closed (Friday 5:00 PM EST to Sunday 5:00 PM EST)
-      const isMarketClosed = () => {
-        try {
-          const now = new Date();
-          const estTimeStr = now.toLocaleString("en-US", { timeZone: "America/New_York" });
-          const estDate = new Date(estTimeStr);
-          const day = estDate.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
-          const hours = estDate.getHours();
+    const controller = new AbortController();
+    const entries = Object.entries(SPOT_SYMBOLS);
+    let stopped = false;
+    let timer = 0;
 
-          if (day === 6) return true; // Saturday
-          if (day === 5 && hours >= 17) return true; // Friday after 5pm EST
-          if (day === 0 && hours < 17) return true; // Sunday before 5pm EST
-        } catch (e) {
-          console.error("Error checking timezone-based market hours:", e);
-        }
-        return false;
-      };
+    const schedule = () => {
+      if (stopped) return;
+      timer = window.setTimeout(poll, tickPollMs(intervalRef.current));
+    };
 
-      if (isMarketClosed()) return;
+    const poll = async () => {
+      try {
+        // Same rest window as before (Friday 17:00 → Sunday 17:00 New York), now
+        // read from the one weekend definition instead of a local wall-clock copy
+        // that drifted from it around the DST changeovers.
+        if (isSpotPollingPaused(Date.now()) || document.visibilityState === 'hidden') return;
 
-      setTickers(prev => {
-        const next = { ...prev };
+        const prices = await Promise.all(
+          entries.map(([, spotSymbol]) => fetchSpotPrice(spotSymbol, { signal: controller.signal }))
+        );
+        // Unmounted (or aborted) while those were in the air: drop the result
+        // rather than writing state nobody is rendering.
+        if (stopped || controller.signal.aborted) return;
 
-        Object.keys(next).forEach(key => {
-          const t = next[key];
-          // Random Walk simulation (realistic tight spread ticks)
-          const tickPercent = (Math.random() - 0.5) * 0.00015; // very small fluctuation
-          const oldPrice = t.price;
-          const newPrice = Number((oldPrice * (1 + tickPercent)).toFixed(3));
-
-          // Calculate net change relative to a baseline initial price
-          const basePrice = t.history[0];
-          const newChange = Number((((newPrice - basePrice) / basePrice) * 100).toFixed(2));
-
-          // Append to history (keep max 10 points)
-          const newHistory = [...t.history];
-          newHistory.push(newPrice);
-          if (newHistory.length > 12) {
-            newHistory.shift();
-          }
-
-          next[key] = {
-            ...t,
-            price: newPrice,
-            change: newChange,
-            history: newHistory
-          };
+        setTickers(prev => {
+          let changed = false;
+          const next = { ...prev };
+          entries.forEach(([id], idx) => {
+            const updated = applyTick(next[id], prices[idx]);
+            if (updated === next[id]) return;
+            next[id] = updated;
+            changed = true;
+          });
+          return changed ? next : prev;
         });
+      } finally {
+        // Runs on the early returns too, so a paused/hidden/aborted tick still
+        // arms the next one and the loop can resume by itself.
+        schedule();
+      }
+    };
 
-        return next;
-      });
-    }, TIMEFRAME_UPDATE_MS[interval] || TIMEFRAME_UPDATE_MS['1']);
+    schedule();
 
-    return () => clearInterval(timer);
-  }, [interval]);
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     onIntervalChange?.(TIMEFRAMES.find(t => t.id === interval)?.label || '1m');
@@ -114,92 +254,80 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
   // Fetch actual prices on mount to sync simulated prices with TradingView charts
   useEffect(() => {
     const controller = new AbortController();
-    const fetchRealPrices = async () => {
-      // Eight requests per tick (4 assets × spot + chart). Skip entirely while
+    const assets = [
+      { id: 'xauusd', spotSymbol: 'XAU', yahooSymbol: 'GC=F' },
+      { id: 'xagusd', spotSymbol: 'XAG', yahooSymbol: 'SI=F' },
+      { id: 'xptusd', spotSymbol: 'XPT', yahooSymbol: 'PL=F' },
+      { id: 'xpdusd', spotSymbol: 'XPD', yahooSymbol: 'PA=F' }
+    ];
+    // One shape per timeframe, not one per asset.
+    const yahooInterval = YAHOO_INTERVALS[interval] || YAHOO_INTERVALS['1'];
+    const yahooRange = interval === 'D' ? '1mo' : interval === 'W' ? '6mo' : ['60', '240'].includes(interval) ? '5d' : '1d';
+    let running = false;
+
+    const fetchRealPrices = async ({ scheduled = false } = {}) => {
+      // Eight requests per round (4 assets × spot + chart). Skip entirely while
       // the tab is hidden rather than polling into the void.
       if (document.visibilityState === 'hidden') return;
-      const assets = [
-        { id: 'xauusd', spotSymbol: 'XAU', yahooSymbol: 'GC=F' },
-        { id: 'xagusd', spotSymbol: 'XAG', yahooSymbol: 'SI=F' },
-        { id: 'xptusd', spotSymbol: 'XPT', yahooSymbol: 'PL=F' },
-        { id: 'xpdusd', spotSymbol: 'XPD', yahooSymbol: 'PA=F' }
-      ];
+      // Don't keep re-polling a shut market all weekend. Only the repeats are
+      // gated: the mount fetch and the tab-focus catch-up still run, so a Sunday
+      // visitor sees Friday's close rather than the hardcoded seed prices.
+      if (scheduled && isSpotPollingPaused(Date.now())) return;
+      // One round at a time. The timer and the visibility catch-up can otherwise
+      // land together — flipping tabs repeatedly used to fire an eight-request
+      // round per flip, all of them writing the same state.
+      if (running) return;
+      running = true;
       try {
         const results = await Promise.all(
           assets.map(async (asset) => {
-            try {
-              // Fetch spot price directly from Gold-API (supports CORS!)
-              const spotPromise = fetch(`/api/spot-price/${asset.spotSymbol}`, { signal: controller.signal })
-                .then(r => r.ok ? r.json() : null)
-                .catch(() => null);
+            // Spot keeps its proxy→Gold-API fallback so the price still matches
+            // the TradingView chart while our API is down; Yahoo is proxy-only
+            // (no CORS) and yields null instead. Neither call throws.
+            const [spotPrice, yahooData] = await Promise.all([
+              fetchSpotPrice(asset.spotSymbol, { signal: controller.signal }),
+              fetchYahooChart(asset.yahooSymbol, { interval: yahooInterval, range: yahooRange, signal: controller.signal }),
+            ]);
 
-              // Fetch yahoo chart change via proxy (if it fails/404s, we fall back gracefully)
-              const yahooInterval = YAHOO_INTERVALS[interval] || YAHOO_INTERVALS['1'];
-              const yahooRange = interval === 'D' ? '1mo' : interval === 'W' ? '6mo' : ['60', '240'].includes(interval) ? '5d' : '1d';
-              const yahooPromise = fetch(`/api/yahoo-chart/${asset.yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`, { signal: controller.signal })
-                .then(r => r.ok ? r.json() : null)
-                .catch(() => null);
-
-              const [spotData, yahooData] = await Promise.all([spotPromise, yahooPromise]);
-              
-              let price = null;
-              let change = null;
-              
-              if (spotData && spotData.price) {
-                price = Number(spotData.price);
-              }
-              
-              if (yahooData) {
-                const result = yahooData.chart?.result?.[0];
-                if (result && result.meta) {
-                  const yahooPrice = Number(result.meta.regularMarketPrice);
-                  const prevClose = Number(result.meta.chartPreviousClose);
-                  change = prevClose ? Number((((yahooPrice - prevClose) / prevClose) * 100).toFixed(2)) : 0;
-                }
-              }
-              
-              if (price !== null) {
-                return { id: asset.id, price, change };
-              }
-            } catch (e) {
-              console.error(`Error fetching for ${asset.id}:`, e);
-            }
-            return null;
+            const quote = readYahooQuote(yahooData);
+            // Spot is preferred; Yahoo's own price is the last resort when both
+            // spot endpoints fail.
+            const price = Number.isFinite(spotPrice) && spotPrice > 0 ? spotPrice : quote.price;
+            return price === null ? null : { id: asset.id, price, change: quote.change };
           })
         );
 
+        // Unmounted or timeframe-switched while those were in the air.
+        if (controller.signal.aborted) return;
+
         setTickers(prev => {
+          let changed = false;
           const next = { ...prev };
           results.forEach(res => {
-            if (res && res.price) {
-              const basePrice = res.price;
-              const currentHistory = [...next[res.id].history];
-              const historyMultiplier = basePrice / next[res.id].price;
-              const newHistory = currentHistory.map(h => Number((h * historyMultiplier).toFixed(3)));
-              
-              // Ensure history[0] aligns with the actual daily change percentage
-              if (res.change !== null && res.change !== undefined) {
-                newHistory[0] = Number((basePrice / (1 + res.change / 100)).toFixed(3));
-              }
-
-              next[res.id] = {
-                ...next[res.id],
-                price: basePrice,
-                change: res.change !== null && res.change !== undefined ? res.change : next[res.id].change,
-                history: newHistory
-              };
-            }
+            if (!res) return;
+            const updated = applyRealPrice(next[res.id], res);
+            if (updated === next[res.id]) return;
+            next[res.id] = updated;
+            changed = true;
           });
-          return next;
+          // Same object when the round produced nothing — a total outage returns
+          // four nulls, and re-publishing an identical map would still re-render
+          // every consumer of onTickersUpdate.
+          return changed ? next : prev;
         });
       } catch (err) {
         if (controller.signal.aborted) return;
         console.error('Error fetching real-time prices:', err);
+      } finally {
+        running = false;
       }
     };
 
     fetchRealPrices();
-    const intervalId = window.setInterval(fetchRealPrices, TIMEFRAME_UPDATE_MS[interval] || TIMEFRAME_UPDATE_MS['1']);
+    const intervalId = window.setInterval(
+      () => fetchRealPrices({ scheduled: true }),
+      TIMEFRAME_UPDATE_MS[interval] || TIMEFRAME_UPDATE_MS['1']
+    );
     // Catch up as soon as the tab comes back, instead of waiting a full period.
     const onVisibility = () => { if (document.visibilityState === 'visible') fetchRealPrices(); };
     document.addEventListener('visibilitychange', onVisibility);
@@ -218,7 +346,11 @@ export function LiveMarketWidget({ onTickersUpdate, onIntervalChange }) {
 
   // Helper to generate SVG sparkline path
   const getSparklinePath = (history, width = 120, height = 36) => {
-    if (!history || history.length < 2) return '';
+    // Every sample has to be a real number: a single NaN makes min and max NaN,
+    // which makes every coordinate NaN, which makes `d` an invalid path the
+    // browser drops on the floor — the line just disappears, with no error
+    // anywhere. Better to draw nothing on purpose than to draw nothing by accident.
+    if (!Array.isArray(history) || history.length < 2 || !history.every(Number.isFinite)) return '';
     const min = Math.min(...history);
     const max = Math.max(...history);
     const range = max - min || 1;

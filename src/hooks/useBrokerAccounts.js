@@ -2,7 +2,7 @@
 // requests. Storage lives in ../lib/brokerCredentials.js, which splits durable
 // non-secret metadata (localStorage) from the password (sessionStorage, tab
 // lifetime only) — see that module for why.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppServices } from '../app/di/AppServicesContext.jsx';
 import {
   readLocalAccounts,
@@ -16,21 +16,41 @@ import {
 // a JSON round-trip through the local cache).
 import { toIsoString } from '../lib/tradeUtils';
 
+/**
+ * True once the server-owned doc carries the broker login (spec §2.1). An empty
+ * string is treated as absent, matching the route's own adoption guard.
+ */
+const hasServerLogin = (account) => typeof account?.login === 'string' && account.login !== '';
+
+/** Removes one account's durable metadata from this device (spec §6 drain). */
+function dropLocalAccount(uid, accountId) {
+  writeLocalAccounts(uid, readLocalAccounts(uid).filter((item) => item.id !== accountId));
+}
+
 /** Coordinates authenticated broker metadata and secure server-side sync commands. */
 export function useBrokerAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { auth, brokerRepository: repository } = useAppServices();
+  // Accounts this mount has already sent an `adopt` for, keyed `uid:accountId`.
+  // A ref, not state: the guard must be read and written synchronously between
+  // two listener events in the same tick, which a re-render cannot promise.
+  const adoptedRef = useRef(new Set());
 
   useEffect(() => {
     let unsubscribeUser = null;
     let unsubscribeAccounts = null;
+    // Marks the previous signed-in session's in-flight adoption stale so it
+    // cannot publish into a list that now belongs to a different user.
+    let disposeSession = null;
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       unsubscribeUser?.();
       unsubscribeAccounts?.();
+      disposeSession?.();
       unsubscribeUser = null;
       unsubscribeAccounts = null;
+      disposeSession = null;
       if (!user) {
         setAccounts([]);
         setLoading(false);
@@ -39,24 +59,36 @@ export function useBrokerAccounts() {
 
       let userData = {};
       let serverAccounts = [];
+      const session = { active: true };
+      disposeSession = () => { session.active = false; };
       setLoading(true);
       setError(null);
       const publishAccounts = () => {
         try {
           const localList = readLocalAccounts(user.uid);
           const localById = new Map(localList.map((account) => [account.id, account]));
-          const managed = serverAccounts.map((account) => ({
-            ...(localById.get(account.id) || {}),
-            ...account,
-            platform: account.brokerType || account.platform,
-            managedByWorker: true,
-            requiresReconnect: false,
-            lastSyncTime: toIsoString(account.lastSyncTime),
-            lastSyncStatus: account.lastSyncStatus || account.syncJobState || 'queued',
-            lastSyncError: account.lastSyncError || null,
-            tradeCount: Number(account.tradeCount || 0),
-            isActive: account.isActive !== false,
-          }));
+          const managed = serverAccounts.map((account) => {
+            const local = localById.get(account.id) || {};
+            return {
+              ...local,
+              ...account,
+              // Server-wins on the one field that decides whether sync works at
+              // all (spec §3.6). The spread alone was not enough: a doc
+              // written before `login` was persisted carries no key, and one
+              // carrying an empty value would blank out a still-usable local
+              // copy mid-migration. Only a real server login displaces this
+              // device's.
+              login: hasServerLogin(account) ? account.login : (local.login || null),
+              platform: account.brokerType || account.platform,
+              managedByWorker: true,
+              requiresReconnect: false,
+              lastSyncTime: toIsoString(account.lastSyncTime),
+              lastSyncStatus: account.lastSyncStatus || account.syncJobState || 'queued',
+              lastSyncError: account.lastSyncError || null,
+              tradeCount: Number(account.tradeCount || 0),
+              isActive: account.isActive !== false,
+            };
+          });
           const legacy = localList.filter((account) => account.managedByWorker !== true).map((account) => ({
             ...account,
             managedByWorker: false,
@@ -81,6 +113,71 @@ export function useBrokerAccounts() {
         }
       };
 
+      /**
+       * One-shot localStorage → Firestore migration of the broker login (spec
+       * §6 backfill matrix; §D-2). Until the login lives on the server doc,
+       * clearing this browser's storage or opening the app on a second device
+       * silently kills sync — `syncAccount` refuses without a login — while the
+       * UI keeps presenting the account as connected.
+       *
+       * Fire-and-forget, at most one POST per account per mount: the guard is
+       * recorded BEFORE the request, so a second snapshot arriving mid-flight
+       * cannot double-fire, and a failure is never retried in this session (the
+       * next mount tries again). Legacy records are deliberately excluded —
+       * they keep rendering as `requiresReconnect` this release.
+       */
+      const runAdoption = async (currentAccounts) => {
+        if (typeof repository.adoptBrokerAccount !== 'function') return;
+        const localById = new Map(readLocalAccounts(user.uid).map((item) => [item.id, item]));
+        if (localById.size === 0) return;
+        const adopted = new Map();
+        let drained = false;
+        for (const account of currentAccounts) {
+          const local = localById.get(account.id);
+          if (!local || local.managedByWorker !== true) continue;
+          if (hasServerLogin(account)) {
+            // The listener already shows server truth, so this device's copy is
+            // redundant metadata — drop it whether or not we adopted it.
+            dropLocalAccount(user.uid, account.id);
+            drained = true;
+            continue;
+          }
+          const login = typeof local.login === 'string' ? local.login.trim() : '';
+          const guardKey = `${user.uid}:${account.id}`;
+          if (!login || adoptedRef.current.has(guardKey)) continue;
+          adoptedRef.current.add(guardKey);
+          try {
+            await repository.adoptBrokerAccount(account.id, login);
+            adopted.set(account.id, login);
+            dropLocalAccount(user.uid, account.id);
+            drained = true;
+          } catch (adoptError) {
+            if (adoptError?.code === 'login-mismatch') {
+              // 409: the doc already carries a different login. Server truth is
+              // never overwritten — the stale local copy is what goes.
+              dropLocalAccount(user.uid, account.id);
+              drained = true;
+            } else {
+              // Offline or a transient 5xx: keep the local copy so sync still
+              // works on this device, and leave the retry to the next mount.
+              console.warn('Broker login adoption deferred:', adoptError?.message || adoptError);
+            }
+          }
+        }
+        if (!drained) return;
+        if (adopted.size) {
+          // The write landed, so this value *is* server truth now. Folding it
+          // in beats waiting for the snapshot round trip: between dropping the
+          // local copy and the listener echoing the doc back, the account would
+          // otherwise render with no login at all — which is exactly the state
+          // `syncAccount` refuses to run in.
+          serverAccounts = serverAccounts.map((account) => (
+            adopted.has(account.id) ? { ...account, login: adopted.get(account.id) } : account
+          ));
+        }
+        if (session.active) publishAccounts();
+      };
+
       unsubscribeUser = repository.subscribeToUserDoc(user.uid, (docSnap) => {
         userData = docSnap.exists() ? docSnap.data() : {};
         publishAccounts();
@@ -89,6 +186,9 @@ export function useBrokerAccounts() {
         serverAccounts = nextAccounts;
         publishAccounts();
         setLoading(false);
+        runAdoption(nextAccounts).catch((adoptError) => {
+          console.error('Broker login adoption failed:', adoptError);
+        });
       }, (snapshotError) => {
         setError(snapshotError.message);
         console.error('Failed to listen to broker accounts:', snapshotError);
@@ -100,6 +200,7 @@ export function useBrokerAccounts() {
       unsubscribeAuth();
       unsubscribeUser?.();
       unsubscribeAccounts?.();
+      disposeSession?.();
     };
   }, [auth, repository]);
 
@@ -177,9 +278,19 @@ export function useBrokerAccounts() {
     try {
       const localList = readLocalAccounts(user.uid);
       const account = accounts.find((item) => item.id === accountId);
-      const result = account?.managedByWorker === true
-        ? await repository.disconnectBroker(accountId)
-        : { message: 'Legacy broker account removed locally.' };
+      let result;
+      if (account?.managedByWorker === true) {
+        try {
+          result = await repository.disconnectBroker(accountId);
+        } catch {
+          // The backend being unreachable must not trap the user in a
+          // connected state — remove locally; the worker-side record is
+          // cleaned up on the next successful backend contact.
+          result = { message: 'Broker removed from this device. Server cleanup will finish when the connection is restored.' };
+        }
+      } else {
+        result = { message: 'Legacy broker account removed locally.' };
+      }
       const remainingLocal = localList.filter((item) => item.id !== accountId);
       writeLocalAccounts(user.uid, remainingLocal);
       // The credential goes with the account it belonged to.

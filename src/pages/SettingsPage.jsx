@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import {
   EmailAuthProvider,
@@ -11,6 +11,7 @@ import { auth } from '../firebase';
 import { useToast } from '../components/ToastContext';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { isPaidPlan } from '../lib/entitlements.js';
+import { RULE_BOUNDS, RULE_IDS } from '../lib/disciplineRules.js';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatusSquare } from '../components/app/StatusSquare';
 import { Button } from '../components/ui/button';
@@ -38,6 +39,10 @@ export function SettingsPage() {
     resetWallet,
     updateMonthlyGoal,
     deleteAllEntries,
+    disciplineRules,
+    saveDisciplineRules,
+    isSavingDisciplineRules,
+    isLoadingDisciplineRules,
   } = useOutletContext();
   const navigate = useNavigate();
   const toast = useToast();
@@ -65,6 +70,22 @@ export function SettingsPage() {
 
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resettingTerminal, setResettingTerminal] = useState(false);
+
+  // Rule values are edited as text (a half-typed "1." is not a number yet), so
+  // the draft holds strings and the clamp happens once, on save, inside
+  // saveDisciplineRules.
+  const [ruleDraft, setRuleDraft] = useState(() => toRuleDraft(disciplineRules));
+  // The stored map keeps a stable identity unless a rule actually changed, so
+  // this re-seeds on a real remote edit (and on the clamped values coming back
+  // after a save) rather than on every user-doc snapshot.
+  useEffect(() => {
+    setRuleDraft(toRuleDraft(disciplineRules));
+  }, [disciplineRules]);
+
+  const activeRuleCount = RULE_IDS.filter((ruleId) => ruleDraft[ruleId].enabled).length;
+
+  const setRuleField = (ruleId, patch) =>
+    setRuleDraft((current) => ({ ...current, [ruleId]: { ...current[ruleId], ...patch } }));
 
   const planLabel = plan === 'pro' ? 'Pro' : plan === 'grace' ? 'Grace' : 'Basic';
   const expiryLabel = expiry ? new Date(expiry).toLocaleDateString() : null;
@@ -125,6 +146,23 @@ export function SettingsPage() {
       toast(getAuthErrorMessage(error), 'error');
     } finally {
       setSavingPassword(false);
+    }
+  };
+
+  const handleSaveRules = async (event) => {
+    event.preventDefault();
+    const next = {};
+    for (const ruleId of RULE_IDS) {
+      // Strings, not parsed numbers: clampRuleValue turns a blank or
+      // unparseable entry into the rule's default, so nothing undefined or NaN
+      // can reach Firestore.
+      next[ruleId] = { enabled: ruleDraft[ruleId].enabled, value: ruleDraft[ruleId].value };
+    }
+    try {
+      await saveDisciplineRules?.(next);
+      toast('Discipline rules saved.', 'success');
+    } catch (error) {
+      toast(error?.message || 'Could not save your discipline rules.', 'error');
     }
   };
 
@@ -263,6 +301,63 @@ export function SettingsPage() {
 
           <SectionCard
             surface
+            title="Discipline rules"
+            description="Flags trades that break your own rules. Advisory only — nothing is ever blocked."
+            meta={`${activeRuleCount} of ${RULE_IDS.length} active`}
+          >
+            <form onSubmit={handleSaveRules} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4">
+                <RuleRow
+                  label="Max trades per day"
+                  hint="Flag every trade past this count."
+                  bounds={RULE_BOUNDS.maxTradesPerDay}
+                  rule={ruleDraft.maxTradesPerDay}
+                  disabled={isLoadingDisciplineRules || isSavingDisciplineRules}
+                  onToggle={(enabled) => setRuleField('maxTradesPerDay', { enabled })}
+                  onValueChange={(value) => setRuleField('maxTradesPerDay', { value })}
+                />
+
+                <RuleRow
+                  label="Max risk per trade"
+                  hint="Flag trades risking more than this."
+                  bounds={RULE_BOUNDS.maxRiskPercent}
+                  rule={ruleDraft.maxRiskPercent}
+                  disabled={isLoadingDisciplineRules || isSavingDisciplineRules}
+                  onToggle={(enabled) => setRuleField('maxRiskPercent', { enabled })}
+                  onValueChange={(value) => setRuleField('maxRiskPercent', { value })}
+                  caveat="attn"
+                  caveatText="Risk rule needs an account balance — set your wallet balance or enable the balance permission. Broker-synced trades without a stop loss are skipped."
+                />
+
+                <RuleRow
+                  label="Revenge-trade window"
+                  hint="Flag entries taken inside a cooldown after a loss."
+                  bounds={RULE_BOUNDS.revengeWindow}
+                  rule={ruleDraft.revengeWindow}
+                  disabled={isLoadingDisciplineRules || isSavingDisciplineRules}
+                  onToggle={(enabled) => setRuleField('revengeWindow', { enabled })}
+                  onValueChange={(value) => setRuleField('revengeWindow', { value })}
+                  caveatText="Uses real entry times. Manually logged trades carry only log time and are skipped by this rule."
+                />
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Values outside a rule&apos;s range are pulled back to it when you save.
+                </p>
+                <Button
+                  type="submit"
+                  disabled={isLoadingDisciplineRules || isSavingDisciplineRules}
+                  className="w-full sm:w-auto"
+                >
+                  {isSavingDisciplineRules ? 'Saving…' : 'Save rules'}
+                </Button>
+              </div>
+            </form>
+          </SectionCard>
+
+          <SectionCard
+            surface
             title="Protected workspace"
             description="Sensitive billing, password, and sync changes stay grouped away from everyday dashboard actions."
           >
@@ -374,6 +469,78 @@ export function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/** Stored rules → the editable draft. Values become text; every rule is present. */
+function toRuleDraft(rules) {
+  const draft = {};
+  for (const ruleId of RULE_IDS) {
+    const stored = rules?.[ruleId];
+    draft[ruleId] = {
+      enabled: stored?.enabled === true,
+      value: String(stored?.value ?? RULE_BOUNDS[ruleId].defaultValue),
+    };
+  }
+  return draft;
+}
+
+/**
+ * One rule: a switch, its bounded numeric input, and the copy explaining what
+ * the flag means. The input is disabled while the switch is off — a number the
+ * rule is not reading should not look editable.
+ */
+function RuleRow({ label, hint, bounds, rule, disabled, onToggle, onValueChange, caveat, caveatText }) {
+  const switchId = useId();
+  const inputId = useId();
+
+  const handleNumericChange = (e) => {
+    const val = e.target.value;
+    if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) onValueChange(val.replace(',', '.'));
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+      <div className="flex items-center justify-between gap-4">
+        <label htmlFor={switchId} className="text-xs font-medium text-foreground">
+          {label}
+        </label>
+        <div className="flex items-center gap-3">
+          <div className="relative w-24">
+            <label htmlFor={inputId} className="sr-only">
+              {`${label} (${bounds.min}–${bounds.max} ${bounds.unit})`}
+            </label>
+            <Input
+              id={inputId}
+              type="text"
+              inputMode="decimal"
+              value={rule.value}
+              onChange={handleNumericChange}
+              disabled={disabled || !rule.enabled}
+              className="figure pr-12"
+            />
+            <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 font-mono text-[11px] text-muted-foreground">
+              {bounds.unit}
+            </span>
+          </div>
+          <Switch
+            id={switchId}
+            checked={rule.enabled}
+            disabled={disabled}
+            onCheckedChange={(checked) => onToggle(checked === true)}
+          />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {hint} Range {bounds.min}–{bounds.max}.
+      </p>
+      {caveatText && (
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <StatusSquare state={caveat === 'attn' ? 'attn' : 'off'} label="Note" className="mt-1" />
+          <span>{caveatText}</span>
+        </p>
+      )}
     </div>
   );
 }

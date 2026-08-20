@@ -1,10 +1,13 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { auth, storage } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency, formatSigned, pnlToneClass } from '../../lib/tradeUtils';
 import { isPaidPlan } from '../../lib/entitlements.js';
+import { resolveSessionAt } from '../../lib/sessionEngine.js';
+import { evaluateRules } from '../../lib/disciplineRules.js';
 import { submitTrade } from '../../services/tradeService';
 import { CurrencyConverter } from '../CurrencyConverter';
 import { SectionCard } from '../app/SectionCard';
+import { SetupCombobox } from '../app/SetupCombobox';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -70,14 +73,37 @@ const SESSION_OPTIONS = [
   { value: 'Sydney', label: 'Sydney' },
 ];
 
-const STRATEGY_OPTIONS = [
-  { value: 'Breakout', label: 'Breakout' },
-  { value: 'SMC', label: 'SMC' },
-  { value: 'ICT', label: 'ICT' },
-  { value: 'Scalp', label: 'Scalp' },
-  { value: 'Swing', label: 'Swing' },
-  { value: 'S/R', label: 'S/R Bounce' },
-];
+// ─── Session prefill (§4.2 mapping table) ────────────────────────────────────
+// The derived `sessionCode` is the truth and the LogTrade use case stores it;
+// this select holds the LEGACY single-hub `session` string, which has no value
+// for either overlap. The table resolves each overlap to its most recently
+// opened hub, and leaves the placeholder for Off — a weekend-gap fill has no
+// session the trader would recognise, and guessing one writes a lie.
+function legacySessionPrefill(resolved) {
+  if (!resolved) return '';
+  switch (resolved.code) {
+    // TRADING_SESSIONS ids reuse the legacy vocabulary, so the Asia hub picks
+    // its own open desk rather than going through a lookup table.
+    case 'Asia': return resolved.desks?.includes('Tokyo') ? 'Tokyo' : 'Sydney';
+    case 'London': return 'London';
+    case 'NY': return 'NewYork';
+    case 'AsiaLondon': return 'London';
+    case 'LondonNY': return 'NewYork';
+    default: return '';
+  }
+}
+
+/** The AUTO chip and the prefill go stale as the desks open and close; a minute is finer than any boundary. */
+const SESSION_TICK_MS = 60000;
+
+/**
+ * Firestore forbids document ids matching `__.*__`, so this can never collide
+ * with a real trade id — which is what makes filtering the draft's own
+ * violations out of the whole-window result safe.
+ */
+const DRAFT_TRADE_ID = '__draft__';
+
+const EMPTY_SETUPS = Object.freeze([]);
 
 export function DashboardRightSidebar({
   plan,
@@ -85,11 +111,20 @@ export function DashboardRightSidebar({
   isTrialActive,
   trialTimeLeft,
   trades,
+  walletBalance,
   setShowPricingModal,
   toast,
   addTrade,
   isLoadingTrades,
   setIsExpanded,
+  // Setup catalog + discipline settings, from the same hooks the outlet context
+  // is fed from (DashboardLayout owns both). Absent props degrade to an empty
+  // picker and no rule checks rather than to a second Firestore listener.
+  setups = EMPTY_SETUPS,
+  resolveSetup,
+  createSetup,
+  archiveSetup,
+  disciplineRules,
 }) {
   const [activeTab, setActiveTab] = useState('basic');
 
@@ -103,8 +138,7 @@ export function DashboardRightSidebar({
   const [sl,    setSl]            = useState('');
   const [tp,    setTp]            = useState('');
   const [note,  setNote]          = useState('');
-  const [session,  setSession]    = useState('');
-  const [strategy, setStrategy]   = useState('');
+  const [setupId, setSetupId]     = useState(null);
   const [saving, setSaving]       = useState(false);
   const [screenshots, setScreenshots] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -129,11 +163,35 @@ export function DashboardRightSidebar({
   const [marketStructure, setMarketStructure] = useState([]);
   const [confluenceFactors, setConfluenceFactors] = useState([]);
 
+  // ── Session — derived tag (the truth) and the legacy select it prefills ────
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), SESSION_TICK_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  const autoSession = useMemo(() => resolveSessionAt(nowMs), [nowMs]);
+  const autoSessionCode = autoSession?.code ?? null;
+  const sessionPrefill = useMemo(() => legacySessionPrefill(autoSession), [autoSession]);
+
+  // Once the trader has picked a session the clock stops overwriting it; the
+  // flag resets with the form, so the next trade is prefilled again.
+  const [sessionEdited, setSessionEdited] = useState(false);
+  const [session, setSession] = useState(sessionPrefill);
+  useEffect(() => {
+    if (!sessionEdited) setSession(sessionPrefill);
+  }, [sessionEdited, sessionPrefill]);
+
   // ── Helpers ────────────────────────────────────────────────────────────────
   const handleNumericChange = (setter) => (e) => {
     const val = e.target.value;
     if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) setter(val.replace(',', '.'));
   };
+
+  const restoreSetup = useCallback(
+    (id) => archiveSetup?.(id, false),
+    [archiveSetup],
+  );
 
   // ── PnL preview ────────────────────────────────────────────────────────────
   const pnlData = calcPnl(
@@ -236,6 +294,11 @@ export function DashboardRightSidebar({
     const { pnl, pips, rr } = tradeRes;
     const outcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
 
+    // The same instant the use case will resolve the session tag from, captured
+    // once here so the draft the rules judge and the doc that gets written can
+    // never disagree about when this trade happened.
+    const loggedAt = new Date();
+
     const tradeData = {
       date: todayStr(),
       direction: mappedDir,
@@ -246,14 +309,17 @@ export function DashboardRightSidebar({
       sl: slVal,
       tp: tpVal,
       session,
-      strategy,
+      setupId,
+      // Back-compat: `strategy` stays the human-readable name so pre-setupId
+      // readers (and the slug fallback in getTradeSetupKey) still resolve.
+      strategy: resolveSetup?.(setupId)?.name ?? '',
       rr,
       pips,
       market: 'GOLD',
       pnl: parseFloat(pnl.toFixed(2)),
       outcome,
       note: note.trim(),
-      timestamp: new Date(),
+      timestamp: loggedAt,
       // ── New extended fields ──────────────────────────────────────────────
       riskPercent:       riskPercent     ? parseFloat(riskPercent)  : null,
       maxDailyLoss:      maxDailyActive  ? parseFloat(maxDailyLoss) || null : null,
@@ -269,12 +335,36 @@ export function DashboardRightSidebar({
       screenshots,
     };
 
+    // ── Discipline pre-submit (§4.2) ────────────────────────────────────────
+    // Advisory only: the verdict is computed before the write and reported
+    // after it, and nothing here can stop the trade being logged. A mirror that
+    // refuses to log the trade it disapproves of just teaches the trader to log
+    // elsewhere.
+    //
+    // The draft carries the provenance the use case will store, not just the
+    // instant: `manual-logtime` is what makes the revenge rule skip it (§3.3),
+    // so the toast can never accuse a trade of something its History row will
+    // not show a chip for.
+    const draft = {
+      ...tradeData,
+      id: DRAFT_TRADE_ID,
+      entryTimestampUtc: loggedAt.toISOString(),
+      sessionSource: 'manual-logtime',
+    };
+    const draftViolations = evaluateRules(
+      [...(Array.isArray(trades) ? trades : []), draft],
+      disciplineRules,
+      { accountBalance: walletBalance },
+    ).filter((entry) => entry.tradeId === DRAFT_TRADE_ID);
+
     try {
       if (addTrade) {
         await submitTrade({ addTrade, tradeData, plan, trades });
         // Reset all tabs
         setEntry(''); setExit(''); setLots('0.10'); setSl(''); setTp('');
-        setNote(''); setSession(''); setStrategy('');
+        // Clearing the edited flag hands the select back to the clock, which
+        // re-prefills it for the next trade.
+        setNote(''); setSetupId(null); setSessionEdited(false);
         setRiskPercent('1'); setMaxDailyLoss(''); setMaxDailyActive(false);
         setPreTradeMood(''); setConfidence(0); setConviction(''); setPostReflect('');
         setTimeframe(''); setSetupGrade(''); setMarketStructure([]); setConfluenceFactors([]);
@@ -282,6 +372,11 @@ export function DashboardRightSidebar({
         setActiveTab('basic');
         setIsExpanded(false);
         toast(`Trade logged: ${outcome} ${formatCurrency(pnl, true)}`, outcome === 'WIN' ? 'success' : 'error');
+        // After the confirmation, and only once the write actually landed — a
+        // rule warning about a trade that failed to save is noise.
+        if (draftViolations.length) {
+          toast(`Rule check: ${draftViolations.map((entry) => entry.message).join(' · ')}`, 'warn');
+        }
       } else {
         toast('Error: Trade submission unavailable.', 'error');
       }
@@ -525,16 +620,28 @@ export function DashboardRightSidebar({
               </Field>
             </div>
 
-            {/* Session / Strategy */}
+            {/* Session / Setup */}
             <div className="dashboard-trade-field-grid grid grid-cols-2 gap-3">
               <Field>
-                <FieldLabel htmlFor="trade-session" className="text-xs text-muted-foreground">
-                  Session
-                </FieldLabel>
+                <div className="flex items-center justify-between gap-1">
+                  <FieldLabel htmlFor="trade-session" className="truncate text-xs text-muted-foreground">
+                    Session
+                  </FieldLabel>
+                  {/* Read-only: the chip is the tag that gets stored, while the
+                      select below it can only hold a single legacy hub. */}
+                  {autoSessionCode && (
+                    <span
+                      title="Derived from your clock — stored with the trade"
+                      className="inline-flex h-[18px] shrink-0 items-center rounded-sm border border-border px-1.5 font-mono text-[11px] leading-none text-muted-foreground"
+                    >
+                      AUTO · {autoSessionCode}
+                    </span>
+                  )}
+                </div>
                 <Select
                   items={SESSION_OPTIONS}
                   value={session || null}
-                  onValueChange={(next) => setSession(next ?? '')}
+                  onValueChange={(next) => { setSessionEdited(true); setSession(next ?? ''); }}
                 >
                   <SelectTrigger id="trade-session" className="w-full">
                     <SelectValue placeholder="Session" />
@@ -556,28 +663,21 @@ export function DashboardRightSidebar({
                   }
                 }}
               >
-                <FieldLabel htmlFor="trade-strategy" className="flex items-center gap-1 text-xs text-muted-foreground">
-                  Strategy
+                <FieldLabel htmlFor="trade-setup" className="flex items-center gap-1 text-xs text-muted-foreground">
+                  Setup
                   {isFree && <LockKeyhole className="size-2.5" aria-hidden="true" />}
                 </FieldLabel>
-                <Select
-                  items={STRATEGY_OPTIONS}
-                  value={strategy || null}
-                  onValueChange={(next) => setStrategy(next ?? '')}
+                <SetupCombobox
+                  id="trade-setup"
+                  value={setupId}
+                  onValueChange={setSetupId}
+                  setups={setups}
+                  onCreateSetup={createSetup}
+                  onRestoreSetup={archiveSetup ? restoreSetup : undefined}
+                  onError={(message) => toast(message, 'error')}
                   disabled={isFree}
-                >
-                  <SelectTrigger
-                    id="trade-strategy"
-                    className="w-full disabled:pointer-events-none data-disabled:pointer-events-none"
-                  >
-                    <SelectValue placeholder="Strategy" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STRATEGY_OPTIONS.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className="disabled:pointer-events-none data-disabled:pointer-events-none"
+                />
               </Field>
             </div>
 

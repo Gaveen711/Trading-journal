@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { formatSigned, pnlToneClass } from '../lib/tradeUtils';
+import { formatCurrency, formatSigned, pnlToneClass } from '../lib/tradeUtils';
+import { fetchSpotPrice } from '../lib/marketData';
+import { costOfBrokenRules } from '../lib/disciplineRules.js';
 import { DirectionCell } from '../components/app/DirectionCell';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { LiveMarketWidget } from '../components/LiveMarketWidget';
@@ -19,6 +21,9 @@ import {
 } from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+
+/** The cost StatCard's window (§4.4), matching AnalyticsPage's COST_WINDOW_MS. */
+const DISCIPLINE_COST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const FALLBACK_TOKEN = (alpha) => (alpha == null ? '#9cff57' : `rgba(156, 255, 87, ${alpha})`);
 
@@ -96,7 +101,10 @@ const RECENT_TRADE_COLUMNS = [
 ];
 
 export function LogTradePage() {
-  const { trades, walletBalance, isExpanded, setIsExpanded } = useOutletContext();
+  const {
+    trades, walletBalance, isExpanded, setIsExpanded,
+    disciplineViolations, enabledRuleIds,
+  } = useOutletContext();
   const { isLightMode, currentTemplate } = useAppTheme();
   const [equityPeriod, setEquityPeriod] = useState('all');
   const [activeTab, setActiveTab] = useState('history');
@@ -189,27 +197,31 @@ export function LogTradePage() {
   const [goldPrice, setGoldPrice] = useState(2389.33);
   const [goldChange, setGoldChange] = useState(14.18);
 
+  // A cold-start safety net, not a second feed. LiveMarketWidget already polls
+  // /api/spot-price/XAU (4s ticks plus the slower real-price loop) and reports
+  // through onTickersUpdate, and `goldPriceValue` below prefers that feed
+  // unconditionally — so the moment a ticker lands, anything this poll fetches
+  // can no longer reach the screen. marketData's in-flight dedupe does NOT
+  // cover the overlap: it coalesces requests that are concurrent on one URL,
+  // and a 30s poll meets a 4s poll only by accident. Keeping the interval alive
+  // therefore bought a duplicate XAU request every 30s, forever, for a value
+  // nothing reads. Stopping on the first live ticker leaves the net intact for
+  // the case it exists for: the widget never reporting at all.
+  const hasLiveGoldPrice = liveTickers?.xauusd?.price != null;
+
   useEffect(() => {
+    if (hasLiveGoldPrice) return undefined;
     const controller = new AbortController();
     const fetchGoldPriceFallback = async () => {
       // Polling a background tab helps nobody and still costs a request.
       if (document.visibilityState === 'hidden') return;
-      try {
-        const res = await fetch('/api/spot-price/XAU', { signal: controller.signal });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.price) {
-            const price = Number(data.price);
-            setGoldPrice(price);
-            const baselineClose = 2375.15;
-            const diff = price - baselineClose;
-            setGoldChange(Number(diff.toFixed(2)));
-          }
-        }
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.warn('Error fetching fallback gold price:', err);
-      }
+      // Shared market-data layer: same proxy call, plus the Gold-API fallback.
+      // Never throws; null covers abort, bad input, and total failure alike.
+      const price = await fetchSpotPrice('XAU', { signal: controller.signal });
+      if (price === null) return;
+      setGoldPrice(price);
+      const baselineClose = 2375.15;
+      setGoldChange(Number((price - baselineClose).toFixed(2)));
     };
 
     fetchGoldPriceFallback();
@@ -218,7 +230,7 @@ export function LogTradePage() {
       clearInterval(interval);
       controller.abort();
     };
-  }, []);
+  }, [hasLiveGoldPrice]);
 
   // Synchronized gold values (always preferred from liveTickers state)
   const goldPriceValue = liveTickers?.xauusd?.price || goldPrice;
@@ -328,6 +340,16 @@ export function LogTradePage() {
     const sum = tradesWithRR.reduce((s, t) => s + Number(t.rr), 0);
     return parseFloat((sum / tradesWithRR.length).toFixed(1));
   }, [trades]);
+
+  const hasEnabledRules = (enabledRuleIds || []).length > 0;
+
+  // `now` is a render-time snapshot by contract — costOfBrokenRules leaves the
+  // window open at the top end precisely so a stale snapshot cannot drop trades
+  // the subscription just pushed in.
+  const disciplineCost = useMemo(
+    () => costOfBrokenRules(disciplineViolations, trades, { now: Date.now(), windowMs: DISCIPLINE_COST_WINDOW_MS }),
+    [disciplineViolations, trades],
+  );
 
   // Both chart memos sorted the same array independently; one sort feeds both.
   const sortedTrades = useMemo(
@@ -450,7 +472,7 @@ export function LogTradePage() {
       </div>
 
       {/* KPI ROW */}
-      <div className="dashboard-kpi-grid grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+      <div className={`dashboard-kpi-grid grid shrink-0 grid-cols-2 gap-3 lg:gap-4 ${hasEnabledRules ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         <StatCard
           label="Net P&L, month to date"
           value={formatSigned(mtdPnl)}
@@ -476,6 +498,24 @@ export function LogTradePage() {
           value={`1:${avgRRatio}`}
           hint="Risk-adjusted"
         />
+        {/*
+          Discipline is a free-plan feature (§4.4: never locked, never blurred),
+          so this card is written as a plain sibling rather than folded into a
+          mapped/indexed stat array — the trap the Analytics grid sets, where
+          `isLocked = isFree && stat.index > 1` silently captures any card
+          appended to the list. No `locked` or `interactive` prop is passed
+          here, and nothing on this page gates KPI cards by plan, so there is no
+          index for a future lock to catch it by. Hidden outright while every
+          rule is off: with no rules there is nothing to have cost anything.
+        */}
+        {hasEnabledRules && (
+          <StatCard
+            label="Cost of broken rules"
+            value={disciplineCost === 0 ? formatCurrency(0) : formatSigned(disciplineCost)}
+            hint={disciplineCost === 0 ? 'No rule breaks this week' : 'Last 7 days'}
+            tone={disciplineCost < 0 ? 'negative' : disciplineCost > 0 ? 'positive' : 'neutral'}
+          />
+        )}
       </div>
 
       {/* MIDDLE TIER: LIVE MARKET WIDGET */}

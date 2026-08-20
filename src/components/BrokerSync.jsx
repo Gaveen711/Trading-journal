@@ -160,6 +160,14 @@ export default function BrokerSync() {
 
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [globalSyncing, setGlobalSyncing] = useState(false);
+  // Two-step disconnect confirmation lives in the modal (window.confirm is
+  // blocked in some embedded/desktop contexts, which made the button a no-op)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    if (!isManageModalOpen) setConfirmDisconnect(false);
+  }, [isManageModalOpen]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -328,13 +336,16 @@ export default function BrokerSync() {
   }
 
   async function handleRemove(accountId) {
-    if (!window.confirm('Remove this broker account? Historical trades will remain.')) return;
+    setDisconnecting(true);
     try {
-      await removeAccount(accountId);
-      toast('Account disconnected.', 'success');
+      const result = await removeAccount(accountId);
+      toast(result?.message || 'Account disconnected.', 'success');
       setIsManageModalOpen(false);
     } catch (err) {
       toast(getFriendlyErrorMessage(err), 'error');
+    } finally {
+      setDisconnecting(false);
+      setConfirmDisconnect(false);
     }
   }
 
@@ -1171,11 +1182,18 @@ export default function BrokerSync() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleRemove(activeAccount.id)}
-                    className="h-11 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border-none"
+                    disabled={disconnecting}
+                    onClick={() => {
+                      if (!confirmDisconnect) {
+                        setConfirmDisconnect(true);
+                        return;
+                      }
+                      handleRemove(activeAccount.id);
+                    }}
+                    className={`h-11 rounded-xl text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border-none disabled:opacity-60 disabled:pointer-events-none ${confirmDisconnect ? 'bg-rose-500 hover:bg-rose-400 ring-2 ring-rose-400/60' : 'bg-rose-600/90 hover:bg-rose-600'}`}
                   >
                     <Trash2Fill className="w-3.5 h-3.5" />
-                    Disconnect
+                    {disconnecting ? 'Disconnecting…' : confirmDisconnect ? 'Tap again to confirm' : 'Disconnect'}
                   </button>
                 </div>
               </div>

@@ -7,6 +7,22 @@ import { useEffect, useState } from 'react';
    is open right now.
    ———————————————————————————————————————————————————————————— */
 
+/* The exchange-local session engine lives in sessionEngine.js because this file
+   imports React, and api/ must resolve session tags at ingest. The names are
+   re-exported here so there is still one import site for session logic; the
+   legacy UTC-hour model below (GOLD_SESSIONS, isMarketClosed and friends) is what
+   the public Vitrine site renders and is deliberately left untouched. New code
+   uses the engine — in particular isWeekendRestAt, not isMarketClosed. */
+export {
+  SESSION_ENGINE_VERSION,
+  SESSION_CODES,
+  TRADING_SESSIONS,
+  sessionCodeForHubs,
+  resolveSessionAt,
+  isWeekendRestAt,
+  sessionUtcWindow,
+} from './sessionEngine.js';
+
 /** Classic UTC session windows for spot gold. */
 export const GOLD_SESSIONS = [
   { id: 'syd', city: 'Sydney', tz: 'Australia/Sydney', open: 21, close: 6 },

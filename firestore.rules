@@ -38,6 +38,15 @@ service cloud.firestore {
       // their own reported statistics. Moving them server-side is tracked
       // separately; until then this rule is deliberately no worse than before
       // for those three fields, and strictly better for everything else.
+      //
+      // sessionAnalytics and disciplineRules belong to that same category:
+      // client-maintained maps that gate no entitlement. sessionAnalytics is a
+      // cached aggregate the client can rebuild from its own trades at any time;
+      // disciplineRules is user-authored settings read back only by that user's
+      // own UI. Distorting either distorts nothing but the writer's own view.
+      // Their nested contents are deliberately not schema-validated — same
+      // precedent as the analytics map — and their bounds are enforced
+      // client-side.
       function clientWritableUserFields() {
         return [
           // Profile
@@ -49,7 +58,9 @@ service cloud.firestore {
           // Wallet preferences
           'walletBalance', 'monthlyGoal',
           // Client-maintained counters (see note above)
-          'totalTradesLogged', 'totalJournalsLogged', 'analytics', 'lastTradeTime'
+          'totalTradesLogged', 'totalJournalsLogged', 'analytics', 'lastTradeTime',
+          // Client-maintained maps (see note above)
+          'sessionAnalytics', 'disciplineRules'
         ];
       }
 
@@ -75,6 +86,45 @@ service cloud.firestore {
         // Write: owner can write any valid trade doc
         // MT5 API writes happen via Firebase Admin SDK (bypasses these rules)
         // Strict schema validation to prevent payload injection and stat manipulation
+
+        // The fields a CLIENT may author. Deliberately NOT "the fields a trade
+        // document may contain": the Admin SDK sync writers bypass rules and
+        // store a whole family of server-owned keys no client owns —
+        //   api/_metaapi-broker.js normalizeDeal:
+        //     positionId, closeDealTicket, symbol, type, closePrice, openPrice,
+        //     closeTime, openTime, commission, netPnl, status, brokerType,
+        //     brokerServer
+        //   api/_brokerTradePersistence.ts:
+        //     accountId, syncedAt, updatedAt, createdAt
+        //   api/_tradeService.ts (EA / TradingView webhook):
+        //     openDealTicket, comment, partial (+ the same broker keys)
+        //
+        // That distinction is the whole point of the create/update split below.
+        function clientWritableTradeFields() {
+          return [
+              // ── Core trade fields ──────────────────────────────────────
+              'id', 'date', 'direction', 'entry', 'exit', 'lots', 'swap',
+              'sl', 'tp', 'rr', 'pips', 'session', 'setup', 'strategy',
+              'strategies', 'market', 'leverage', 'pnl', 'outcome', 'note',
+              'screenshots', 'timestamp', 'source', 'confidence',
+              // ── Risk tab fields ────────────────────────────────────────
+              'riskPercent', 'maxDailyLoss', 'autoRR',
+              // ── Mood / Psychology tab fields ───────────────────────────
+              'preTradeMood', 'conviction', 'postReflect',
+              // ── Advanced / Setup tab fields ────────────────────────────
+              'timeframe', 'setupGrade', 'marketStructure', 'confluenceFactors',
+              // ── Derived session tag ────────────────────────────────────
+              'entryTimestampUtc', 'sessionCode', 'sessionSource',
+              'sessionEngineVersion', 'sessionResolvedAt',
+              // ── Setup catalog reference (manual write paths only) ──────
+              'setupId'
+            ];
+        }
+
+        // Value checks only. `request.resource.data` is the POST-MERGE document
+        // on an update, so every clause below constrains the resulting trade —
+        // including absPnlDiff, which is why the integrity check still binds a
+        // patch that touches only some of pnl/entry/exit/lots/swap/direction.
         function isValidTrade() {
           let data = request.resource.data;
           let entry = data.get('entry', 0.0);
@@ -89,20 +139,7 @@ service cloud.firestore {
           let pnlDiff = pnl - expectedPnl;
           let absPnlDiff = pnlDiff < 0.0 ? -pnlDiff : pnlDiff;
 
-          return data.keys().hasOnly([
-              // ── Core trade fields ──────────────────────────────────────
-              'id', 'date', 'direction', 'entry', 'exit', 'lots', 'swap',
-              'sl', 'tp', 'rr', 'pips', 'session', 'setup', 'strategy',
-              'strategies', 'market', 'leverage', 'pnl', 'outcome', 'note',
-              'screenshots', 'timestamp', 'source', 'confidence',
-              // ── Risk tab fields ────────────────────────────────────────
-              'riskPercent', 'maxDailyLoss', 'autoRR',
-              // ── Mood / Psychology tab fields ───────────────────────────
-              'preTradeMood', 'conviction', 'postReflect',
-              // ── Advanced / Setup tab fields ────────────────────────────
-              'timeframe', 'setupGrade', 'marketStructure', 'confluenceFactors'
-            ])
-            && pnl is number
+          return pnl is number
             && pnl >= -10000000 // Prevent malicious extreme negative PNL
             && pnl <= 10000000  // Prevent malicious extreme positive PNL
             && lots is number
@@ -118,12 +155,85 @@ service cloud.firestore {
             && data.get('note', '') is string
             && data.get('note', '').size() <= 4000
             && (data.get('strategies', []) is list)
+            // sessionCode is derived, never user-entered. An out-of-vocabulary
+            // value would open an eighth sessionAnalytics bucket that no reader
+            // accounts for, so the enum is pinned here rather than client-side.
+            && (data.get('sessionCode', null) == null
+                || data.get('sessionCode', null) in ['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY', 'Off'])
+            // sessionSource ('broker' | 'webhook' | 'manual-logtime' | 'user' | null)
+            // is deliberately NOT enum-checked: the server write paths own it, and
+            // pinning its vocabulary here would make every new precision tier a
+            // rules deploy. It is a provenance label, not an aggregation key.
+            //
+            // An open vocabulary is not an open payload, though, and the two are
+            // separable: unbounded it is a client-writable string on every trade
+            // document, and a UI that renders a precision tier off this label would
+            // vouch for a fabricated one. Bounded, not pinned.
+            && (data.get('sessionSource', null) == null
+                || (data.get('sessionSource', null) is string
+                    && data.get('sessionSource', null).size() <= 32))
+            // sessionEngineVersion is the self-heal gate getTradeSessionCode reads
+            // before trusting a stored sessionCode. `is number`, not `is int`: the
+            // bound exists to stop a payload, and the narrower check would risk
+            // denying a write over integer-vs-double serialization for no security
+            // gain. Pinning a stale version to freeze a tag is self-harm only.
+            && (data.get('sessionEngineVersion', null) == null
+                || data.get('sessionEngineVersion', null) is number)
+            // entryTimestampUtc / sessionResolvedAt accept exactly the instant
+            // shapes momentMs (src/lib/tradeAnalytics.js) reads: Firestore
+            // Timestamp, epoch ms, or an ISO string long enough for nanoseconds
+            // plus an offset. Bounded NOW, while no writer exists — after Phase 3
+            // ships, adding a bound risks denying a live write.
+            && (data.get('entryTimestampUtc', null) == null
+                || data.get('entryTimestampUtc', null) is timestamp
+                || data.get('entryTimestampUtc', null) is number
+                || (data.get('entryTimestampUtc', null) is string
+                    && data.get('entryTimestampUtc', null).size() <= 40))
+            && (data.get('sessionResolvedAt', null) == null
+                || data.get('sessionResolvedAt', null) is timestamp
+                || data.get('sessionResolvedAt', null) is number
+                || (data.get('sessionResolvedAt', null) is string
+                    && data.get('sessionResolvedAt', null).size() <= 40))
+            // setupId is an opaque catalog id; bounded so it cannot carry a payload.
+            && (data.get('setupId', null) == null
+                || (data.get('setupId', null) is string && data.get('setupId', null).size() <= 64))
             && absPnlDiff < 1.0; // Widened tolerance: floating-point safety + broker swap rounding
         }
 
-        allow update: if isOwner(userId) && isValidTrade();
+        // Update constrains the DIFF, not the post-merge key set.
+        //
+        // `request.resource.data` on an update is the document AFTER the merge,
+        // so `keys().hasOnly(clientWritableTradeFields())` was being asked
+        // whether the *stored* document is client-shaped — and on a broker-synced
+        // trade it never is (accountId, syncedAt, netPnl, commission, positionId,
+        // … were all put there by the Admin SDK). Every edit of a synced trade
+        // was therefore denied outright, surfacing as "Failed to update".
+        //
+        // Widening the key list to cover those server fields is the wrong fix
+        // twice over. It cannot work without admitting `netPnl` and `commission`
+        // — tradePnlValue prefers netPnl over pnl, so a client that could write
+        // it would control reported P&L while walking straight past the
+        // absPnlDiff integrity check, which only constrains `pnl`. And it would
+        // re-break on the next server-owned field the sync writer adds, needing
+        // a rules deploy to unbreak client edits again.
+        //
+        // affectedKeys() asks the question that actually matters — "did the
+        // client touch anything it does not own?" — and answers it the same way
+        // the users/{userId} rule above already does. Untouched server fields
+        // are not in the diff; a client attempt to write, change or DELETE one
+        // is. That last case also closes a hole the old rule left open: a
+        // client set() without merge, which drops every server field, produced
+        // a post-merge document made only of allowlisted keys and passed.
+        allow update: if isOwner(userId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(clientWritableTradeFields())
+          && isValidTrade();
 
-        allow create: if isOwner(userId) && isValidTrade()
+        // Create is wholly client-authored, so the key set stays closed here:
+        // netPnl, commission and the rest cannot be conjured by a client.
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(clientWritableTradeFields())
+          && isValidTrade()
           // Rate limiting to prevent 10,000 trades/minute billing attacks (5-second cooldown)
           && getAfter(/databases/$(database)/documents/users/$(userId)).data.lastTradeTime == request.time
           && (
@@ -145,7 +255,71 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
-      // Secure broker accounts
+      // Setup catalog — the owner's own taxonomy, so the owner writes it
+      // directly. Seeded lazily by the client (deterministic `default_<slug>`
+      // ids) and never touched by a server path, which is why this is the one
+      // client-written subcollection with no Admin SDK writer behind it.
+      match /setups/{setupId} {
+        allow read: if isOwner(userId);
+
+        // Slug uniqueness is a catalog-wide property and cannot be expressed in
+        // rules (no cross-document reads without unbounded get() cost); it is
+        // enforced client-side, with duplicates resolved deterministically.
+        // What is enforced here is shape: a bounded name, and a slug restricted
+        // to the characters that make `default_<slug>` a legal document id.
+        //
+        // Every key is typed and bounded. An untyped `sortOrder` or `createdAt`
+        // is a client-writable field that can hold ~1 MiB, which is the same
+        // exposure `name` and `slug` are capped against. No client writes this
+        // subcollection yet, so the bounds cost nothing to add today.
+        function isValidSetup() {
+          let data = request.resource.data;
+
+          return data.keys().hasOnly([
+              'id', 'name', 'slug', 'isDefault', 'archived', 'mergedInto',
+              'sortOrder', 'createdAt', 'updatedAt'
+            ])
+            && data.get('name', '') is string
+            && data.get('name', '').size() >= 1
+            && data.get('name', '').size() <= 64
+            && data.get('slug', '') is string
+            && data.get('slug', '').size() <= 64
+            // The rule and slugifySetupName must agree. '^[a-z0-9-]+$' admits
+            // '-', '---' and '-abc-', which the slugifier can never produce; a
+            // setup stored on slug '-' is permanently unmatchable by the legacy
+            // trade path (slugifySetupName('-') is '', which matchSetupIdBySlug
+            // rejects) and silently buckets that history as 'untagged'.
+            && data.get('slug', '').matches('^[a-z0-9]+(-[a-z0-9]+)*$')
+            && data.get('archived', false) is bool
+            && (data.get('mergedInto', null) == null || data.get('mergedInto', null) is string)
+            // `id` mirrors the document id, which for a seed is 'default_' plus a
+            // slug of up to 64 — 128 leaves headroom without leaving it unbounded.
+            && (data.get('id', null) == null
+                || (data.get('id', null) is string && data.get('id', null).size() <= 128))
+            && data.get('isDefault', false) is bool
+            && data.get('sortOrder', 0) is number
+            // createdAt is read through momentMs by matchSetupIdBySlug, so it
+            // takes the same instant shapes the trade fields above do.
+            && (data.get('createdAt', null) == null
+                || data.get('createdAt', null) is timestamp
+                || data.get('createdAt', null) is number
+                || (data.get('createdAt', null) is string && data.get('createdAt', null).size() <= 40))
+            && (data.get('updatedAt', null) == null
+                || data.get('updatedAt', null) is timestamp
+                || data.get('updatedAt', null) is number
+                || (data.get('updatedAt', null) is string && data.get('updatedAt', null).size() <= 40));
+        }
+
+        // create/update only — `request.resource` is null on delete, so a schema
+        // check written as `allow write` would deny every deletion.
+        allow create, update: if isOwner(userId) && isValidSetup();
+        allow delete: if isOwner(userId);
+      }
+
+      // Secure broker accounts. The doc now also carries the broker `login` —
+      // account metadata that used to live only in localStorage. It never
+      // carries the password: that stays tab-scoped in sessionStorage and is
+      // never written to Firestore, so read access here leaks no credential.
       match /brokerAccounts/{accountId} {
         allow read: if isOwner(userId);
         allow write: if false; // Server-managed queue and MetaApi metadata only
