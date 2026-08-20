@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `88c577e1`
+- Built from commit: `a98d8f7e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -35,7 +35,7 @@
 - components.json
 - FooterNav.jsx
 - HistoryPage.jsx
-- field.tsx
+- tradeAnalytics.js
 - DataTable.jsx
 - FirebaseBrokerRepository.js
 - AnalyticsPage.jsx
@@ -75,7 +75,7 @@
 - _metaapi-broker.js
 - App.jsx
 - Production Operations & Maintenance Guide — xaujournal
-- @google-cloud/storage
+- field.tsx
 - hono
 - lucide-react
 - @radix-ui/react-slot
@@ -88,7 +88,7 @@
 - tailwind-merge
 - tw-animate-css
 - @vercel/analytics
-- @vercel/kv
+- sheet.tsx
 - @vercel/speed-insights
 - consolidateBrokerConnect
 - HIGH
@@ -110,7 +110,7 @@
 - workflows/graphify.md
 - C-01 — Broker MT4/MT5 passwords stored in plaintext `localStorage`, never cleared at sign-out
 - H-01 — Cron routes authenticate successfully against `"Bearer undefined"` when `CRON_SECRET` is unset
-- tradeAnalytics.js
+- tradeAnalyticsSessions.test.js
 - html2canvas
 - H-04 — Unauthenticated `/api/contact` writes to Firestore, sends email, and injects raw HTML into the ops inbox
 - metaapi.cloud-sdk
@@ -120,19 +120,19 @@
 - @fontsource-variable/newsreader
 - @google-cloud/firestore
 - @google-cloud/recaptcha-enterprise
-- react
+- AnalyticsPage.disciplineLock.test.jsx
 - @fontsource-variable/geist
 - framer-motion
 - react-bootstrap-icons
-- sheet.tsx
-- tradeAnalyticsSessions.test.js
+- StatusSquare.jsx
+- DirectionCell.jsx
 - useTrades.editTrade.test.jsx
 - useBrokerAccounts.adopt.test.jsx
-- AnalyticsPage.disciplineLock.test.jsx
+- @google-cloud/storage
 - LogTradePage.discipline.test.jsx
-- StatusSquare.jsx
+- react
 - DashboardLayout.sidebarWiring.test.js
-- DirectionCell.jsx
+- @vercel/kv
 - clsx
 
 ## God Nodes (most connected - your core abstractions)
@@ -244,9 +244,9 @@ Nodes (26): listCities(), normalizeSession(), RAIL_FILL, segmentState(), Session
 Cohesion: 0.14
 Nodes (14): toDate(), toMillis(), chip(), DetailField(), formatTradeTime(), getTimestampMs(), HISTORY_COLUMNS, HistoryPage() (+6 more)
 
-### Community 20 - "field.tsx"
-Cohesion: 0.15
-Nodes (13): Field(), FieldContent(), FieldDescription(), FieldError(), FieldGroup(), FieldLabel(), FieldLegend(), FieldSeparator() (+5 more)
+### Community 20 - "tradeAnalytics.js"
+Cohesion: 0.21
+Nodes (16): CLOSE_FIELDS, emptySessionAnalytics(), emptySessionBucket(), emptySessionDelta(), ENTRY_FIELDS, finiteOrNull(), followMerge(), getTradeSetupKey() (+8 more)
 
 ### Community 21 - "DataTable.jsx"
 Cohesion: 0.18
@@ -368,6 +368,10 @@ Nodes (31): App(), AuthSyncFailure(), ScrollProgress(), clearUxState(), shouldSk
 Cohesion: 0.11
 Nodes (18): 1. Secrets Management & Rotation Plan, 2. Production Monitoring & Logging Setup, 3. Reliability & Downtime Mitigation, 4. Scaling Optimization, 5. Emergency Manual Deployments, A. Firebase Admin SDK / Service Account Rotation, 🔔 Alerting Thresholds, B. MetaApi Cloud Token Rotation (+10 more)
 
+### Community 61 - "field.tsx"
+Cohesion: 0.15
+Nodes (13): Field(), FieldContent(), FieldDescription(), FieldError(), FieldGroup(), FieldLabel(), FieldLegend(), FieldSeparator() (+5 more)
+
 ### Community 65 - "XAU Journal × MetaApi — Architecture"
 Cohesion: 0.17
 Nodes (11): Backend (Firebase Cloud Functions), Code map, Deploy checklist, Environment variables, Firestore schema, Overview, Security rule, UI flow (Sync page) (+3 more)
@@ -375,6 +379,10 @@ Nodes (11): Backend (Firebase Cloud Functions), Code map, Deploy checklist, Envi
 ### Community 66 - "_entitlementMiddleware.ts"
 Cohesion: 0.26
 Nodes (11): assertEmailVerified(), getUidFromContext(), isEmailVerificationEnforced(), verifyIdToken(), assertPro(), ProGateOptions, requireAuth(), requireEmailVerified() (+3 more)
+
+### Community 74 - "sheet.tsx"
+Cohesion: 0.18
+Nodes (7): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle()
 
 ### Community 83 - "consolidateBrokerConnect"
 Cohesion: 0.26
@@ -444,9 +452,9 @@ Nodes (4): Attack scenarios, C-01 — Broker MT4/MT5 passwords stored in plainte
 Cohesion: 0.67
 Nodes (3): Attack scenario, Fix, H-01 — Cron routes authenticate successfully against `"Bearer undefined"` when `CRON_SECRET` is unset
 
-### Community 103 - "tradeAnalytics.js"
-Cohesion: 0.21
-Nodes (16): CLOSE_FIELDS, emptySessionAnalytics(), emptySessionBucket(), emptySessionDelta(), ENTRY_FIELDS, finiteOrNull(), followMerge(), getTradeSetupKey() (+8 more)
+### Community 103 - "tradeAnalyticsSessions.test.js"
+Cohesion: 0.24
+Nodes (7): MIN_SESSION_INSIGHT_SAMPLE, MIN_SETUP_SAMPLE, SESSION_ANALYTICS_VERSION, SESSION_BUCKETS, ms(), secondsLike(), underscoreSecondsLike()
 
 ### Community 105 - "H-04 — Unauthenticated `/api/contact` writes to Firestore, sends email, and injects raw HTML into the ops inbox"
 Cohesion: 0.67
@@ -464,21 +472,13 @@ Nodes (3): Attack scenario, Fix, M-03 — Lemon Squeezy webhook: non-constant-ti
 Cohesion: 0.21
 Nodes (10): affectedKeys(), postMerge(), renderModal(), RULES, rulesTradeAllowlist(), SERVER_OWNED, stripComments(), submitEdit() (+2 more)
 
-### Community 117 - "sheet.tsx"
-Cohesion: 0.18
-Nodes (7): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle()
-
-### Community 118 - "tradeAnalyticsSessions.test.js"
-Cohesion: 0.24
-Nodes (7): MIN_SESSION_INSIGHT_SAMPLE, MIN_SETUP_SAMPLE, SESSION_ANALYTICS_VERSION, SESSION_BUCKETS, ms(), secondsLike(), underscoreSecondsLike()
+### Community 113 - "AnalyticsPage.disciplineLock.test.jsx"
+Cohesion: 0.47
+Nodes (4): dayKeyAgo(), h, renderPage(), trade()
 
 ### Community 119 - "useTrades.editTrade.test.jsx"
 Cohesion: 0.22
 Nodes (6): APPLIED_PATCH, harness, LATER_TRADE, OLD_TRADE, RECENT_TRADE, USER
-
-### Community 121 - "AnalyticsPage.disciplineLock.test.jsx"
-Cohesion: 0.47
-Nodes (4): dayKeyAgo(), h, renderPage(), trade()
 
 ### Community 122 - "LogTradePage.discipline.test.jsx"
 Cohesion: 0.40
@@ -496,12 +496,12 @@ Nodes (3): declaredProps(), passedProps(), withoutComments()
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `cn` to `button.tsx`, `EmptyState.jsx`, `DashboardLayout.jsx`, `tradeUtils.js`, `SectionCard.jsx`, `app/AuthenticatedApp.jsx`, `LogTradePage.jsx`, `ManageSetupsDialog.jsx`, `SetupCombobox.jsx`, `FooterNav.jsx`, `HistoryPage.jsx`, `field.tsx`, `DataTable.jsx`, `sheet.tsx`, `DashboardRightSidebar.jsx`, `dropdown-menu.tsx`, `StatusSquare.jsx`, `DirectionCell.jsx`?**
-  _High betweenness centrality (0.127) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `overrides`, `class-variance-authority`, `firebase-admin`, `firebase`, `@firecms/neat`, `@google-cloud/storage`, `hono`, `lucide-react`, `@radix-ui/react-slot`, `react-chartjs-2`, `react-dom`, `react-router-dom`, `resend`, `tailwind-merge`, `tw-animate-css`, `@vercel/analytics`, `@vercel/kv`, `@vercel/speed-insights`, `html2canvas`, `metaapi.cloud-sdk`, `@fontsource-variable/newsreader`, `@google-cloud/firestore`, `@google-cloud/recaptcha-enterprise`, `react`, `@fontsource-variable/geist`, `framer-motion`, `react-bootstrap-icons`, `clsx`?**
-  _High betweenness centrality (0.122) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `overrides`, `class-variance-authority`, `firebase-admin`, `firebase`, `@firecms/neat`, `hono`, `lucide-react`, `@radix-ui/react-slot`, `react-chartjs-2`, `react-dom`, `react-router-dom`, `resend`, `tailwind-merge`, `tw-animate-css`, `@vercel/analytics`, `@vercel/speed-insights`, `html2canvas`, `metaapi.cloud-sdk`, `@fontsource-variable/newsreader`, `@google-cloud/firestore`, `@google-cloud/recaptcha-enterprise`, `@fontsource-variable/geist`, `framer-motion`, `react-bootstrap-icons`, `@google-cloud/storage`, `react`, `@vercel/kv`, `clsx`?**
+  _High betweenness centrality (0.129) - this node is a cross-community bridge._
 - **Why does `react` connect `react` to `dependencies`?**
-  _High betweenness centrality (0.119) - this node is a cross-community bridge._
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
+- **Why does `cn()` connect `cn` to `button.tsx`, `EmptyState.jsx`, `DashboardLayout.jsx`, `tradeUtils.js`, `SectionCard.jsx`, `app/AuthenticatedApp.jsx`, `sheet.tsx`, `ManageSetupsDialog.jsx`, `SetupCombobox.jsx`, `FooterNav.jsx`, `HistoryPage.jsx`, `DataTable.jsx`, `DirectionCell.jsx`, `StatusSquare.jsx`, `DashboardRightSidebar.jsx`, `dropdown-menu.tsx`, `LogTradePage.jsx`, `field.tsx`?**
+  _High betweenness centrality (0.113) - this node is a cross-community bridge._
 - **What connects `Env`, `Variables`, `WEB_VITAL_NAMES` to the rest of the system?**
   _510 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `BrokerSync.jsx` be split into smaller, more focused modules?**
