@@ -140,6 +140,9 @@ vi.mock('./_metaapi-broker.js', () => {
 
 
 import { db } from './_firebase.js';
+// The constant, not a literal: a SESSION_ENGINE_VERSION bump must fail loudly
+// here if the webhook write path is not re-checked against the new boundaries.
+import { SESSION_ENGINE_VERSION } from '../src/lib/sessionEngine.js';
 
 describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
   beforeEach(() => {
@@ -324,5 +327,137 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
     const res = await executeRequest(payload, { 'x-forwarded-for': testIp });
     expect(res.statusCode).toBe(429);
     expect(res.jsonData.error).toBe('Too Many Requests');
+  });
+
+  describe('session tagging (spec §2.2 webhook write path)', () => {
+    // Mocks an existing open trade doc that was tagged 'Asia' at open time.
+    // The tag deliberately contradicts what the close instant would resolve to
+    // (16:30Z on 2026-01-14 → LondonNY), so any close-path re-derivation shows
+    // up as the wrong bucket rather than passing by coincidence.
+    const mockExistingOpenTrade = () => {
+      db.__mocks.mockDocGet.mockImplementation(async function () {
+        if (this.collectionName === 'apiKeys') return { exists: true, data: () => ({ uid: 'TEST_USER_ID' }) };
+        if (this.collectionName === 'users') return { exists: true, data: () => ({ plan: 'pro', planExpiry: new Date(Date.now() + 86400000).toISOString() }) };
+        return {
+          exists: true,
+          data: () => ({
+            positionId: '98765',
+            openPrice: 2000.00,
+            direction: 'buy',
+            lots: 0.5,
+            status: 'open',
+            openTime: '2026-01-14T02:00:00Z',
+            entryTimestampUtc: '2026-01-14T02:00:00.000Z',
+            sessionCode: 'Asia',
+            sessionSource: 'webhook',
+            sessionEngineVersion: SESSION_ENGINE_VERSION,
+          }),
+        };
+      });
+    };
+
+    const closePayload = {
+      event: 'close',
+      positionId: '98765',
+      ticket: '12346',
+      symbol: 'XAUUSD',
+      direction: 'buy',
+      lots: 0.5,
+      price: 2010.00,
+      time: '2026-01-14T16:30:00Z',
+      commission: -1.5,
+      swap: -2.0,
+      profit: 500.00,
+    };
+
+    it('stamps session fields from payload.time on open events with sessionSource webhook', async () => {
+      const res = await executeRequest({
+        event: 'open',
+        positionId: '55501',
+        ticket: '55501',
+        symbol: 'XAUUSD',
+        direction: 'buy',
+        lots: 0.5,
+        price: 2000.50,
+        // 2026-03-04T10:00Z: London desk open (GMT), NY closed (EST) → London.
+        time: '2026-03-04T10:00:00Z',
+        source: 'mt5',
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.jsonData.status).toBe('created');
+      expect(db.__mocks.mockDocSet).toHaveBeenCalledWith(expect.objectContaining({
+        entryTimestampUtc: '2026-03-04T10:00:00.000Z',
+        sessionCode: 'London',
+        sessionSource: 'webhook',
+        sessionEngineVersion: SESSION_ENGINE_VERSION,
+        sessionResolvedAt: 'MOCK_TIMESTAMP',
+      }));
+    });
+
+    it('close that creates a partial doc resolves the session from closeTime', async () => {
+      // Default mock: trade doc does not exist → the close must create the
+      // partial doc and resolve from closeTime exactly like normalizeDeal.
+      // 14:00Z on 2026-03-04: London and NY both open → LondonNY.
+      const res = await executeRequest({ ...closePayload, positionId: '77701', time: '2026-03-04T14:00:00Z' });
+
+      expect(res.statusCode).toBe(200);
+      const setCall = db.__mocks.mockDocUpdate.mock.calls.find(([data]) => data.status === 'closed');
+      expect(setCall).toBeDefined();
+      expect(setCall[0]).toMatchObject({
+        partial: true,
+        createdAt: 'MOCK_TIMESTAMP',
+        entryTimestampUtc: '2026-03-04T14:00:00.000Z',
+        sessionCode: 'LondonNY',
+        sessionSource: 'webhook',
+        sessionEngineVersion: SESSION_ENGINE_VERSION,
+        sessionResolvedAt: 'MOCK_TIMESTAMP',
+      });
+    });
+
+    it('close of an existing open doc writes no session field — the open tag survives', async () => {
+      mockExistingOpenTrade();
+
+      const res = await executeRequest(closePayload);
+
+      expect(res.statusCode).toBe(200);
+      const setCall = db.__mocks.mockDocUpdate.mock.calls.find(([data]) => data.status === 'closed');
+      expect(setCall).toBeDefined();
+      // Merge-set with none of these keys leaves the open event's tag intact;
+      // their presence with ANY value would overwrite it.
+      expect(setCall[0]).not.toHaveProperty('entryTimestampUtc');
+      expect(setCall[0]).not.toHaveProperty('sessionCode');
+      expect(setCall[0]).not.toHaveProperty('sessionSource');
+      expect(setCall[0]).not.toHaveProperty('sessionEngineVersion');
+      expect(setCall[0]).not.toHaveProperty('sessionResolvedAt');
+      expect(setCall[0]).not.toHaveProperty('partial');
+    });
+
+    it('open→close moves the trade into the bucket the OPEN event stamped, alongside analytics.*', async () => {
+      mockExistingOpenTrade();
+
+      const res = await executeRequest(closePayload);
+
+      expect(res.statusCode).toBe(200);
+      const userUpdateCall = db.__mocks.mockDocUpdate.mock.calls.find(
+        ([data]) => 'analytics.tradeCount' in data,
+      );
+      expect(userUpdateCall).toBeDefined();
+      const userUpdate = userUpdateCall[0];
+      // Flat and bucketed paths land in ONE update call; netPnl = 500 - 1.5 - 2 = 496.5.
+      expect(userUpdate).toMatchObject({
+        totalTradesLogged: { type: 'increment', value: 1 },
+        'analytics.tradeCount': { type: 'increment', value: 1 },
+        'analytics.totalPnl': { type: 'increment', value: 496.5 },
+        'sessionAnalytics.buckets.Asia.tradeCount': { type: 'increment', value: 1 },
+        'sessionAnalytics.buckets.Asia.totalPnl': { type: 'increment', value: 496.5 },
+        'sessionAnalytics.buckets.Asia.wins': { type: 'increment', value: 1 },
+        'sessionAnalytics.buckets.Asia.grossProfit': { type: 'increment', value: 496.5 },
+      });
+      // Bucketed under the stored open tag, never re-derived from the close
+      // instant (16:30Z → LondonNY) and never dumped in Unknown.
+      expect(userUpdate['sessionAnalytics.buckets.LondonNY.tradeCount']).toBeUndefined();
+      expect(userUpdate['sessionAnalytics.buckets.Unknown.tradeCount']).toBeUndefined();
+    });
   });
 });

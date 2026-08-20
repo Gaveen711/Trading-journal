@@ -1,7 +1,17 @@
 import { chunkedDbGetAll } from './_firestoreUtils.js'
-import { analyticsDeltaForTrades, analyticsUpdate, subtractTradeAnalytics, tradeAnalyticsDelta } from '../src/lib/tradeAnalytics.js'
+import {
+  analyticsDeltaForTrades, analyticsUpdate, subtractTradeAnalytics, tradeAnalyticsDelta,
+  sessionAnalyticsDelta, sessionAnalyticsDeltaForTrades, sessionAnalyticsUpdate, subtractSessionAnalytics,
+} from '../src/lib/tradeAnalytics.js'
 
 const FIRESTORE_BATCH_WRITE_LIMIT = 450
+
+/** Session deltas are bucketed ({bucket: {counter}}), not flat — accumulate per bucket. */
+function addSessionDelta(total: any, delta: any) {
+  Object.keys(total).forEach((bucket) => {
+    Object.keys(total[bucket]).forEach((key) => { total[bucket][key] += delta[bucket][key] })
+  })
+}
 
 export function toDateOrNull(value: any): Date | null {
   if (!value) return null
@@ -34,12 +44,16 @@ export async function persistBrokerTrades({
     const chunk = brokerTrades.slice(i, i + FIRESTORE_BATCH_WRITE_LIMIT)
     const batch = db.batch()
     const aggregateDelta = analyticsDeltaForTrades([])
+    const sessionAggregateDelta = sessionAnalyticsDeltaForTrades([])
 
     for (const trade of chunk) {
       const tradeDocId = 'broker_' + accountId + '_' + trade.closeDealTicket
       const previous = existingTrades.get(tradeDocId)
       const exists = Boolean(previous)
       const tradeData: any = { ...trade, accountId, syncedAt: timestampFactory(), updatedAt: timestampFactory() }
+      // Audit stamp normalizeDeal cannot set (no timestamp factory there). Only
+      // accompanies actual session fields — a doc without them gets none invented.
+      if (tradeData.sessionEngineVersion !== undefined) tradeData.sessionResolvedAt = timestampFactory()
       if (exists) {
         updatedTrades++
       } else {
@@ -47,15 +61,29 @@ export async function persistBrokerTrades({
         newTrades++
       }
       batch.set(tradesRef.doc(tradeDocId), tradeData, { merge: true })
+      const nextTrade = exists ? { ...previous, ...tradeData } : tradeData
       const delta = exists
-        ? subtractTradeAnalytics(previous, { ...previous, ...tradeData })
+        ? subtractTradeAnalytics(previous, nextTrade)
         : tradeAnalyticsDelta(tradeData)
       Object.keys(aggregateDelta).forEach((key) => { aggregateDelta[key] += delta[key] })
+      // 'Unknown' is a legitimate aggregate bucket (untimed trades); it is
+      // never a stored sessionCode — that comes from resolveSessionAt upstream.
+      addSessionDelta(sessionAggregateDelta, exists
+        ? subtractSessionAnalytics(previous, nextTrade)
+        : sessionAnalyticsDelta(tradeData))
     }
 
-    const hasAggregateChanges = Object.values(aggregateDelta).some((value) => value !== 0)
-    if (hasAggregateChanges && incrementFactory) {
-      batch.update(db.collection('users').doc(userId), analyticsUpdate(aggregateDelta, incrementFactory))
+    if (incrementFactory) {
+      const hasAggregateChanges = Object.values(aggregateDelta).some((value) => value !== 0)
+      // One update per batch: 'analytics.*' and 'sessionAnalytics.buckets.*'
+      // dot paths (plus 'totalTradesLogged') cannot collide, and
+      // sessionAnalyticsUpdate drops zero counters so an all-zero session
+      // delta contributes nothing.
+      const userUpdate: any = hasAggregateChanges ? analyticsUpdate(aggregateDelta, incrementFactory) : {}
+      Object.assign(userUpdate, sessionAnalyticsUpdate(sessionAggregateDelta, incrementFactory))
+      if (Object.keys(userUpdate).length) {
+        batch.update(db.collection('users').doc(userId), userUpdate)
+      }
     }
     if (chunk.length) commitPromises.push(batch.commit())
   }

@@ -5,6 +5,7 @@ import {
   connectBrokerCallable,
   syncBrokerTradesCallable,
   disconnectBrokerCallable,
+  adoptBrokerCallable,
 } from '../../lib/brokerSync.js';
 
 export class FirebaseBrokerRepository extends BrokerRepository {
@@ -30,5 +31,10 @@ export class FirebaseBrokerRepository extends BrokerRepository {
 
   async disconnectBroker(accountId) {
     return disconnectBrokerCallable(accountId);
+  }
+
+  /** Migrates this device's stored broker login onto the server-owned doc. */
+  async adoptBrokerAccount(accountId, login) {
+    return adoptBrokerCallable(accountId, login);
   }
 }

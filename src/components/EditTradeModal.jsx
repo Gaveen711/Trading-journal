@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { XLg, Check2Circle, CloudArrowUp, Trash, LockFill } from 'react-bootstrap-icons';
 import { AnimatePresence } from 'framer-motion';
 import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
+import { SetupCombobox } from './app/SetupCombobox';
 import { calcPnl, formatCurrency } from '../lib/tradeUtils';
 import { auth, storage } from '../firebase';
 import { useToast } from './ToastContext';
@@ -10,11 +11,34 @@ import { ImageViewerModal } from './ImageViewerModal';
 import { requireProFeature } from '../services/featureGate';
 import { isPaidPlan } from '../lib/entitlements.js';
 
-export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClose }) {
-  const [formData, setFormData] = useState({ ...trade });
+export function EditTradeModal({
+  trade,
+  plan,
+  setShowPricingModal,
+  onSave,
+  onClose,
+  // Setup catalog, from the outlet context the host page already reads. Absent
+  // props degrade to an empty picker rather than to a second listener.
+  setups,
+  createSetup,
+  archiveSetup,
+}) {
+  // Broker and webhook documents store the two prices as openPrice/closePrice
+  // (api/_metaapi-broker.js normalizeDeal, api/_tradeService.ts) — the same
+  // fallback resolveTradeRiskUsd already applies to `entry`. Without it this
+  // form loads a synced trade with two empty price inputs, and calcPnl's
+  // `!entry` guard then submits pnl 0 / pips 0 / outcome BE over a real trade.
+  // Harmless while every synced edit was denied by firestore.rules; not once
+  // the rules let the write through. `??` only, so a legitimate stored 0 stays.
+  const [formData, setFormData] = useState({
+    ...trade,
+    entry: trade.entry ?? trade.openPrice ?? '',
+    exit: trade.exit ?? trade.closePrice ?? '',
+  });
   const [direction, setDirection] = useState(trade.direction);
   const [session, setSession] = useState(trade.session || '');
   const setup = trade.setup || '';
+  const [setupId, setSetupId] = useState(trade.setupId || null);
   const [strategies, setStrategies] = useState(trade.strategies || []);
   const [strategyInput, setStrategyInput] = useState('');
   const [date, setDate] = useState(trade.date);
@@ -87,6 +111,11 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
     }
   };
 
+  const restoreSetup = useCallback(
+    (id) => archiveSetup?.(id, false),
+    [archiveSetup],
+  );
+
   const removeScreenshot = (indexToRemove) => {
     setFormData(prev => ({
       ...prev,
@@ -124,18 +153,57 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
     }
   };
 
+  // Two constraints shape this payload, and spreading `...formData` broke both.
+  //
+  // 1. formData is seeded from `{ ...trade }`, so on a broker-synced trade it
+  //    carries server-owned fields (netPnl, positionId, accountId, closeTime,
+  //    commission, status). firestore.rules validates trades with a hasOnly()
+  //    allowlist that contains none of them, so every edit of a synced trade
+  //    was rejected outright. Widening the allowlist is not the fix: netPnl is
+  //    what tradePnlValue prefers, so admitting it would hand the client
+  //    control of reported P&L while bypassing the absPnlDiff integrity check
+  //    (which only constrains `pnl`).
+  // 2. handleNumericChange stores raw input text, so entry/exit/lots are
+  //    strings once touched, and the rules require `is number`.
+  //
+  // editTrade issues transaction.update(), which merges — omitted fields keep
+  // their stored values, so sending only what this form owns is safe.
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const num = (value, fallback = 0) => {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+    // sl/tp have no input here; they ride through from the loaded trade, where
+    // "no level set" is null rather than 0 — a 0 stop would be a real price.
+    const optionalNum = (value) => {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
     onSave(trade.id, {
-      ...formData,
+      entry: num(formData.entry),
+      exit: num(formData.exit),
+      lots: num(formData.lots),
+      swap: num(formData.swap),
+      sl: optionalNum(formData.sl),
+      tp: optionalNum(formData.tp),
+      note: formData.note ?? '',
+      screenshots: Array.isArray(formData.screenshots) ? formData.screenshots : [],
       direction,
       session,
       setup,
-      strategies,
+      // Explicit null, never undefined: Firestore rejects undefined outright,
+      // and clearing the picker has to be able to untag the trade.
+      setupId: setupId ?? null,
+      strategies: Array.isArray(strategies) ? strategies : [],
       date,
       pnl: derivedMetrics.pnl,
       pips: derivedMetrics.pips,
-      rr: derivedMetrics.rr,
+      // Firestore rejects undefined outright; rr is genuinely absent when no
+      // stop is set, and the rules leave it untyped.
+      rr: derivedMetrics.rr ?? null,
       outcome: derivedMetrics.outcome
     });
   };
@@ -174,6 +242,16 @@ export function EditTradeModal({ trade, plan, setShowPricingModal, onSave, onClo
               />
             </div>
             <div className="space-y-2">
+              <label htmlFor="modal-setup" className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Setup</label>
+              <SetupCombobox
+                id="modal-setup"
+                value={setupId}
+                onValueChange={setSetupId}
+                setups={setups}
+                onCreateSetup={createSetup}
+                onRestoreSetup={archiveSetup ? restoreSetup : undefined}
+                onError={(message) => toast?.(message, 'error')}
+              />
               <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Strategies</label>
               <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-[48px] px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('modal-strategy-input')?.focus()}>
                 <div className="flex flex-wrap gap-1.5 items-center">

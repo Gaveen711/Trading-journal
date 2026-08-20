@@ -100,6 +100,9 @@ vi.mock('./_firebase.js', () => {
                 syncJobState: 'queued',
                 nextSyncAt: new Date(nowMs - 1000).toISOString(),
                 lastSyncTime: new Date(nowMs - 100000).toISOString(),
+                // One already-migrated account (e.g. a connect that crashed
+                // before its terminal update): the poller must not downgrade it.
+                ...(uid === 'LIFETIME_USER' ? { credentialStorage: 'client-session' } : {}),
               })
             }))
           };
@@ -226,5 +229,35 @@ describe('Broker Sync Poller Cron Job', () => {
     // Privacy policy forbids scheduled sync from using retained provider access.
     expect(fetchBrokerTrades).not.toHaveBeenCalled();
     expect(db.__mocks.mockDocUpdate).toHaveBeenCalledTimes(5);
+  });
+
+  it('preserves the persisted login and never downgrades client-session credentialStorage (spec §2.1)', async () => {
+    const res = await executePollerRequest({ Authorization: `Bearer ${cronSecret}` });
+    expect(res.status).toBe(200);
+
+    const updatePayloads = db.__mocks.mockDocUpdate.mock.calls.map(([payload]) => payload);
+    expect(updatePayloads).toHaveLength(5);
+
+    for (const payload of updatePayloads) {
+      // 'login' is spec §2.1 account metadata written by add/adopt — the
+      // legacy-credential scrub must not delete it, or sync dies on both
+      // sides once the client drains localStorage.
+      expect(payload).not.toHaveProperty('login');
+      // The actual credentials still get scrubbed.
+      expect(payload.password).toBe('MOCK_DELETE_FIELD');
+      expect(payload.brokerLogin).toBe('MOCK_DELETE_FIELD');
+      expect(payload.brokerPassword).toBe('MOCK_DELETE_FIELD');
+      expect(payload.metaApiAccountId).toBe('MOCK_DELETE_FIELD');
+      expect(payload.providerAccountId).toBe('MOCK_DELETE_FIELD');
+      expect(payload.credentialFingerprint).toBe('MOCK_DELETE_FIELD');
+    }
+
+    // Update calls follow doc order: LIFETIME_USER (already migrated to
+    // client-session) is first and must keep it; true-legacy accounts convert
+    // to client-local.
+    expect(updatePayloads[0].credentialStorage).toBe('client-session');
+    for (const payload of updatePayloads.slice(1)) {
+      expect(payload.credentialStorage).toBe('client-local');
+    }
   });
 });

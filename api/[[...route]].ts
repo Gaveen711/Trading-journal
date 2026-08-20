@@ -9,7 +9,8 @@ import resend from './_resend.js'
 
 import { kv } from '@vercel/kv'
 import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
-import { isSyncAllowed, getUidFromContext, verifyIdToken, assertEmailVerified } from './_auth.js'
+import { getUidFromContext, verifyIdToken } from './_auth.js'
+import { requireAuth, withUserDoc, requireEmailVerified, requirePro, requireProUser, assertPro } from './_entitlementMiddleware.js'
 import {
   assertCron,
   assertRequiredConfig,
@@ -34,7 +35,7 @@ import {
 import { getClientIp } from './_ipUtils.js'
 import { persistBrokerTrades } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
-import { emptyTradeAnalytics } from '../src/lib/tradeAnalytics.js'
+import { emptyTradeAnalytics, emptySessionAnalytics } from '../src/lib/tradeAnalytics.js'
 import { USER_CREDENTIAL_FIELDS, ACCOUNT_CREDENTIAL_FIELDS, deletionPatch } from './_credentialFields.js'
 
 // Ensure Firebase is initialized before any routes execute
@@ -282,13 +283,18 @@ async function consolidateBrokerConnect({
       accountName: name,
       brokerType,
       server,
-      // Privacy boundary: broker login/password stay on the user's device.
-      // Firestore stores only metadata needed to display and identify the account.
-      credentialStorage: 'client-local',
       // Merge writes also remove sensitive fields left by older deployments.
       // The shared list covers all 7 legacy fields — the inline version here
       // had drifted to deleting only 4 of them.
       ...deletionPatch(ACCOUNT_CREDENTIAL_FIELDS, credentialDeleteSentinel),
+      // Privacy boundary: the broker *password* stays on the user's device.
+      // The login is account metadata (spec §2.1) — persisting it is what lets
+      // sync survive device changes; 'client-session' still means the server
+      // holds no credential. Never echo the login back in the response.
+      // Must stay BELOW the deletion spread: 'login' is in the legacy scrub
+      // list, and a later delete sentinel would clobber the persisted value.
+      login: String(login),
+      credentialStorage: 'client-session',
       isActive: true,
       lastSyncStatus: 'running',
       lastSyncError: null,
@@ -386,26 +392,17 @@ async function handleBrokerAdd(
 }
 
 
+// Spec §2.1: broker login is account *metadata* (never the password). The
+// pattern keeps stored values free of path separators and spoofable formatting.
+const BROKER_LOGIN = /^[A-Za-z0-9._-]{1,32}$/
+
 // ── 2. Broker Login Sync Route ──────────────────────────────────────────────
-app.post('/broker-login-sync', async (c) => {
-  let uid: string
-  try {
-    uid = await getUidFromContext(c)
-  } catch (err: any) {
-    return c.json({ error: 'Invalid or expired token' }, 401)
-  }
-
-  const user = await db.collection('users').doc(uid).get()
-  if (!user.exists) {
-    return c.json({ error: 'User not found' }, 404)
-  }
-
-  const userData = user.data()
-  if (!isSyncAllowed(userData)) {
-    return c.json({ error: 'Broker sync requires active Pro subscription' }, 403)
-  }
-  const unverified = assertEmailVerified(c, userData)
-  if (unverified) return unverified
+// Pro is gated per action, not per route: 'add'/'sync' consume MetaApi quota
+// and require Pro; 'adopt'/'remove' only manage account metadata and must keep
+// working for lapsed users (deliberate — spec §7-Q7), so they need auth +
+// verified email only.
+app.post('/broker-login-sync', requireAuth, withUserDoc, requireEmailVerified, async (c) => {
+  const uid = String(c.get('uid'))
 
   let body;
   try {
@@ -417,12 +414,22 @@ app.post('/broker-login-sync', async (c) => {
   const { action } = body
 
   if (action === 'add') {
+    const proDenied = assertPro(c, { error: 'Broker sync requires active Pro subscription' })
+    if (proDenied) return proDenied
+
     const { login, password, server, brokerType, accountName } = body
     if (!login || !password || !server || !brokerType) {
       return c.json({ error: 'Missing required: login, password, server, brokerType' }, 400)
     }
     if (!['mt4', 'mt5'].includes(brokerType)) {
       return c.json({ error: 'brokerType must be mt4 or mt5' }, 400)
+    }
+    // consolidateBrokerConnect persists the login BEFORE the MetaApi call can
+    // fail, so the §2.1 shape must hold here — otherwise a malformed value
+    // (or '[object Object]') is stored and a later adopt 409s against it.
+    // String() first: legacy clients send numeric MT logins.
+    if (!BROKER_LOGIN.test(String(login))) {
+      return c.json({ error: 'Missing or invalid login' }, 400)
     }
 
     return handleBrokerAdd(c, uid, {
@@ -436,6 +443,9 @@ app.post('/broker-login-sync', async (c) => {
   }
 
   if (action === 'sync') {
+    const proDenied = assertPro(c, { error: 'Broker sync requires active Pro subscription' })
+    if (proDenied) return proDenied
+
     const { accountId, login, password, server, brokerType } = body
     // accountId becomes a Firestore document id; a slash would build a deeper
     // path than the brokerAccounts document intended.
@@ -477,7 +487,53 @@ app.post('/broker-login-sync', async (c) => {
       return handleRouteError('broker-login-sync:sync', error, c, 'Failed to sync broker')
     }
   }
+  if (action === 'adopt') {
+    // One-shot localStorage → Firestore migration of the broker login (spec
+    // §2.1 / D-item 2). Not Pro-gated: without the server-held login, a lapsed
+    // user's account list dies with their localStorage. Passwords never touch
+    // this path — 'client-session' records that the server holds no credential.
+    const { accountId, login } = body
+    if (!isValidAccountId(accountId)) return c.json({ error: 'Missing or invalid accountId' }, 400)
+    if (typeof login !== 'string' || !BROKER_LOGIN.test(login)) {
+      return c.json({ error: 'Missing or invalid login' }, 400)
+    }
+    try {
+      const accountRef = db.collection('users').doc(uid).collection('brokerAccounts').doc(accountId)
+      // Transactional: two concurrent adopts (two devices with divergent stale
+      // localStorage) must serialize, or a plain get-then-update race bypasses
+      // the 409 mismatch guard and the loser silently overwrites the winner.
+      const outcome = await db.runTransaction(async (tx: any) => {
+        const accountSnap = await tx.get(accountRef)
+        if (!accountSnap.exists) return 'missing'
+
+        const storedLogin = accountSnap.get('login')
+        if (typeof storedLogin === 'string' && storedLogin !== '') {
+          // Idempotent on re-runs; a *different* stored login means server truth
+          // already exists and is never silently overwritten.
+          return storedLogin === login ? 'noop' : 'mismatch'
+        }
+
+        tx.update(accountRef, {
+          login,
+          credentialStorage: 'client-session',
+          migratedFromLocalAt: now(),
+          updatedAt: now(),
+        })
+        return 'adopted'
+      })
+      if (outcome === 'missing') return c.json({ error: 'Broker account not found' }, 404)
+      if (outcome === 'mismatch') {
+        return c.json({ error: 'Broker account already has a different login', code: 'login-mismatch' }, 409)
+      }
+      return c.json({ ok: true, adopted: outcome === 'adopted' })
+    } catch (error: any) {
+      return handleRouteError('broker-login-sync:adopt', error, c, 'Failed to adopt account')
+    }
+  }
+
   if (action === 'remove') {
+    // Deliberately not Pro-gated (spec §7-Q7): lapsed users must still be able
+    // to remove their own account metadata.
     const { accountId } = body
     if (!isValidAccountId(accountId)) return c.json({ error: 'Missing or invalid accountId' }, 400)
     try {
@@ -497,14 +553,8 @@ app.post('/broker-login-sync', async (c) => {
 })
 
 // ── 3. Connect Broker Route ──────────────────────────────────────────────────
-app.post('/connect-broker', async (c) => {
-  let uid: string
-  try {
-    uid = await getUidFromContext(c)
-  } catch (err: any) {
-    console.error('[connect-broker] verifyIdToken failed:', err?.message || err)
-    return c.json({ error: 'Invalid or expired token' }, 401)
-  }
+app.post('/connect-broker', ...requireProUser({ message: 'Broker connect is a Pro feature.' }), async (c) => {
+  const uid = String(c.get('uid'))
 
   let body;
   try {
@@ -517,62 +567,31 @@ app.post('/connect-broker', async (c) => {
   if (!server || !accountId || !password) {
     return c.json({ error: 'Missing server, accountId, or password' }, 400)
   }
+  // accountId is the MT login this legacy route persists (spec §2.1) — same
+  // shape gate as the 'add' action, before anything reaches Firestore.
+  if (!BROKER_LOGIN.test(String(accountId))) {
+    return c.json({ error: 'Invalid accountId' }, 400)
+  }
 
   const brokerType = platform === 'mt4' ? 'mt4' : 'mt5'
 
-  try {
-    const userDoc = await db.collection('users').doc(uid).get()
-    const userData = userDoc.data() || {}
-    if (!isSyncAllowed(userData)) {
-      return c.json({
-        error: 'Pro subscription required',
-        message: 'Broker connect is a Pro feature.',
-      }, 403)
-    }
-    const unverified = assertEmailVerified(c, userData)
-    if (unverified) return unverified
-
-    return handleBrokerAdd(c, uid, {
-      login: accountId,
-      password,
-      server,
-      brokerType,
-      accountName: String(server),
-      legacyResponse: true
-    })
-  } catch (err: any) {
-    console.error('[connect-broker]', err.message)
-    const msg = err.message || 'Failed to connect broker'
-    if (/invalid|auth|credential|password|login/i.test(msg)) {
-      return c.json({ error: 'Invalid broker credentials. Check login, password, and server name.' }, 401)
-    }
-    return handleRouteError('connect-broker', err, c)
-  }
+  // handleBrokerAdd owns all error mapping (credential 401s, in-progress 409s,
+  // sanitized 500s) — nothing here can throw past it.
+  return handleBrokerAdd(c, uid, {
+    login: accountId,
+    password,
+    server,
+    brokerType,
+    accountName: String(server),
+    legacyResponse: true
+  })
 })
 
 // ── 4. Generate API Key Route ────────────────────────────────────────────────
-app.post('/generate-api-key', async (c) => {
-  let uid: string
-  try {
-    uid = await getUidFromContext(c)
-  } catch (err: any) {
-    console.error('[generate-api-key] verifyIdToken failed:', err?.message || err)
-    return c.json({ error: 'Invalid or expired token' }, 401)
-  }
+app.post('/generate-api-key', ...requireProUser({ message: 'MT5/TradingView Auto-Sync is a Pro feature. Upgrade to generate an API key.' }), async (c) => {
+  const uid = String(c.get('uid'))
 
   try {
-    const userDoc = await db.collection('users').doc(uid).get()
-    const userData = userDoc.data() || {}
-
-    if (!isSyncAllowed(userData)) {
-      return c.json({
-        error: 'Pro subscription required',
-        message: 'MT5/TradingView Auto-Sync is a Pro feature. Upgrade to generate an API key.',
-      }, 403)
-    }
-    const unverified = assertEmailVerified(c, userData)
-    if (unverified) return unverified
-
     // Keys are stored hashed, so an existing key can no longer be re-read and
     // returned. Rotating is the only option: revoke the old record, mint a new
     // secret, and show it once.
@@ -928,6 +947,12 @@ app.post('/reset-trades', async (c) => {
     await db.collection('users').doc(uid).set({
       totalTradesLogged: 0,
       analytics: emptyTradeAnalytics(),
+      // The server-maintained session aggregate must reset with the trades it
+      // counts — left behind, a re-sync double-counts every bucket, and the
+      // stale counters are version-consistent so the lazy rebuild gate would
+      // trust them forever. The zeroed map (version stamped) IS the correct
+      // full-rebuild result for an empty trade set.
+      sessionAnalytics: emptySessionAnalytics(),
     }, { merge: true })
 
     console.log(`[reset-trades] Wiped trades for uid=${uid}`)
@@ -993,9 +1018,21 @@ const handleBrokerSyncPoller = async (c: any) => {
         uniqueUsers.add(uid)
         await scrubLegacyBrokerCredentials(uid)
       }
+      const accountData = accountDoc.data() || {}
       await accountDoc.ref.update({
-        credentialStorage: 'client-local',
-        ...deletionPatch(ACCOUNT_CREDENTIAL_FIELDS, credentialDeleteSentinel),
+        // Never downgrade an account already migrated to server-held metadata
+        // (connect/adopt write 'client-session'); a crash between connect's
+        // initial set and its terminal update lands here within 5 minutes.
+        credentialStorage: accountData.credentialStorage === 'client-session'
+          ? 'client-session'
+          : 'client-local',
+        // 'login' is persisted §2.1 account *metadata* (written by add/adopt),
+        // not a credential — deleting it here would strand sync on both sides
+        // once the client drains localStorage. Scrub everything else.
+        ...deletionPatch(
+          ACCOUNT_CREDENTIAL_FIELDS.filter((field) => field !== 'login'),
+          credentialDeleteSentinel,
+        ),
         syncJobState: 'client-managed',
         nextSyncAt: null,
         updatedAt: new Date().toISOString(),

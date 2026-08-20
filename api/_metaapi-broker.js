@@ -2,6 +2,8 @@
 
 import MetaApi from 'metaapi.cloud-sdk/esm-node';
 import { computePips, outcomeForPnl, isGoldSymbol } from '../src/lib/goldContract.js';
+// sessionEngine.js, not goldSessions.js — goldSessions.js imports React.
+import { SESSION_ENGINE_VERSION, resolveSessionAt } from '../src/lib/sessionEngine.js';
 
 let apiClient = null;
 
@@ -50,6 +52,12 @@ function normalizeDeal(deal, ctx, entryDeal = null) {
   // Gold pip math only applies to gold: a EURUSD deal on the same account
   // used to get pips wrong by orders of magnitude.
   const pips = diff == null || !isGoldSymbol(deal.symbol || 'XAUUSD') ? null : computePips(diff);
+  // Canonical entry instant (§2.2): openTime, falling back to closeTime for
+  // MT4 deals that carry no entry. sessionCode stays in the rules enum-or-null;
+  // 'Unknown' is an analytics bucket and is never stored on a document.
+  // sessionResolvedAt is stamped by persistBrokerTrades — no timestamp factory here.
+  const entryTimestampUtc = openTime ?? closeTime.toISOString();
+  const sessionCode = resolveSessionAt(entryTimestampUtc)?.code ?? null;
 
   return {
     positionId,
@@ -74,6 +82,10 @@ function normalizeDeal(deal, ctx, entryDeal = null) {
     brokerServer: ctx.server,
     market: 'GOLD',
     outcome: outcomeForPnl(netPnl),
+    entryTimestampUtc,
+    sessionCode,
+    sessionSource: 'broker',
+    sessionEngineVersion: SESSION_ENGINE_VERSION,
   };
 }
 

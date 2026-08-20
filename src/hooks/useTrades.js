@@ -144,8 +144,22 @@ export function useTrades(user) {
   };
   const editTrade = async (id, updatedData) => {
     if (!user?.uid) throw new Error('Not authenticated');
-    await repository.editTrade(user.uid, id, updatedData);
-    setTrades((current) => current.map((trade) => trade.id === id ? { ...trade, ...updatedData } : trade));
+    // The repository re-derives the session tag inside its transaction, so what
+    // it applied is wider than what the form sent. Merging the form payload
+    // alone leaves a version-matched but stale `sessionCode` on the local copy,
+    // which getTradeSessionCode trusts over the instant — the trade would keep
+    // reporting under its pre-edit session until a page reload.
+    const applied = (await repository.editTrade(user.uid, id, updatedData)) || updatedData;
+    // olderRef, not just the rendered array: every trade past the live 100-doc
+    // window lives only there, and the next listener event rebuilds `trades`
+    // from it — silently reverting the edit the user just watched land.
+    olderRef.current = olderRef.current.map((trade) => (
+      trade.id === id ? { ...trade, ...applied } : trade
+    ));
+    recentRef.current = recentRef.current.map((trade) => (
+      trade.id === id ? { ...trade, ...applied } : trade
+    ));
+    setTrades((current) => current.map((trade) => trade.id === id ? { ...trade, ...applied } : trade));
   };
   const resetTrades = async () => {
     if (!user?.uid) throw new Error('Not authenticated');

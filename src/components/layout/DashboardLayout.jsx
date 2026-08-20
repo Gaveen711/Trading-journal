@@ -26,6 +26,9 @@ import { useSessionBrokerAccounts, useSessionWallet } from '../../app/di/Authent
 import Logo from '../Logo';
 import { useTrades } from '../../hooks/useTrades';
 import { useJournals } from '../../hooks/useJournals';
+import { useSetups } from '../../hooks/useSetups';
+import { useDisciplineSettings } from '../../hooks/useDisciplineSettings';
+import { useDisciplineViolations } from '../../hooks/useDisciplineViolations';
 import { useToast } from '../ToastContext';
 import { DashboardRightSidebar } from './DashboardRightSidebar';
 import { AppDialog } from '../app/AppDialog';
@@ -272,6 +275,27 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
 
   const displayedTrades = syncPermissions.tradeHistory ? trades : [];
   const displayedWalletBalance = syncPermissions.accountBalance ? walletBalance : 0;
+
+  // Setup catalog and discipline settings/flags, wired once here so every route
+  // reads the same catalog and the same rule set through the outlet context.
+  const {
+    setups, setupsById, resolveSetup, createSetup, renameSetup, mergeSetups, archiveSetup, deleteSetup,
+    loading: isLoadingSetups,
+  } = useSetups(user);
+  const {
+    rules: disciplineRules, enabledRuleIds, saveRules: saveDisciplineRules,
+    isSaving: isSavingDisciplineRules, loading: isLoadingDisciplineRules,
+  } = useDisciplineSettings(user);
+  // Fed the DISPLAYED trade list and balance on purpose: with the balance
+  // permission off the risk rule sees no balance and fails open, which is the
+  // documented behaviour rather than flagging against a balance the user has
+  // withheld.
+  const { violations: disciplineViolations, byTradeId: disciplineViolationsByTradeId, indeterminateDayKey: indeterminateDisciplineDayKey } = useDisciplineViolations({
+    trades: displayedTrades,
+    hasMore: hasMoreTrades,
+    rules: disciplineRules,
+    accountBalance: displayedWalletBalance,
+  });
 
   const navigation = [
     { id: '', name: 'Dashboard', icon: LayoutDashboard, group: 'Workspace' },
@@ -566,10 +590,16 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <div className="dashboard-command-chip hidden items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 lg:flex">
+            <button
+              type="button"
+              onClick={() => openPortal?.()}
+              title="Manage billing and view invoices"
+              aria-label="Manage billing and view invoices"
+              className="dashboard-command-chip hidden cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/60 lg:flex"
+            >
               <CircleDollarSign className="size-4 text-primary" aria-hidden="true" />
               <span className="text-xs capitalize text-muted-foreground">{planBadgeLabel}</span>
-            </div>
+            </button>
             <div className="dashboard-command-chip hidden rounded-lg border border-border bg-card px-3 py-2 xl:block">
               <span className="figure text-xs text-muted-foreground">
                 {new Date(currentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -617,6 +647,9 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
               trades: displayedTrades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, addTrade, removeTrade, editTrade, resetTrades,
               journals, isLoadingJournals, saveJournalEntry, deleteEntry, deleteAllEntries,
               walletBalance: displayedWalletBalance, updateBalance, monthlyGoal, updateMonthlyGoal, resetWallet, lastMT5Sync,
+              setups, setupsById, resolveSetup, createSetup, renameSetup, mergeSetups, archiveSetup, deleteSetup, isLoadingSetups,
+              disciplineRules, enabledRuleIds, saveDisciplineRules, isSavingDisciplineRules, isLoadingDisciplineRules,
+              disciplineViolations, disciplineViolationsByTradeId, indeterminateDisciplineDayKey,
               isExpanded: isRightSidebarExpanded,
               setIsExpanded: setIsRightSidebarExpanded,
               setShowThemeSelector
@@ -655,6 +688,18 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
                   setShowThemeSelector={setShowThemeSelector}
                   isExpanded={isRightSidebarExpanded}
                   setIsExpanded={setIsRightSidebarExpanded}
+                  // The log form's Setup picker and its discipline pre-submit
+                  // check read these. They are props rather than a second pair
+                  // of hooks so the form shares this layout's single catalog
+                  // listener and single settings listener; omitting them does
+                  // not fail loudly — it degrades to an empty picker and a rule
+                  // check that can never fire — so they are passed here
+                  // explicitly and asserted by a wiring test.
+                  setups={setups}
+                  resolveSetup={resolveSetup}
+                  createSetup={createSetup}
+                  archiveSetup={archiveSetup}
+                  disciplineRules={disciplineRules}
                 />
               </div>
             </aside>

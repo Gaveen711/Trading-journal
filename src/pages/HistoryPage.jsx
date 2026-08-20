@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { Download, XLg, PencilSquare, Share, Sliders } from 'react-bootstrap-icons';
@@ -7,7 +7,8 @@ import { CustomSelect } from '../components/ui/CustomSelect';
 import { EditTradeModal } from '../components/EditTradeModal';
 import { ImageViewerModal } from '../components/ImageViewerModal';
 import { formatSigned, formatSignedNumber, formatPrice, pnlToneClass, toDate, toMillis } from '../lib/tradeUtils';
-import { getTradeStrategyTags } from '../lib/tradeAnalytics.js';
+import { getTradeSetupKey, getTradeStrategyTags } from '../lib/tradeAnalytics.js';
+import { tradeDayKey } from '../lib/disciplineRules.js';
 import { isPaidPlan } from '../lib/entitlements.js';
 import { DirectionCell } from '../components/app/DirectionCell';
 import { SectionCard } from '../components/app/SectionCard';
@@ -50,15 +51,28 @@ const HistorySkeleton = () => (
   </div>
 );
 
-// Chip recipe — neutral rectangle, never a colored pill.
-const chip = (text, key) => (
+// Chip recipe — neutral rectangle, never a colored pill. `title` is the hover
+// sentence a discipline chip carries; omitted everywhere else, so no attribute
+// is emitted.
+const chip = (text, key, title) => (
   <span
     key={key}
+    title={title}
     className="inline-flex h-[18px] items-center rounded-sm border border-border px-1.5 font-mono text-[11px] leading-none text-muted-foreground"
   >
     {text}
   </span>
 );
+
+const dash = <span className="text-muted-foreground">—</span>;
+
+// Column-width labels for the Rules chips; the full sentence lives in `title`
+// and in the expanded row, which is where a flag is actually read.
+const RULE_CHIP_LABEL = {
+  maxTradesPerDay: 'Limit',
+  maxRiskPercent: 'Risk',
+  revengeWindow: 'Revenge',
+};
 
 const formatTradeTime = (timestamp) => {
   const dateObj = toDate(timestamp);
@@ -146,8 +160,18 @@ function DetailField({ label, value, figure = false }) {
 }
 
 export function HistoryPage() {
-  const { trades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades, removeTrade, editTrade, plan, setShowPricingModal } = useOutletContext();
+  const {
+    trades, isLoadingTrades, isLoadingMore, hasMoreTrades, loadMoreTrades, loadAllTrades,
+    removeTrade, editTrade, plan, setShowPricingModal,
+    setups, setupsById, resolveSetup, createSetup, archiveSetup,
+    enabledRuleIds, disciplineViolationsByTradeId, indeterminateDisciplineDayKey,
+  } = useOutletContext();
   const toast = useToast();
+
+  // Discipline is free-plan and advisory: the column, the filter, and the
+  // expanded-row section all appear together the moment a rule is armed, and
+  // all disappear together when none is.
+  const hasEnabledRules = (enabledRuleIds?.length || 0) > 0;
 
   // Primary layout filters
   const [filterSearch, setFilterSearch] = useState('');
@@ -156,7 +180,8 @@ export function HistoryPage() {
 
   // Advanced collapsible filters
   const [filterOutcome, setFilterOutcome] = useState('');
-  const [filterStrategy, setFilterStrategy] = useState('');
+  const [filterSetup, setFilterSetup] = useState('');
+  const [filterDiscipline, setFilterDiscipline] = useState('');
   const [filterMood, setFilterMood] = useState('');
   const [filterGrade, setFilterGrade] = useState('');
   const [filterTimeframe, setFilterTimeframe] = useState('');
@@ -170,6 +195,27 @@ export function HistoryPage() {
   const [editingTrade, setEditingTrade] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [downloadState, setDownloadState] = useState('idle'); // 'idle' | 'downloading' | 'ready'
+
+  // A day split across the 100-doc pagination boundary holds an arbitrary
+  // subset of itself, so every count- and order-sensitive rule would be wrong
+  // on it. Those rows report `—` and are never claimed clean either.
+  const isIndeterminate = useCallback(
+    (t) => Boolean(indeterminateDisciplineDayKey) && tradeDayKey(t) === indeterminateDisciplineDayKey,
+    [indeterminateDisciplineDayKey]
+  );
+
+  const violationsFor = useCallback(
+    (t) => (t?.id ? disciplineViolationsByTradeId?.get(t.id) || [] : []),
+    [disciplineViolationsByTradeId]
+  );
+
+  // Catalog name for the bucket the trade reports under. Null covers both
+  // 'untagged' and an id whose setup was hard-deleted — neither has a name to
+  // show, and inventing one would be worse than a dash.
+  const setupNameFor = useCallback(
+    (t) => resolveSetup?.(getTradeSetupKey(t, setupsById))?.name || null,
+    [resolveSetup, setupsById]
+  );
 
   const handleFilterSearch = (val) => {
     setFilterSearch(val);
@@ -193,12 +239,48 @@ export function HistoryPage() {
     setFilterDir('');
     setFilterSession('');
     setFilterOutcome('');
-    setFilterStrategy('');
+    setFilterSetup('');
+    setFilterDiscipline('');
     setFilterMood('');
     setFilterGrade('');
     setFilterTimeframe('');
     setVisibleCount(30);
   };
+
+  // Setup lands after Direction and Rules lands last — a fixed order, so the
+  // table never reshuffles as rules are armed or disarmed.
+  const historyColumns = useMemo(() => {
+    const columns = [...HISTORY_COLUMNS];
+    columns.splice(columns.findIndex((c) => c.id === 'direction') + 1, 0, {
+      id: 'setup',
+      header: 'Setup',
+      hideBelow: 'md',
+      cell: (t) => {
+        const name = setupNameFor(t);
+        return name ? chip(name) : dash;
+      },
+    });
+    if (hasEnabledRules) {
+      columns.push({
+        id: 'rules',
+        header: 'Rules',
+        hideBelow: 'md',
+        cell: (t) => {
+          if (isIndeterminate(t)) return dash;
+          const rows = violationsFor(t);
+          if (!rows.length) return dash;
+          return (
+            <div className="flex flex-wrap gap-1">
+              {rows.map((v, idx) =>
+                chip(RULE_CHIP_LABEL[v.ruleId] || 'Rule', `${v.ruleId}-${idx}`, v.message)
+              )}
+            </div>
+          );
+        },
+      });
+    }
+    return columns;
+  }, [hasEnabledRules, isIndeterminate, setupNameFor, violationsFor]);
 
   // Filter and Sort logic
   const filteredAndSortedTrades = useMemo(() => {
@@ -231,9 +313,17 @@ export function HistoryPage() {
         }
       }
 
-      // Strategy filter
-      if (filterStrategy) {
-        if (!getTradeStrategyTags(t).includes(filterStrategy)) return false;
+      // Setup filter — matched in memory against the same bucket key the
+      // Setups analytics counts under (R4: no server-side setupId query).
+      if (filterSetup && getTradeSetupKey(t, setupsById) !== filterSetup) return false;
+
+      // Discipline filter. Indeterminate rows drop out of both sides: they are
+      // not known to have broken a rule, and they are not known to be clean.
+      if (filterDiscipline && hasEnabledRules) {
+        if (isIndeterminate(t)) return false;
+        const broke = violationsFor(t).length > 0;
+        if (filterDiscipline === 'breaks' && !broke) return false;
+        if (filterDiscipline === 'clean' && broke) return false;
       }
 
       // Mood, Grade, Timeframe
@@ -266,7 +356,9 @@ export function HistoryPage() {
       });
     }
     return filtered;
-  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterStrategy, filterMood, filterGrade, filterTimeframe, filterSort]);
+  }, [trades, filterSearch, filterDir, filterOutcome, filterSession, filterSetup, filterDiscipline,
+    filterMood, filterGrade, filterTimeframe, filterSort, setupsById, hasEnabledRules,
+    isIndeterminate, violationsFor]);
 
   // Filtered metrics calculation
   const filteredMetrics = useMemo(() => {
@@ -292,18 +384,16 @@ export function HistoryPage() {
     };
   }, [filteredAndSortedTrades]);
 
-  const uniqueStrategies = useMemo(() => {
-    const strats = new Set();
-    trades.forEach(t => {
-      getTradeStrategyTags(t).forEach(s => strats.add(s));
-    });
-    return Array.from(strats).sort();
-  }, [trades]);
-
-  const strategyOptions = [
-    { value: '', label: 'All strategies' },
-    ...uniqueStrategies.map(s => ({ value: s, label: s }))
-  ];
+  // The catalog, not the trades: a setup with no trades yet still belongs in
+  // the picker. Archived and merged docs stay out — a merged setup's trades
+  // already report under its target.
+  const setupOptions = useMemo(() => ([
+    { value: '', label: 'All setups' },
+    ...(setups || [])
+      .filter((s) => !s.archived && !s.mergedInto)
+      .map((s) => ({ value: s.id, label: s.name })),
+    { value: 'untagged', label: 'Untagged' },
+  ]), [setups]);
 
   const displayedTrades = useMemo(() => {
     return filteredAndSortedTrades.slice(0, visibleCount);
@@ -412,10 +502,12 @@ export function HistoryPage() {
 
   const renderTradeDetail = (t) => {
     const strat = getTradeStrategyTags(t)[0] || 'Unclassified';
+    const rowViolations = hasEnabledRules && !isIndeterminate(t) ? violationsFor(t) : [];
     return (
       <div className="grid gap-4 border-t border-border bg-muted/30 p-4 text-left">
         {/* Detailed fields */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          <DetailField label="Setup" value={setupNameFor(t)} />
           <DetailField label="Strategy" value={strat} />
           <DetailField label="Session" value={t.session} />
           <DetailField label="Risk percent" value={t.riskPercent ? `${t.riskPercent}%` : null} figure />
@@ -427,6 +519,16 @@ export function HistoryPage() {
           <DetailField label="Setup grade" value={t.setupGrade} />
           <DetailField label="Auto R:R" value={t.autoRR ? `1:${t.autoRR}` : null} figure />
         </div>
+
+        {/* Discipline — the full sentence behind each Rules chip. */}
+        {rowViolations.length > 0 && (
+          <div>
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Discipline</span>
+            <div className="flex flex-wrap gap-1.5">
+              {rowViolations.map((v, idx) => chip(v.message, `${v.ruleId}-${idx}`))}
+            </div>
+          </div>
+        )}
 
         {/* Confluences and structure */}
         {((t.marketStructure && t.marketStructure.length > 0) || (t.confluenceFactors && t.confluenceFactors.length > 0)) && (
@@ -609,7 +711,12 @@ export function HistoryPage() {
 
         {/* Advanced filters */}
         {showMoreFilters && (
-          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          <div
+            className={cn(
+              'mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3',
+              hasEnabledRules ? 'lg:grid-cols-4' : 'lg:grid-cols-6'
+            )}
+          >
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">Outcome</span>
               <CustomSelect
@@ -626,14 +733,30 @@ export function HistoryPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Strategy</span>
+              <span className="text-xs font-medium text-muted-foreground">Setup</span>
               <CustomSelect
-                value={filterStrategy}
-                onChange={setFilterStrategy}
-                placeholder="All strategies"
-                options={strategyOptions}
+                value={filterSetup}
+                onChange={setFilterSetup}
+                placeholder="All setups"
+                options={setupOptions}
               />
             </div>
+
+            {hasEnabledRules && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Discipline</span>
+                <CustomSelect
+                  value={filterDiscipline}
+                  onChange={setFilterDiscipline}
+                  placeholder="All trades"
+                  options={[
+                    { value: '', label: 'All trades' },
+                    { value: 'breaks', label: 'Rule breaks only' },
+                    { value: 'clean', label: 'Clean only' }
+                  ]}
+                />
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">Mood</span>
@@ -713,7 +836,7 @@ export function HistoryPage() {
       >
         <DataTable
           caption="Trade history"
-          columns={HISTORY_COLUMNS}
+          columns={historyColumns}
           rows={displayedTrades}
           getRowId={(t) => t.id}
           sort={SORT_TO_COLUMN[filterSort] || null}
@@ -754,6 +877,14 @@ export function HistoryPage() {
           setShowPricingModal={setShowPricingModal}
           onSave={onSaveEdit}
           onClose={() => setEditingTrade(null)}
+          // The modal's Setup picker takes the FULL catalog (archived docs
+          // included, so a collision offers Restore rather than a duplicate
+          // slug). Without these the picker renders empty and a trade can only
+          // be untagged, never re-tagged — a silent degrade, so a wiring test
+          // asserts they are here.
+          setups={setups}
+          createSetup={createSetup}
+          archiveSetup={archiveSetup}
         />
       )}
 
