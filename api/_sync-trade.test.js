@@ -330,7 +330,7 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
   });
 
   describe('session tagging (spec §2.2 webhook write path)', () => {
-    // Mocks an existing open trade doc that was tagged 'Asia' at open time.
+    // Mocks an existing open trade doc that was tagged 'SydneyTokyo' at open time.
     // The tag deliberately contradicts what the close instant would resolve to
     // (16:30Z on 2026-01-14 → LondonNY), so any close-path re-derivation shows
     // up as the wrong bucket rather than passing by coincidence.
@@ -348,7 +348,7 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
             status: 'open',
             openTime: '2026-01-14T02:00:00Z',
             entryTimestampUtc: '2026-01-14T02:00:00.000Z',
-            sessionCode: 'Asia',
+            sessionCode: 'SydneyTokyo',
             sessionSource: 'webhook',
             sessionEngineVersion: SESSION_ENGINE_VERSION,
           }),
@@ -449,10 +449,10 @@ describe('EA -> Cloud Function -> Firestore (sync-trade)', () => {
         totalTradesLogged: { type: 'increment', value: 1 },
         'analytics.tradeCount': { type: 'increment', value: 1 },
         'analytics.totalPnl': { type: 'increment', value: 496.5 },
-        'sessionAnalytics.buckets.Asia.tradeCount': { type: 'increment', value: 1 },
-        'sessionAnalytics.buckets.Asia.totalPnl': { type: 'increment', value: 496.5 },
-        'sessionAnalytics.buckets.Asia.wins': { type: 'increment', value: 1 },
-        'sessionAnalytics.buckets.Asia.grossProfit': { type: 'increment', value: 496.5 },
+        'sessionAnalytics.buckets.SydneyTokyo.tradeCount': { type: 'increment', value: 1 },
+        'sessionAnalytics.buckets.SydneyTokyo.totalPnl': { type: 'increment', value: 496.5 },
+        'sessionAnalytics.buckets.SydneyTokyo.wins': { type: 'increment', value: 1 },
+        'sessionAnalytics.buckets.SydneyTokyo.grossProfit': { type: 'increment', value: 496.5 },
       });
       // Bucketed under the stored open tag, never re-derived from the close
       // instant (16:30Z → LondonNY) and never dumped in Unknown.

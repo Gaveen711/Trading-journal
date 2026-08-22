@@ -31,7 +31,11 @@ const DELTA_SIGN = { up: '+', down: '−', flat: '' };
  * @param {'stacked'|'inline'} [props.layout='stacked']
  * @param {React.ComponentType} [props.icon]       layout="inline" ONLY. Stacked cards get no icon.
  * @param {boolean} [props.interactive=false]
- * @param {(revealed: boolean) => void} [props.onRevealChange]  hover/focus/click/Enter/Space. Page owns revealed state.
+ * @param {(revealed: boolean) => void} [props.onRevealChange]
+ *        Peek-and-pin. Hover or focus reveals for as long as it lasts; click,
+ *        Enter or Space pins the reveal so it survives the pointer leaving, and
+ *        again to unpin. Fires only when the resulting state actually changes.
+ *        Page owns revealed state.
  * @param {boolean} [props.locked=false]           Redaction, not blur: the real value never enters the DOM.
  * @param {() => void} [props.onLockedActivate]
  * @param {string} [props.lockLabel='Unlock with Pro']
@@ -54,15 +58,33 @@ export function StatCard({
   loading = false,
   className,
 }) {
+  // Peek and pin, tracked as two independent inputs rather than one flag.
+  //
+  // A single toggled flag made hover and click fight each other: hovering set
+  // it true, so the click that followed on the very same card toggled it back
+  // to false and the value collapsed under the pointer. Deriving the reveal
+  // from (pointer/focus present) OR (pinned) removes the conflict, and gives
+  // touch — which has no hover at all — the tap-to-pin behaviour it needs.
+  const peekingRef = useRef(false);
+  const pinnedRef = useRef(false);
   const revealedRef = useRef(false);
   const isInteractive = interactive || locked;
   const valueNode = locked ? '••••' : value;
   const toneClass = TONE_CLASS[tone] ?? TONE_CLASS.neutral;
 
-  const emitReveal = (next) => {
+  /** Publishes the derived state, and only when it actually changed. */
+  const syncReveal = () => {
     if (locked) return;
+    const next = peekingRef.current || pinnedRef.current;
+    if (next === revealedRef.current) return;
     revealedRef.current = next;
     onRevealChange?.(next);
+  };
+
+  const setPeeking = (next) => {
+    if (locked) return;
+    peekingRef.current = next;
+    syncReveal();
   };
 
   const handleActivate = () => {
@@ -70,7 +92,8 @@ export function StatCard({
       onLockedActivate?.();
       return;
     }
-    emitReveal(!revealedRef.current);
+    pinnedRef.current = !pinnedRef.current;
+    syncReveal();
   };
 
   const overlayButton = isInteractive ? (
@@ -78,10 +101,10 @@ export function StatCard({
       type="button"
       className="absolute inset-0 rounded-xl"
       aria-label={locked ? `${lockLabel}: ${label}` : label}
-      onMouseEnter={() => emitReveal(true)}
-      onMouseLeave={() => emitReveal(false)}
-      onFocus={() => emitReveal(true)}
-      onBlur={() => emitReveal(false)}
+      onMouseEnter={() => setPeeking(true)}
+      onMouseLeave={() => setPeeking(false)}
+      onFocus={() => setPeeking(true)}
+      onBlur={() => setPeeking(false)}
       onClick={handleActivate}
     />
   ) : null;

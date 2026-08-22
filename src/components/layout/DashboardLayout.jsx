@@ -60,14 +60,8 @@ import {
 } from '../ui/dropdown-menu';
 import { cn } from '../../lib/utils';
 import { isPaidPlan } from '../../lib/entitlements.js';
+import { ACCENT_TEMPLATES } from '../../lib/accentTemplates.js';
 
-const ACCENT_TEMPLATES = [
-  { id: 'sage-modern', name: 'Honey teal', desc: 'Bronze, teal & deep blue' },
-  { id: 'obsidian-teal', name: 'Obsidian teal', desc: 'Sleek dark teal & platinum' },
-  { id: 'nordic-slate', name: 'Nordic slate', desc: 'Ice blue & frost white' },
-  { id: 'crimson-rust', name: 'Crimson rust', desc: 'Deep terracotta & copper gold' },
-  { id: 'royal-gold', name: 'Royal gold', desc: 'Rich gold & dark bronze' },
-];
 
 // Minimum gap between automatic broker syncs for the same account.
 const BACKGROUND_SYNC_MIN_INTERVAL_MS = 5 * 60 * 1000;
@@ -461,12 +455,15 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
     >
       {/* DESKTOP SIDEBAR */}
       <Sidebar collapsible="icon" className="dashboard-sidebar hidden md:flex">
-        <SidebarHeader className="px-3 pt-4 pb-2">
-          <div className="flex min-h-11 items-center gap-2">
+        <SidebarHeader className="px-3 pt-4 pb-2 group-data-[collapsible=icon]:px-0">
+          {/* Collapsed to the icon rail there is only room for one control per
+              line, so the row becomes a column — side by side the brand mark
+              and the trigger were pressed against each other. */}
+          <div className="flex min-h-11 items-center gap-2 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-2">
             <button
               type="button"
               onClick={() => navigate('/app')}
-              className="dashboard-brand flex min-w-0 flex-1 items-center gap-2.5 rounded-lg"
+              className="dashboard-brand flex min-w-0 flex-1 items-center gap-2.5 rounded-lg group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center"
               aria-label="Go to dashboard"
             >
               <span className="dashboard-brand-mark flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
@@ -477,7 +474,7 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
                 <span className="block truncate font-mono text-[10px] uppercase tracking-[0.16em] text-primary">{planBadgeLabel}</span>
               </span>
             </button>
-            <SidebarTrigger className="ml-auto group-data-[collapsible=icon]:mx-auto" />
+            <SidebarTrigger className="ml-auto group-data-[collapsible=icon]:ml-0" />
           </div>
         </SidebarHeader>
 

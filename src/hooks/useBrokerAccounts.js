@@ -37,6 +37,10 @@ export function useBrokerAccounts() {
   // A ref, not state: the guard must be read and written synchronously between
   // two listener events in the same tick, which a re-render cannot promise.
   const adoptedRef = useRef(new Set());
+  // Accounts this session has disconnected, keyed `uid:accountId`. When the
+  // backend call fails (offline) the doc is left active, so without this the
+  // very next snapshot would resurrect an account the user just removed.
+  const removedRef = useRef(new Set());
 
   useEffect(() => {
     let unsubscribeUser = null;
@@ -99,17 +103,21 @@ export function useBrokerAccounts() {
             tradeCount: Number(userData.lastBrokerSyncCount || 0),
             isActive: true,
           }));
-          setAccounts([...managed, ...legacy]);
+          setAccounts([...managed, ...legacy].filter(
+            (account) => !removedRef.current.has(`${user.uid}:${account.id}`),
+          ));
         } catch (parseError) {
           console.error('Failed to parse local broker accounts:', parseError);
-          setAccounts(serverAccounts.map((account) => ({
-            ...account,
-            platform: account.brokerType || account.platform,
-            managedByWorker: true,
-            requiresReconnect: false,
-            lastSyncTime: toIsoString(account.lastSyncTime),
-            isActive: account.isActive !== false,
-          })));
+          setAccounts(serverAccounts
+            .filter((account) => !removedRef.current.has(`${user.uid}:${account.id}`))
+            .map((account) => ({
+              ...account,
+              platform: account.brokerType || account.platform,
+              managedByWorker: true,
+              requiresReconnect: false,
+              lastSyncTime: toIsoString(account.lastSyncTime),
+              isActive: account.isActive !== false,
+            })));
         }
       };
 
@@ -211,6 +219,8 @@ export function useBrokerAccounts() {
     try {
       const result = await repository.connectBroker({ accountId: login, password, server, platform: brokerType });
       // Metadata is durable; the password is held only for this tab's session.
+      // A reconnect of a previously disconnected account must be visible again.
+      removedRef.current.delete(`${user.uid}:${result.accountId}`);
       const newAccount = { id: result.accountId, accountName, platform: brokerType, server, login, managedByWorker: true };
       writeLocalAccounts(user.uid, [newAccount]);
       writeSessionPassword(user.uid, result.accountId, password);
@@ -295,6 +305,7 @@ export function useBrokerAccounts() {
       writeLocalAccounts(user.uid, remainingLocal);
       // The credential goes with the account it belonged to.
       sessionStorage.removeItem(secretKey(user.uid));
+      removedRef.current.add(`${user.uid}:${accountId}`);
       setAccounts((current) => current.filter((item) => item.id !== accountId));
       return result;
     } catch (operationError) {

@@ -5,11 +5,24 @@ import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
 import { SetupCombobox } from './app/SetupCombobox';
 import { calcPnl, formatCurrency } from '../lib/tradeUtils';
+import { cn } from '../lib/utils';
+import { outcomeForPnl } from '../lib/goldContract.js';
 import { auth, storage } from '../firebase';
 import { useToast } from './ToastContext';
 import { ImageViewerModal } from './ImageViewerModal';
 import { requireProFeature } from '../services/featureGate';
 import { isPaidPlan } from '../lib/entitlements.js';
+
+/**
+ * The form's two alignment tokens.
+ *
+ * Every labelled control in this modal is the same height and every label sits
+ * flush with the field beneath it. Before these, one row could hold a 48px date
+ * picker, a 48px select and a 32px combobox, and the labels carried an `ml-1`
+ * that indented the text 4px past the field border it was labelling.
+ */
+const FIELD_LABEL = 'block text-[10px] font-black uppercase tracking-widest text-foreground/70';
+const FIELD_CONTROL = 'h-11';
 
 export function EditTradeModal({
   trade,
@@ -42,7 +55,7 @@ export function EditTradeModal({
   const [strategies, setStrategies] = useState(trade.strategies || []);
   const [strategyInput, setStrategyInput] = useState('');
   const [date, setDate] = useState(trade.date);
-  
+
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -72,7 +85,7 @@ export function EditTradeModal({
         const file = files[i];
         const uniqueName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${file.name}`;
         const storageRef = ref(storage, `users/${userId}/trades/${uniqueName}`);
-        
+
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         await new Promise((resolve, reject) => {
@@ -139,7 +152,7 @@ export function EditTradeModal({
       pnl: res.pnl ?? 0,
       pips: res.pips ?? 0,
       rr: res.rr,
-      outcome: res.pnl > 0.01 ? 'WIN' : res.pnl < -0.01 ? 'LOSS' : 'BE'
+      outcome: outcomeForPnl(res.pnl)
     };
   }, [formData.entry, formData.exit, formData.lots, formData.swap, formData.sl, formData.tp, direction]);
 
@@ -211,7 +224,7 @@ export function EditTradeModal({
   return (
     <div className="fixed inset-0 z-[150] overflow-y-auto flex items-start sm:items-center justify-center p-4">
       <div className="fixed inset-0 bg-background/60 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
-      
+
       <div className="relative w-full max-w-2xl my-8 card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700 z-10">
         <div className="flex justify-between items-center text-left">
           <div className="space-y-1">
@@ -225,13 +238,14 @@ export function EditTradeModal({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Date</label>
-              <DatePicker value={date} onChange={setDate} />
+              <label className={FIELD_LABEL}>Date</label>
+              <DatePicker value={date} onChange={setDate} className={FIELD_CONTROL} />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Session</label>
-              <CustomSelect 
-                value={session} 
+              <label className={FIELD_LABEL}>Session</label>
+              <CustomSelect
+                className={FIELD_CONTROL}
+                value={session}
                 onChange={setSession}
                 options={[
                   { value: 'Sydney', label: 'Sydney' },
@@ -242,7 +256,7 @@ export function EditTradeModal({
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="modal-setup" className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Setup</label>
+              <label htmlFor="modal-setup" className={FIELD_LABEL}>Setup</label>
               <SetupCombobox
                 id="modal-setup"
                 value={setupId}
@@ -251,9 +265,14 @@ export function EditTradeModal({
                 onCreateSetup={createSetup}
                 onRestoreSetup={archiveSetup ? restoreSetup : undefined}
                 onError={(message) => toast?.(message, 'error')}
+                className={FIELD_CONTROL}
               />
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Strategies</label>
-              <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-[48px] px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('modal-strategy-input')?.focus()}>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+              <label htmlFor="modal-strategy-input" className={FIELD_LABEL}>Strategies</label>
+              <div className="flex flex-col justify-center rounded-xl border border-border/40 bg-card min-h-11 px-2 py-1.5 cursor-text focus-within:border-primary/50 transition-colors" onClick={() => document.getElementById('modal-strategy-input')?.focus()}>
                 <div className="flex flex-wrap gap-1.5 items-center">
                   {strategies.map((tag, i) => (
                     <span key={i} className="flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">
@@ -285,19 +304,18 @@ export function EditTradeModal({
                   />
                 </div>
               </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Direction</label>
+              <label className={FIELD_LABEL}>Direction</label>
               <div className="flex bg-muted rounded-xl p-1 gap-1 border border-border/50 h-11">
-                <button 
+                <button
                   type="button"
                   onClick={() => setDirection('BUY')}
                   className={`flex-1 rounded-lg text-xs font-black transition-all ${direction === 'BUY' ? 'bg-green-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
                 >BUY</button>
-                <button 
+                <button
                   type="button"
                   onClick={() => setDirection('SELL')}
                   className={`flex-1 rounded-lg text-xs font-black transition-all ${direction === 'SELL' ? 'bg-red-500 text-white shadow-lg' : 'hover:bg-background text-muted-foreground hover:text-foreground'}`}
@@ -305,36 +323,39 @@ export function EditTradeModal({
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Lot Size</label>
-              <input 
-                type="text" 
+              <label htmlFor="modal-lots" className={FIELD_LABEL}>Lot Size</label>
+              <input
+                id="modal-lots"
+                type="text"
                 inputMode="decimal"
-                value={formData.lots} 
+                value={formData.lots}
                 onChange={handleNumericChange('lots')}
-                className="input-premium h-11 text-sm font-bold" 
+                className={cn('input-premium w-full text-sm font-bold', FIELD_CONTROL)}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Entry Price</label>
-              <input 
-                type="text" 
+              <label htmlFor="modal-entry" className={FIELD_LABEL}>Entry Price</label>
+              <input
+                id="modal-entry"
+                type="text"
                 inputMode="decimal"
-                value={formData.entry} 
+                value={formData.entry}
                 onChange={handleNumericChange('entry')}
-                className="input-premium h-11 text-sm font-bold" 
+                className={cn('input-premium w-full text-sm font-bold', FIELD_CONTROL)}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Exit Price</label>
-              <input 
-                type="text" 
+              <label htmlFor="modal-exit" className={FIELD_LABEL}>Exit Price</label>
+              <input
+                id="modal-exit"
+                type="text"
                 inputMode="decimal"
-                value={formData.exit} 
+                value={formData.exit}
                 onChange={handleNumericChange('exit')}
-                className="input-premium h-11 text-sm font-bold" 
+                className={cn('input-premium w-full text-sm font-bold', FIELD_CONTROL)}
               />
             </div>
           </div>
@@ -353,17 +374,18 @@ export function EditTradeModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1">Notes</label>
-            <textarea 
-              value={formData.note} 
+            <label htmlFor="modal-note" className={FIELD_LABEL}>Notes</label>
+            <textarea
+              id="modal-note"
+              value={formData.note}
               onChange={e => setFormData({ ...formData, note: e.target.value })}
-              className="input-premium h-24 resize-none text-xs leading-relaxed p-4 w-full" 
+              className="input-premium h-24 w-full resize-none p-4 text-xs leading-relaxed"
             />
           </div>
 
           {/* Screenshots Upload & Edit Zone */}
           <div className="space-y-2 text-left">
-            <label className="text-[10px] font-black uppercase tracking-widest text-foreground/70 ml-1 flex justify-between">
+            <label className={cn(FIELD_LABEL, 'flex justify-between')}>
               <span>Analysis Screenshots</span>
               {!isPaidPlan(plan) && <span className="text-[8px] font-black uppercase tracking-widest text-primary flex items-center gap-1"><LockFill className="w-2.5 h-2.5" /> Pro Feature</span>}
             </label>
@@ -388,8 +410,8 @@ export function EditTradeModal({
 
                 {uploading && (
                   <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/10">
-                    <div 
-                      className="bg-primary h-full rounded-full transition-all duration-300" 
+                    <div
+                      className="bg-primary h-full rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -399,10 +421,10 @@ export function EditTradeModal({
                   <div className="flex flex-wrap gap-2.5 pt-1">
                     {formData.screenshots.map((url, i) => (
                       <div key={i} className="relative w-16 h-16 rounded-xl border border-border/50 overflow-hidden bg-muted group/thumb shadow-sm">
-                        <img 
-                          src={url} 
-                          alt="screenshot preview" 
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity" 
+                        <img
+                          src={url}
+                          alt="screenshot preview"
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setActiveImageUrl(url)}
                         />
                         <button
@@ -419,7 +441,7 @@ export function EditTradeModal({
                 )}
               </div>
             ) : (
-              <div 
+              <div
                 onClick={() => { requireProFeature(plan, setShowPricingModal, toast, 'attach analysis screenshots'); }}
                 className="border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/5 opacity-60 hover:opacity-100 transition-opacity"
               >

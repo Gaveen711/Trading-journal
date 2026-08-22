@@ -80,9 +80,9 @@ export function SessionRail({ now, className }) {
 /**
  * SessionGlyph — the row/cell-scale mark. 14×6px inline. Display-only: a
  * scanning aid beside the stored session text, never the only
- * representation. Unrecognized values (analytics buckets like "Asia" or
- * "Overlap", free text) render all four segments neutral with the raw
- * string in the title.
+ * representation. The four session codes match a desk by name; values with no
+ * single desk behind them (the overlap buckets, Off, Unknown, free text) render
+ * all four segments neutral with the raw string in the title.
  *
  * @param {object} props
  * @param {string} props.session    Stored trade.session value (free text tolerated).

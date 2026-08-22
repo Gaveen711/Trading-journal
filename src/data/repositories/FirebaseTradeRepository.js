@@ -219,14 +219,47 @@ export class FirebaseTradeRepository extends TradeRepository {
     return applied;
   }
 
+  /**
+   * Wipes the trade collection server-side.
+   *
+   * Success is `{ success: true }` from the route, not merely a 2xx. Anything
+   * that intercepts this request — a dev proxy, an auth wall, a CDN error page,
+   * a stale deploy without the route — can answer 200 with a body that is not
+   * this route's, and the old check accepted every one of them. The caller then
+   * reported "Terminal reset complete" while nothing had been deleted, and the
+   * Firestore listener promptly put every trade back on screen. A reset that
+   * did not happen must fail loudly.
+   */
   async resetTrades(userId, idToken) {
     const response = await fetch('/api/reset-trades', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + idToken },
+      cache: 'no-store',
+      headers: {
+        Authorization: 'Bearer ' + idToken,
+        Accept: 'application/json',
+      },
     });
+
+    // Never let a non-JSON body throw over the real failure: an HTML error page
+    // makes .json() raise a SyntaxError that says nothing about what went wrong.
+    const data = await response.json().catch(() => null);
+
+    // Vercel Deployment Protection answers before the route does, so the app
+    // never sees the request at all. Its envelope is recognisable, and saying
+    // so beats "the server did not confirm it" — the fix is a project setting,
+    // not anything the user can do in the app.
+    if (data?.protection || data?.error?.code === '401') {
+      throw new Error(
+        'Blocked before reaching the server: this deployment has Vercel protection enabled. '
+        + 'Disable Deployment Protection for it, or point VITE_API_TARGET at an unprotected backend.'
+      );
+    }
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'Failed to reset trades via API');
+      const message = typeof data?.error === 'string' ? data.error : null;
+      throw new Error(message || `Failed to reset trades (HTTP ${response.status}).`);
+    }
+    if (data?.success !== true) {
+      throw new Error('The reset did not complete — the server did not confirm it. Your trades are unchanged.');
     }
   }
 }

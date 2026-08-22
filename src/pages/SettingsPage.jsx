@@ -9,9 +9,12 @@ import {
 import { Eye, EyeSlash } from 'react-bootstrap-icons';
 import { auth } from '../firebase';
 import { useToast } from '../components/ToastContext';
+import { useSessionBrokerAccounts, useSessionWallet } from '../app/di/AuthenticatedSessionContext.jsx';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { isPaidPlan } from '../lib/entitlements.js';
-import { RULE_BOUNDS, RULE_IDS } from '../lib/disciplineRules.js';
+import { accentTemplateName } from '../lib/accentTemplates.js';
+import { formatCurrency } from '../lib/tradeUtils';
+import { DEFAULT_DISCIPLINE_RULES, RULE_BOUNDS, RULE_IDS } from '../lib/disciplineRules.js';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatusSquare } from '../components/app/StatusSquare';
 import { Button } from '../components/ui/button';
@@ -41,16 +44,27 @@ export function SettingsPage() {
     deleteAllEntries,
     disciplineRules,
     saveDisciplineRules,
+    setups,
+    deleteSetup,
     isSavingDisciplineRules,
     isLoadingDisciplineRules,
   } = useOutletContext();
   const navigate = useNavigate();
   const toast = useToast();
+  // Read straight from the session context rather than threading two more
+  // values through the outlet: the provider already owns the single broker
+  // list every dashboard surface shares.
+  const { accounts: brokerAccounts, removeAccount: removeBrokerAccount } = useSessionBrokerAccounts();
+  // The TRUE balance, not the outlet's `walletBalance` — that one is masked to
+  // 0 when the account-balance sync permission is off, and a top-up computed
+  // from a masked 0 would overwrite the real deposit with just the top-up.
+  const { walletBalance, updateBalance } = useSessionWallet();
   const { isLightMode, toggleTheme, currentTemplate } = useAppTheme();
   const user = auth.currentUser;
 
   const usernameId = useId();
   const darkModeId = useId();
+  const topUpId = useId();
 
   const providerIds = useMemo(
     () => user?.providerData?.map((provider) => provider.providerId) || [],
@@ -68,6 +82,8 @@ export function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [toppingUp, setToppingUp] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resettingTerminal, setResettingTerminal] = useState(false);
 
@@ -166,21 +182,85 @@ export function SettingsPage() {
     }
   };
 
+  /**
+   * Deposits are additive: the stored field is an absolute balance, so a
+   * top-up is read-add-write. The amount is parsed defensively because the
+   * input is free text — a blank or unparseable entry must not write NaN into
+   * the balance every downstream metric divides by.
+   */
+  const handleTopUp = async (event) => {
+    event.preventDefault();
+    const amount = Number(topUpAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast('Enter an amount greater than zero.', 'error');
+      return;
+    }
+    setToppingUp(true);
+    try {
+      const next = Number(((walletBalance || 0) + amount).toFixed(2));
+      await updateBalance(next);
+      setTopUpAmount('');
+      toast(`Wallet topped up. New balance ${formatCurrency(next)}.`, 'success');
+    } catch (error) {
+      toast(error?.message || 'Could not update your wallet balance.', 'error');
+    } finally {
+      setToppingUp(false);
+    }
+  };
+
   const handleResetTerminal = async () => {
     setResetDialogOpen(false);
     setResettingTerminal(true);
     try {
+      // Every store the workspace owns, not just trades. Setup tags and
+      // discipline rules used to survive a "reset", which left the terminal
+      // carrying the old account's configuration.
+      //
+      // Default setups are catalog scaffolding rather than user data, and
+      // `deleteSetup` refuses them outright — only the ones the user created
+      // go. Wiping the trades leaves every setup at zero references, so none
+      // of these deletions can orphan a tag.
+      const customSetups = (setups || []).filter((setup) => !setup.isDefault);
+      // A connected broker would immediately re-import the trades that were
+      // just wiped, so "start fresh" has to include the connection itself.
+      const connectedBrokers = brokerAccounts || [];
+
       // Independent writes, so they run together rather than in series. The
       // journal clear is one batched pass instead of two writes per entry.
-      await Promise.all([
-        resetTrades?.(),
-        resetWallet?.(),
-        updateMonthlyGoal?.(1000),
-        deleteAllEntries?.(),
-      ]);
-      localStorage.removeItem('xau-weekly-summary');
-      localStorage.removeItem('xau-trade-reminders');
-      toast('Terminal reset complete.', 'success');
+      // allSettled, not all: a single rejection must not hide whether the
+      // rest of the wipe landed — a half-reset reported as a flat failure is
+      // what makes users hit the button again.
+      const steps = [
+        ['trades', resetTrades?.()],
+        ['wallet', resetWallet?.()],
+        ['monthly goal', updateMonthlyGoal?.(1000)],
+        ['journal entries', deleteAllEntries?.()],
+        ['discipline rules', saveDisciplineRules?.(DEFAULT_DISCIPLINE_RULES)],
+        ...customSetups.map((setup) => [`setup "${setup.name}"`, deleteSetup?.(setup.id)]),
+        ...connectedBrokers.map((account) => [
+          `broker connection (${account.server || account.accountName || account.id})`,
+          removeBrokerAccount?.(account.id),
+        ]),
+      ];
+      const outcomes = await Promise.allSettled(steps.map(([, task]) => task));
+
+      // Broker sync permissions are per-user device state, so they belong to
+      // the workspace being reset. (The two keys cleared here previously —
+      // 'xau-weekly-summary' and 'xau-trade-reminders' — are written by
+      // nothing in the app; removing them was a no-op.) Theme, template and
+      // sidebar preferences are deliberately kept: they are app chrome, not
+      // terminal data.
+      localStorage.removeItem('xau-sync-permissions-current');
+      if (user?.uid) localStorage.removeItem(`xau-sync-permissions-${user.uid}`);
+
+      const failed = outcomes
+        .map((outcome, index) => (outcome.status === 'rejected' ? steps[index][0] : null))
+        .filter(Boolean);
+      if (failed.length) {
+        toast(`Terminal reset finished, but this could not be cleared: ${failed.join(', ')}.`, 'error');
+      } else {
+        toast('Terminal reset complete.', 'success');
+      }
     } catch (error) {
       toast(error?.message || 'Terminal reset failed. Please try again.', 'error');
     } finally {
@@ -358,13 +438,51 @@ export function SettingsPage() {
 
           <SectionCard
             surface
+            title="Wallet"
+            description="Your starting capital. Trade P&L is applied on top of this figure."
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs text-muted-foreground">Current balance</span>
+                <span className="figure text-sm text-foreground">{formatCurrency(walletBalance || 0)}</span>
+              </div>
+
+              <form onSubmit={handleTopUp} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <label htmlFor={topUpId} className="text-xs font-medium text-muted-foreground">
+                    Add funds
+                  </label>
+                  <Input
+                    id={topUpId}
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="0.00"
+                    value={topUpAmount}
+                    onChange={(event) => setTopUpAmount(event.target.value)}
+                  />
+                </div>
+                <Button type="submit" disabled={toppingUp} className="shrink-0">
+                  {toppingUp ? 'Adding…' : 'Top up'}
+                </Button>
+              </form>
+
+              <p className="text-xs text-muted-foreground">
+                Adds to the balance rather than replacing it. To correct a mistake, reset the
+                terminal or top up by the difference.
+              </p>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            surface
             title="Protected workspace"
             description="Sensitive billing, password, and sync changes stay grouped away from everyday dashboard actions."
           >
             <div className="flex flex-col gap-3 rounded-lg border border-destructive/20 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
-                Resetting the terminal clears trades, wallet history, journal entries, and reminders.
-                It cannot be undone.
+                Resetting the terminal clears trades, wallet history, journal entries, your setup
+                tags, discipline rules, and any connected broker. It cannot be undone.
               </p>
               <Button
                 variant="destructive"
@@ -417,7 +535,7 @@ export function SettingsPage() {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground">Palette</span>
                 <span className="text-sm text-foreground">
-                  {formatTemplateName(currentTemplate)}
+                  {accentTemplateName(currentTemplate)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-4">
@@ -457,8 +575,9 @@ export function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset the terminal?</AlertDialogTitle>
             <AlertDialogDescription>
-              All trades, wallet history, journal entries, and trade reminders will be removed. This
-              cannot be undone.
+              All trades, wallet history, journal entries, and your custom setup tags will be
+              removed, any connected broker is disconnected, and discipline rules and the monthly
+              goal return to their defaults. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -577,13 +696,6 @@ function PasswordInput({ label, value, onChange, autoComplete }) {
       </div>
     </div>
   );
-}
-
-function formatTemplateName(template) {
-  return String(template || '')
-    .split('-')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
 }
 
 function getAuthErrorMessage(error) {

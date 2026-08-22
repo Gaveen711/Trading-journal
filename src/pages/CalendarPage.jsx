@@ -3,6 +3,12 @@ import { useOutletContext } from 'react-router-dom';
 import { useMonthTrades } from '../hooks/useMonthTrades';
 import { pad2, formatNumber, formatSigned, pnlToneClass } from '../lib/tradeUtils';
 import { DirectionCell } from '../components/app/DirectionCell';
+import {
+  getTradeOutcome,
+  getTradeSessionCode,
+  getTradeSetupKey,
+} from '../lib/tradeAnalytics.js';
+import { PRIMARY_SESSIONS, SESSION_LABELS, primarySessionForCode } from '../lib/sessionEngine.js';
 import { ChevronLeft, ChevronRight } from 'react-bootstrap-icons';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatCard } from '../components/app/StatCard';
@@ -16,7 +22,10 @@ const WEEKDAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const pnlTone = pnlToneClass;
 
 export function CalendarPage() {
-  const { user, plan } = useOutletContext();
+  // `setupsById` is what turns a stored setupId into the name the rest of the
+  // app shows; without it this page grouped on the raw legacy `setup` string
+  // and reported renamed or merged setups as if they were still separate.
+  const { user, plan, setupsById, resolveSetup } = useOutletContext();
 
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear, setCalYear] = useState(new Date().getFullYear());
@@ -67,6 +76,8 @@ export function CalendarPage() {
       if (dayTrs.length > 0) {
         activeDays++;
         const dayPnl = dayTrs.reduce((sum, t) => sum + (t.pnl || 0), 0);
+        // A green DAY is still a P&L question — a day has no stored outcome.
+        // Individual trades below go through getTradeOutcome instead.
         if (dayPnl > 0.01) winDays++;
       }
     }
@@ -75,31 +86,35 @@ export function CalendarPage() {
     const totalPips = monthlyTrades.reduce((sum, t) => sum + (Number(t.pips) || 0), 0);
 
     // ── Monthly Analytics (Session & Setup) ──────────────────────────────────
+    // Bucketed on the same key the Setups analytics counts under, then resolved
+    // to the catalog's current name — so a renamed setup stays one row here and
+    // a merged one reports under its target, exactly as it does elsewhere.
     const setupStats = {};
     monthlyTrades.forEach(t => {
-      const sName = t.setup || 'Direct Execution';
-      if (!setupStats[sName]) setupStats[sName] = { pnl: 0, count: 0, wins: 0 };
-      setupStats[sName].pnl += (t.pnl || 0);
-      setupStats[sName].count++;
-      if (t.pnl > 0.01) setupStats[sName].wins++;
+      const key = getTradeSetupKey(t, setupsById);
+      if (!setupStats[key]) setupStats[key] = { pnl: 0, count: 0, wins: 0 };
+      setupStats[key].pnl += (t.pnl || 0);
+      setupStats[key].count++;
+      if (getTradeOutcome(t) === 'WIN') setupStats[key].wins++;
     });
-    const sortedSetups = Object.entries(setupStats).map(([name, data]) => ({
-      name,
+    const sortedSetups = Object.entries(setupStats).map(([key, data]) => ({
+      name: key === 'untagged' ? 'Untagged' : (resolveSetup?.(key)?.name || key),
       ...data,
       winRate: data.count > 0 ? (data.wins / data.count) * 100 : 0
     })).sort((a, b) => b.pnl - a.pnl).slice(0, 2);
 
-    const sessionStats = { 'Sydney': { pnl: 0, count: 0 }, 'Tokyo': { pnl: 0, count: 0 }, 'London': { pnl: 0, count: 0 }, 'New York': { pnl: 0, count: 0 } };
+    // Through the engine, not a local string matcher. The matcher this replaces
+    // keyed on the free-text `session` field with its own spelling list (it even
+    // carried a 'tokoyo' typo) and folded Sydney into Tokyo, so this page could
+    // report a different best session than Analytics did for the same month.
+    const sessionStats = Object.fromEntries(
+      PRIMARY_SESSIONS.map((name) => [name, { pnl: 0, count: 0 }])
+    );
     monthlyTrades.forEach(t => {
-      let s = t.session || '';
-      if (s.toLowerCase().includes('sydney')) s = 'Sydney';
-      else if (s.toLowerCase().includes('tokyo') || s.toLowerCase().includes('tokoyo') || s.toLowerCase().includes('asia')) s = 'Tokyo';
-      else if (s.toLowerCase().includes('london')) s = 'London';
-      else if (s.toLowerCase().includes('york') || s.toLowerCase().includes('new') || s.toLowerCase().includes('ny')) s = 'New York';
-      else return;
-
-      sessionStats[s].pnl += (t.pnl || 0);
-      sessionStats[s].count++;
+      const session = primarySessionForCode(getTradeSessionCode(t));
+      if (!session) return;
+      sessionStats[session].pnl += (t.pnl || 0);
+      sessionStats[session].count++;
     });
 
     let bestSession = '';
@@ -107,7 +122,7 @@ export function CalendarPage() {
     Object.entries(sessionStats).forEach(([name, data]) => {
       if (data.count > 0 && data.pnl > bestSessionPnl) {
         bestSessionPnl = data.pnl;
-        bestSession = name;
+        bestSession = SESSION_LABELS[name] || name;
       }
     });
 
@@ -147,7 +162,7 @@ export function CalendarPage() {
       bestSetup,
       smartTip
     };
-  }, [trades, calMonth, calYear]);
+  }, [trades, calMonth, calYear, setupsById, resolveSetup]);
 
   const {
     tradesByDate,
@@ -199,6 +214,13 @@ export function CalendarPage() {
           key={`day-${d}`}
           type="button"
           aria-pressed={isSelected}
+          // Without this a screen reader announces the cell as just its day
+          // number: neither the date nor the result it is reporting.
+          aria-label={`${fmtDate(formatDate(calYear, calMonth, d))}${
+            hasTrades
+              ? `, ${ts.length} ${ts.length === 1 ? 'trade' : 'trades'}, net ${formatSigned(pnl, 0)}`
+              : ', no trades'
+          }`}
           onClick={() => setSelectedCalDay(d)}
           className={cn(
             'flex min-h-[76px] sm:min-h-[104px] flex-col justify-between rounded-md border p-2 text-left transition-colors',
@@ -226,9 +248,11 @@ export function CalendarPage() {
       );
     }
 
-    // 3. Next Month Padding
+    // 3. Next Month Padding — pad to a whole number of weeks, not to a fixed
+    // 42 cells. A short month that starts early needs five rows; the fixed
+    // count always drew six, leaving a blank row hanging under the grid.
     const totalCellsFilled = firstDayIndex + daysInMonth;
-    const nextMonthPadding = 42 - totalCellsFilled;
+    const nextMonthPadding = Math.ceil(totalCellsFilled / 7) * 7 - totalCellsFilled;
     for (let i = 1; i <= nextMonthPadding; i++) {
       cells.push(
         <div key={`next-${i}`} className="min-h-[76px] sm:min-h-[104px] rounded-md border border-transparent p-2 select-none">
@@ -245,7 +269,7 @@ export function CalendarPage() {
   const selectedTotal = selectedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
   const selectedLots = selectedTrades.reduce((sum, t) => sum + (Number(t.lots) || 0), 0);
   const selectedPips = selectedTrades.reduce((sum, t) => sum + (Number(t.pips) || 0), 0);
-  const selectedWins = selectedTrades.filter(t => t.pnl > 0.01).length;
+  const selectedWins = selectedTrades.filter(t => getTradeOutcome(t) === 'WIN').length;
   const selectedDayWinRate = selectedTrades.length > 0 ? (selectedWins / selectedTrades.length) * 100 : 0;
 
   const changeMonth = (delta) => {
@@ -264,21 +288,11 @@ export function CalendarPage() {
       ? `−${formatNumber(Math.abs(selectedPips), 0)}`
       : formatNumber(0, 0);
 
-  if (historyLoadError) return (
-    <div className="rounded-md border border-border bg-card p-6">
-      <h2 className="text-sm font-medium text-foreground">This month could not be loaded</h2>
-      <p className="mt-1 text-sm text-muted-foreground">The calendar is hidden so a partial month is not mistaken for complete data.</p>
-      <Button size="sm" className="mt-4" onClick={retryMonth}>
-        Retry
-      </Button>
-    </div>
-  );
-
-  if (isLoadingTrades) return (
-    <div className="rounded-md border border-border bg-card p-6 text-sm text-muted-foreground">
-      Loading this month…
-    </div>
-  );
+  // Loading and error states replace the GRID, never the page. These used to
+  // be early returns, so every month change unmounted the header along with
+  // the month arrows that had just been clicked — the controls vanished
+  // under the pointer and the page height collapsed on each step.
+  const gridState = historyLoadError ? 'error' : isLoadingTrades ? 'loading' : 'ready';
 
   return (
     <div className="flex flex-col gap-6">
@@ -328,23 +342,50 @@ export function CalendarPage() {
         {/* Calendar Grid */}
         <SectionCard
           title="Month overview"
-          meta={`${activeDays} active · ${winDays} green`}
+          // Zeroes during a month fetch read as "no trading days", not "not
+          // counted yet".
+          meta={gridState === 'ready' ? `${activeDays} active · ${winDays} green` : '—'}
           className="lg:col-span-2"
         >
-          {/* Weekday headers */}
-          <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
-            {WEEKDAYS.map((d, i) => (
-              <div key={d} className="py-1 text-center text-xs font-medium text-muted-foreground">
-                <span className="hidden sm:inline">{d}</span>
-                <span className="sm:hidden">{WEEKDAYS_SHORT[i]}</span>
+          {gridState === 'error' ? (
+            <div className="py-10 text-center">
+              <h2 className="text-sm font-medium text-foreground">This month could not be loaded</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                The grid is hidden so a partial month is not mistaken for complete data.
+              </p>
+              <Button size="sm" className="mt-4" onClick={retryMonth}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Weekday headers */}
+              <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+                {WEEKDAYS.map((d, i) => (
+                  <div key={d} className="py-1 text-center text-xs font-medium text-muted-foreground">
+                    <span className="hidden sm:inline">{d}</span>
+                    <span className="sm:hidden">{WEEKDAYS_SHORT[i]}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-            {renderCells()}
-          </div>
+              {/* Days Grid — the skeleton keeps the grid's exact footprint so
+                  the page does not jump between months. */}
+              <div
+                className="grid grid-cols-7 gap-1.5 sm:gap-2"
+                aria-busy={gridState === 'loading'}
+              >
+                {gridState === 'loading'
+                  ? Array.from({ length: 35 }, (_, i) => (
+                      <div
+                        key={`skeleton-${i}`}
+                        className="min-h-[76px] animate-pulse rounded-md border border-border bg-muted/40 sm:min-h-[104px]"
+                      />
+                    ))
+                  : renderCells()}
+              </div>
+            </>
+          )}
         </SectionCard>
 
         {/* Detail Panel (Right Column) */}
@@ -461,7 +502,7 @@ export function CalendarPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {Object.entries(sessionStats).map(([name, data]) => (
                     <div key={name} className="flex flex-col gap-1 rounded-md border border-border bg-card p-3">
-                      <span className="text-xs font-medium text-muted-foreground">{name}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{SESSION_LABELS[name] || name}</span>
                       <span
                         className={cn(
                           'figure text-sm',

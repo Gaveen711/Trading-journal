@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthSyncFailure } from './app/components/AuthSyncFailure.jsx';
+import { LinkPeek } from './app/experience/LinkPeek.jsx';
 import { ScrollProgress } from './app/experience/ScrollProgress.jsx';
 import { useRouteExperience } from './app/experience/useRouteExperience.js';
 import { AppRoutes, isPublicNavbarPath } from './app/routing/AppRoutes.jsx';
@@ -33,6 +34,7 @@ function App() {
       <PageSEO />
       <ScrollProgress pathname={location.pathname} />
       <Suspense fallback={fallback}>{content}</Suspense>
+      <LinkPeek />
     </ErrorBoundary>
   );
 }

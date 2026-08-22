@@ -15,7 +15,7 @@ describe('app/StatCard', () => {
     expect(screen.getByText('+$1,240.50')).toBeInTheDocument();
   });
 
-  it('interactive renders a real button and reports reveal state for hover, focus and activation', async () => {
+  it('interactive renders a real button and peeks on hover and focus', async () => {
     const user = userEvent.setup();
     const onRevealChange = vi.fn();
     render(<StatCard label="Win rate" value="61%" interactive onRevealChange={onRevealChange} />);
@@ -27,18 +27,55 @@ describe('app/StatCard', () => {
     await user.hover(button);
     await user.unhover(button);
     await user.tab(); // focus
-    await user.keyboard('{Enter}');
-    await user.keyboard(' ');
-    await user.tab(); // blur — leaving must always emit false
+    await user.keyboard('{Enter}'); // pins — already revealed by focus, so no event
+    await user.keyboard(' ');       // unpins — still focused, so still no event
+    await user.tab(); // blur — leaving with nothing pinned must emit false
 
+    // Only real transitions are published: a pin that does not change what the
+    // user can see is not a reveal change.
     expect(onRevealChange.mock.calls.map(([revealed]) => revealed)).toEqual([
       true, // hover in
       false, // hover out
       true, // focus
-      false, // Enter toggles off
-      true, // Space toggles on
-      false, // blur
+      false, // blur, unpinned
     ]);
+    expect(onRevealChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('does not collapse the value when the card under the pointer is clicked', async () => {
+    // The regression this guards: hover set a single toggled flag true, so the
+    // click that followed flipped it back and the value vanished mid-read.
+    const user = userEvent.setup();
+    const onRevealChange = vi.fn();
+    render(<StatCard label="Win rate" value="61%" interactive onRevealChange={onRevealChange} />);
+
+    const button = screen.getByRole('button', { name: 'Win rate' });
+    await user.hover(button);
+    expect(onRevealChange).toHaveBeenLastCalledWith(true);
+
+    await user.click(button);
+    expect(onRevealChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it('a pinned reveal survives the pointer leaving, and unpins on a second activation', async () => {
+    const user = userEvent.setup();
+    const onRevealChange = vi.fn();
+    render(<StatCard label="Win rate" value="61%" interactive onRevealChange={onRevealChange} />);
+
+    const button = screen.getByRole('button', { name: 'Win rate' });
+    await user.click(button); // pointer-less click: pins outright
+    expect(onRevealChange).toHaveBeenLastCalledWith(true);
+
+    await user.unhover(button);
+    // Still revealed — that is the whole point of pinning.
+    expect(onRevealChange).toHaveBeenLastCalledWith(true);
+
+    // Unpinning while the pointer is still on the card does not hide it — the
+    // peek is doing the work now. It hides when the pointer finally leaves.
+    await user.click(button);
+    expect(onRevealChange).toHaveBeenLastCalledWith(true);
+
+    await user.unhover(button);
     expect(onRevealChange).toHaveBeenLastCalledWith(false);
   });
 

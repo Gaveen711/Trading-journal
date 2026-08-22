@@ -31,8 +31,10 @@ import {
 
 /* Instants verified against sessionEngine.resolveSessionAt; all weekdays unless
  * noted, so the weekend-rest short-circuit is exercised only where intended. */
-const ASIA = '2026-08-19T02:00:00Z';       // Wed
-const ASIA_LONDON = '2026-08-19T08:00:00Z';
+const SYDNEY_TOKYO = '2026-08-19T02:00:00Z';  // Wed
+const SYDNEY = '2026-08-19T22:00:00Z';        // Sydney alone, before Tokyo opens
+const TOKYO = '2026-08-19T06:00:00Z';         // Tokyo alone, after Sydney closes
+const TOKYO_LONDON = '2026-08-19T08:00:00Z';
 const LONDON = '2026-08-19T10:00:00Z';
 const LONDON_NY = '2026-08-19T13:00:00Z';
 const NY = '2026-08-19T18:00:00Z';
@@ -103,15 +105,15 @@ describe('entryMoment', () => {
     expect(entryMoment({
       entryTimestampUtc: LONDON,
       openTime: NY,
-      timestamp: ASIA,
+      timestamp: SYDNEY_TOKYO,
     })).toBe(ms(LONDON));
-    expect(entryMoment({ openTime: NY, timestamp: ASIA })).toBe(ms(NY));
-    expect(entryMoment({ timestamp: ASIA })).toBe(ms(ASIA));
+    expect(entryMoment({ openTime: NY, timestamp: SYDNEY_TOKYO })).toBe(ms(NY));
+    expect(entryMoment({ timestamp: SYDNEY_TOKYO })).toBe(ms(SYDNEY_TOKYO));
   });
 
   it('falls through a tier that cannot be coerced rather than giving up', () => {
     expect(entryMoment({ entryTimestampUtc: 'not-a-date', openTime: NY })).toBe(ms(NY));
-    expect(entryMoment({ entryTimestampUtc: null, openTime: '', timestamp: ASIA })).toBe(ms(ASIA));
+    expect(entryMoment({ entryTimestampUtc: null, openTime: '', timestamp: SYDNEY_TOKYO })).toBe(ms(SYDNEY_TOKYO));
   });
 
   it('accepts ISO strings, epoch ms, Dates and Timestamp shapes', () => {
@@ -143,8 +145,8 @@ describe('entryMoment', () => {
 
 describe('closeMoment', () => {
   it('prefers closeTime over timestamp', () => {
-    expect(closeMoment({ closeTime: NY, timestamp: ASIA })).toBe(ms(NY));
-    expect(closeMoment({ timestamp: ASIA })).toBe(ms(ASIA));
+    expect(closeMoment({ closeTime: NY, timestamp: SYDNEY_TOKYO })).toBe(ms(NY));
+    expect(closeMoment({ timestamp: SYDNEY_TOKYO })).toBe(ms(SYDNEY_TOKYO));
   });
 
   it('ignores the entry-only tiers', () => {
@@ -248,8 +250,10 @@ describe('getTradeSessionCode', () => {
   });
 
   it('derives every code from the entry instant', () => {
-    expect(getTradeSessionCode({ entryTimestampUtc: ASIA })).toBe('Asia');
-    expect(getTradeSessionCode({ entryTimestampUtc: ASIA_LONDON })).toBe('AsiaLondon');
+    expect(getTradeSessionCode({ entryTimestampUtc: SYDNEY })).toBe('Sydney');
+    expect(getTradeSessionCode({ entryTimestampUtc: SYDNEY_TOKYO })).toBe('SydneyTokyo');
+    expect(getTradeSessionCode({ entryTimestampUtc: TOKYO })).toBe('Tokyo');
+    expect(getTradeSessionCode({ entryTimestampUtc: TOKYO_LONDON })).toBe('TokyoLondon');
     expect(getTradeSessionCode({ entryTimestampUtc: LONDON })).toBe('London');
     expect(getTradeSessionCode({ entryTimestampUtc: LONDON_NY })).toBe('LondonNY');
     expect(getTradeSessionCode({ entryTimestampUtc: NY })).toBe('NY');
@@ -278,15 +282,17 @@ describe('getTradeSessionCode', () => {
     expect(getTradeSessionCode({ timestamp: NY, date: '2026-08-19', session: 'London' })).toBe('NY');
   });
 
-  it('maps the legacy session vocabulary onto hub groups, case-insensitively', () => {
-    expect(getTradeSessionCode({ session: 'Sydney' })).toBe('Asia');
-    expect(getTradeSessionCode({ session: 'Tokyo' })).toBe('Asia');
-    expect(getTradeSessionCode({ session: 'Asia' })).toBe('Asia');
+  it('maps the legacy session vocabulary onto the four sessions, case-insensitively', () => {
+    // Each city now keeps its own identity. The bare 'Asia' pick predates the
+    // split and names no desk, so it resolves to the deeper Asian book.
+    expect(getTradeSessionCode({ session: 'Sydney' })).toBe('Sydney');
+    expect(getTradeSessionCode({ session: 'Tokyo' })).toBe('Tokyo');
+    expect(getTradeSessionCode({ session: 'Asia' })).toBe('Tokyo');
     expect(getTradeSessionCode({ session: 'London' })).toBe('London');
     expect(getTradeSessionCode({ session: 'NewYork' })).toBe('NY');
     expect(getTradeSessionCode({ session: 'New York' })).toBe('NY');
     expect(getTradeSessionCode({ session: 'NY' })).toBe('NY');
-    expect(getTradeSessionCode({ session: 'sYdNeY' })).toBe('Asia');
+    expect(getTradeSessionCode({ session: 'sYdNeY' })).toBe('Sydney');
     expect(getTradeSessionCode({ session: '  london  ' })).toBe('London');
   });
 
@@ -311,8 +317,12 @@ describe('getTradeSessionCode', () => {
 
 describe('SESSION_BUCKETS', () => {
   it('is the rules enum plus Unknown, with Off first-class', () => {
-    expect(SESSION_BUCKETS).toEqual(['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY', 'Off', 'Unknown']);
-    expect(SESSION_BUCKETS).toHaveLength(7);
+    expect(SESSION_BUCKETS).toEqual([
+      'Sydney', 'Tokyo', 'London', 'NY',
+      'SydneyTokyo', 'TokyoLondon', 'LondonNY',
+      'Off', 'Unknown',
+    ]);
+    expect(SESSION_BUCKETS).toHaveLength(9);
     expect(SESSION_BUCKETS).toContain('Off');
     expect(SESSION_CODES.every((code) => SESSION_BUCKETS.includes(code))).toBe(true);
     expect(Object.isFrozen(SESSION_BUCKETS)).toBe(true);
@@ -320,7 +330,7 @@ describe('SESSION_BUCKETS', () => {
 });
 
 describe('emptySessionAnalytics', () => {
-  it('stamps both versions and zeroes all seven buckets', () => {
+  it('stamps both versions and zeroes all nine buckets', () => {
     const empty = emptySessionAnalytics();
     expect(empty.version).toBe(SESSION_ANALYTICS_VERSION);
     expect(empty.engineVersion).toBe(SESSION_ENGINE_VERSION);
@@ -417,13 +427,13 @@ describe('sessionAnalyticsDelta', () => {
     expect(stored.buckets.London.tradeCount).toBe(1);
     applySessionDelta(stored, sessionAnalyticsDelta(trade, -1));
     expect(stored).toEqual(emptySessionAnalytics());
-    expect(Object.keys(stored.buckets)).toHaveLength(7);
+    expect(Object.keys(stored.buckets)).toHaveLength(9);
   });
 
   it('round-trips for a loss, a BE trade, an Off trade and an untagged trade', () => {
     const cases = [
       { status: 'closed', netPnl: -75, entry: 2400, sl: 2390, lots: 1, entryTimestampUtc: NY, closeTime: '2026-08-19T19:00:00Z' },
-      { status: 'closed', netPnl: 0.005, entryTimestampUtc: ASIA_LONDON },
+      { status: 'closed', netPnl: 0.005, entryTimestampUtc: TOKYO_LONDON },
       { status: 'closed', netPnl: 12, entryTimestampUtc: WEEKEND },
       { status: 'closed', netPnl: 12 },
     ];
@@ -445,7 +455,10 @@ describe('subtractSessionAnalytics', () => {
     expect(diff.London.totalPnl).toBe(-100);
     expect(diff.NY.tradeCount).toBe(1);
     expect(diff.NY.totalPnl).toBe(100);
-    expect(diff.Asia.tradeCount).toBe(0);
+    // Untouched buckets stay at zero — the diff moves one trade, it does not
+    // rewrite the aggregate.
+    expect(diff.Sydney.tradeCount).toBe(0);
+    expect(diff.Tokyo.tradeCount).toBe(0);
   });
 
   it('is a no-op when nothing analytics-relevant changed', () => {
@@ -847,9 +860,9 @@ describe('getTradeSessionCode — legacy `session` prototype keys', () => {
     }
   });
 
-  it('still folds the legacy vocabulary onto hub groups', () => {
-    expect(getTradeSessionCode({ session: 'Sydney' })).toBe('Asia');
-    expect(getTradeSessionCode({ session: 'tokyo' })).toBe('Asia');
+  it('still folds the legacy vocabulary onto the four sessions', () => {
+    expect(getTradeSessionCode({ session: 'Sydney' })).toBe('Sydney');
+    expect(getTradeSessionCode({ session: 'tokyo' })).toBe('Tokyo');
     expect(getTradeSessionCode({ session: ' London ' })).toBe('London');
     expect(getTradeSessionCode({ session: 'New York' })).toBe('NY');
     expect(getTradeSessionCode({ session: 'ny' })).toBe('NY');

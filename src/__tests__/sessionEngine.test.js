@@ -29,7 +29,11 @@ const at = (dayMs, utcHour) => dayMs + utcHour * HOUR_MS;
 
 describe('sessionEngine constants', () => {
   it('exports the stored sessionCode enum without Unknown', () => {
-    expect(SESSION_CODES).toEqual(['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY', 'Off']);
+    expect(SESSION_CODES).toEqual([
+      'Sydney', 'Tokyo', 'London', 'NY',
+      'SydneyTokyo', 'TokyoLondon', 'LondonNY',
+      'Off',
+    ]);
     // 'Unknown' is an analytics bucket, never a tag — firestore.rules mirrors this list.
     expect(SESSION_CODES).not.toContain('Unknown');
     expect(Object.isFrozen(SESSION_CODES)).toBe(true);
@@ -37,7 +41,8 @@ describe('sessionEngine constants', () => {
 
   it('defines four hubs in IANA zones, never fixed UTC offsets', () => {
     expect(TRADING_SESSIONS.map((desk) => desk.id)).toEqual(['Sydney', 'Tokyo', 'London', 'NewYork']);
-    expect(TRADING_SESSIONS.map((desk) => desk.hub)).toEqual(['Asia', 'Asia', 'London', 'NY']);
+    // One desk, one hub: the four-session split has no grouping left to do.
+    expect(TRADING_SESSIONS.map((desk) => desk.hub)).toEqual(['Sydney', 'Tokyo', 'London', 'NY']);
     for (const desk of TRADING_SESSIONS) {
       expect(desk.tz).toMatch(/^[A-Za-z_]+\/[A-Za-z_]+$/);
       expect(Number.isInteger(desk.openHour)).toBe(true);
@@ -46,7 +51,7 @@ describe('sessionEngine constants', () => {
   });
 
   it('exports a numeric engine version', () => {
-    expect(SESSION_ENGINE_VERSION).toBe(1);
+    expect(SESSION_ENGINE_VERSION).toBe(2);
   });
 });
 
@@ -109,7 +114,7 @@ describe('resolveSessionAt — full-year totality (spec §3.1)', () => {
   });
 
   it('emits hubs in fixed east-to-west order, never iteration order', () => {
-    const order = ['Asia', 'London', 'NY'];
+    const order = ['Sydney', 'Tokyo', 'London', 'NY'];
     const bad = [];
     for (let ms = start; ms < end; ms += HOUR_MS) {
       const { hubs } = resolveSessionAt(ms);
@@ -188,16 +193,28 @@ describe('resolveSessionAt — DST correctness', () => {
   });
 });
 
-describe('resolveSessionAt — the two exact overlaps', () => {
-  it('maps {Asia, London} to AsiaLondon in both regimes', () => {
+describe('resolveSessionAt — the named overlaps', () => {
+  it('maps {Tokyo, London} to TokyoLondon in both regimes', () => {
     const summer = resolveSessionAt(at(SUMMER_DAY, 8)); // Tokyo open to 18:00 JST, London open from 08:00 BST
-    expect(summer.hubs).toEqual(['Asia', 'London']);
+    expect(summer.hubs).toEqual(['Tokyo', 'London']);
     expect(summer.desks).toEqual(['Tokyo', 'London']);
-    expect(summer.code).toBe('AsiaLondon');
+    expect(summer.code).toBe('TokyoLondon');
 
     const winter = resolveSessionAt(at(WINTER_DAY, 8));
-    expect(winter.hubs).toEqual(['Asia', 'London']);
-    expect(winter.code).toBe('AsiaLondon');
+    expect(winter.hubs).toEqual(['Tokyo', 'London']);
+    expect(winter.code).toBe('TokyoLondon');
+  });
+
+  it('maps {Sydney, Tokyo} to SydneyTokyo — the pair the old Asia hub hid', () => {
+    // 02:00 UTC: Sydney is mid-desk and Tokyo has been open since 00:00 UTC.
+    const summer = resolveSessionAt(at(SUMMER_DAY, 2));
+    expect(summer.hubs).toEqual(['Sydney', 'Tokyo']);
+    expect(summer.desks).toEqual(['Sydney', 'Tokyo']);
+    expect(summer.code).toBe('SydneyTokyo');
+
+    const winter = resolveSessionAt(at(WINTER_DAY, 2));
+    expect(winter.hubs).toEqual(['Sydney', 'Tokyo']);
+    expect(winter.code).toBe('SydneyTokyo');
   });
 
   it('maps {London, NY} to LondonNY in both regimes', () => {
@@ -213,39 +230,49 @@ describe('resolveSessionAt — the two exact overlaps', () => {
 });
 
 /**
- * The priority fallback. {Asia, NY} is a real seasonal set, not a hypothetical:
+ * The priority fallback. {Sydney, NY} is a real seasonal set, not a hypothetical:
  * with New York on EST (17:00 close = 22:00 UTC) and Sydney on AEDT (07:00 open =
  * 20:00 UTC) it occurs for two hours every trading day, ~Nov–Mar. It resolves to
- * 'NY' rather than a seventh enum value, which is what keeps firestore.rules stable.
+ * 'NY' rather than another enum value, which is what keeps firestore.rules stable.
  */
-describe('resolveSessionAt — priority fallback (London > NY > Asia)', () => {
-  it('resolves the natural winter {Asia, NY} window to NY', () => {
+describe('resolveSessionAt — priority fallback (London > NY > Tokyo > Sydney)', () => {
+  it('resolves the natural winter {Sydney, NY} window to NY', () => {
     for (const utcHour of [20, 21]) {
       const result = resolveSessionAt(at(WINTER_DAY, utcHour));
-      expect(result.hubs).toEqual(['Asia', 'NY']);
+      expect(result.hubs).toEqual(['Sydney', 'NY']);
       expect(result.desks).toEqual(['Sydney', 'NewYork']);
       expect(result.code).toBe('NY');
     }
     // The hour either side is a single hub, proving the window is a real 2h overlap.
     expect(resolveSessionAt(at(WINTER_DAY, 19)).code).toBe('NY');
     expect(resolveSessionAt(at(WINTER_DAY, 19)).hubs).toEqual(['NY']);
-    expect(resolveSessionAt(at(WINTER_DAY, 22)).hubs).toEqual(['Asia']);
+    expect(resolveSessionAt(at(WINTER_DAY, 22)).hubs).toEqual(['Sydney']);
   });
 
-  it('also resolves the October {Asia, NY} window (NY on EDT, Sydney on AEDT)', () => {
+  it('also resolves the October {Sydney, NY} window (NY on EDT, Sydney on AEDT)', () => {
     // Between the Sydney (Oct 4) and US (Nov 1) transitions the overlap narrows to 1h.
     const result = resolveSessionAt(Date.UTC(YEAR, 9, 14, 20));
-    expect(result.hubs).toEqual(['Asia', 'NY']);
+    expect(result.hubs).toEqual(['Sydney', 'NY']);
     expect(result.code).toBe('NY');
   });
 
   it('applies the priority scan directly for every non-exact set', () => {
-    expect(sessionCodeForHubs(['Asia', 'NY'])).toBe('NY');
-    expect(sessionCodeForHubs(['NY', 'Asia'])).toBe('NY');
-    expect(sessionCodeForHubs(['Asia', 'London', 'NY'])).toBe('London');
-    expect(sessionCodeForHubs(['Asia'])).toBe('Asia');
+    expect(sessionCodeForHubs(['Sydney', 'NY'])).toBe('NY');
+    expect(sessionCodeForHubs(['NY', 'Sydney'])).toBe('NY');
+    expect(sessionCodeForHubs(['Tokyo', 'NY'])).toBe('NY');
+    expect(sessionCodeForHubs(['Sydney', 'London', 'NY'])).toBe('London');
+    expect(sessionCodeForHubs(['Sydney', 'Tokyo', 'London'])).toBe('London');
+    expect(sessionCodeForHubs(['Sydney'])).toBe('Sydney');
+    expect(sessionCodeForHubs(['Tokyo'])).toBe('Tokyo');
     expect(sessionCodeForHubs(['London'])).toBe('London');
     expect(sessionCodeForHubs(['NY'])).toBe('NY');
+  });
+
+  it('treats the retired v1 hub names as unrecognised rather than coercing them', () => {
+    // 'Asia' is no longer a hub. It is ignored like any other unknown member,
+    // which is what keeps the function total across the version change.
+    expect(sessionCodeForHubs(['Asia'])).toBe('Off');
+    expect(sessionCodeForHubs(['Asia', 'London'])).toBe('London');
   });
 
   it('is total — never undefined for any input shape', () => {
@@ -253,13 +280,13 @@ describe('resolveSessionAt — priority fallback (London > NY > Asia)', () => {
     expect(sessionCodeForHubs(null)).toBe('Off');
     expect(sessionCodeForHubs(undefined)).toBe('Off');
     expect(sessionCodeForHubs(['Mars'])).toBe('Off');
-    expect(sessionCodeForHubs(['Mars', 'Asia'])).toBe('Asia');
+    expect(sessionCodeForHubs(['Mars', 'Tokyo'])).toBe('Tokyo');
     expect(sessionCodeForHubs(new Set(['London', 'NY']))).toBe('LondonNY');
-    expect(sessionCodeForHubs(new Set(['Asia', 'Asia']))).toBe('Asia');
+    expect(sessionCodeForHubs(new Set(['Tokyo', 'Tokyo']))).toBe('Tokyo');
 
-    // Exhaustive over the powerset of the three hubs.
-    const hubs = ['Asia', 'London', 'NY'];
-    for (let mask = 0; mask < 8; mask += 1) {
+    // Exhaustive over the powerset of the four hubs.
+    const hubs = ['Sydney', 'Tokyo', 'London', 'NY'];
+    for (let mask = 0; mask < 16; mask += 1) {
       const set = hubs.filter((_, index) => mask & (1 << index));
       expect(SESSION_CODES).toContain(sessionCodeForHubs(set));
     }
@@ -279,12 +306,12 @@ describe('resolveSessionAt — Off', () => {
     expect(result.engineVersion).toBe(SESSION_ENGINE_VERSION);
   });
 
-  it('stays Off across the whole rest window and reopens as Asia', () => {
+  it('stays Off across the whole rest window and reopens as Sydney', () => {
     expect(resolveSessionAt(Date.UTC(YEAR, 0, 16, 22)).code).toBe('Off'); // Fri 17:00 EST
     expect(resolveSessionAt(Date.UTC(YEAR, 0, 17, 3)).code).toBe('Off');
     expect(resolveSessionAt(Date.UTC(YEAR, 0, 18, 21)).code).toBe('Off'); // Sun 16:00 EST
     const reopen = resolveSessionAt(Date.UTC(YEAR, 0, 18, 22)); // Sun 17:00 EST
-    expect(reopen.code).toBe('Asia');
+    expect(reopen.code).toBe('Sydney');
     expect(reopen.desks).toEqual(['Sydney']);
   });
 });
@@ -354,7 +381,12 @@ describe('isWeekendRestAt', () => {
 describe('resolveSessionAt — input handling', () => {
   it('accepts epoch ms, Date and ISO string interchangeably', () => {
     const ms = at(WINTER_DAY, 14);
-    const expected = { code: 'LondonNY', hubs: ['London', 'NY'], desks: ['London', 'NewYork'], engineVersion: 1 };
+    const expected = {
+      code: 'LondonNY',
+      hubs: ['London', 'NY'],
+      desks: ['London', 'NewYork'],
+      engineVersion: SESSION_ENGINE_VERSION,
+    };
     expect(resolveSessionAt(ms)).toEqual(expected);
     expect(resolveSessionAt(new Date(ms))).toEqual(expected);
     expect(resolveSessionAt(new Date(ms).toISOString())).toEqual(expected);
@@ -385,14 +417,22 @@ describe('sessionUtcWindow', () => {
   it('moves the projection with DST, which is why nothing derived from it may be stored', () => {
     expect(sessionUtcWindow('NY', '2026-07-15')).toEqual({ startUtcHour: 12, endUtcHour: 21 });
     expect(sessionUtcWindow('NY', '2026-01-14')).toEqual({ startUtcHour: 13, endUtcHour: 22 });
-    // Asia wraps midnight; start > end is expected, not a bug.
-    expect(sessionUtcWindow('Asia', '2026-07-15')).toEqual({ startUtcHour: 21, endUtcHour: 9 });
-    expect(sessionUtcWindow('Asia', '2026-01-14')).toEqual({ startUtcHour: 20, endUtcHour: 9 });
+    // Sydney wraps midnight; start > end is expected, not a bug. Tokyo does not
+    // wrap, and never moves: JST has no DST. Splitting the old Asia hub is what
+    // makes that difference visible at all.
+    expect(sessionUtcWindow('Sydney', '2026-07-15')).toEqual({ startUtcHour: 21, endUtcHour: 6 });
+    expect(sessionUtcWindow('Sydney', '2026-01-14')).toEqual({ startUtcHour: 20, endUtcHour: 5 });
+    expect(sessionUtcWindow('Tokyo', '2026-07-15')).toEqual({ startUtcHour: 0, endUtcHour: 9 });
+    expect(sessionUtcWindow('Tokyo', '2026-01-14')).toEqual({ startUtcHour: 0, endUtcHour: 9 });
   });
 
   it('intersects the two hubs for an overlap code', () => {
-    expect(sessionUtcWindow('AsiaLondon', '2026-07-15')).toEqual({ startUtcHour: 7, endUtcHour: 9 });
-    expect(sessionUtcWindow('AsiaLondon', '2026-01-14')).toEqual({ startUtcHour: 8, endUtcHour: 9 });
+    // Tokyo was always the binding side of the old AsiaLondon window, so these
+    // two carry the same hours the retired code did.
+    expect(sessionUtcWindow('TokyoLondon', '2026-07-15')).toEqual({ startUtcHour: 7, endUtcHour: 9 });
+    expect(sessionUtcWindow('TokyoLondon', '2026-01-14')).toEqual({ startUtcHour: 8, endUtcHour: 9 });
+    expect(sessionUtcWindow('SydneyTokyo', '2026-07-15')).toEqual({ startUtcHour: 0, endUtcHour: 6 });
+    expect(sessionUtcWindow('SydneyTokyo', '2026-01-14')).toEqual({ startUtcHour: 0, endUtcHour: 5 });
     expect(sessionUtcWindow('LondonNY', '2026-07-15')).toEqual({ startUtcHour: 12, endUtcHour: 16 });
     expect(sessionUtcWindow('LondonNY', '2026-01-14')).toEqual({ startUtcHour: 13, endUtcHour: 17 });
   });
@@ -405,7 +445,7 @@ describe('sessionUtcWindow', () => {
   });
 
   it('has no hours for codes without hours, and never throws on bad input', () => {
-    for (const code of ['Off', 'Unknown', '', null, undefined, 'Sydney', 'asia']) {
+    for (const code of ['Off', 'Unknown', '', null, undefined, 'Asia', 'AsiaLondon', 'asia']) {
       expect(sessionUtcWindow(code, '2026-01-14')).toBeNull();
     }
     for (const date of [null, undefined, NaN, '', 'nope', new Date('nope'), {}]) {
@@ -415,7 +455,7 @@ describe('sessionUtcWindow', () => {
   });
 
   it('stays defined for every code on every day of the year it has hours for', () => {
-    const withHours = ['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY'];
+    const withHours = ['Sydney', 'Tokyo', 'London', 'NY', 'SydneyTokyo', 'TokyoLondon', 'LondonNY'];
     const holes = [];
     for (let ms = Date.UTC(YEAR, 0, 1); ms < Date.UTC(YEAR + 1, 0, 1); ms += 24 * HOUR_MS) {
       for (const code of withHours) {
@@ -446,8 +486,8 @@ describe('prototype-key totality', () => {
     }
   });
 
-  it('sessionUtcWindow still answers for the five codes that have hours', () => {
-    for (const code of ['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY']) {
+  it('sessionUtcWindow still answers for the seven codes that have hours', () => {
+    for (const code of ['Sydney', 'Tokyo', 'London', 'NY', 'SydneyTokyo', 'TokyoLondon', 'LondonNY']) {
       expect(sessionUtcWindow(code, '2026-01-14')).not.toBeNull();
     }
   });
@@ -467,9 +507,9 @@ describe('prototype-key totality', () => {
   });
 
   it('sessionCodeForHubs keeps answering for the iterable shapes it documents', () => {
-    expect(sessionCodeForHubs(['Asia'])).toBe('Asia');
+    expect(sessionCodeForHubs(['Tokyo'])).toBe('Tokyo');
     expect(sessionCodeForHubs(new Set(['London', 'NY']))).toBe('LondonNY');
-    expect(sessionCodeForHubs(['Asia', 'NY'])).toBe('NY');
+    expect(sessionCodeForHubs(['Sydney', 'NY'])).toBe('NY');
     expect(sessionCodeForHubs([])).toBe('Off');
     expect(sessionCodeForHubs(null)).toBe('Off');
   });

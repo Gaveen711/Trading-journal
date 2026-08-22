@@ -19,10 +19,27 @@
  * `sessionEngineVersion` tag, so tags and the sessionAnalytics aggregate are
  * re-derived lazily on read (mirrors the ANALYTICS_VERSION gate).
  */
-export const SESSION_ENGINE_VERSION = 1;
+export const SESSION_ENGINE_VERSION = 2;
 
-/** The stored `sessionCode` enum. Mirrored by firestore.rules; 'Unknown' is not one — that is an analytics bucket, never a tag. */
-export const SESSION_CODES = Object.freeze(['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY', 'Off']);
+/**
+ * The stored `sessionCode` enum. Mirrored by firestore.rules; 'Unknown' is not
+ * one — that is an analytics bucket, never a tag.
+ *
+ * v2 splits the former `Asia` hub into its two desks. The product's session
+ * vocabulary is the four centres a gold trader actually names — Sydney, Tokyo,
+ * London, New York — and folding Sydney and Tokyo together meant the two could
+ * never be compared, which is the comparison an Asian-hours trader most wants.
+ *
+ * The three named overlaps are the ones that occur at every offset pair the
+ * zones can take. Sydney∩NY happens only seasonally and Sydney∩London never
+ * does, so neither gets an enum value: `sessionCodeForHubs` collapses any
+ * unnamed combination to its highest-priority member (see there).
+ */
+export const SESSION_CODES = Object.freeze([
+  'Sydney', 'Tokyo', 'London', 'NY',
+  'SydneyTokyo', 'TokyoLondon', 'LondonNY',
+  'Off',
+]);
 
 /**
  * The four hubs in EXCHANGE-LOCAL WALL-CLOCK hours with IANA zones — never fixed
@@ -39,29 +56,70 @@ export const SESSION_CODES = Object.freeze(['Asia', 'London', 'NY', 'AsiaLondon'
  *
  * `id` deliberately reuses the legacy `session` field vocabulary
  * (Sydney/Tokyo/London/NewYork) so the log-form prefill maps without a lookup.
- * Sydney and Tokyo share `hub: 'Asia'`: Asia is one edge to a trader, and two
- * buckets would halve every Asian sample.
+ * Since v2 each desk is its own hub — one desk, one session, four sessions.
  */
 export const TRADING_SESSIONS = Object.freeze([
-  Object.freeze({ id: 'Sydney', city: 'Sydney', tz: 'Australia/Sydney', hub: 'Asia', openHour: 7, closeHour: 16 }),
-  Object.freeze({ id: 'Tokyo', city: 'Tokyo', tz: 'Asia/Tokyo', hub: 'Asia', openHour: 9, closeHour: 18 }),
+  Object.freeze({ id: 'Sydney', city: 'Sydney', tz: 'Australia/Sydney', hub: 'Sydney', openHour: 7, closeHour: 16 }),
+  Object.freeze({ id: 'Tokyo', city: 'Tokyo', tz: 'Asia/Tokyo', hub: 'Tokyo', openHour: 9, closeHour: 18 }),
   Object.freeze({ id: 'London', city: 'London', tz: 'Europe/London', hub: 'London', openHour: 8, closeHour: 17 }),
   Object.freeze({ id: 'NewYork', city: 'New York', tz: 'America/New_York', hub: 'NY', openHour: 8, closeHour: 17 }),
 ]);
 
+/** Display order and label for the four sessions — east to west by opening order. */
+export const SESSION_LABELS = Object.freeze({
+  Sydney: 'Sydney',
+  Tokyo: 'Tokyo',
+  London: 'London',
+  NY: 'New York',
+  SydneyTokyo: 'Sydney + Tokyo',
+  TokyoLondon: 'Tokyo + London',
+  LondonNY: 'London + New York',
+  Off: 'Off-hours',
+});
+
 /**
- * Overlap wins over any single hub, and London outranks NY outranks Asia when the
- * open set is not one of the two named overlaps. Order is load-bearing: it is the
- * priority scan in sessionCodeForHubs.
+ * Overlap wins over any single hub; otherwise London outranks NY outranks Tokyo
+ * outranks Sydney when the open set is not one of the named overlaps. Order is
+ * load-bearing: it is the priority scan in sessionCodeForHubs.
  */
-const HUB_PRIORITY = Object.freeze(['London', 'NY', 'Asia']);
+const HUB_PRIORITY = Object.freeze(['London', 'NY', 'Tokyo', 'Sydney']);
 
 /** Deterministic output order for `hubs` — east to west by opening order, independent of priority. */
-const HUB_ORDER = Object.freeze(['Asia', 'London', 'NY']);
+const HUB_ORDER = Object.freeze(['Sydney', 'Tokyo', 'London', 'NY']);
 
 /** Weekend rest is anchored to the New York desk close/reopen; see isWeekendRestAt. */
 const WEEKEND_TZ = 'America/New_York';
 const WEEKEND_BOUNDARY_HOUR = 17;
+
+/**
+ * The four sessions, in east-to-west opening order. This is the product's
+ * session vocabulary: any surface that shows "P&L by session" shows these four.
+ */
+export const PRIMARY_SESSIONS = Object.freeze(['Sydney', 'Tokyo', 'London', 'NY']);
+
+/**
+ * Folds any session code onto one of the four primary sessions.
+ *
+ * A trade opened during an overlap belongs to both desks, but a four-column
+ * chart has to attribute it to one. The choice is not re-litigated here — it
+ * reuses HUB_PRIORITY, the same precedence `sessionCodeForHubs` already applies
+ * when an open set has no named overlap, so the two can never disagree.
+ *
+ * Off and Unknown have no desk behind them and return null: callers decide
+ * whether to drop them or show them separately, rather than having them
+ * silently inflate a real session's bucket — which is exactly what the ad-hoc
+ * `default: 'Asia'` mappings this replaces used to do.
+ *
+ * @param {string} code
+ * @returns {'Sydney'|'Tokyo'|'London'|'NY'|null}
+ */
+export function primarySessionForCode(code) {
+  if (typeof code !== 'string') return null;
+  if (PRIMARY_SESSIONS.includes(code)) return code;
+  const hubs = Object.prototype.hasOwnProperty.call(CODE_HUBS, code) ? CODE_HUBS[code] : null;
+  if (!hubs) return null;
+  return HUB_PRIORITY.find((hub) => hubs.includes(hub)) ?? null;
+}
 
 /**
  * Which hub groups each code projects onto. Off/Unknown are absent on purpose —
@@ -72,10 +130,12 @@ const WEEKEND_BOUNDARY_HOUR = 17;
  * for the `for…of` to choke on.
  */
 const CODE_HUBS = Object.freeze({
-  Asia: Object.freeze(['Asia']),
+  Sydney: Object.freeze(['Sydney']),
+  Tokyo: Object.freeze(['Tokyo']),
   London: Object.freeze(['London']),
   NY: Object.freeze(['NY']),
-  AsiaLondon: Object.freeze(['Asia', 'London']),
+  SydneyTokyo: Object.freeze(['Sydney', 'Tokyo']),
+  TokyoLondon: Object.freeze(['Tokyo', 'London']),
   LondonNY: Object.freeze(['London', 'NY']),
 });
 
@@ -191,11 +251,11 @@ function isDeskOpenAt(desk, ms) {
 
 /**
  * Total over arbitrary hub sets — this is the contract, not a convenience.
- * Exact {Asia,London} and {London,NY} are the two named overlaps; every other
+ * Exact {Sydney,Tokyo}, {Tokyo,London} and {London,NY} are the named overlaps; every other
  * non-empty set collapses to its highest-priority member, which is what makes the
- * seasonal {Asia,NY} set resolvable (with the US on EST and Sydney on AEDT, roughly
- * November–March, NY's 17:00 close falls ~2h after Sydney's 07:00 open) without a
- * seventh enum value or a rules change. Unrecognised members are ignored, so this
+ * seasonal {Sydney,NY} set resolvable (with the US on EST and Sydney on AEDT, roughly
+ * November–March, NY's 17:00 close falls ~2h after Sydney's 07:00 open) without an
+ * extra enum value or a rules change. Unrecognised members are ignored, so this
  * never returns undefined.
  *
  * Total for any argument, not just for any hub set: a non-iterable value yields
@@ -203,7 +263,7 @@ function isDeskOpenAt(desk, ms) {
  * what resolveSessionAt's priority scan and every caller downstream rely on.
  *
  * @param {string[]|Set<string>|null|undefined} hubs
- * @returns {'Asia'|'London'|'NY'|'AsiaLondon'|'LondonNY'|'Off'}
+ * @returns {'Sydney'|'Tokyo'|'London'|'NY'|'SydneyTokyo'|'TokyoLondon'|'LondonNY'|'Off'}
  */
 export function sessionCodeForHubs(hubs) {
   const open = new Set();
@@ -214,7 +274,8 @@ export function sessionCodeForHubs(hubs) {
   }
   if (open.size === 0) return 'Off';
   if (open.size === 2) {
-    if (open.has('Asia') && open.has('London')) return 'AsiaLondon';
+    if (open.has('Sydney') && open.has('Tokyo')) return 'SydneyTokyo';
+    if (open.has('Tokyo') && open.has('London')) return 'TokyoLondon';
     if (open.has('London') && open.has('NY')) return 'LondonNY';
   }
   return HUB_PRIORITY.find((hub) => open.has(hub));
@@ -290,7 +351,7 @@ function hubWindowMs(hub, day) {
     start = start === null ? open : Math.min(start, open);
     end = end === null ? close : Math.max(end, close);
   }
-  // Sydney and Tokyo overlap at every offset pair either zone can take, so min/max is a true union, not a hull.
+  // One desk per hub since v2, so this is that desk's own window.
   return start === null ? null : { start, end };
 }
 
@@ -300,7 +361,7 @@ function hubWindowMs(hub, day) {
  * why nothing derived from it may be stored.
  *
  * Single-hub codes give that hub's span; overlap codes give the intersection of
- * their two hubs. Hours may wrap (Asia is ~21→09 UTC).
+ * their two hubs. Hours may wrap (Sydney is ~21→06 UTC).
  *
  * @param {string} code A sessionCode. 'Off', 'Unknown', null and unknown codes have no hours.
  * @param {Date|number|string} date UTC calendar date; a 'YYYY-MM-DD' day string is read literally.

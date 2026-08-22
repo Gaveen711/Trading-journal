@@ -90,6 +90,19 @@ export function DataTable({
           )}
           {columns.map((column) => {
             const sorted = sort != null && sort.columnId === column.id;
+            const sortArrow = (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'transition-opacity',
+                  sorted
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-40 group-focus-visible:opacity-40'
+                )}
+              >
+                {sorted && sort.direction === 'desc' ? '↓' : '↑'}
+              </span>
+            );
             return (
               <TableHead
                 key={column.id}
@@ -106,15 +119,26 @@ export function DataTable({
                 {column.sortable ? (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+                    className="group inline-flex items-center gap-1 transition-colors hover:text-foreground"
                     onClick={() => onSortChange?.(nextSort(column.id))}
                   >
+                    {/* Arrows, not carets: ▲/▼ belong exclusively to trade
+                        direction in this system.
+
+                        The arrow leads on an end-aligned column and trails on a
+                        start-aligned one, so the LABEL always ends flush with
+                        the edge its figures are aligned to. Trailing it in a
+                        right-aligned column pushed the header text a glyph's
+                        width in from the numbers underneath it.
+
+                        It is drawn faintly rather than omitted when unsorted:
+                        with a marker on the sorted column only, nothing
+                        distinguished a sortable header from a plain one until
+                        the pointer happened to land on it. Reserving the box in
+                        both states also stops the label shifting on sort. */}
+                    {isEnd(column) && sortArrow}
                     {column.header}
-                    {sorted && (
-                      // Arrows, not carets: ▲/▼ belong exclusively to trade
-                      // direction in this system.
-                      <span aria-hidden="true">{sort.direction === 'asc' ? '↑' : '↓'}</span>
-                    )}
+                    {!isEnd(column) && sortArrow}
                   </button>
                 ) : (
                   column.header

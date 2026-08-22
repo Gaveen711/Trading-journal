@@ -156,10 +156,19 @@ service cloud.firestore {
             && data.get('note', '').size() <= 4000
             && (data.get('strategies', []) is list)
             // sessionCode is derived, never user-entered. An out-of-vocabulary
-            // value would open an eighth sessionAnalytics bucket that no reader
-            // accounts for, so the enum is pinned here rather than client-side.
+            // value would open a sessionAnalytics bucket that no reader accounts
+            // for, so the enum is pinned here rather than client-side.
+            //
+            // Mirrors SESSION_CODES in src/lib/sessionEngine.js — the two move in
+            // the same commit. The legacy v1 codes ('Asia', 'AsiaLondon') stay
+            // accepted so documents written before the four-session split remain
+            // writable; readers re-derive them through the engine-version gate.
             && (data.get('sessionCode', null) == null
-                || data.get('sessionCode', null) in ['Asia', 'London', 'NY', 'AsiaLondon', 'LondonNY', 'Off'])
+                || data.get('sessionCode', null) in [
+                     'Sydney', 'Tokyo', 'London', 'NY',
+                     'SydneyTokyo', 'TokyoLondon', 'LondonNY', 'Off',
+                     'Asia', 'AsiaLondon'
+                   ])
             // sessionSource ('broker' | 'webhook' | 'manual-logtime' | 'user' | null)
             // is deliberately NOT enum-checked: the server write paths own it, and
             // pinning its vocabulary here would make every new precision tier a
