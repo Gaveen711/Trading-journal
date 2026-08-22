@@ -9,12 +9,16 @@ import {
   SESSION_BUCKETS,
   deriveSessionStats,
   getTradeOutcome,
+  getTradeSessionCode,
   getTradeSetupKey,
   getTradeStrategyTags,
   isTradeAnalyticsEligible,
   sessionAnalyticsDeltaForTrades,
   tradePnlValue,
 } from '../lib/tradeAnalytics.js';
+import { PRIMARY_SESSIONS, primarySessionForCode } from '../lib/sessionEngine.js';
+import { resolveChartTheme, seriesColor } from '../lib/chartTheme.js';
+import { cn } from '../lib/utils';
 import { costOfBrokenRules } from '../lib/disciplineRules.js';
 import { DirectionCell } from '../components/app/DirectionCell';
 import { Share } from 'react-bootstrap-icons';
@@ -38,46 +42,14 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 const ShareTradeModal = lazy(() =>
   import('../components/ShareTradeModal').then((m) => ({ default: m.ShareTradeModal })));
 
-// Chart colors come from the live CSS tokens so every accent template and both
-// modes retint the charts without a per-theme color map (Phase 4 migrates the
-// chart internals; this phase migrates the colors).
-const cssHsl = (name, alpha) => {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return alpha != null ? `hsl(${v} / ${alpha})` : `hsl(${v})`;
-};
-
-// One source for the WEEKLY session series — that chart's datasets and its
-// legend resolve through these tokens, and nothing else does. The Sessions
-// panel below deliberately does not reuse them: one "Overlap" hue cannot
-// represent the engine's two distinct overlaps plus Off and Unknown, and its
-// bars are toned by sign instead (§4.1).
-const SESSION_TOKENS = {
-  London: '--chart-1',
-  NY: '--chart-2',
-  Asia: '--chart-3',
-  Overlap: '--chart-4',
-};
-
-// The theme args are unused except as reactivity keys: the token values change
-// when the .dark class or the theme-* template class flips on <html>, which
-// React cannot observe directly.
-const resolveChartColors = (_isLightMode, _currentTemplate) => ({
-  win: cssHsl('--win', 0.75),
-  winBorder: cssHsl('--win'),
-  loss: cssHsl('--loss', 0.75),
-  lossBorder: cssHsl('--loss'),
-  grid: cssHsl('--border', 0.5),
-  ticks: cssHsl('--muted-foreground'),
-  border: cssHsl('--border'),
-  tooltipBg: cssHsl('--popover'),
-  tooltipTitle: cssHsl('--muted-foreground'),
-  tooltipBody: cssHsl('--foreground'),
-  strategy: cssHsl('--chart-1', 0.8),
-  strategyBorder: cssHsl('--chart-1'),
-  sessions: Object.fromEntries(
-    Object.entries(SESSION_TOKENS).map(([session, token]) => [session, cssHsl(token)])
-  ),
-});
+// The WEEKLY session series: the four primary sessions, in the engine's own
+// east-to-west order. The value is an index into the shared categorical ramp,
+// so the legend swatch and the bar it describes can never drift apart.
+//
+// The Sessions panel above deliberately does not reuse these: it reports every
+// bucket the engine can produce — both overlaps, Off and Unknown included —
+// and tones its bars by sign instead (§4.1).
+const SESSION_SERIES = Object.fromEntries(PRIMARY_SESSIONS.map((name, index) => [name, index]));
 
 const signedCompact = formatSignedCompact;
 
@@ -151,6 +123,13 @@ const buildSessionInsight = (qualified) => {
 
 // Plain text names, no glyphs and no swatches: SessionGlyph draws single-hub
 // marks only, and there is no mark for an overlap, for Off, or for Unknown.
+/**
+ * The gutter a `padded={false}` SectionCard removes. Children that are not
+ * full-bleed (rails, stat grids, charts) put it back so only the tables run to
+ * the card's edge.
+ */
+const CARD_GUTTER = 'px-(--card-spacing)';
+
 const SESSION_COLUMNS = [
   {
     id: 'session',
@@ -535,37 +514,28 @@ export function AnalyticsPage() {
     const monthlyPnlLabels = monthsOrder.filter(m => monthsWithTrades.has(m));
     const monthlyPnlValues = monthlyPnlLabels.map(m => monthlyPnlMap[m] || 0);
 
-    // 4. Weekly P&L by legacy session group — the existing weekly chart, kept
-    // as-is. Its four-hue grouping is the legacy `session` vocabulary and is
-    // not the engine's seven-bucket model; the Sessions panel above owns that.
-    const getNormalizedSession = (s) => {
-      if (!s) return 'Asia';
-      const norm = s.toLowerCase().trim();
-      if (norm.includes('london')) return 'London';
-      if (norm.includes('ny') || norm.includes('new york') || norm.includes('new-york') || norm.includes('newyork')) return 'NY';
-      if (norm.includes('asia') || norm.includes('tokyo') || norm.includes('sydney')) return 'Asia';
-      if (norm.includes('overlap')) return 'Overlap';
-      return 'Asia';
-    };
-
-    const sessionWeeklyPnl = {
-      London: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-      NY: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-      Asia: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
-      Overlap: { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 }
-    };
+    // 4. Weekly P&L by session — through the engine, like every other session
+    // figure on the dashboard. This used to run its own string matcher over the
+    // legacy free-text `session` field, which defaulted anything it did not
+    // recognise (including a completely untagged trade) into Asia and quietly
+    // inflated that series.
+    const sessionWeeklyPnl = Object.fromEntries(
+      PRIMARY_SESSIONS.map((name) => [
+        name,
+        { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 },
+      ])
+    );
 
     tradesList.forEach(t => {
-      const session = getNormalizedSession(t.session);
-
-      // Update weekly P&L
-      if (t.date) {
-        const dateObj = new Date(t.date);
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const dayName = days[dateObj.getDay()];
-        if (sessionWeeklyPnl[session] && sessionWeeklyPnl[session][dayName] !== undefined) {
-          sessionWeeklyPnl[session][dayName] += tradePnlValue(t);
-        }
+      // Off-hours and untagged trades fold to null and are left out entirely
+      // rather than being attributed to a desk that was shut.
+      const session = primarySessionForCode(getTradeSessionCode(t));
+      if (!session || !t.date) return;
+      const dateObj = new Date(t.date);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayName = days[dateObj.getDay()];
+      if (sessionWeeklyPnl[session][dayName] !== undefined) {
+        sessionWeeklyPnl[session][dayName] += tradePnlValue(t);
       }
     });
 
@@ -632,8 +602,11 @@ export function AnalyticsPage() {
     winRatePercent
   } = stats;
 
+  // The theme values are reactivity keys, not arguments: the tokens change
+  // when the .dark or theme-* class flips on <html>, which React cannot see.
   const chartColors = useMemo(
-    () => resolveChartColors(isLightMode, currentTemplate),
+    () => resolveChartTheme(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isLightMode, currentTemplate]
   );
 
@@ -691,10 +664,10 @@ export function AnalyticsPage() {
       },
       sessionWeekly: {
         labels: days,
-        datasets: Object.keys(SESSION_TOKENS).map(session => ({
+        datasets: Object.entries(SESSION_SERIES).map(([session, slot]) => ({
           label: session,
           data: days.map(day => parseFloat(sessionWeeklyPnl[session][day].toFixed(2))),
-          backgroundColor: chartColors.sessions[session],
+          backgroundColor: seriesColor(chartColors, slot),
           borderRadius: 2,
           borderWidth: 0,
           barPercentage: 0.8,
@@ -703,11 +676,14 @@ export function AnalyticsPage() {
       },
       strategy: {
         labels: strategyLabels,
+        // Each strategy gets its own slot on the ramp. One flat color across
+        // every bar made neighbouring strategies read as one series and gave
+        // the eye nothing to track a single strategy by.
         datasets: [{
           label: 'Strategy performance',
           data: strategyValues,
-          backgroundColor: chartColors.strategy,
-          borderColor: chartColors.strategyBorder,
+          backgroundColor: strategyValues.map((_, index) => seriesColor(chartColors, index, true)),
+          borderColor: strategyValues.map((_, index) => seriesColor(chartColors, index)),
           borderWidth: 1.5,
           borderRadius: 2,
         }]
@@ -913,6 +889,9 @@ export function AnalyticsPage() {
         <SectionCard
           surface
           className="lg:col-span-2"
+          // Edge-to-edge so this table's left rule lines up with the Setups
+          // table below it; the non-table children re-apply the card gutter.
+          padded={isFree}
           title="Sessions"
           description="Where your edge trades. Auto-tagged from entry time."
           meta={isFree ? undefined : `${sessionTaggedCount} of ${sessionTradeCount} trades tagged`}
@@ -929,9 +908,11 @@ export function AnalyticsPage() {
             <div className="flex flex-col gap-4">
               {/* The signature mark, not a legend: it reports which desks are
                   open right now, never how the table's buckets are coloured. */}
-              <SessionRail />
+              <div className={CARD_GUTTER}>
+                <SessionRail />
+              </div>
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className={cn(CARD_GUTTER, 'grid grid-cols-2 gap-3 md:grid-cols-4')}>
                 {sessionStatCards.map((stat) => (
                   <StatCard
                     key={stat.id}
@@ -943,7 +924,7 @@ export function AnalyticsPage() {
                 ))}
               </div>
 
-              <div className="h-64">
+              <div className={cn(CARD_GUTTER, 'h-64')}>
                 <Bar data={chartData.sessionNet} options={chartOptions} />
               </div>
 
@@ -1048,7 +1029,7 @@ export function AnalyticsPage() {
           ) : (
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
-                {Object.entries(SESSION_TOKENS).map(([session, token]) => (
+                {Object.entries(SESSION_SERIES).map(([session, slot]) => (
                   <span
                     key={session}
                     className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
@@ -1056,7 +1037,7 @@ export function AnalyticsPage() {
                     <span
                       aria-hidden="true"
                       className="inline-block size-2 rounded-sm"
-                      style={{ backgroundColor: cssHsl(token) }}
+                      style={{ backgroundColor: seriesColor(chartColors, slot) }}
                     />
                     {session}
                   </span>

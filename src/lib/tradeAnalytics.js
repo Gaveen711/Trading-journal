@@ -41,6 +41,15 @@ export function isLongDirection(direction) {
   return normalized === 'BUY' || normalized === 'LONG';
 }
 
+/**
+ * The other half of the pair. Callers that only tested `=== 'SELL'` silently
+ * dropped every trade recorded as 'SHORT' from their counts.
+ */
+export function isShortDirection(direction) {
+  const normalized = String(direction || '').toUpperCase();
+  return normalized === 'SELL' || normalized === 'SHORT';
+}
+
 const emptyDelta = () => ({
   tradeCount: 0, totalPnl: 0, totalPips: 0, wins: 0, losses: 0,
   breakEven: 0, longs: 0, shorts: 0, grossProfit: 0, grossLoss: 0,
@@ -62,7 +71,7 @@ export function tradeAnalyticsDelta(trade, multiplier = 1) {
   const outcome = getTradeOutcome(trade);
   const direction = String(trade.direction || trade.type || '').toUpperCase();
   const isLong = isLongDirection(direction);
-  const isShort = direction === 'SELL' || direction === 'SHORT';
+  const isShort = isShortDirection(direction);
   delta.tradeCount = multiplier;
   delta.totalPnl = pnl * multiplier;
   delta.totalPips = number(trade.pips) * multiplier;
@@ -226,8 +235,10 @@ const UNKNOWN_BUCKET = 'Unknown';
 export const SESSION_BUCKETS = Object.freeze([...SESSION_CODES, UNKNOWN_BUCKET]);
 
 /**
- * The legacy user-picked `session` vocabulary, folded onto hub groups. Sydney
- * and Tokyo are one edge.
+ * The legacy user-picked `session` vocabulary, folded onto session codes. Since
+ * the four-session split each city maps to itself; the bare 'asia' pick — which
+ * predates the split and names no desk — resolves to Tokyo, the Asian gold desk
+ * with by far the deeper book.
  *
  * Read through hasOwnProperty at the one call site, never as a bare index:
  * `session` is in firestore.rules' trade allowlist with no type and no enum
@@ -238,9 +249,9 @@ export const SESSION_BUCKETS = Object.freeze([...SESSION_CODES, UNKNOWN_BUCKET])
  * batch. This is a JS-side fix; the deployed rules need no change for it.
  */
 const LEGACY_SESSION_CODES = Object.freeze({
-  sydney: 'Asia',
-  tokyo: 'Asia',
-  asia: 'Asia',
+  sydney: 'Sydney',
+  tokyo: 'Tokyo',
+  asia: 'Tokyo',
   london: 'London',
   newyork: 'NY',
   'new york': 'NY',

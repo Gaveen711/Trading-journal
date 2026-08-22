@@ -3655,6 +3655,93 @@ nav .apple-glass-panel:hover,
   }
 }
 
+/* --- Dashboard opts out of the global card hover glow ---------------------
+   The marketing pages keep it (it reads as polish on a scroll-through page),
+   but inside the app every panel lighting up on pointer-over is noise and
+   makes nothing look special. Only boxes that explicitly opt in with
+   `.glow-card` still lift and glow in here. --- */
+@media (hover: hover) {
+  .dashboard-shell .card-premium:not(.glow-card):hover,
+  .dashboard-shell .card-apple-glass:not(.glow-card):hover,
+  .dashboard-shell .card-pastel-green-glass:not(.glow-card):hover,
+  .dashboard-shell .card-pastel-blue-glass:not(.glow-card):hover,
+  .dashboard-shell .card-pastel-pink-glass:not(.glow-card):hover,
+  .dashboard-shell .card-pastel-yellow-glass:not(.glow-card):hover,
+  .dashboard-shell .cyber-step-card:not(.glow-card):hover,
+  .dashboard-shell .bg-card:not(.glow-card):hover,
+  .dashboard-shell [class*="bg-card"]:not(.glow-card):hover,
+  .dashboard-shell .xau-card:not(.glow-card):hover,
+  .dashboard-shell [data-slot="card"]:not(.glow-card):hover,
+  .dashboard-shell [data-ux-card="true"]:not(.glow-card):hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (hover: none) {
+  .dashboard-shell .card-premium:not(.glow-card):active,
+  .dashboard-shell .card-apple-glass:not(.glow-card):active,
+  .dashboard-shell .card-pastel-green-glass:not(.glow-card):active,
+  .dashboard-shell .card-pastel-blue-glass:not(.glow-card):active,
+  .dashboard-shell .card-pastel-pink-glass:not(.glow-card):active,
+  .dashboard-shell .card-pastel-yellow-glass:not(.glow-card):active,
+  .dashboard-shell .cyber-step-card:not(.glow-card):active,
+  .dashboard-shell .bg-card:not(.glow-card):active,
+  .dashboard-shell [class*="bg-card"]:not(.glow-card):active,
+  .dashboard-shell .xau-card:not(.glow-card):active,
+  .dashboard-shell [data-slot="card"]:not(.glow-card):active,
+  .dashboard-shell [data-ux-card="true"]:not(.glow-card):active {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* --- Link peek: browser-style status bar for the hovered link ------------- */
+.link-peek {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 90; /* under modals (z-100) — never covers a dialog's controls */
+  max-width: min(70vw, 44rem);
+  padding: 0.2rem 0.7rem 0.25rem 0.6rem;
+  border-top-right-radius: 0.45rem;
+  background: hsl(var(--card));
+  border-top: 1px solid hsl(var(--border) / 0.6);
+  border-right: 1px solid hsl(var(--border) / 0.6);
+  box-shadow: 0 -2px 12px -6px rgba(0, 0, 0, 0.35);
+  pointer-events: none; /* must never block the link it is describing */
+  animation: link-peek-in 120ms ease-out;
+}
+
+.link-peek__text {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  /* Reads as a URL, not as body copy. */
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  direction: ltr;
+}
+
+@keyframes link-peek-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-peek { animation: none; }
+}
+
+/* Touch devices have no hover state to describe, and the bar would only sit
+   on top of content. */
+@media (hover: none) {
+  .link-peek { display: none; }
+}
+
 /* ── Global Button Design System ────────────────────────────────────────── */
 .qgs-button {
   min-height: 52px;

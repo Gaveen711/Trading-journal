@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // The repository is the last mile of the session write path: everything the
 // LogTrade use case resolves has to survive into the document, and the
@@ -148,7 +148,7 @@ describe('FirebaseTradeRepository session write paths', () => {
     expect(update['sessionAnalytics.buckets.LondonNY.tradeCount']).toEqual({ increment: 1 });
     expect(update['sessionAnalytics.buckets.LondonNY.wins']).toEqual({ increment: 1 });
     // Zero counters are dropped, so an untouched bucket writes no fields.
-    expect(update['sessionAnalytics.buckets.Asia.tradeCount']).toBeUndefined();
+    expect(update['sessionAnalytics.buckets.Tokyo.tradeCount']).toBeUndefined();
     expect(undefinedPaths(update)).toEqual([]);
   });
 
@@ -175,7 +175,7 @@ describe('FirebaseTradeRepository session write paths', () => {
     // A day string carries no instant, so the instant is retired rather than a
     // code being "recomputed" from a bare date.
     expect(patch.entryTimestampUtc).toBeNull();
-    expect(patch.sessionCode).toBe('Asia');
+    expect(patch.sessionCode).toBe('Tokyo');
     expect(patch.sessionSource).toBe('user');
     expect(patch.sessionEngineVersion).toBe(SESSION_ENGINE_VERSION);
     expect(patch.sessionResolvedAt).toEqual({ serverTimestamp: true });
@@ -189,8 +189,8 @@ describe('FirebaseTradeRepository session write paths', () => {
 
     const update = txUserWrite();
     expect(update['sessionAnalytics.buckets.LondonNY.tradeCount']).toEqual({ increment: -1 });
-    expect(update['sessionAnalytics.buckets.Asia.tradeCount']).toEqual({ increment: 1 });
-    expect(update['sessionAnalytics.buckets.Asia.totalPnl']).toEqual({ increment: 100 });
+    expect(update['sessionAnalytics.buckets.Tokyo.tradeCount']).toEqual({ increment: 1 });
+    expect(update['sessionAnalytics.buckets.Tokyo.totalPnl']).toEqual({ increment: 100 });
     // The v2 correction is a no-op for a session-only move, and rides the same write.
     expect(update['analytics.tradeCount']).toEqual({ increment: 0 });
   });
@@ -205,7 +205,7 @@ describe('FirebaseTradeRepository session write paths', () => {
     expect(patch.sessionCode).toBe('LondonNY');
     expect(patch.sessionSource).toBe('manual-logtime');
     // The user's Session pick loses to a trusted instant, so nothing moves.
-    expect(txUserWrite()['sessionAnalytics.buckets.Asia.tradeCount']).toBeUndefined();
+    expect(txUserWrite()['sessionAnalytics.buckets.Tokyo.tradeCount']).toBeUndefined();
   });
 
   it('falls through an uncoercible stored instant to the log-time tier', async () => {
@@ -222,7 +222,7 @@ describe('FirebaseTradeRepository session write paths', () => {
 
     const patch = txTradeWrite();
     expect(patch.entryTimestampUtc).toBe('2026-08-19T02:00:00.000Z');
-    expect(patch.sessionCode).toBe('Asia');
+    expect(patch.sessionCode).toBe('SydneyTokyo');
     expect(patch.sessionSource).toBe('manual-logtime');
   });
 
@@ -260,7 +260,7 @@ describe('FirebaseTradeRepository session write paths', () => {
       date: '2026-08-10',
       session: 'Tokyo',
       entryTimestampUtc: null,
-      sessionCode: 'Asia',
+      sessionCode: 'Tokyo',
       sessionSource: 'user',
       sessionEngineVersion: SESSION_ENGINE_VERSION,
     });
@@ -268,5 +268,75 @@ describe('FirebaseTradeRepository session write paths', () => {
     // so it is withheld from the returned patch rather than cached as an object.
     expect(applied).not.toHaveProperty('sessionResolvedAt');
     expect(txTradeWrite().sessionResolvedAt).toEqual({ serverTimestamp: true });
+  });
+});
+
+/**
+ * Reset is the one call whose failure is invisible: the UI shows a success
+ * toast, the Firestore listener re-delivers every trade, and the user reads
+ * that as "the button does nothing". A 2xx that is not this route's answer has
+ * to be treated as the failure it is.
+ */
+describe('FirebaseTradeRepository.resetTrades', () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => { globalThis.fetch = originalFetch; });
+
+  const respond = (init, body) => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: init.ok,
+      status: init.status,
+      json: body instanceof Error
+        ? () => Promise.reject(body)
+        : () => Promise.resolve(body),
+    });
+  };
+
+  it('resolves when the route confirms the wipe', async () => {
+    respond({ ok: true, status: 200 }, { success: true, message: 'All trades reset successfully.' });
+    await expect(repository.resetTrades('u1', 'token')).resolves.toBeUndefined();
+
+    const [url, options] = globalThis.fetch.mock.calls[0];
+    expect(url).toBe('/api/reset-trades');
+    expect(options.method).toBe('POST');
+    expect(options.headers.Authorization).toBe('Bearer token');
+  });
+
+  it('rejects a 200 that never confirms, instead of reporting a reset that did not happen', async () => {
+    // A dev proxy, a login wall or a stale deploy answering the request.
+    respond({ ok: true, status: 200 }, { ok: true });
+    await expect(repository.resetTrades('u1', 'token')).rejects.toThrow(/did not complete/i);
+  });
+
+  it('rejects a 200 whose body is not JSON at all', async () => {
+    respond({ ok: true, status: 200 }, new SyntaxError('Unexpected token <'));
+    await expect(repository.resetTrades('u1', 'token')).rejects.toThrow(/did not complete/i);
+  });
+
+  it('surfaces the route error text on a failure status', async () => {
+    respond({ ok: false, status: 401 }, { error: 'Invalid or expired token' });
+    await expect(repository.resetTrades('u1', 'token')).rejects.toThrow('Invalid or expired token');
+  });
+
+  it('still reports the status when an error body cannot be parsed', async () => {
+    respond({ ok: false, status: 502 }, new SyntaxError('Unexpected token <'));
+    await expect(repository.resetTrades('u1', 'token')).rejects.toThrow(/HTTP 502/);
+  });
+});
+
+describe('FirebaseTradeRepository.resetTrades — deployment protection', () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => { globalThis.fetch = originalFetch; });
+
+  it('names Vercel deployment protection rather than blaming the route', async () => {
+    // The real body the protected deployment returns; the app code never runs.
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({
+        protection: { vercel_auth_enabled: true },
+        error: { message: 'Protected deployment', code: '401' },
+      }),
+    });
+    await expect(repository.resetTrades('u1', 'token')).rejects.toThrow(/Vercel protection/i);
   });
 });

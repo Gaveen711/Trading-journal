@@ -4,6 +4,10 @@ import { Line } from 'react-chartjs-2';
 import { formatCurrency, formatSigned, pnlToneClass } from '../lib/tradeUtils';
 import { fetchSpotPrice } from '../lib/marketData';
 import { costOfBrokenRules } from '../lib/disciplineRules.js';
+// getTradeOutcome, not a bare `outcome` read: a broker-imported row stores no
+// outcome and would otherwise be counted as a loss.
+import { getTradeOutcome } from '../lib/tradeAnalytics.js';
+import { resolveChartTheme } from '../lib/chartTheme.js';
 import { DirectionCell } from '../components/app/DirectionCell';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { LiveMarketWidget } from '../components/LiveMarketWidget';
@@ -24,41 +28,6 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 /** The cost StatCard's window (§4.4), matching AnalyticsPage's COST_WINDOW_MS. */
 const DISCIPLINE_COST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-const FALLBACK_TOKEN = (alpha) => (alpha == null ? '#9cff57' : `rgba(156, 255, 87, ${alpha})`);
-
-// Theme arguments are reactivity keys; values are resolved from the scoped
-// dashboard tokens after the root theme or accent class changes.
-//
-// getPropertyValue is cheap, but the getComputedStyle that precedes it forces a
-// style recalc. This used to run per token — eight per call, and the call
-// happened in both the data and the options memo — so one accent change cost
-// ~16 recalcs. One style object, read eight times, costs one.
-const resolveDashboardChartColors = (_isLightMode, _currentTemplate) => {
-  if (typeof document === 'undefined') {
-    return {
-      primary: FALLBACK_TOKEN(), primaryFill: FALLBACK_TOKEN(0.22), primaryClear: FALLBACK_TOKEN(0),
-      grid: FALLBACK_TOKEN(0.55), ticks: FALLBACK_TOKEN(), tooltipBg: FALLBACK_TOKEN(0.96),
-      tooltipTitle: FALLBACK_TOKEN(), tooltipBody: FALLBACK_TOKEN(),
-    };
-  }
-  const shell = document.querySelector('.dashboard-shell');
-  const style = getComputedStyle(shell ?? document.documentElement);
-  const token = (name, alpha) => {
-    const value = style.getPropertyValue(name).trim();
-    return alpha == null ? `hsl(${value})` : `hsl(${value} / ${alpha})`;
-  };
-  return {
-    primary: token('--primary'),
-    primaryFill: token('--primary', 0.22),
-    primaryClear: token('--primary', 0),
-    grid: token('--border', 0.55),
-    ticks: token('--muted-foreground'),
-    tooltipBg: token('--popover', 0.96),
-    tooltipTitle: token('--muted-foreground'),
-    tooltipBody: token('--foreground'),
-  };
-};
 
 const chip = (text) => (
   <span className="inline-flex h-[18px] items-center rounded-sm border border-border px-1.5 font-mono text-[11px] text-muted-foreground">
@@ -302,13 +271,13 @@ export function LogTradePage() {
   const winRateMtd = useMemo(() => {
     const targetTrades = mtdTrades.length > 0 ? mtdTrades : trades;
     if (targetTrades.length === 0) return 0;
-    const wins = targetTrades.filter(t => t.outcome === 'WIN').length;
+    const wins = targetTrades.filter(t => getTradeOutcome(t) === 'WIN').length;
     return Math.round((wins / targetTrades.length) * 100);
   }, [mtdTrades, trades]);
 
   const winCountMtd = useMemo(() => {
     const targetTrades = mtdTrades.length > 0 ? mtdTrades : trades;
-    return targetTrades.filter(t => t.outcome === 'WIN').length;
+    return targetTrades.filter(t => getTradeOutcome(t) === 'WIN').length;
   }, [mtdTrades, trades]);
 
   const totalCountMtd = useMemo(() => {
@@ -359,8 +328,10 @@ export function LogTradePage() {
 
   // Resolved once per theme/accent change and shared by the data and options
   // memos, so a recolor costs one style recalc instead of sixteen.
+  // Theme values are reactivity keys, not arguments — see resolveChartTheme.
   const chartColors = useMemo(
-    () => resolveDashboardChartColors(isLightMode, currentTemplate),
+    () => resolveChartTheme(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isLightMode, currentTemplate],
   );
 

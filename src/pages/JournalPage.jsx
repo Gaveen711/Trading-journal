@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../components/ToastContext';
 import { todayStr } from '../lib/tradeUtils';
@@ -52,27 +52,59 @@ export function JournalPage() {
   const [journalText, setJournalText] = useState('');
   const [selectedMood, setSelectedMood] = useState(null);
   const [journalSaved, setJournalSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  // True once the user edits the open entry, until it is saved, deleted, or
+  // they move to another date. Guards the re-seed above.
+  const isDirtyRef = useRef(false);
+
+  // Clears the transient "Saved" label. As a bare setTimeout in the save
+  // handler this kept running after the page unmounted.
+  useEffect(() => {
+    if (!journalSaved) return undefined;
+    const timer = setTimeout(() => setJournalSaved(false), 2000);
+    return () => clearTimeout(timer);
+  }, [journalSaved]);
 
   const entries = useMemo(() => {
     return Object.entries(journals).sort((a, b) => b[0].localeCompare(a[0]));
   }, [journals]);
 
+  // Seed the editor from the store, but never on top of unsaved edits.
+  //
+  // This effect used to depend on `journals` outright, so any snapshot landing
+  // while the user typed — their own save, an edit from another tab, the
+  // initial load resolving — reset the textarea to the stored text and threw
+  // away everything written since. Keying it on the date alone fixes that but
+  // breaks the first paint, where `journals` is still empty and the real entry
+  // arrives a moment later.
+  //
+  // So: re-seed whenever the stored entry for this date changes, and skip only
+  // when the user has actually touched the field. Switching dates always
+  // re-seeds, because it clears the dirty flag first.
+  const storedEntry = journals[journalDate];
   useEffect(() => {
-    const entry = journals[journalDate] || {};
-    setJournalText(entry.text || '');
-    setSelectedMood(entry.mood || null);
-  }, [journalDate, journals]);
+    if (isDirtyRef.current) return;
+    setJournalText(storedEntry?.text || '');
+    setSelectedMood(storedEntry?.mood || null);
+  }, [storedEntry]);
+
+  useEffect(() => {
+    isDirtyRef.current = false;
+  }, [journalDate]);
 
   const onSaveJournal = async () => {
-    if (!journalDate) return;
+    if (!journalDate || saving) return;
+    setSaving(true);
     try {
       await saveJournalEntry(journalDate, journalText, selectedMood);
+      isDirtyRef.current = false;
       setJournalSaved(true);
-      setTimeout(() => setJournalSaved(false), 2000);
       toast('Journal saved!', 'success');
     } catch {
-      toast('Storage error.', 'error');
+      toast('Could not save your entry. Please try again.', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -83,12 +115,14 @@ export function JournalPage() {
     try {
       await deleteEntry(date);
       if (journalDate === date) {
+        isDirtyRef.current = false;
         setJournalText('');
         setSelectedMood(null);
       }
       toast('Entry deleted.', 'warn');
     } catch {
-      toast('Storage error.', 'warn');
+      // An failed delete is an error, not the same 'warn' the success path uses.
+      toast('Could not delete that entry. Please try again.', 'error');
     }
   };
 
@@ -121,7 +155,11 @@ export function JournalPage() {
                   aria-labelledby="journal-mood-label"
                   className="w-full"
                   value={selectedMood ? [String(selectedMood)] : []}
-                  onValueChange={([next]) => next && setSelectedMood(Number(next))}
+                  onValueChange={([next]) => {
+                    if (!next) return;
+                    isDirtyRef.current = true;
+                    setSelectedMood(Number(next));
+                  }}
                 >
                   {MOODS.map(({ value, label, Icon }) => (
                     <ToggleGroupItem key={value} value={value} size="sm" className="flex-1" aria-label={label} title={label}>
@@ -139,13 +177,16 @@ export function JournalPage() {
                   id="journal-notes"
                   className="h-44 resize-none text-sm leading-relaxed"
                   value={journalText}
-                  onChange={(e) => setJournalText(e.target.value)}
+                  onChange={(e) => {
+                    isDirtyRef.current = true;
+                    setJournalText(e.target.value);
+                  }}
                   placeholder="What you saw, what you did, what you'd repeat…"
                 />
               </div>
 
-              <Button className="w-full" onClick={onSaveJournal}>
-                {journalSaved ? 'Saved' : 'Save entry'}
+              <Button className="w-full" onClick={onSaveJournal} disabled={saving}>
+                {saving ? 'Saving…' : journalSaved ? 'Saved' : 'Save entry'}
               </Button>
             </div>
           </SectionCard>

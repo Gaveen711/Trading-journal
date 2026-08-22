@@ -807,25 +807,28 @@ export default function BrokerSync() {
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="relative mt-6 sm:mt-0 w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-[2rem] border border-border/40 bg-card/95 dark:bg-[#0b0c10]/95 p-5 sm:p-7 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
+              className="relative mt-6 sm:mt-0 flex w-full max-w-lg max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[2rem] border border-border/40 bg-card/95 dark:bg-[#0b0c10]/95 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setIsConnectModalOpen(false)}
-                className="absolute top-4 right-4 w-11 h-11 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors bg-transparent border-none outline-none"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="space-y-5">
-                {/* Header */}
-                <div className="flex items-center gap-3 pr-10 min-w-0">
-                  <BrokerLogo preset={connectingPreset} className="w-10 h-10 rounded-xl" imageClassName="w-6 h-6" />
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-bold text-foreground leading-snug break-words">Connect {connectingPreset.name}</h3>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mt-0.5">Secure transient connection</p>
-                  </div>
+              {/* Header — the close button lives in the flow rather than
+                  absolutely on top of the title, so a long broker name can no
+                  longer slide under it and the row keeps the card's padding. */}
+              <div className="flex items-start gap-3 border-b border-border/25 px-5 py-4 sm:px-7 sm:py-5">
+                <BrokerLogo preset={connectingPreset} className="w-10 h-10 shrink-0 rounded-xl" imageClassName="w-6 h-6" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-lg font-bold leading-snug text-foreground">Connect {connectingPreset.name}</h3>
+                  <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Secure transient connection</p>
                 </div>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={() => setIsConnectModalOpen(false)}
+                  className="-mr-2 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-none bg-transparent text-muted-foreground outline-none transition-colors hover:bg-muted/50 hover:text-foreground"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
 
                 {/* Account Overwrite Warning */}
                 {isAccountConnected && (
@@ -1013,7 +1016,10 @@ export default function BrokerSync() {
                         ? 'linear-gradient(135deg, hsl(var(--primary) / 0.7), hsl(var(--primary-to) / 0.7))'
                         : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-to)))',
                       boxShadow: connecting ? 'none' : '0 0 20px hsl(var(--primary) / 0.35)',
-                      color: 'white',
+                      // The dark themes set a near-black --primary-foreground
+                      // precisely because their primary is a light lime/cyan;
+                      // hardcoding white washed the label out to nothing there.
+                      color: 'hsl(var(--primary-foreground))',
                       border: 'none',
                     }}
                   >
@@ -1058,12 +1064,13 @@ export default function BrokerSync() {
               onClick={(e) => e.stopPropagation()}
               className="relative mt-6 sm:mt-0 w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-border/40 bg-card/95 dark:bg-[#0b0c10]/95 p-5 sm:p-7 shadow-[0_24px_80px_-28px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
             >
-              {/* Close Button */}
               <button
+                type="button"
+                aria-label="Close"
                 onClick={() => setIsManageModalOpen(false)}
-                className="absolute top-4 right-4 w-11 h-11 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/50 transition-colors bg-transparent border-none outline-none"
+                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border-none bg-transparent text-muted-foreground outline-none transition-colors hover:bg-muted/50 hover:text-foreground"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
 
               <div className="space-y-6">

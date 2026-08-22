@@ -13,10 +13,21 @@ export class FirebaseBrokerRepository extends BrokerRepository {
     return onSnapshot(doc(db, 'users', userId), onUpdate, onError);
   }
 
+  /**
+   * Disconnect is a soft delete server-side (`isActive: false`), so the doc
+   * survives. Publishing it anyway made the snapshot re-add the account the
+   * instant the local list dropped it — the Disconnect button looked like a
+   * no-op. Deactivated accounts are filtered out here, at the single point
+   * every consumer reads server truth from.
+   */
   subscribeToAccounts(userId, onUpdate, onError) {
     return onSnapshot(
       collection(db, 'users', userId, 'brokerAccounts'),
-      (snapshot) => onUpdate(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      (snapshot) => onUpdate(
+        snapshot.docs
+          .map((item) => ({ id: item.id, ...item.data() }))
+          .filter((item) => item.isActive !== false),
+      ),
       onError,
     );
   }

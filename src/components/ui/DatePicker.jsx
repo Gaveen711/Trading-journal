@@ -1,8 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar3 } from 'react-bootstrap-icons';
 import { pad2 } from '../../lib/tradeUtils';
+import { cn } from '../../lib/utils';
 
-export function DatePicker({ value, onChange, name }) {
+/**
+ * `className` lands on the trigger so a form can bring the control to its own
+ * field height. It merges after the defaults, so an `h-*` passed here wins.
+ */
+export function DatePicker({ value, onChange, name, className }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(value ? new Date(value + 'T00:00:00') : new Date());
   const popoverRef = useRef(null);
@@ -78,7 +83,7 @@ export function DatePicker({ value, onChange, name }) {
     <div className="relative w-full" ref={popoverRef}>
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className="input-premium h-12 flex items-center justify-between cursor-pointer group"
+        className={cn('input-premium h-12 flex items-center justify-between cursor-pointer group', className)}
       >
         <span className="text-sm font-bold">{value || 'Select Date...'}</span>
         <Calendar3 className={`w-4 h-4 transition-colors ${isOpen ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { auth, storage } from '../../firebase';
 import { calcPnl, todayStr, formatCurrency, formatSigned, pnlToneClass } from '../../lib/tradeUtils';
 import { isPaidPlan } from '../../lib/entitlements.js';
+import { outcomeForPnl } from '../../lib/goldContract.js';
 import { resolveSessionAt } from '../../lib/sessionEngine.js';
 import { evaluateRules } from '../../lib/disciplineRules.js';
 import { submitTrade } from '../../services/tradeService';
@@ -82,12 +83,14 @@ const SESSION_OPTIONS = [
 function legacySessionPrefill(resolved) {
   if (!resolved) return '';
   switch (resolved.code) {
-    // TRADING_SESSIONS ids reuse the legacy vocabulary, so the Asia hub picks
-    // its own open desk rather than going through a lookup table.
-    case 'Asia': return resolved.desks?.includes('Tokyo') ? 'Tokyo' : 'Sydney';
+    // Since the four-session split each single code names its own desk, so the
+    // only work left is the legacy 'NewYork' spelling and the overlaps.
+    case 'Sydney': return 'Sydney';
+    case 'Tokyo': return 'Tokyo';
     case 'London': return 'London';
     case 'NY': return 'NewYork';
-    case 'AsiaLondon': return 'London';
+    case 'SydneyTokyo': return 'Tokyo';
+    case 'TokyoLondon': return 'London';
     case 'LondonNY': return 'NewYork';
     default: return '';
   }
@@ -292,7 +295,10 @@ export function DashboardRightSidebar({
     const mappedDir = direction === 'LONG' ? 'BUY' : 'SELL';
     const tradeRes  = calcPnl(entryVal, exitVal, lotsVal, 0, slVal, tpVal, mappedDir, 0);
     const { pnl, pips, rr } = tradeRes;
-    const outcome = pnl > 0.01 ? 'WIN' : pnl < -0.01 ? 'LOSS' : 'BE';
+    // The one place the WIN/LOSS/BE threshold is defined, shared with the
+    // read-side getTradeOutcome so a logged trade and a re-derived one can
+    // never land on different verdicts.
+    const outcome = outcomeForPnl(pnl);
 
     // The same instant the use case will resolve the session tag from, captured
     // once here so the draft the rules judge and the doc that gets written can

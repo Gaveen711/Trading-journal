@@ -7,7 +7,15 @@ import { CustomSelect } from '../components/ui/CustomSelect';
 import { EditTradeModal } from '../components/EditTradeModal';
 import { ImageViewerModal } from '../components/ImageViewerModal';
 import { formatSigned, formatSignedNumber, formatPrice, pnlToneClass, toDate, toMillis } from '../lib/tradeUtils';
-import { getTradeSetupKey, getTradeStrategyTags } from '../lib/tradeAnalytics.js';
+import {
+  getTradeOutcome,
+  getTradeSessionCode,
+  getTradeSetupKey,
+  getTradeStrategyTags,
+  isLongDirection,
+  isShortDirection,
+} from '../lib/tradeAnalytics.js';
+import { PRIMARY_SESSIONS, SESSION_LABELS, primarySessionForCode } from '../lib/sessionEngine.js';
 import { tradeDayKey } from '../lib/disciplineRules.js';
 import { isPaidPlan } from '../lib/entitlements.js';
 import { DirectionCell } from '../components/app/DirectionCell';
@@ -300,17 +308,13 @@ export function HistoryPage() {
       // Outcome filter
       if (filterOutcome && t.outcome !== filterOutcome) return false;
 
-      // Session filter (mapping pill labels to database values case-insensitively)
-      if (filterSession) {
-        const s = (t.session || '').toLowerCase();
-        const f = filterSession.toLowerCase();
-        if (f === 'asia') {
-          if (s !== 'tokyo' && s !== 'sydney' && s !== 'asia') return false;
-        } else if (f === 'newyork' || f === 'ny') {
-          if (s !== 'newyork' && s !== 'new york' && s !== 'ny') return false;
-        } else {
-          if (s !== f) return false;
-        }
+      // Session filter — resolved through the engine, so the pills select the
+      // same four sessions Analytics and Calendar report on. This used to match
+      // the free-text `session` field against its own spelling list, which meant
+      // a broker-imported trade (tagged by instant, with no `session` string at
+      // all) could never be found by any session pill.
+      if (filterSession && primarySessionForCode(getTradeSessionCode(t)) !== filterSession) {
+        return false;
       }
 
       // Setup filter — matched in memory against the same bucket key the
@@ -369,10 +373,15 @@ export function HistoryPage() {
     const totals = filteredAndSortedTrades.reduce((acc, trade) => {
       acc.pnl += Number(trade.pnl) || 0;
       acc.pips += Number(trade.pips) || 0;
-      if (trade.outcome === 'WIN') acc.wins += 1;
-      const direction = trade.direction?.toUpperCase();
-      if (direction === 'BUY') acc.longs += 1;
-      if (direction === 'SELL') acc.shorts += 1;
+      // getTradeOutcome, not a bare `outcome` read: broker-imported rows carry
+      // no stored outcome, so this counted every one of them as a loss and
+      // reported a win rate the rest of the app disagreed with.
+      if (getTradeOutcome(trade) === 'WIN') acc.wins += 1;
+      // Through the shared vocabulary, not a local 'BUY'/'SELL' test: a trade
+      // stored as 'LONG' or 'SHORT' counted as neither here, so the long/short
+      // split under the filters disagreed with every other surface.
+      if (isLongDirection(trade.direction)) acc.longs += 1;
+      if (isShortDirection(trade.direction)) acc.shorts += 1;
       return acc;
     }, { pnl: 0, pips: 0, wins: 0, longs: 0, shorts: 0 });
 
@@ -509,7 +518,10 @@ export function HistoryPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           <DetailField label="Setup" value={setupNameFor(t)} />
           <DetailField label="Strategy" value={strat} />
-          <DetailField label="Session" value={t.session} />
+          {/* The derived code, not the legacy free-text field: a broker-synced
+              trade carries no `session` string and showed a bare dash here
+              while the table beside it reported a real session. */}
+          <DetailField label="Session" value={SESSION_LABELS[getTradeSessionCode(t)] || t.session} />
           <DetailField label="Risk percent" value={t.riskPercent ? `${t.riskPercent}%` : null} figure />
           <DetailField label="Stop loss" value={t.sl ? formatPrice(t.sl) : null} figure />
           <DetailField label="Take profit" value={t.tp ? formatPrice(t.tp) : null} figure />
@@ -694,7 +706,7 @@ export function HistoryPage() {
             </ToggleGroupItem>
           </ToggleGroup>
 
-          {/* Session — analytics buckets; values stay as stored */}
+          {/* Session — the engine's four sessions, in its own opening order */}
           <ToggleGroup
             spacing={0}
             aria-label="Filter by session"
@@ -702,10 +714,11 @@ export function HistoryPage() {
             onValueChange={([next]) => next && handleSessionPill(next === 'all' ? '' : next)}
           >
             <ToggleGroupItem value="all" size="sm">All sessions</ToggleGroupItem>
-            <ToggleGroupItem value="London" size="sm">London</ToggleGroupItem>
-            <ToggleGroupItem value="NewYork" size="sm">NY</ToggleGroupItem>
-            <ToggleGroupItem value="Asia" size="sm">Asia</ToggleGroupItem>
-            <ToggleGroupItem value="Overlap" size="sm">Overlap</ToggleGroupItem>
+            {PRIMARY_SESSIONS.map((session) => (
+              <ToggleGroupItem key={session} value={session} size="sm">
+                {SESSION_LABELS[session] || session}
+              </ToggleGroupItem>
+            ))}
           </ToggleGroup>
         </div>
 
