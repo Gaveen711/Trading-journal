@@ -375,7 +375,7 @@ body:has(.dashboard-shell) {
   --win: 143 72% 31%;
   --loss: 350 72% 44%;
   min-height: 100dvh;
-  background: hsl(var(--background));
+  background: transparent;
   font-family: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -423,22 +423,32 @@ body:has(.dashboard-shell) {
     linear-gradient(180deg, hsl(var(--foreground) / 0.022) 1px, transparent 1px),
     radial-gradient(circle at 12% 4%, hsl(var(--primary) / 0.09), transparent 30rem),
     radial-gradient(circle at 92% 16%, hsl(var(--accent) / 0.065), transparent 28rem),
-    hsl(var(--background));
+    hsl(var(--background) / 0.88);
   background-size: 72px 72px, 72px 72px, auto, auto, auto;
 }
 
 .dashboard-sidebar {
   contain: layout;
-  background: linear-gradient(180deg, hsl(var(--sidebar)), hsl(var(--background)));
+  background: linear-gradient(180deg, hsl(var(--sidebar) / 0.94), hsl(var(--background) / 0.9));
   border-right: 1px solid hsl(var(--sidebar-border));
   box-shadow: 18px 0 56px -42px hsl(var(--primary) / 0.24);
   will-change: width;
 }
 
+.dashboard-sidebar [data-slot="sidebar-inner"] {
+  background: linear-gradient(180deg, hsl(var(--sidebar) / 0.94), hsl(var(--background) / 0.9));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
 .dark .dashboard-sidebar {
-  background: linear-gradient(180deg, hsl(222 44% 2%), hsl(222 38% 3%));
+  background: linear-gradient(180deg, hsl(222 44% 2% / 0.92), hsl(222 38% 3% / 0.88));
   border-right-color: hsl(var(--sidebar-border));
   box-shadow: 18px 0 56px -42px hsl(var(--primary) / 0.28);
+}
+
+.dark .dashboard-sidebar [data-slot="sidebar-inner"] {
+  background: linear-gradient(180deg, hsl(222 44% 2% / 0.92), hsl(222 38% 3% / 0.88));
 }
 
 .theme-obsidian-teal .dashboard-shell,
@@ -709,15 +719,22 @@ body:has(.dashboard-shell) {
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1), 0 0 24px hsl(var(--primary) / 0.075) !important;
 }
 
-.dashboard-mobile-nav {
+.dashboard-floating-dock {
   background: hsl(var(--card) / 0.9);
   -webkit-backdrop-filter: blur(22px) saturate(150%);
   backdrop-filter: blur(22px) saturate(150%);
   box-shadow: 0 18px 52px hsl(222 50% 1% / 0.72), 0 0 26px hsl(var(--primary) / 0.08);
 }
 
-.dashboard-mobile-nav-item[aria-current="page"] {
+.dashboard-floating-dock-item[aria-current="page"] {
   box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2), 0 0 18px hsl(var(--primary) / 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-floating-dock-item {
+    transform: none !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {

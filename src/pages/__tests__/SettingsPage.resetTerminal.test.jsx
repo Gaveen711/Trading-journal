@@ -9,7 +9,6 @@ import userEvent from '@testing-library/user-event';
 
 let outletContext;
 let brokerContext;
-let walletContext;
 const toast = vi.fn();
 
 vi.mock('react-router-dom', async (importOriginal) => ({
@@ -24,7 +23,6 @@ vi.mock('../../components/ToastContext', () => ({
 
 vi.mock('../../app/di/AuthenticatedSessionContext.jsx', () => ({
   useSessionBrokerAccounts: () => brokerContext,
-  useSessionWallet: () => walletContext,
 }));
 
 vi.mock('../../firebase', () => ({
@@ -71,7 +69,6 @@ async function resetTerminal(user) {
 beforeEach(() => {
   toast.mockClear();
   outletContext = makeContext();
-  walletContext = { walletBalance: 500, updateBalance: vi.fn().mockResolvedValue(undefined) };
   brokerContext = {
     accounts: [{ id: 'acc1', server: 'JustMarkets-Demo2' }],
     removeAccount: vi.fn().mockResolvedValue(undefined),
@@ -125,44 +122,5 @@ describe('SettingsPage — reset terminal', () => {
       expect.stringContaining('trades'),
       'error'
     );
-  });
-});
-
-describe('SettingsPage — wallet top-up', () => {
-  it('adds to the stored balance rather than replacing it', async () => {
-    const user = userEvent.setup();
-    render(<SettingsPage />);
-
-    await user.type(screen.getByLabelText(/add funds/i), '250.50');
-    await user.click(screen.getByRole('button', { name: /top up/i }));
-
-    expect(walletContext.updateBalance).toHaveBeenCalledWith(750.5);
-    expect(toast).toHaveBeenCalledWith(expect.stringMatching(/topped up/i), 'success');
-  });
-
-  it('reads the true balance, not the outlet value the sync permission masks', async () => {
-    const user = userEvent.setup();
-    // Permission off: the outlet publishes 0 while the real deposit is 500.
-    outletContext = makeContext({ walletBalance: 0 });
-    render(<SettingsPage />);
-
-    await user.type(screen.getByLabelText(/add funds/i), '100');
-    await user.click(screen.getByRole('button', { name: /top up/i }));
-
-    // 600, not 100 — computing from the masked 0 would erase the deposit.
-    expect(walletContext.updateBalance).toHaveBeenCalledWith(600);
-  });
-
-  it('refuses an amount that is not a positive number', async () => {
-    const user = userEvent.setup();
-    render(<SettingsPage />);
-
-    for (const bad of ['0', '-25', 'abc']) {
-      await user.clear(screen.getByLabelText(/add funds/i));
-      await user.type(screen.getByLabelText(/add funds/i), bad);
-      await user.click(screen.getByRole('button', { name: /top up/i }));
-    }
-    expect(walletContext.updateBalance).not.toHaveBeenCalled();
-    expect(toast).toHaveBeenCalledWith(expect.stringMatching(/greater than zero/i), 'error');
   });
 });

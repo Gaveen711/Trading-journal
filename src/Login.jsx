@@ -80,7 +80,7 @@ function Login() {
       wireframe: false,
       colorBlending: 8,
       backgroundColor: lightMode ? '#fafbfc' : '#050510',
-      backgroundAlpha: 1,
+      backgroundAlpha: 0,
       grainScale: 2,
       grainSparsity: 0,
       grainIntensity: 0,
@@ -339,13 +339,13 @@ function Login() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none bg-background text-foreground aurora-theme"
+      className="login-page min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden select-none bg-transparent text-foreground aurora-theme"
     >
       {/* NeatGradient animated background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
         <canvas
           ref={canvasRef}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: isLightMode ? 0.28 : 0.55 }}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: isLightMode ? 0.16 : 0.28 }}
         />
       </div>
 

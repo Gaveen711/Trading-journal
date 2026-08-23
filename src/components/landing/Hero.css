@@ -1,0 +1,339 @@
+/* ————————————————————————————————————————————————————————————————
+   Hero — "Lightbox" (class prefix xh-)
+
+   Three real captures on a 3D plinth under museum glass. Inherits every
+   token and the glass recipe from PublicSite.css; this file only adds the
+   plinth, the plates and the readout strip.
+
+   Motion has ONE implementation. `--xh-progress` runs 0 → 1 across the
+   first 70vh of scroll: browsers with scroll timelines animate it here
+   (the @supports block), everyone else has it written inline by the
+   rAF-throttled listener in Hero.jsx. Every plate transform is a calc()
+   of that number, so the two paths cannot disagree. Under reduced motion
+   the property is pinned at 1 — the settled, flat state — and nothing
+   animates.
+
+     · Amber: the live dot in the eyebrow. Nothing else.
+     · Green / red: the signed R figures in the strip. Nothing else.
+     · No filters on large areas; will-change only on the three plates.
+   ———————————————————————————————————————————————————————————————— */
+
+@property --xh-progress {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.xh {
+  --xh-progress: 0;
+  --xh-px: 0;
+  --xh-py: 0;
+  --xh-tilt-x: 10deg;
+  --xh-tilt-y: -9deg;
+  --xh-tilt-z: -1.5deg;
+  --xh-bleed: 0px;
+
+  position: relative;
+  overflow: clip;
+  /* room for the fixed 66px nav, then the showroom's own air */
+  padding-block: clamp(108px, 12vw, 152px) clamp(40px, 5vw, 64px);
+}
+
+/* ————————————————————————— grid ————————————————————————— */
+
+.xh-grid {
+  display: grid;
+  gap: clamp(44px, 6vw, 64px);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .xh { --xh-bleed: 16px; }
+  .xh-grid {
+    grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr);
+    gap: 56px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xh { --xh-bleed: 32px; }
+}
+
+@media (min-width: 1440px) {
+  .xh { --xh-bleed: 72px; }
+}
+
+/* ————————————————————————— copy ————————————————————————— */
+
+.xh-copy {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+/* The eyebrow is a live reading. The amber dot inside .xj-live is the
+   signal, so the eyebrow's own amber rule is dropped — one amber mark. */
+.xh-eyebrow {
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  column-gap: 10px;
+  row-gap: 6px;
+}
+
+.xh-eyebrow::before { display: none; }
+.xh-eyebrow .xj-live { gap: 9px; }
+/* Closed-desk reading stays legible: only the dot goes faint. */
+.xh-eyebrow .xj-live.is-idle { color: var(--xj-ink-2); }
+.xh-eyebrow-dot { color: var(--xj-faint); }
+.xh-eyebrow b { font-weight: 500; color: var(--xj-ink-2); }
+
+/* The system headline, sized for a 44% column so the fold at 1440×900 and
+   1280×800 holds the headline, both CTAs and the front plate together. */
+.xj .xh-title {
+  max-width: 22ch;
+  font-size: clamp(2.5rem, 5.1vw, 4.6rem) !important;
+  line-height: 1.02 !important;
+}
+
+.xh-lede {
+  margin-top: 24px;
+  max-width: 50ch;
+}
+
+.xh-actions { margin-top: 32px; }
+
+.xh-proof {
+  margin-top: 22px;
+  color: var(--xj-ink-2);
+  letter-spacing: 0.13em;
+}
+
+/* ————————————————————————— the lightbox ————————————————————————— */
+
+/* Stage: owns the perspective, the parallax variables and the settle
+   timeline. Wider than its column on purpose — the product is too big for
+   the frame — and the section clips whatever runs past the viewport. */
+.xh-stage {
+  position: relative;
+  z-index: 1;
+  width: calc(100% + var(--xh-bleed));
+  min-width: 0;
+  perspective: 1600px;
+  perspective-origin: 32% 38%;
+  animation: xh-arrive 900ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* The lightbox's own light: a quiet falloff behind the plates, in bone,
+   never a colour. A gradient, not a filter. */
+.xh-stage::before {
+  content: '';
+  position: absolute;
+  inset: -14% -12% -18% -10%;
+  z-index: -1;
+  background: radial-gradient(60% 64% at 58% 46%, rgba(236, 234, 228, 0.085), transparent 72%);
+  pointer-events: none;
+}
+
+/* The stack is the 3D context. Tilted at progress 0, flat at progress 1. */
+.xh-stack {
+  position: relative;
+  transform-style: preserve-3d;
+  transform:
+    rotateX(calc((1 - var(--xh-progress)) * var(--xh-tilt-x)))
+    rotateY(calc((1 - var(--xh-progress)) * var(--xh-tilt-y)))
+    rotateZ(calc((1 - var(--xh-progress)) * var(--xh-tilt-z)));
+}
+
+.xh-plate {
+  position: relative;
+  border-radius: var(--xj-glass-radius);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Front plate: in flow, so it sizes the stack. Rides the pointer by 4px. */
+.xh-plate--front {
+  z-index: 3;
+  transform: translate3d(calc(var(--xh-px) * 4px), calc(var(--xh-py) * 4px), 0);
+  box-shadow:
+    0 48px 80px -40px rgba(0, 0, 0, 0.92),
+    0 18px 30px -18px rgba(0, 0, 0, 0.7);
+}
+
+/* Back plates: the same box, pushed up and right and down the z-axis.
+   They fan further out and brighten as the stack settles. */
+.xh-plate--mid,
+.xh-plate--back {
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 30px 60px -36px rgba(0, 0, 0, 0.85);
+}
+
+.xh-plate--mid {
+  z-index: 2;
+  transform: translate3d(
+    calc(var(--xh-px) * 7px + 7% + var(--xh-progress) * 4%),
+    calc(var(--xh-py) * 7px - 9% - var(--xh-progress) * 4%),
+    -72px
+  );
+}
+
+.xh-plate--back {
+  z-index: 1;
+  transform: translate3d(
+    calc(var(--xh-px) * 10px + 14% + var(--xh-progress) * 8%),
+    calc(var(--xh-py) * 10px - 18% - var(--xh-progress) * 7%),
+    -144px
+  );
+}
+
+/* Dimming is a ground-coloured scrim inside the frame — the hairline stays
+   crisp, the transparency behind it goes dark. Opacity only; no filter. */
+.xh-plate--mid::after,
+.xh-plate--back::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: 1;
+  border-radius: calc(var(--xj-glass-radius) - 1px);
+  background: var(--xj-ground);
+  pointer-events: none;
+}
+
+.xh-plate--mid::after { opacity: calc(0.36 - var(--xh-progress) * 0.26); }
+.xh-plate--back::after { opacity: calc(0.52 - var(--xh-progress) * 0.32); }
+
+/* The plates arrive with the page: a short rise, never from invisible, so
+   the front capture (the LCP candidate) is on screen from the first frame. */
+@keyframes xh-arrive {
+  from { opacity: 0.4; transform: translate3d(0, 22px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Scroll-driven settle. Longhands, because the `animation` shorthand
+   resets animation-timeline/range to their initial values. */
+@keyframes xh-settle {
+  from { --xh-progress: 0; }
+  to { --xh-progress: 1; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .xh-stage {
+    animation-name: xh-arrive, xh-settle;
+    animation-duration: 900ms, auto;
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1), cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    animation-fill-mode: both, both;
+    animation-timeline: auto, scroll(root block);
+    animation-range: normal, 0 70vh;
+  }
+}
+
+/* ————————————————————————— breakpoints ————————————————————————— */
+
+/* Tablet: single column, full stack under the copy, a gentler tilt. */
+@media (max-width: 1023px) {
+  .xh {
+    --xh-tilt-x: 7deg;
+    --xh-tilt-y: -6deg;
+    --xh-tilt-z: -1deg;
+  }
+  .xh-stage { perspective-origin: 40% 40%; }
+  .xh-grid { gap: clamp(56px, 8vw, 80px); }
+  /* One column: the headline has the whole shell, so it can be larger. */
+  .xj .xh-title { font-size: clamp(2.5rem, 6.2vw, 3.5rem) !important; }
+}
+
+/* Phone: one plate, a slight tilt; the back plates never load. */
+@media (max-width: 767px) {
+  .xh {
+    --xh-tilt-x: 6deg;
+    --xh-tilt-y: -4deg;
+    --xh-tilt-z: -0.6deg;
+  }
+  .xh-plate--mid,
+  .xh-plate--back { display: none; }
+  .xh-stage::before { inset: -10% -8% -14% -8%; }
+}
+
+/* ————————————————————————— readouts ————————————————————————— */
+
+/* The strip under the plinth: hairline top and bottom, mono, one reading
+   per cell. Its top hairline is the shelf the stack sits on. */
+.xh-ticker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: clamp(44px, 6vw, 72px) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--xj-edge);
+  border-bottom: 1px solid var(--xj-edge);
+  font-family: var(--xj-mono);
+}
+
+.xh-ticker li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--xj-edge);
+}
+
+.xh-ticker li:nth-child(odd) { padding-right: 14px; border-right: 1px solid var(--xj-edge); }
+.xh-ticker li:nth-child(even) { padding-left: 14px; }
+.xh-ticker li:nth-last-child(-n + 2) { border-bottom: 0; }
+
+/* Narrow cells stack the reading under its label — a tile, never an
+   ellipsis on a label. */
+@media (max-width: 599px) {
+  .xh-ticker li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 13px 0;
+  }
+  .xh-ticker-val { font-size: 0.88rem; }
+}
+
+.xh-ticker-key {
+  overflow: hidden;
+  color: var(--xj-ink-2);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.xh-ticker-val {
+  flex: 0 0 auto;
+  color: var(--xj-ink);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (min-width: 900px) {
+  .xh-ticker {
+    display: flex;
+    justify-content: space-between;
+    gap: 28px;
+  }
+  .xh-ticker li {
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 15px 0;
+    border-bottom: 0;
+  }
+  .xh-ticker li:nth-child(odd) { padding-right: 0; border-right: 0; }
+  .xh-ticker li:nth-child(even) { padding-left: 0; }
+}
+
+/* ————————————————————————— reduced motion ————————————————————————— */
+
+@media (prefers-reduced-motion: reduce) {
+  .xh { --xh-progress: 1; }
+  .xh-stage { animation: none; opacity: 1; transform: none; }
+}

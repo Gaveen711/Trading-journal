@@ -1,88 +1,491 @@
-/* Contact page surfaces — "Instrument" system. Prefix: xjc- */
+/* Contact page — a split sheet on the Vitrine system. Prefix: xct-
+   Left: editorial column (headline, what to include, broker request).
+   Right: the message itself on museum glass, with an envelope header
+   that reports where it goes, what it is about and what state it is in. */
 
-.xjc-grid { display: grid; gap: 48px 64px; align-items: start; }
+/* ——————————————————————————— grid ——————————————————————————— */
 
-@media (min-width: 960px) {
-  .xjc-grid { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); }
+.xct-grid {
+  display: grid;
+  grid-template-areas:
+    'head'
+    'form'
+    'aside';
+  gap: 44px;
+  align-items: start;
 }
 
-.xjc-routes { list-style: none; margin: 40px 0 0; padding: 0; border-top: 1px solid var(--xj-line); }
+.xct-head { grid-area: head; min-width: 0; }
+.xct-sheet { grid-area: form; min-width: 0; }
+.xct-aside { grid-area: aside; min-width: 0; }
 
-.xjc-routes li { border-bottom: 1px solid var(--xj-line); }
+@media (min-width: 960px) {
+  .xct-grid {
+    grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'head form'
+      'aside form';
+    column-gap: clamp(48px, 6vw, 88px);
+    row-gap: 48px;
+  }
 
-.xjc-routes :is(a, .xjc-route-static) {
+  /* The editorial column runs longer than the sheet, so the sheet follows
+     the reader: what to include is read with the message still in view, and
+     "Request a broker" at the foot of the column reveals fields on screen.
+     The root's overflow is `clip`, not `hidden`, so sticky still works. */
+  .xct-sheet {
+    position: sticky;
+    top: 88px;
+  }
+}
+
+/* The headline shares its column with the form, so it runs a size down from
+   the site-wide cover headline. Both rules carry !important (the shared one
+   does), so the longer selector decides. */
+.xj .xct-head .xj-h1 {
+  font-size: clamp(2.6rem, 4.6vw, 4.1rem) !important;
+  max-width: 14ch;
+}
+
+.xct-head .xj-lede { max-width: 44ch; }
+
+/* ——————————————————————————— what to include ——————————————————————————— */
+
+.xct-aside > .xj-label { margin-bottom: 6px; }
+
+.xct-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--xj-line);
+}
+
+.xct-row {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 8px 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 18px;
+  align-items: baseline;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
   padding: 18px 0;
+  border: 0;
+  border-bottom: 1px solid var(--xj-line);
+  border-radius: 0;
+  background: none;
+  color: var(--xj-mute);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   transition: color 150ms ease;
 }
 
-.xjc-routes .xj-label { padding-top: 3px; }
-
-.xjc-routes strong {
-  display: block;
+.xct-row-label {
+  grid-row: 1;
+  grid-column: 1;
   color: var(--xj-bone);
-  font-size: 0.98rem;
-  font-weight: 450;
-  letter-spacing: -0.012em;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
-.xjc-routes p { margin: 5px 0 0; color: var(--xj-mute); font-size: 0.88rem; line-height: 1.55; }
-.xjc-routes a:hover strong { color: var(--xj-signal); }
+.xct-row-detail {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+  line-height: 1.58;
+}
 
-/* the form */
-
-.xjc-form form,
-.xjc-success { padding: clamp(20px, 2.6vw, 30px); }
-
-.xjc-hint {
-  margin: 0 0 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--xj-line);
+/* The cue sits on the label's line at every width; below 560px the detail
+   drops under both of them. */
+.xct-row-cue {
+  grid-row: 1;
+  grid-column: 2;
+  justify-self: end;
   color: var(--xj-mute);
-  font-size: 0.89rem;
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 150ms ease;
+}
+
+.xct-row:hover { color: var(--xj-bone); }
+.xct-row:hover .xct-row-cue { color: var(--xj-bone); }
+
+/* Selected = the topic currently loaded in the form. The dot is the signal. */
+.xct-row[aria-pressed='true'] .xct-row-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--xj-mute);
+}
+
+.xct-row[aria-pressed='true'] .xct-row-cue::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--xj-signal);
+}
+
+@media (min-width: 560px) {
+  .xct-row { grid-template-columns: 104px minmax(0, 1fr) auto; }
+  .xct-row-detail { grid-row: 1; grid-column: 2; }
+  .xct-row-cue { grid-column: 3; }
+}
+
+.xct-direct {
+  margin: 22px 0 0;
+  color: var(--xj-mute);
+  font-size: 0.92rem;
   line-height: 1.6;
 }
 
-.xjc-field-grid { display: grid; gap: 0 18px; }
+/* ——————————————————————————— ask for your broker ——————————————————————————— */
+
+.xct-broker {
+  margin-top: 40px;
+  padding: clamp(20px, 2.4vw, 26px);
+  border: 1px solid var(--xj-line);
+  border-radius: var(--xj-glass-radius);
+}
+
+.xct-broker .xj-eyebrow { margin-bottom: 18px; }
+
+.xct-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  color: var(--xj-mute);
+  font-size: 0.92rem;
+}
+
+.xct-stat strong {
+  color: var(--xj-bone);
+  font-size: clamp(2.4rem, 3.2vw, 3rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.xct-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xct-platforms li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--xj-mute);
+  font-family: var(--xj-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+}
+
+.xct-platforms img { width: 16px; height: 16px; border-radius: 4px; }
+.xct-platforms b { color: var(--xj-bone); font-weight: 500; }
+
+.xct-broker-copy {
+  margin: 18px 0 22px;
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  line-height: 1.62;
+}
+
+/* ——————————————————————————— the sheet ——————————————————————————— */
+
+/* Envelope header: the silkscreen strip of the glass pane, reporting the
+   message's routing and state. Keys are uppercase mono; values keep their
+   own case because an email address is not shouted. */
+.xct-envelope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--xj-glass-line);
+  border-radius: calc(var(--xj-glass-radius) - 1px) calc(var(--xj-glass-radius) - 1px) 0 0;
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.xct-envelope > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.xct-envelope dt {
+  color: var(--xj-faint);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.xct-envelope dd {
+  margin: 0;
+  color: var(--xj-mute);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xct-envelope .xct-dim { color: var(--xj-faint); }
 
 @media (min-width: 560px) {
-  .xjc-field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .xct-envelope-status { margin-left: auto; }
 }
 
-.xjc-form-error {
-  margin: 0 0 18px;
-  padding: 12px 14px;
-  border: 1px solid var(--xj-down);
+.xct-form,
+.xct-receipt { padding: clamp(20px, 2.6vw, 30px); }
+
+/* Fields reuse the shared .xj-input / .xj-field-error furniture; the label
+   is its own element above the control (see Field in ContactPage.jsx). */
+.xct-field { margin-bottom: 18px; min-width: 0; }
+
+.xct-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--xj-mute);
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.xct-label em { color: var(--xj-faint); font-size: 0.6rem; font-style: normal; }
+
+.xct-pair { display: grid; gap: 0 18px; }
+
+@media (min-width: 560px) {
+  .xct-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* native select, dressed as the shared input */
+.xct-select { position: relative; }
+
+.xct-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 42px;
+  cursor: pointer;
+}
+
+.xct-select select.is-empty { color: var(--xj-faint); }
+.xct-select select option { background: var(--xj-panel); color: var(--xj-bone); }
+
+.xct-select svg {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  color: var(--xj-faint);
+  pointer-events: none;
+}
+
+/* Broker request: appears when the topic asks for it. The eyebrow's amber
+   hairline is the only accent; the block itself is a hairline box. */
+.xct-request {
+  margin: 2px 0 22px;
+  padding: 18px 18px 2px;
+  border: 1px solid var(--xj-glass-line);
   border-radius: var(--xj-radius);
-  color: var(--xj-down);
-  font-size: 0.86rem;
+  animation: xct-open 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
-.xjc-submit {
+@keyframes xct-open {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.xct-request .xj-eyebrow { margin-bottom: 16px; }
+
+.xct-request-note {
+  margin: 0 0 16px;
+  color: var(--xj-mute);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.xct-platform { padding: 0; border: 0; }
+.xct-platform legend { float: left; }
+.xct-platform .xct-chips { clear: both; }
+
+.xct-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.xct-chip { display: inline-flex; position: relative; }
+
+.xct-chip-face {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 16px 0 14px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+  background: var(--xj-void);
+  color: var(--xj-mute);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+/* the radio's own dot, drawn on the chip */
+.xct-chip-face::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--xj-line-2);
+  transition: background-color 150ms ease;
+}
+
+.xct-chip:hover .xct-chip-face { border-color: var(--xj-faint); color: var(--xj-bone); }
+
+.xct-chip input:checked + .xct-chip-face {
+  border-color: var(--xj-bone);
+  color: var(--xj-bone);
+}
+
+.xct-chip input:checked + .xct-chip-face::before { background: var(--xj-signal); }
+
+.xct-chip input:focus-visible + .xct-chip-face {
+  outline: 2px solid var(--xj-signal);
+  outline-offset: 3px;
+}
+
+.xct-chip input[aria-invalid='true'] + .xct-chip-face { border-color: var(--xj-down); }
+
+/* message footer: hint on the left, the counter on the right */
+.xct-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  color: var(--xj-mute);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+/* silkscreen figure: the system's faint tag colour, bone once over the cap */
+.xct-count {
+  flex: 0 0 auto;
+  color: var(--xj-faint);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.xct-count.is-over { color: var(--xj-bone); }
+
+/* send failure: plain words, the text kept, a way out. Not red — red is
+   for realised P&L and the field errors only. */
+.xct-fail {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+}
+
+.xct-fail .xj-label { margin-bottom: 8px; color: var(--xj-mute); }
+
+.xct-fail p:not(.xj-label) {
+  margin: 0 0 12px;
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.xct-submit {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 8px;
-  padding-top: 20px;
-  border-top: 1px solid var(--xj-line);
+  gap: 16px 24px;
+  margin-top: 10px;
+  padding-top: 22px;
+  border-top: 1px solid var(--xj-glass-line);
 }
 
-.xjc-submit small { max-width: 30ch; color: var(--xj-faint); font-size: 0.76rem; line-height: 1.5; }
-
-.xjc-success { text-align: center; }
-.xjc-success svg { width: 30px; height: 30px; margin: 12px auto 18px; color: var(--xj-signal); }
-.xjc-success h2 { margin-bottom: 10px; }
-
-.xjc-success p {
-  margin: 0 auto 26px;
-  max-width: 42ch;
+.xct-consent {
+  margin: 0;
+  max-width: 34ch;
   color: var(--xj-mute);
-  font-size: 0.92rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.xct-consent .xj-link { font-size: inherit; }
+
+@media (max-width: 559px) {
+  .xct-submit .xj-cta { width: 100%; }
+  .xct-consent { max-width: none; }
+}
+
+/* ——————————————————————————— receipt ——————————————————————————— */
+
+/* What the machine prints once the message is logged: mono, short, and it
+   says what happens next. */
+.xj .xct-receipt h2 {
+  margin: 0;
+  color: var(--xj-bone);
+  font-family: var(--xj-mono) !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.xct-receipt dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px 20px;
+  margin: 22px 0 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--xj-glass-line);
+  font-family: var(--xj-mono);
+  font-size: 0.8rem;
   line-height: 1.65;
 }
 
-.xjc-success strong { color: var(--xj-bone); font-weight: 500; }
+.xct-receipt dt {
+  color: var(--xj-faint);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-top: 4px;
+}
+
+.xct-receipt dd { margin: 0 0 12px; color: var(--xj-mute); }
+.xct-receipt dd:last-of-type { margin-bottom: 0; }
+.xct-receipt dd strong { color: var(--xj-bone); font-weight: 500; }
+
+@media (min-width: 560px) {
+  .xct-receipt dl { grid-template-columns: 72px minmax(0, 1fr); }
+  .xct-receipt dd { margin-bottom: 0; }
+}

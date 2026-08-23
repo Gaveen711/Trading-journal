@@ -1,22 +1,38 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
 
 import { PublicFooter } from '../components/FooterNav';
 import { PublicNavbar } from '../components/PublicNavbar';
 import { ProTermsModal } from '../components/ProTermsModal';
-import { CTAButton, CTALink, SectionHead } from '../components/PublicSite';
+import { CTAButton, CTALink, SectionHead, Shot, TextLink } from '../components/PublicSite';
 import { useDeskReveal } from '../lib/goldSessions';
 import { AppServicesProvider } from '../app/di/AppServicesContext';
 import { auth } from '../firebaseAuth';
 import { useSubscription } from '../hooks/useSubscription';
+import { applyPageSEO, buildFAQSchema, injectJsonLd, removeJsonLd } from '../lib/seo';
 import { PRO_MONTHLY_DISPLAY, PRO_YEARLY_DISPLAY, PRO_YEARLY_MONTHLY_DISPLAY, PRO_YEARLY_SAVINGS } from '../lib/pricing';
 import './PublicSite.css';
+import './PricingPage.css';
+
+/* ————————————————————————————————————————————————————————————————
+   xaujournal — pricing, the rate card.
+
+   Two plates: Free is the whole manual journal, Pro adds the broker
+   connection, the full analytics and the automation. One switch above
+   them chooses the billing interval and the Pro price crossfades; the
+   interval is carried into checkout after the Pro terms are accepted.
+
+   Every price on this page is a constant from src/lib/pricing.js, and
+   every promise about refunds and cancellation is the one the refund
+   policy and the terms of service make.
+   ———————————————————————————————————————————————————————————————— */
 
 const FEATURES = [
   { label: 'Unlimited manual trade entries', free: true, pro: true },
   { label: 'Calendar, notes and core P&L', free: true, pro: true },
-  { label: 'Trade screenshots and setup context', free: true, pro: true },
+  { label: 'Setup tags and trade notes', free: true, pro: true },
+  { label: 'Chart screenshots on every trade', free: false, pro: true },
   { label: 'MT4/MT5 automatic import', free: false, pro: true },
   { label: 'Full session and setup analytics', free: false, pro: true },
   { label: 'Unlimited synced trade history', free: false, pro: true },
@@ -26,27 +42,50 @@ const FEATURES = [
 
 const COMPARISON_ROWS = [
   ['Trade capture', 'Manual entries', 'Manual + MT4/MT5 sync'],
-  ['Review depth', 'Notes and screenshots', 'Setups, mood, quality and rules'],
+  ['Review depth', 'Notes and setup tags', 'Screenshots, mood, quality and rules'],
   ['Analytics', 'Core P&L and calendar', 'Sessions, setups and performance trends'],
   ['History', 'Manual journal history', 'Unlimited synced history'],
   ['Automation', 'Not included', 'Broker sync, webhooks and API'],
   ['Support', 'Standard', 'Priority'],
 ];
 
-const PRO_JOBS = [
-  ['Capture', 'Bring supported MT4 and MT5 fills into the journal without copying a single line.'],
-  ['Read', 'Compare sessions, setups, execution quality and account performance in one record.'],
-  ['Keep private', 'Your journal stays account-scoped. A broker connection exists only after you authorise it.'],
+/* The two captures under "What Pro adds", each with three notes. The sync
+   notes carry the old "capture / keep private" jobs; the analytics notes
+   carry "read". */
+const PRO_ADDS = [
+  {
+    shot: 'sync',
+    title: 'Broker sync — MT5',
+    notes: [
+      ['Fills', 'Connect a supported MT4 or MT5 account once. Closed trades arrive in the journal with entry, exit, size and time already filled — nothing copied by hand.'],
+      ['Session', 'Each fill is stamped with the session it was opened in — Sydney, Tokyo, London or New York — so the split is there before you open the analytics.'],
+      ['Scope', 'Your journal stays account-scoped. A broker connection exists only after you authorise it, and you can remove it from Settings at any time.'],
+    ],
+  },
+  {
+    shot: 'analytics',
+    title: 'Analytics — by session',
+    notes: [
+      ['Sessions', 'Win rate, expectancy and average R per session, side by side — the London open and the NY continuation on the same footing.'],
+      ['Setups', 'Tag each trade with a setup and compare them on expectancy, win rate and net P&L. The record shows which ones earn their place.'],
+      ['History', 'Unlimited synced history. The sample keeps growing, and the analytics read all of it.'],
+    ],
+  },
 ];
 
 const FAQ = [
-  ['What is included in Free?', 'Free includes unlimited manual logging, calendar review, core P&L, screenshots and notes. You can build a real review habit before paying for automation.'],
-  ['Does Free include MT4 or MT5 sync?', 'No. Broker sync is a Pro feature. Free traders enter trades manually; Pro can import supported MetaTrader history automatically.'],
+  ['What is included in Free?', 'Unlimited manual logging, the P&L calendar, core statistics, setup tags and notes. It is a full journal, not a trial: build the review habit first, pay only for automation and chart screenshots.'],
+  ['Does Free include MT4 or MT5 sync?', 'No. Broker sync is a Pro feature. Free traders enter trades by hand; Pro imports closed trades from a connected MT4 or MT5 account automatically.'],
+  ['Which brokers work with sync?', 'Any broker that runs MT4 or MT5. Pick a server preset or enter your broker’s server name, then sign in with the account login and its investor or trading password.'],
   ['When should I move to Pro?', 'Move when copying trades is slowing down your review, or when your sample is large enough that session, setup and execution analytics become useful.'],
-  ['Can I cancel at any time?', 'Yes. Cancel from the billing portal. Pro remains active until the end of the paid billing period.'],
+  ['Monthly or yearly?', `Monthly is ${PRO_MONTHLY_DISPLAY} a month. Yearly is ${PRO_YEARLY_DISPLAY} billed once — ${PRO_YEARLY_MONTHLY_DISPLAY} a month, $${PRO_YEARLY_SAVINGS} less than twelve monthly payments. Both renew automatically until you cancel.`],
+  ['Can I cancel at any time?', 'Yes. Cancel from the billing portal in your account settings. Pro stays active until the end of the paid billing period, then the account returns to Free.'],
+  ['Is there a refund if Pro is not for me?', 'Yes, on the first payment: a 7-day money-back guarantee. Email info@xaujournal.com within 7 days of your first Pro charge and it is refunded in full. Renewal charges are non-refundable.'],
   ['Is my trading data private?', 'Yes. Journals are account-scoped. A broker account is only connected after you explicitly authorise it.'],
-  ['How is payment handled?', 'Checkout is handled by Lemon Squeezy and supports major credit and debit cards.'],
+  ['How is payment handled?', 'Checkout is handled by Lemon Squeezy and supports major credit and debit cards. Prices are in USD. xaujournal does not store your card details.'],
 ];
+
+const FAQ_SCHEMA = FAQ.map(([q, a]) => ({ q, a }));
 
 function FeatureLedger({ plan }) {
   return (
@@ -64,12 +103,68 @@ function FeatureLedger({ plan }) {
   );
 }
 
+/** Monthly / yearly, as two native radios dressed as one pill. */
+function BillingSwitch({ value, onChange }) {
+  return (
+    <div className='xpr-billing'>
+      <span className='xj-label' id='billing-label'>Billing</span>
+      <div className='xpr-seg' role='radiogroup' aria-labelledby='billing-label' data-billing={value}>
+        <label className='xpr-seg-opt'>
+          <input
+            type='radio'
+            name='billing'
+            value='monthly'
+            checked={value === 'monthly'}
+            onChange={() => onChange('monthly')}
+          />
+          <span className='xpr-seg-face'>Monthly</span>
+        </label>
+        <label className='xpr-seg-opt'>
+          <input
+            type='radio'
+            name='billing'
+            value='yearly'
+            checked={value === 'yearly'}
+            onChange={() => onChange('yearly')}
+          />
+          <span className='xpr-seg-face'>
+            Yearly
+            <span className='xpr-seg-save'>Save ${PRO_YEARLY_SAVINGS}</span>
+          </span>
+        </label>
+        <span className='xpr-seg-thumb' aria-hidden='true' />
+      </div>
+    </div>
+  );
+}
+
+function PriceLayer({ on, amount, unit, bill, billing }) {
+  return (
+    <p className={on ? 'xpr-price-layer is-on' : 'xpr-price-layer'} data-billing={billing} aria-hidden={!on}>
+      <strong className='xpr-amount'>{amount}</strong>
+      <span className='xpr-unit'>{unit}</span>
+      <small className='xpr-bill'>{bill}</small>
+    </p>
+  );
+}
+
 function PricingPageContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showTerms, setShowTerms] = useState(false);
+  const [billing, setBilling] = useState('monthly');
   const user = auth.currentUser;
   const { startCheckout, recordProAcceptance } = useSubscription(user);
   useDeskReveal();
+
+  useEffect(() => {
+    applyPageSEO(location.pathname);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    injectJsonLd('ld-pricing-faq', buildFAQSchema(FAQ_SCHEMA));
+    return () => removeJsonLd('ld-pricing-faq');
+  }, []);
 
   const handleUpgradeClick = () => {
     if (!user) {
@@ -83,7 +178,7 @@ function PricingPageContent() {
     const accepted = await recordProAcceptance();
     if (accepted) {
       setShowTerms(false);
-      startCheckout();
+      startCheckout(billing === 'yearly' ? 'pro_yearly' : 'pro_monthly');
     }
   };
 
@@ -92,46 +187,108 @@ function PricingPageContent() {
       <PublicNavbar />
       <div className='xj' data-ux-skip='true'>
         <main data-ux-skip='true'>
-          <section className='xj-cover' aria-labelledby='pricing-heading'>
-            <div className='xj-shell xj-settle'>
-              <p className='xj-eyebrow'>Rate card · USD · cancel any time</p>
-              <h1 id='pricing-heading' className='xj-h1'>Two desks. <em>One instrument.</em></h1>
-              <p className='xj-lede'>
-                Manual review should not sit behind a paywall — so it does not. Pay only when broker
-                sync, deeper analytics and a longer record start saving you real time.
-              </p>
+          <section className='xj-cover xpr-cover' aria-labelledby='pricing-heading'>
+            <div className='xj-shell xpr-cover-grid'>
+              <div className='xj-settle'>
+                <p className='xj-eyebrow'>Pricing</p>
+                <h1 id='pricing-heading' className='xj-h1'>Pay for the <em>sync</em>, not the journal.</h1>
+              </div>
+              <div className='xj-settle'>
+                <p className='xj-lede'>
+                  Free is a full journal: unlimited manual entries, the calendar, notes, setup tags
+                  and core P&L. Pro adds MT4/MT5 broker sync, chart screenshots on every trade, the
+                  full session and setup analytics, and TradingView webhooks with API access.
+                </p>
+                <BillingSwitch value={billing} onChange={setBilling} />
+              </div>
             </div>
           </section>
 
-          <section className='xj-section xj-section--plain' aria-label='Plans'>
+          <section className='xj-section xj-section--plain xpr-plates-section' aria-label='Plans'>
             <div className='xj-shell'>
-              <div className='xj-plans'>
-                <article className='xj-plan'>
-                  <p className='xj-plan-tag'><span>Free · manual desk</span></p>
-                  <h2>Free</h2>
-                  <div className='xj-price'><strong>$0</strong><span>/ month</span></div>
-                  <p className='xj-plan-note'>No card. No trial clock.</p>
-                  <p className='xj-plan-desc'>
-                    For traders building the habit: capture the trade, add context and review the
-                    week without a subscription.
+              <div className='xpr-plates'>
+                <article className='xpr-plate xpr-plate--free' aria-labelledby='plan-free'>
+                  <p className='xpr-plate-bar'><span>Free · manual desk</span></p>
+                  <div className='xpr-plate-head'>
+                    <h2 id='plan-free'>Free</h2>
+                    <div className='xpr-price'>
+                      <PriceLayer on amount='$0' unit='/ mo' bill='No card. No trial clock.' billing='always' />
+                    </div>
+                  </div>
+                  <p className='xpr-plate-desc'>
+                    For traders building the habit: log the trade, add the context, review the week.
+                    No subscription, no clock running.
                   </p>
-                  <FeatureLedger plan='free' />
-                  <CTAButton ghost onClick={() => navigate('/login?mode=signup')}>Start free</CTAButton>
+                  <div className='xpr-plate-ledger'><FeatureLedger plan='free' /></div>
+                  <div className='xpr-plate-cta'>
+                    <CTALink ghost to='/login?mode=signup'>Start free</CTALink>
+                  </div>
+                  <p className='xpr-plate-foot'>No card · Manual entries stay unlimited</p>
                 </article>
 
-                <article className='xj-plan xj-plan--lead'>
-                  <p className='xj-plan-tag'><span>Pro · connected desk</span><mark>MT4 / MT5 sync</mark></p>
-                  <h2>Pro</h2>
-                  <div className='xj-price'><strong>{PRO_MONTHLY_DISPLAY}</strong><span>/ month</span></div>
-                  <p className='xj-plan-note'>
-                    or {PRO_YEARLY_DISPLAY}/year ({PRO_YEARLY_MONTHLY_DISPLAY}/month) — save ${PRO_YEARLY_SAVINGS}
+                <article className='xpr-plate xpr-plate--lead xj-glass' aria-labelledby='plan-pro' data-billing={billing}>
+                  <p className='xpr-plate-bar'>
+                    <span>Pro · connected desk</span>
+                    <span className='xpr-tag'>Broker sync included</span>
                   </p>
-                  <p className='xj-plan-desc'>
-                    For active gold traders who want the admin handled and the full pattern visible.
+                  <div className='xpr-plate-head'>
+                    <h2 id='plan-pro'>Pro</h2>
+                    <div className='xpr-price'>
+                      <PriceLayer
+                        on={billing === 'monthly'}
+                        amount={PRO_MONTHLY_DISPLAY}
+                        unit='/ mo'
+                        bill='Billed monthly'
+                        billing='monthly'
+                      />
+                      <PriceLayer
+                        on={billing === 'yearly'}
+                        amount={PRO_YEARLY_MONTHLY_DISPLAY}
+                        unit='/ mo'
+                        bill={`Billed ${PRO_YEARLY_DISPLAY} / yr`}
+                        billing='yearly'
+                      />
+                    </div>
+                  </div>
+                  <p className='xpr-plate-desc'>
+                    For traders past the habit: the fills arrive on their own, the record grows every
+                    session, and the analytics can read all of it.
                   </p>
-                  <FeatureLedger plan='pro' />
-                  <CTAButton onClick={handleUpgradeClick}>Move to Pro</CTAButton>
+                  <div className='xpr-plate-ledger'><FeatureLedger plan='pro' /></div>
+                  <div className='xpr-plate-cta'>
+                    <CTAButton onClick={handleUpgradeClick}>Move to Pro</CTAButton>
+                  </div>
+                  <p className='xpr-plate-foot'>
+                    Checkout by Lemon Squeezy · USD · Cancel any time · 7-day money-back on the first payment
+                  </p>
                 </article>
+              </div>
+            </div>
+          </section>
+
+          <section className='xj-section' aria-labelledby='pro-adds-heading'>
+            <div className='xj-shell'>
+              <SectionHead
+                split
+                eyebrow='What Pro adds'
+                id='pro-adds-heading'
+                title={<>Fills arrive. The <em>pattern</em> shows.</>}
+                lede='Pro is for the trader past the habit. The broker does the typing, the record grows every session, and the analytics get enough sample to answer real questions: which session pays, which setup does not, where the R goes.'
+              />
+              <div className='xpr-adds'>
+                {PRO_ADDS.map(({ shot, title, notes }) => (
+                  <div className='xpr-add xj-reveal' key={shot}>
+                    <Shot name={shot} title={title} />
+                    <dl className='xpr-notes'>
+                      {notes.map(([label, text]) => (
+                        <div key={label}>
+                          <dt>{label}</dt>
+                          <dd>{text}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
@@ -140,41 +297,29 @@ function PricingPageContent() {
             <div className='xj-shell'>
               <SectionHead
                 split
-                eyebrow='Compare the work'
+                eyebrow='Free against Pro'
                 id='compare-heading'
-                title={<>The difference is <em>admin and depth.</em></>}
-                lede='Both desks let you review honestly. Pro removes repeated data entry and gives a larger sample enough structure to answer better questions.'
+                title={<>The difference is admin and <em>depth.</em></>}
+                lede='Both desks let you review honestly. Pro removes the repeated data entry and gives a larger sample enough structure to answer better questions.'
               />
 
-              <div className='xj-compare xj-reveal' role='table' aria-label='Free and Pro comparison'>
-                <div className='xj-compare-row' role='row'>
+              <div className='xpr-compare xj-reveal' role='table' aria-label='Free and Pro, line by line'>
+                <div className='xpr-compare-head' role='row'>
                   <span role='columnheader'>Review task</span>
                   <span role='columnheader'>Free</span>
                   <span role='columnheader'>Pro</span>
                 </div>
-                {COMPARISON_ROWS.map(([feature, free, pro]) => (
-                  <div className='xj-compare-row' role='row' key={feature}>
-                    <strong role='rowheader'>{feature}</strong>
-                    <span role='cell' data-plan='Free'>{free}</span>
-                    <span role='cell' data-plan='Pro'>{pro}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className='xj-section' aria-labelledby='pro-purpose-heading'>
-            <div className='xj-shell'>
-              <SectionHead
-                eyebrow='What Pro is for'
-                id='pro-purpose-heading'
-                title={<>Protect the <em>review time.</em></>}
-              />
-              <div className='xj-rows'>
-                {PRO_JOBS.map(([title, detail]) => (
-                  <div className='xj-row' key={title}>
-                    <span>{title}</span>
-                    <p>{detail}</p>
+                {COMPARISON_ROWS.map(([task, free, pro]) => (
+                  <div className='xpr-compare-row' role='row' key={task}>
+                    <strong role='rowheader'>{task}</strong>
+                    <span role='cell' data-plan='Free'>
+                      <b className='xpr-compare-plan'>Free</b>
+                      {free}
+                    </span>
+                    <span role='cell' data-plan='Pro'>
+                      <b className='xpr-compare-plan'>Pro</b>
+                      {pro}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -183,10 +328,13 @@ function PricingPageContent() {
 
           <section className='xj-section' aria-labelledby='pricing-faq-heading'>
             <div className='xj-shell'>
-              <div className='xj-faq'>
+              <div className='xj-faq xj-reveal'>
                 <div>
                   <p className='xj-eyebrow'>Before you choose</p>
-                  <h2 id='pricing-faq-heading' className='xj-h2'>Straight answers. <em>No plan fog.</em></h2>
+                  <h2 id='pricing-faq-heading' className='xj-h2'>Straight answers. No plan <em>fog.</em></h2>
+                  <p className='xpr-faq-aside'>
+                    <TextLink to='/refund-policy'>Read the refund policy</TextLink>
+                  </p>
                 </div>
                 <div className='xj-faq-list'>
                   {FAQ.map(([question, answer]) => (
@@ -203,10 +351,10 @@ function PricingPageContent() {
           <section className='xj-section' aria-label='Start free'>
             <div className='xj-shell'>
               <div className='xj-close-row'>
-                <h2 className='xj-h2'>Start on the <em>free desk.</em></h2>
+                <h2 className='xj-h2'>Start on the <em>free</em> desk.</h2>
                 <div className='xj-actions'>
                   <CTALink to='/login?mode=signup'>Start free</CTALink>
-                  <small>Upgrade only when automation earns it</small>
+                  <small>Move to Pro when the fills are worth syncing</small>
                 </div>
               </div>
             </div>
@@ -216,7 +364,15 @@ function PricingPageContent() {
       <PublicFooter />
 
       {showTerms ? (
-        <ProTermsModal onAccept={handleAcceptTerms} onClose={() => setShowTerms(false)} />
+        <ProTermsModal
+          onAccept={handleAcceptTerms}
+          onClose={() => setShowTerms(false)}
+          renderAcceptAction={(onAccept) => (
+            <div className='xj xpr-terms-action'>
+              <CTAButton onClick={onAccept}>Accept and continue</CTAButton>
+            </div>
+          )}
+        />
       ) : null}
     </>
   );

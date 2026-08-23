@@ -1,6 +1,6 @@
 export function PageLoader({ text = 'Syncing Terminal' }) {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6">
+    <div className="page-loader min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
       <div className="relative">
         <div className="absolute inset-0 bg-[#007CFF]/10 blur-3xl rounded-full" />
         <div className="loader-wrapper relative z-10 animate-in fade-in duration-300">

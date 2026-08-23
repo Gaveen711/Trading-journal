@@ -1,0 +1,175 @@
+/* ————————————————————————————————————————————————————————————————
+   Broker wall (xb-). Two counter-scrolling rows of brand marks under
+   the Vitrine glass. Monochrome at rest, colour under the pointer,
+   paused on hover, static grid under reduced motion.
+   ———————————————————————————————————————————————————————————————— */
+
+.xb { --xb-gap: 12px; --xb-duration: 72s; }
+
+.xb .xj-head { margin-bottom: 0; }
+
+.xb-ask { margin: 26px 0 0; }
+
+/* Full-bleed band: tiles run edge to edge and dissolve into the ground
+   so the rows read as a continuous belt rather than a clipped box. */
+.xb-band {
+  display: grid;
+  gap: var(--xb-gap);
+  margin-top: clamp(40px, 5vw, 64px);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
+.xb-row { overflow: hidden; }
+
+.xb-track {
+  display: flex;
+  gap: var(--xb-gap);
+  width: max-content;
+  animation: xb-drift var(--xb-duration) linear infinite;
+}
+
+.xb-row--reverse .xb-track {
+  --xb-duration: 84s;
+  animation-direction: reverse;
+}
+
+.xb-row:hover .xb-track,
+.xb-row:focus-within .xb-track { animation-play-state: paused; }
+
+/* The track is [set][gap][set]; one full set plus one gap returns it to
+   the identical frame, so the loop never shows a seam. */
+@keyframes xb-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(calc(-50% - var(--xb-gap) / 2), 0, 0); }
+}
+
+.xb-set {
+  display: flex;
+  gap: var(--xb-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xb-tile {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 11px;
+  height: 46px;
+  padding: 0 16px 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: var(--xj-ink-2);
+  white-space: nowrap;
+  transition: border-color 240ms cubic-bezier(0.2, 0.7, 0.3, 1), color 240ms ease, background-color 240ms ease;
+}
+
+.xb-tile:hover,
+.xb-tile:focus-within {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--xj-ink);
+}
+
+/* Real brand marks at one calm height, never stretched. Monochrome so the
+   wall reads as one material; the colour is the broker's, not ours, and
+   it appears only when a visitor asks for it. */
+.xb-logo {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 5px;
+  object-fit: contain;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.72;
+  transition: filter 240ms ease, opacity 240ms ease, background-color 240ms ease;
+}
+
+/* Near-black marks get a bone chip so they survive the grayscale. */
+.xb-logo[data-chip='true'] { padding: 3px; background: rgba(236, 234, 228, 0.9); }
+
+.xb-logo--blank { display: block; background: rgba(255, 255, 255, 0.08); }
+
+.xb-name {
+  font-size: 0.86rem;
+  font-weight: 450;
+  letter-spacing: -0.008em;
+}
+
+.xb-platforms { display: inline-flex; gap: 4px; margin-left: 2px; }
+
+/* Platform as silkscreen: two letters and a digit in a hairline pill. */
+.xb-badge {
+  display: inline-grid;
+  place-items: center;
+  height: 17px;
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-decoration: none;
+  transition: color 240ms ease, border-color 240ms ease;
+}
+
+.xb-tile:hover .xb-logo,
+.xb-tile:focus-within .xb-logo { filter: none; opacity: 1; }
+
+.xb-tile:hover .xb-badge,
+.xb-tile:focus-within .xb-badge { color: var(--xj-ink-2); border-color: rgba(255, 255, 255, 0.22); }
+
+.xb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin-top: 22px;
+}
+
+.xb-legend span { display: inline-flex; align-items: center; gap: 7px; }
+
+.xb-legend img {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.8;
+}
+
+/* Reduced motion: no drift and no duplicate set. From tablet width the
+   rows wrap into a grid inside the shell so the whole wall is on view at
+   rest; on a phone a wrapped wall is thirty-odd rows tall, so the two rows
+   stay as rows and scroll sideways under the thumb instead. */
+@media (prefers-reduced-motion: reduce) {
+  .xb-track { animation: none; }
+  .xb-set[aria-hidden='true'] { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) and (min-width: 720px) {
+  .xb-band {
+    width: min(100% - (var(--xj-gutter) * 2), 1200px);
+    margin-inline: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .xb-track { width: auto; }
+  .xb-set { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 719px) {
+  .xb-row {
+    overflow-x: auto;
+    padding-inline: var(--xj-gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .xb-row::-webkit-scrollbar { display: none; }
+}

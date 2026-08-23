@@ -35,7 +35,7 @@ We reserve the right to suspend or terminate accounts that violate these Terms, 
   {
     id: 'subscriptions',
     title: '4. Subscriptions & billing',
-    content: `Pro subscriptions are billed monthly at the rate displayed at the time of purchase. All prices are in USD. Payments are processed securely via our payment processor.
+    content: `Pro subscriptions are available on a monthly or a yearly billing cycle, at the rate displayed at the time of purchase. A yearly subscription is charged in full at the start of each 12-month period. All prices are in USD. Payments are processed securely via our payment processor.
 
 Subscriptions auto-renew each billing cycle unless cancelled before the renewal date. You may cancel at any time via the billing portal in your account settings. Cancellation takes effect at the end of the current billing period — you retain Pro access until then.
 
@@ -123,7 +123,7 @@ export function TermsOfServicePage() {
       title="Terms of"
       accent="Service"
       lede="Our commitment to transparency and fairness in providing the best trading journal experience."
-      summary="Use xaujournal responsibly. Your data is yours. We don't give financial advice. Connect your broker securely via Meta API. Pro subscriptions auto-renew monthly and include a 7-day money-back guarantee on the first payment."
+      summary="Use xaujournal responsibly. Your data is yours. We don't give financial advice. Connect your broker securely via Meta API. Pro subscriptions auto-renew each monthly or yearly cycle and include a 7-day money-back guarantee on the first payment."
       sections={SECTIONS}
     />
   );

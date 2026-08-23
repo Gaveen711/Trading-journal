@@ -9,13 +9,21 @@ import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { PageLoader } from './components/PageLoader.jsx';
 import { PageSEO } from './components/PageSEO.jsx';
 import { PublicNavSkeleton } from './components/PublicNavSkeleton.jsx';
+import { BackgroundPixelStars } from './components/ui/BackgroundPixelStars.jsx';
 import { hasPersistedAuthHint, useAuthSession } from './features/auth/hooks/useAuthSession.js';
+
+function starfieldModeForPath(pathname) {
+  if (pathname.startsWith('/app')) return 'terminal';
+  if (pathname === '/login') return 'login';
+  return 'public';
+}
 
 /** Root UI shell. Session policy, routing and route effects live in dedicated modules. */
 function App() {
   const location = useLocation();
   const { user, isLoading, hasError } = useAuthSession();
   const isPublicRoute = isPublicNavbarPath(location.pathname);
+  const starfieldMode = starfieldModeForPath(location.pathname);
   useRouteExperience(location.pathname);
 
   const publicLoader = (text) => (
@@ -30,12 +38,17 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <PageSEO />
-      <ScrollProgress pathname={location.pathname} />
-      <Suspense fallback={fallback}>{content}</Suspense>
-      <LinkPeek />
-    </ErrorBoundary>
+    <div className={`app-starfield app-starfield--${starfieldMode}`}>
+      <BackgroundPixelStars />
+      <div className="app-starfield__content">
+        <ErrorBoundary>
+          <PageSEO />
+          <ScrollProgress pathname={location.pathname} />
+          <Suspense fallback={fallback}>{content}</Suspense>
+          <LinkPeek />
+        </ErrorBoundary>
+      </div>
+    </div>
   );
 }
 

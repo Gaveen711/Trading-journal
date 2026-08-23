@@ -18,6 +18,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc -p api --noEmit",
     "preview": "vite preview",
+    "shots": "node scripts/capture-shots.mjs",
+    "shots:og": "node scripts/build-og.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -70,6 +72,7 @@
     "globals": "^17.4.0",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.9",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4.0.0",
     "terser": "^5.46.1",
     "typescript": "^6.0.3",

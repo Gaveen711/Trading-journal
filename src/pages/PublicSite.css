@@ -56,16 +56,14 @@
   --xj-mute: var(--xj-ink-2);
   --xj-faint: #5e646b;
 
-  /* Surfaces that are not a flat token: the CTA's hover face, and the
-     translucent scrims behind fixed chrome. */
-  --xj-cta-hover: #ffffff;
+  /* Translucent scrims behind fixed chrome. */
   --xj-scrim: rgba(8, 9, 11, 0.82);
   --xj-scrim-solid: rgba(13, 15, 18, 0.9);
   --xj-wash: rgba(236, 234, 228, 0.045);
   --xj-wash-line: rgba(236, 234, 228, 0.06);
 
-  --xj-serif: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
-  --xj-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --xj-serif: 'Handjet', 'Raleway', system-ui, sans-serif;
+  --xj-sans: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --xj-mono: 'IBM Plex Mono', ui-monospace, Consolas, 'SF Mono', monospace;
 
   --xj-gutter: 20px;
@@ -79,6 +77,8 @@
   background: var(--xj-ground);
   color: var(--xj-ink);
   font-family: var(--xj-sans);
+  font-optical-sizing: auto;
+  font-style: normal;
   font-size: 16px;
   font-weight: 400;
   line-height: 1.6;
@@ -141,6 +141,7 @@
   font-weight: 500 !important;
   text-transform: none;
   text-wrap: balance;
+  font-variation-settings: 'ELSH' 2;
 }
 
 .xj-h1 {
@@ -232,62 +233,134 @@
 /* ————————————————————————— actions ————————————————————————— */
 
 .xj-cta {
-  display: inline-flex;
+  --xj-cta-fill: var(--xj-bone);
+  --xj-cta-fill-ink: var(--xj-void);
+  --xj-cta-dot: var(--xj-signal);
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  grid-template-areas: 'cta';
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  width: max-content;
+  min-width: 128px;
   min-height: 48px;
   padding: 0 22px;
-  border: 1px solid var(--xj-bone);
-  border-radius: var(--xj-radius);
-  background: var(--xj-bone);
-  color: var(--xj-void);
+  overflow: hidden;
+  border: 1px solid var(--xj-line-2);
+  border-radius: 999px;
+  background: rgba(13, 15, 18, 0.78);
+  color: var(--xj-bone);
   font-family: var(--xj-sans);
   font-size: 0.92rem;
   font-weight: 500;
   letter-spacing: -0.01em;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: border-color 220ms ease, opacity 150ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.xj-cta svg {
-  width: 14px;
-  height: 14px;
+.xj-cta__label {
+  grid-area: cta;
+  position: relative;
+  z-index: 3;
+  display: inline-block;
+  transform: translateX(0);
+  transition: opacity 260ms ease, transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.xj-cta__hover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--xj-cta-fill-ink);
+  opacity: 0;
+  transform: translateX(60px);
+  transition: opacity 260ms ease, transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.xj-cta__hover svg {
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.7;
-  transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-/* A CTA can be a <button> or a <Link>. For the anchor version the reset above,
-   `.xj a { color: inherit }`, is more specific than `.xj-cta` — one class plus
-   an element beats one class — so every anchor CTA inherited the surrounding
-   bone text onto its own bone background and became unreadable. Naming the
-   element here puts the button's own colour back in charge. */
-a.xj-cta { color: var(--xj-void); }
+.xj-cta__fill {
+  position: absolute;
+  top: 50%;
+  left: -5%;
+  z-index: 2;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--xj-cta-dot);
+  transform: scale(1) translateY(-50%);
+  transform-origin: 0% 50%;
+  transition:
+    top 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 220ms ease;
+}
+
+/* `.xj a { color: inherit }` is more specific than a single CTA class, so the
+   anchor form restates its resting ink rather than depending on source order. */
+a.xj-cta { color: var(--xj-bone); }
 a.xj-cta--ghost { color: var(--xj-bone); }
 
-/* Hover states restate the colour rather than relying on it being inherited,
-   so the light and dark values stay visible together. */
-.xj-cta:hover {
-  background: var(--xj-cta-hover);
-  border-color: var(--xj-cta-hover);
-  color: var(--xj-void);
+.xj-cta:is(:hover, :focus-visible):not(:disabled) {
+  border-color: var(--xj-cta-fill);
 }
-.xj-cta:hover svg { transform: translateX(3px); }
+
+.xj .xj-cta:focus-visible { border-radius: 999px; }
+
+.xj-cta:is(:hover, :focus-visible):not(:disabled) .xj-cta__label {
+  opacity: 0;
+  transform: translateX(88px);
+}
+
+.xj-cta:is(:hover, :focus-visible):not(:disabled) .xj-cta__hover {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.xj-cta:is(:hover, :focus-visible):not(:disabled) .xj-cta__fill {
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background: var(--xj-cta-fill);
+  transform: scale(1) translate(-50%, -50%);
+}
+
 .xj-cta:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .xj-cta--ghost {
+  --xj-cta-fill: var(--xj-line-2);
+  --xj-cta-fill-ink: var(--xj-bone);
+  --xj-cta-dot: var(--xj-mute);
   background: transparent;
   border-color: var(--xj-line-2);
   color: var(--xj-bone);
 }
 
-.xj-cta--ghost:hover {
-  background: transparent;
-  border-color: var(--xj-bone);
-  color: var(--xj-bone);
+@media (prefers-reduced-motion: reduce) {
+  .xj-cta,
+  .xj-cta__label,
+  .xj-cta__hover,
+  .xj-cta__fill {
+    transition-duration: 0.01ms;
+  }
 }
 
 .xj-link {
@@ -344,9 +417,9 @@ a.xj-cta--ghost { color: var(--xj-bone); }
 }
 
 .xj-panel-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
   min-height: 42px;
   padding: 0 14px;
@@ -362,6 +435,36 @@ a.xj-cta--ghost { color: var(--xj-bone); }
   color: var(--xj-faint);
 }
 
+/* Three quiet window controls own their grid column, so the label can never
+   collide with them as the pane narrows. Their colour wakes on inspection. */
+.xj-panel-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.xj-panel-controls i {
+  display: block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6f4144;
+  filter: saturate(0.35);
+  opacity: 0.76;
+  transition: filter 180ms ease, opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.xj-panel-controls i:nth-child(2) { background: #71623c; }
+.xj-panel-controls i:nth-child(3) { background: #3e654d; }
+
+.xj-panel:hover > .xj-panel-bar .xj-panel-controls i,
+.xj-panel-bar:hover .xj-panel-controls i {
+  filter: saturate(1);
+  opacity: 1;
+  transform: scale(1.06);
+}
+
 .xj-panel-bar strong {
   font-weight: 500;
   color: var(--xj-mute);
@@ -370,7 +473,48 @@ a.xj-cta--ghost { color: var(--xj-bone); }
   text-overflow: ellipsis;
 }
 
-.xj-panel-bar span { white-space: nowrap; }
+.xj-panel-meta { white-space: nowrap; }
+
+/* Bespoke glass surfaces do not all own a title row. A small controls notch
+   sits on the border instead, preserving their internal layout and spacing. */
+.xj-glass:not(.xj-panel)::before {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  top: -9px;
+  left: 14px;
+  width: 50px;
+  height: 18px;
+  border: 1px solid var(--xj-glass-line);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 10px 50%, #6f4144 0 3px, transparent 3.5px),
+    radial-gradient(circle at 24px 50%, #71623c 0 3px, transparent 3.5px),
+    radial-gradient(circle at 38px 50%, #3e654d 0 3px, transparent 3.5px),
+    var(--xj-ground-2);
+  filter: saturate(0.35);
+  opacity: 0.82;
+  pointer-events: none;
+  transition: filter 180ms ease, opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .xj-glass:not(.xj-panel) {
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 180ms ease, box-shadow 260ms ease;
+  }
+
+  .xj-glass:not(.xj-panel):hover {
+    transform: translate3d(0, -3px, 0);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 1px 0 var(--xj-glass-highlight), 0 24px 50px -28px rgba(0, 0, 0, 0.82);
+  }
+
+  .xj-glass:not(.xj-panel):hover::before {
+    filter: saturate(1);
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
 
 /* Live dot — the only element allowed to pulse. */
 .xj-live {
@@ -603,7 +747,7 @@ a.xj-row:hover > svg { color: var(--xj-signal); transform: translate(2px, -2px);
   line-height: 1.5;
 }
 
-.xj-ledger svg { width: 16px; height: 16px; margin-top: 2px; color: var(--xj-signal); }
+.xj-ledger svg { width: 16px; height: 16px; margin-top: 2px; color: var(--xj-mute); /* included = silkscreen, not signal */ }
 .xj-ledger li.is-out { color: var(--xj-faint); }
 .xj-ledger li.is-out svg { color: var(--xj-line-2); }
 
@@ -901,7 +1045,13 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
   background: var(--xj-void);
 }
 
-.xj-footer-grid { display: grid; gap: 40px; }
+.xj-footer-window { overflow: hidden; }
+
+.xj-footer-grid {
+  display: grid;
+  gap: 40px;
+  padding: clamp(26px, 4vw, 46px);
+}
 
 @media (min-width: 760px) {
   .xj-footer-grid { grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 48px 32px; }
@@ -915,6 +1065,40 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
   line-height: 1.65;
 }
 
+.xj-footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.xj-footer-socials a {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--xj-glass-line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--xj-mute);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.xj-footer-socials svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+.xj-footer-socials a:hover {
+  color: var(--xj-bone);
+  border-color: var(--xj-bone);
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-3px) rotate(-4deg);
+}
+
 .xj-footer-col ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
 
 /* Links sit in a tight column, so the tap target comes from padding
@@ -922,6 +1106,8 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
 .xj-footer-col a {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   min-height: 40px;
   color: var(--xj-mute);
   font-size: 0.92rem;
@@ -929,6 +1115,23 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
 }
 
 .xj-footer-col a:hover { color: var(--xj-bone); }
+
+.xj-footer-col a b {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition: opacity 150ms ease, transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 150ms ease;
+}
+
+.xj-footer-col a:hover b,
+.xj-footer-col a:focus-visible b {
+  color: var(--xj-bone);
+  opacity: 1;
+  transform: none;
+}
 
 @media (min-width: 760px) {
   .xj-footer-col ul { margin-top: 14px; gap: 4px; }
@@ -940,7 +1143,7 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
-  margin-top: clamp(48px, 6vw, 72px);
+  margin-top: clamp(24px, 3vw, 36px);
   border: 1px solid var(--xj-line);
   border-radius: var(--xj-radius);
   background: var(--xj-line);
@@ -957,6 +1160,11 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
   gap: 5px;
   padding: 16px;
   background: var(--xj-panel);
+  transition: background-color 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .xj-footer-clock:hover { background: var(--xj-raise); transform: translateY(-2px); }
 }
 
 .xj-footer-clock small {
@@ -1156,242 +1364,6 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
   .xj-close-row .xj-actions { margin-top: 0; justify-content: flex-end; }
 }
 
-/* ————————————————————————— study hub —————————————————————————
-   The Blogs library ("The study"): shelves of glass slide cards on the
-   index, and a 68ch reading column on the article page. xjs- prefixes the
-   shelf pieces, xja- the article pieces. */
-
-.xjs-shelf-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 12px 16px;
-  margin-bottom: clamp(26px, 3.5vw, 40px);
-}
-
-.xj .xjs-shelf-head h2 {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: clamp(1.45rem, 2.4vw, 2.1rem) !important;
-  line-height: 1.1 !important;
-}
-
-.xjs-shelf-rule {
-  flex: 1 1 40px;
-  align-self: center;
-  height: 1px;
-  background: var(--xj-edge);
-}
-
-/* One slide of the shelf. The glass recipe comes from .xj-glass; this only
-   adds the slide's anatomy: spine on the left edge, body beside it. */
-.xjs-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 20px 22px 20px 56px;
-  color: var(--xj-ink);
-  transition: border-color 180ms ease, transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.xjs-card:hover { border-color: rgba(255, 255, 255, 0.22); transform: translateY(-3px); }
-
-/* Category spine — reads top-to-bottom along the card's left edge, the way a
-   book spine reads on the shelf. */
-.xjs-card-spine {
-  position: absolute;
-  inset: 1px auto 1px 1px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  border-right: 1px solid var(--xj-glass-line);
-  border-radius: calc(var(--xj-glass-radius) - 1px) 0 0 calc(var(--xj-glass-radius) - 1px);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-  font-size: 0.58rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  writing-mode: vertical-rl;
-}
-
-.xj .xjs-card h3 {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: 1.26rem !important;
-  line-height: 1.22 !important;
-  margin-bottom: 10px;
-}
-
-.xjs-card-summary {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-  margin: 0 0 18px;
-  color: var(--xj-mute);
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-.xjs-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: auto 0 0;
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-  font-size: 0.64rem;
-  font-weight: 500;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.xjs-card-meta svg {
-  width: 13px;
-  height: 13px;
-  margin-left: auto;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  transition: color 150ms ease, transform 200ms ease;
-}
-
-.xjs-card:hover .xjs-card-meta svg { color: var(--xj-signal); transform: translateX(3px); }
-
-/* ————————————————————————— study article ————————————————————————— */
-
-.xja-crumb {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 22px;
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-  font-size: 0.67rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.xja-crumb a { color: var(--xj-mute); transition: color 150ms ease; }
-.xja-crumb a:hover { color: var(--xj-bone); }
-
-.xj .xja-title {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: clamp(2.05rem, 4.4vw, 3.3rem) !important;
-  line-height: 1.08 !important;
-}
-
-.xja-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 12px;
-  margin: 18px 0 0;
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.xja-takeaways { margin-top: clamp(34px, 4vw, 48px); padding: 22px 24px; }
-
-.xja-takeaways ul {
-  list-style: none;
-  display: grid;
-  gap: 12px;
-  margin: 14px 0 0;
-  padding: 0;
-}
-
-.xja-takeaways li {
-  display: grid;
-  grid-template-columns: 14px minmax(0, 1fr);
-  gap: 12px;
-  color: var(--xj-ink);
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-/* The tick is silkscreen, not signal — nothing here is live. */
-.xja-takeaways li::before {
-  content: '—';
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-}
-
-.xja-body { margin-top: clamp(14px, 2vw, 26px); }
-
-.xj .xja-body h2 {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: clamp(1.4rem, 2.2vw, 1.7rem) !important;
-  line-height: 1.18 !important;
-  margin: clamp(38px, 4.5vw, 54px) 0 14px;
-}
-
-.xja-body p {
-  margin: 0 0 16px;
-  color: rgba(236, 234, 228, 0.84);
-  font-size: 1.0625rem;
-  line-height: 1.7;
-}
-
-.xja-sources { list-style: none; display: grid; gap: 14px; margin: 18px 0 0; padding: 0; }
-
-.xja-pager { display: grid; gap: 14px; margin-top: clamp(44px, 5vw, 64px); }
-
-@media (min-width: 640px) {
-  .xja-pager { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-.xja-pager a {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 18px 20px;
-  color: var(--xj-mute);
-  transition: border-color 180ms ease, color 150ms ease;
-}
-
-.xja-pager a:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--xj-bone); }
-.xja-pager a strong { font-weight: 450; font-size: 0.95rem; line-height: 1.45; letter-spacing: -0.01em; }
-.xja-pager a.xja-pager-next { text-align: right; align-items: flex-end; }
-
-.xja-cta {
-  display: grid;
-  gap: 20px 32px;
-  align-items: center;
-  margin-top: clamp(44px, 5vw, 64px);
-  padding: clamp(24px, 3.5vw, 36px);
-}
-
-@media (min-width: 720px) {
-  .xja-cta { grid-template-columns: minmax(0, 1fr) auto; }
-}
-
-.xj .xja-cta h2 {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: clamp(1.45rem, 2.4vw, 1.9rem) !important;
-  line-height: 1.15 !important;
-}
-
-.xja-cta p { margin: 10px 0 0; color: var(--xj-mute); font-size: 0.94rem; line-height: 1.65; }
-
 /* ————————————————————————— load settle —————————————————————————
    Supporting copy rises into place in reading order when a page mounts.
 
@@ -1462,4 +1434,135 @@ textarea.xj-input { resize: vertical; min-height: 130px; }
     transition-duration: 0.001ms !important;
   }
   .xj-reveal { opacity: 1; transform: none; }
+}
+
+/* ————————————————————————— product plates —————————————————————————
+   <Shot> — a real dashboard capture under museum glass. The frame keeps
+   the 1440×900 capture ratio so the page never reflows while the image
+   streams in. A missing file (fresh checkout before `npm run shots`)
+   leaves the frame up with its title silkscreened in the middle. */
+
+.xj-shot {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  border: 1px solid var(--xj-glass-line);
+  border-radius: var(--xj-glass-radius);
+  background: var(--xj-ground-2);
+  box-shadow: inset 0 1px 0 var(--xj-glass-highlight), var(--xj-glass-shadow);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.xj-shot-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 34px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--xj-glass-line);
+  background: rgba(255, 255, 255, 0.035);
+  font-family: var(--xj-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--xj-faint);
+}
+
+.xj-shot-dots { display: inline-flex; gap: 6px; }
+.xj-shot-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6f4144;
+  filter: saturate(0.35);
+  transition: filter 180ms ease, transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.xj-shot-dots i:nth-child(2) { background: #71623c; }
+.xj-shot-dots i:nth-child(3) { background: #3e654d; }
+.xj-shot:hover .xj-shot-dots i { filter: saturate(1); transform: scale(1.08); }
+
+.xj-shot-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.xj-shot-frame {
+  position: relative;
+  aspect-ratio: 1440 / 900;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
+    var(--xj-ground-2);
+}
+
+.xj-shot-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.xj-shot-frame img[data-missing='true'] { visibility: hidden; }
+
+.xj-shot-missing {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  font-family: var(--xj-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--xj-faint);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 14px 15px);
+}
+
+.xj-shot-frame:has(img[data-missing='true']) .xj-shot-missing { display: grid; }
+
+/* Specular sweep: one slow pass of light across the glass, never on
+   reduced motion. Opt in with .xj-shot--sweep. */
+.xj-shot--sweep::after {
+  content: '';
+  position: absolute;
+  inset: -40% -60%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.05) 48%,
+    rgba(255, 255, 255, 0.11) 50%,
+    rgba(255, 255, 255, 0.05) 52%,
+    transparent 58%
+  );
+  transform: translateX(-60%);
+  animation: xj-sweep 12s ease-in-out infinite;
+}
+
+@keyframes xj-sweep {
+  0%, 55% { transform: translateX(-60%); }
+  85%, 100% { transform: translateX(60%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xj-shot--sweep::after { animation: none; }
+}
+
+/* ————————————————————————— global chrome on public routes —————————————————————————
+   The app-wide reading-progress bar paints a bronze→vermilion→teal gradient.
+   On the showroom it becomes a bone hairline: one colour, no glow. */
+body:has(.xj) .ux-scroll-progress {
+  height: 1px;
+  background: var(--xj-ink, #eceae4);
+  opacity: 0.45;
+  box-shadow: none;
 }

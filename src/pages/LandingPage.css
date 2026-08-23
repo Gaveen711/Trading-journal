@@ -1,698 +1,193 @@
 /* ————————————————————————————————————————————————————————————————
-   xaujournal — landing page: the "Vitrine" direction.
-
-   A dark showroom. The working product sits under museum glass on a
-   hairline plinth; everything on display is a number derived from the
-   sample record. Inherits the token layer and the glass recipe from
-   PublicSite.css — this file only adds the exhibits.
-
-     · Amber is a signal: live dots, the active session tab, the one
-       figure being pointed at. Nothing else.
-     · Green and red are reserved for realised P&L.
-     · Layout lives in Tailwind utilities in the JSX; this file is the
-       bespoke art — glass, plates, plinth, rail.
+   Landing page — "Lightbox". Page-level glue only; each section in
+   src/components/landing/ ships its own stylesheet. Shared tokens and
+   furniture live in PublicSite.css (.xj-*).
    ———————————————————————————————————————————————————————————————— */
 
-.xv {
-  --xv-tilt: rotateX(7deg) rotateY(-9deg);
-  --xv-tilt-rest: rotateX(1.5deg) rotateY(-2deg);
-}
+.xl { --xl-section-gap: clamp(72px, 9vw, 128px); }
 
-@media (max-width: 1023px) {
-  .xv {
-    --xv-tilt: rotateX(4deg) rotateY(-5deg);
-    --xv-tilt-rest: rotateX(1deg) rotateY(-1.5deg);
-  }
-}
-
-.xv .is-signal { color: var(--xj-signal); }
-
-/* ————————————————— hero ————————————————— */
-
-.xv-hero {
+/* The global canvas lives in App. This wrapper only owns the landing page's
+   scroll atmosphere and keeps its chapters in one stacking context. */
+.landing-pixel-page {
+  --story-ease: cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  padding-block: clamp(116px, 14vw, 176px) clamp(64px, 8vw, 112px);
+  isolation: isolate;
+  background: transparent;
 }
 
-/* The live microline under the CTAs — one fact, in mono. */
-.xv-fact {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 16px;
-  margin: 26px 0 0;
-  font-family: var(--xj-mono);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--xj-ink-2);
-}
-
-.xv-fact b { font-weight: 500; color: var(--xj-ink-2); }
-
-/* ————————————————— the vitrine ————————————————— */
-
-/* Stage: owns the perspective and the pointer-parallax variables. */
-.xv-stage {
-  position: relative;
-  perspective: 1200px;
-  /* the floating panes overhang the plate; keep them off the hero copy */
-  margin-top: 18px;
-}
-
-@media (min-width: 1024px) {
-  .xv-stage { margin-top: 0; }
-}
-
-/* The plate rests tilted, then rights itself under attention —
-   hover, or simply scrolling into the page. */
-.xv-plate3d {
-  position: relative;
-  transform: var(--xv-tilt);
-  transform-style: preserve-3d;
-  transition: transform 720ms cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.xv-stage:hover .xv-plate3d,
-.xv-stage.is-flat .xv-plate3d {
-  transform: var(--xv-tilt-rest);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .xv-plate3d { transform: var(--xv-tilt-rest); }
-}
-
-/* The plate itself takes the shared glass recipe from .xj-glass and
-   only adds clipping so the panel bar and sweep respect the radius. */
-.xv-plate { overflow: hidden; }
-
-.xv-plate-body {
-  display: grid;
-  gap: 18px;
-  padding: 18px;
-}
-
-.xv-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 18px;
-  margin: 0;
-}
-
-@media (min-width: 520px) {
-  .xv-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-.xv-stats dd {
-  margin: 6px 0 0;
-  color: var(--xj-ink);
-  font-size: 1.18rem;
-  font-weight: 500;
-}
-
-.xv-curve { position: relative; }
-
-.xv-curve svg { display: block; width: 100%; height: auto; }
-
-.xv-curve-zero { stroke: var(--xj-edge); stroke-width: 1; stroke-dasharray: 3 5; }
-.xv-curve-area { fill: rgba(76, 195, 138, 0.08); }
-.xv-curve-line { fill: none; stroke: var(--xj-up); stroke-width: 1.6; }
-
-.xv-curve-tag {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 0.72rem;
-}
-
-/* The one figure the hero plate points at. */
-.xv-plate-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 14px;
-  margin: 0;
-  padding: 12px 16px;
-  border-top: 1px solid var(--xj-glass-line);
-  color: var(--xj-ink-2);
-  font-family: var(--xj-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.xv-plate-foot b { font-weight: 500; }
-.xv-plate-foot span { color: var(--xj-faint); }
-
-/* Museum glass over the plate: a slow diagonal specular sweep. */
-.xv-glasspane {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--xj-glass-radius);
-  overflow: hidden;
+.landing-pixel-page::before {
+  content: '';
+  position: fixed;
+  inset: -18vh -12vw;
+  z-index: 0;
   pointer-events: none;
+  background:
+    radial-gradient(38% 34% at 18% 24%, rgba(226, 166, 61, 0.075), transparent 72%),
+    radial-gradient(32% 30% at 82% 68%, rgba(122, 156, 201, 0.055), transparent 74%);
+  opacity: 0.72;
+  transform: translate3d(0, -6vh, 0) scale(1.02);
 }
 
-.xv-glasspane::before {
+.landing-pixel-page__content { position: relative; z-index: 1; }
+
+.landing-pixel-page .xj { background: transparent; }
+
+.landing-story {
+  position: relative;
+  overflow: clip;
+}
+
+/* Sections are chapters of one page, not bordered modules. The breathing room
+   and moving light establish each turn in the story. */
+.landing-pixel-page .xj-section,
+.landing-pixel-page .xc-chapter {
+  border-top: 0;
+}
+
+.landing-story-section {
+  isolation: isolate;
+  opacity: 0.16;
+  transform: translate3d(0, 84px, 0) scale(0.985);
+  transform-origin: 50% 20%;
+  transition:
+    opacity 900ms var(--story-ease),
+    transform 1150ms var(--story-ease);
+  will-change: transform, opacity;
+}
+
+.landing-story-section::before {
   content: '';
   position: absolute;
-  top: -45%;
-  bottom: -45%;
-  left: 0;
-  width: 34%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.045) 42%,
-    rgba(255, 255, 255, 0.085) 50%,
-    rgba(255, 255, 255, 0.045) 58%,
-    rgba(255, 255, 255, 0) 100%
+  inset: 5% -18%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    44% 38% at var(--story-x, 50%) 48%,
+    rgba(236, 234, 228, 0.045),
+    transparent 76%
   );
-  transform: rotate(16deg) translateX(-180%);
-  animation: xv-sweep 12s cubic-bezier(0.45, 0.05, 0.35, 1) infinite;
+  opacity: 0;
+  transform: translate3d(0, 42px, 0) scale(0.9);
+  transition:
+    opacity 1400ms var(--story-ease) 120ms,
+    transform 1600ms var(--story-ease) 120ms;
 }
 
-@keyframes xv-sweep {
-  0% { transform: rotate(16deg) translateX(-180%); }
-  46% { transform: rotate(16deg) translateX(500%); }
-  100% { transform: rotate(16deg) translateX(500%); }
+.landing-story-section.is-story-visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+.landing-story-section.is-story-visible::before {
+  opacity: 1;
+  transform: none;
+}
+
+/* The internal reveals land after their section has arrived, giving every
+   chapter a deliberate two-beat entrance instead of one generic fade. */
+.landing-pixel-page .xj-reveal {
+  opacity: 0;
+  transform: translate3d(0, 54px, 0) scale(0.99);
+  transition:
+    opacity 850ms var(--story-ease),
+    transform 1100ms var(--story-ease);
+}
+
+.landing-pixel-page .xj-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (min-width: 960px) {
+  .landing-pixel-page .xc-chapter:nth-child(odd).xj-reveal {
+    transform: translate3d(-54px, 40px, 0) scale(0.985);
+  }
+
+  .landing-pixel-page .xc-chapter:nth-child(even).xj-reveal {
+    transform: translate3d(54px, 40px, 0) scale(0.985);
+  }
+
+  .landing-pixel-page .xc-chapter.xj-reveal.is-in { transform: none; }
+}
+
+@keyframes landing-atmosphere-drift {
+  from { transform: translate3d(0, -6vh, 0) scale(1.02); }
+  to { transform: translate3d(0, 8vh, 0) scale(1.08); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .landing-pixel-page::before {
+    animation-name: landing-atmosphere-drift;
+    animation-duration: auto;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .xv-glasspane::before { animation: none; }
-}
-
-/* Floating panes above the vitrine. They ride the pointer by a few
-   pixels — the parallax variables are written by the hero's JS and stay
-   at zero for touch and reduced motion. translateZ lifts them off the
-   plate so the tilt reads as depth. */
-.xv-float {
-  position: absolute;
-  z-index: 2;
-  display: grid;
-  gap: 5px;
-  padding: 12px 16px;
-  font-family: var(--xj-mono);
-  font-size: 0.7rem;
-  white-space: nowrap;
-}
-
-.xv-float--live {
-  top: -20px;
-  right: 6%;
-  transform: translate3d(calc(var(--par-x, 0) * 16px), calc(var(--par-y, 0) * 12px), 42px);
-}
-
-.xv-float--pnl {
-  bottom: -24px;
-  left: -2%;
-  transform: translate3d(calc(var(--par-x, 0) * 26px), calc(var(--par-y, 0) * 18px), 58px);
-}
-
-.xv-float strong { font-size: 1.08rem; font-weight: 500; }
-
-@media (max-width: 640px) {
-  .xv-float--live { right: 0; top: -16px; }
-  .xv-float--pnl { left: 0; bottom: -18px; }
-}
-
-/* The plinth: a hairline shelf with a soft shadow beneath — dark,
-   never a glow. */
-.xv-plinth {
-  position: relative;
-  height: 1px;
-  margin: 44px 5% 0;
-  background: linear-gradient(to right, transparent, var(--xj-edge) 16%, var(--xj-edge) 84%, transparent);
-}
-
-.xv-plinth::after {
-  content: '';
-  position: absolute;
-  top: 1px;
-  left: 10%;
-  right: 10%;
-  height: 30px;
-  background: radial-gradient(52% 100% at 50% 0, rgba(0, 0, 0, 0.55), transparent 72%);
-  pointer-events: none;
-}
-
-/* ————————————————— the session rail ————————————————— */
-
-.xv-rail-band {
-  border-top: 1px solid var(--xj-edge);
-  padding-block: clamp(26px, 4vw, 44px);
-}
-
-.xv-rail {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-@media (min-width: 880px) {
-  .xv-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-/* One glass segment per session. Selection is the amber hairline at the
-   top edge — amber marking the active tab, nothing decorative. */
-.xv-rail-tab {
-  display: grid;
-  gap: 7px;
-  justify-items: start;
-  padding: 14px 16px 15px;
-  border: 1px solid var(--xj-glass-line);
-  border-radius: var(--xj-glass-radius);
-  background: var(--xj-glass-fill);
-  box-shadow: inset 0 1px 0 var(--xj-glass-highlight);
-  color: var(--xj-ink-2);
-  font-family: var(--xj-sans);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.xv-rail-tab:hover { border-color: rgba(255, 255, 255, 0.22); }
-
-.xv-rail-tab[aria-selected='true'] {
-  box-shadow: inset 0 2px 0 var(--xj-signal), inset 0 1px 0 var(--xj-glass-highlight);
-}
-
-.xv-rail-tab[aria-selected='true'] .xv-rail-city { color: var(--xj-signal); }
-
-.xv-rail-city {
-  color: var(--xj-ink);
-  font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  transition: color 160ms ease;
-}
-
-.xv-rail-hours { font-size: 0.7rem; color: var(--xj-ink-2); }
-
-.xv-rail-meta {
-  font-family: var(--xj-mono);
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--xj-faint);
-}
-
-/* ————————————————— product chapters ————————————————— */
-
-.xv-chapters {
-  display: grid;
-  gap: clamp(72px, 9vw, 120px);
-}
-
-.xv-spec {
-  margin: 0 0 14px;
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-  font-size: 0.67rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-/* Chapter titles speak serif — same !important tie-break pattern the
-   shared sheet uses for .xj-h1/.xj-h2. */
-.xj .xv-chapter h3 {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: clamp(1.6rem, 2.8vw, 2.3rem) !important;
-  line-height: 1.12 !important;
-  max-width: 20ch;
-}
-
-.xv-chapter-copy {
-  margin: 16px 0 0;
-  max-width: 52ch;
-  color: var(--xj-ink-2);
-  font-size: 0.97rem;
-  line-height: 1.68;
-}
-
-/* Plate caption — the line the session rail refilters. */
-.xv-caption {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 18px;
-  margin: 14px 2px 0;
-  color: var(--xj-ink-2);
-  font-family: var(--xj-mono);
-  font-size: 0.66rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.xv-caption b { font-weight: 500; }
-
-/* — journal plate — */
-
-.xv-log {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.xv-log-row {
-  display: grid;
-  grid-template-columns: 104px 74px minmax(0, 1fr);
-  gap: 4px 14px;
-  align-items: baseline;
-  padding: 13px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.xv-log-row:first-child { border-top: 0; }
-
-@media (min-width: 640px) {
-  .xv-log-row { grid-template-columns: 104px 78px 58px minmax(0, 1fr); }
-}
-
-.xv-log-time { font-size: 0.7rem; color: var(--xj-faint); }
-.xv-log-session { color: var(--xj-ink-2); font-size: 0.8rem; }
-
-.xv-log-r {
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-align: left;
-}
-
-@media (min-width: 640px) {
-  .xv-log-r { text-align: right; }
-}
-
-.xv-log-note {
-  grid-column: 1 / -1;
-  color: var(--xj-ink);
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-@media (min-width: 640px) {
-  .xv-log-note { grid-column: auto; }
-}
-
-/* — analytics plate — */
-
-.xv-ana {
-  display: grid;
-  gap: 24px;
-  padding: 18px;
-}
-
-@media (min-width: 680px) {
-  .xv-ana {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 32px;
+  .landing-pixel-page::before { animation: none; transform: none; }
+  .landing-story-section,
+  .landing-story-section::before,
+  .landing-pixel-page .xj-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
-.xv-split-row {
-  display: grid;
-  grid-template-columns: 82px minmax(0, 1fr) 60px;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 0;
-  color: var(--xj-ink-2);
-  font-size: 0.85rem;
-}
+@media (max-width: 767px) {
+  .landing-pixel-page .xj-section {
+    padding-block: clamp(64px, 18vw, 88px);
+  }
 
-.xv-split-row i {
-  display: block;
-  width: var(--w);
-  height: 8px;
-  border-radius: 1px;
-}
+  .landing-story-section {
+    transform: translate3d(0, 44px, 0) scale(0.992);
+  }
 
-.xv-split-row i.is-up { background: var(--xj-up); opacity: 0.7; }
-.xv-split-row i.is-down { background: var(--xj-down); opacity: 0.7; }
+  .landing-story-section::before {
+    inset: 8% -42%;
+    opacity: 0;
+  }
 
-.xv-split-row b {
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-align: right;
-}
+  .landing-pixel-page .xj-head {
+    margin-bottom: clamp(34px, 10vw, 48px);
+  }
 
-/* The rail's selection reaches into the plate: the matching desk is the
-   one being pointed at, so its name goes amber. */
-.xv-split-row.is-here .xv-split-name { color: var(--xj-signal); }
+  .landing-pixel-page .xh {
+    padding-block: 104px 44px;
+  }
 
-/* — the calendar — */
+  .landing-pixel-page .xh-grid {
+    gap: clamp(48px, 14vw, 64px);
+  }
 
-.xv-cal {
-  display: grid;
-  grid-template-columns: repeat(7, clamp(16px, 2.6vw, 22px));
-  gap: 4px;
-  justify-content: start;
-}
+  .landing-pixel-page .xh-actions .xj-cta {
+    width: 100%;
+  }
 
-.xv-cal i {
-  aspect-ratio: 1;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.05);
-}
+  .landing-pixel-page .xc-chapter {
+    gap: 24px;
+    padding-block: clamp(52px, 15vw, 72px);
+  }
 
-.xv-cal i.is-rest { background: rgba(255, 255, 255, 0.03); }
-.xv-cal i.is-even { background: rgba(255, 255, 255, 0.1); }
-.xv-cal i.is-up-1 { background: rgba(76, 195, 138, 0.3); }
-.xv-cal i.is-up-2 { background: rgba(76, 195, 138, 0.66); }
-.xv-cal i.is-down-1 { background: rgba(229, 72, 77, 0.3); }
-.xv-cal i.is-down-2 { background: rgba(229, 72, 77, 0.62); }
-.xv-cal i.is-best { box-shadow: 0 0 0 1.5px var(--xj-signal); }
+  .landing-pixel-page .xc-plate,
+  .landing-pixel-page .xc-chapter--flip .xc-plate {
+    padding-inline: 0 5%;
+  }
 
-.xv-cal-note {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-  margin: 14px 0 0;
-  color: var(--xj-ink-2);
-  font-family: var(--xj-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
+  .landing-pixel-page .xe-actions {
+    align-items: stretch;
+  }
 
-.xv-cal-note b { font-weight: 500; }
-
-/* — sync plate — */
-
-.xv-sync {
-  display: grid;
-  gap: 20px;
-  padding: 18px;
-}
-
-.xv-sync-flow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--xj-ink-2);
-  font-family: var(--xj-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.xv-sync-flow span {
-  flex: 1 1 0;
-  padding: 12px 8px;
-  border: 1px solid var(--xj-glass-line);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.02);
-  text-align: center;
-}
-
-.xv-sync-flow span.is-dest {
-  border-color: rgba(255, 255, 255, 0.22);
-  color: var(--xj-ink);
-}
-
-.xv-sync-flow i {
-  flex: 0 0 14px;
-  height: 1px;
-  background: var(--xj-edge);
-}
-
-.xv-sync-rows {
-  display: grid;
-  margin: 0;
-}
-
-.xv-sync-rows > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.xv-sync-rows dd {
-  margin: 0;
-  color: var(--xj-ink);
-  font-size: 0.8rem;
-  text-align: right;
-}
-
-/* ————————————————— proof strip ————————————————— */
-
-.xv-proof-band {
-  border-top: 1px solid var(--xj-edge);
-  padding-block: clamp(24px, 3.5vw, 36px);
-}
-
-.xv-proof {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 0;
-  justify-content: space-between;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  color: var(--xj-ink-2);
-  font-family: var(--xj-mono);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.xv-proof li { display: flex; align-items: center; }
-
-/* Hairline dividers between facts; they disappear when the row wraps
-   into a column on narrow screens. */
-@media (min-width: 720px) {
-  .xv-proof li + li::before {
-    content: '';
-    width: 1px;
-    height: 12px;
-    margin-inline: 28px;
-    background: var(--xj-edge);
+  .landing-pixel-page .xe-actions .xj-cta {
+    width: 100%;
   }
 }
 
-@media (max-width: 719px) {
-  .xv-proof { flex-direction: column; align-items: flex-start; gap: 12px; }
-}
-
-/* ————————————————— pricing bridge ————————————————— */
-
-.xv-tier {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: clamp(24px, 3vw, 34px);
-  color: var(--xj-ink);
-  transition: border-color 180ms ease, transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.xv-tier:hover { border-color: rgba(255, 255, 255, 0.22); transform: translateY(-3px); }
-
-.xv-tier-name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-  font-size: 0.66rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.xv-tier-name mark {
-  padding: 4px 8px;
-  border-radius: 3px;
-  background: var(--xj-signal-soft);
-  color: var(--xj-signal);
-  font-size: 0.62rem;
-}
-
-.xv-tier-price {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin: 0;
-}
-
-.xv-tier-price strong {
-  font-size: clamp(2.2rem, 3.6vw, 2.9rem);
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.xv-tier-price span { color: var(--xj-faint); font-size: 0.88rem; }
-
-.xv-tier ul {
-  list-style: none;
-  display: grid;
-  gap: 9px;
-  margin: 0;
-  padding: 0;
-  color: var(--xj-ink-2);
-  font-size: 0.92rem;
-}
-
-.xv-tier li {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 10px;
-}
-
-.xv-tier li::before {
-  content: '—';
-  color: var(--xj-faint);
-  font-family: var(--xj-mono);
-}
-
-.xv-tier-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: auto;
-  padding-top: 8px;
-  color: var(--xj-ink-2);
-  font-size: 0.9rem;
-  font-weight: 450;
-  transition: color 150ms ease;
-}
-
-.xv-tier-more svg {
-  width: 13px;
-  height: 13px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.xv-tier:hover .xv-tier-more { color: var(--xj-ink); }
-.xv-tier:hover .xv-tier-more svg { transform: translateX(3px); }
-
-/* ————————————————— final CTA ————————————————— */
-
-.xv-final { padding-block: clamp(104px, 13vw, 168px); }
-
-.xj .xv-final-title {
-  font-family: var(--xj-serif) !important;
-  font-optical-sizing: auto;
-  font-weight: 500 !important;
-  font-size: clamp(2.3rem, 5.2vw, 4.3rem) !important;
-  line-height: 1.06 !important;
-  max-width: 19ch;
-  text-wrap: balance;
+@media (max-width: 420px) {
+  .landing-pixel-page .xp-figures { grid-template-columns: 1fr; }
+  .landing-pixel-page .xp-figure:last-child { grid-column: auto; }
 }

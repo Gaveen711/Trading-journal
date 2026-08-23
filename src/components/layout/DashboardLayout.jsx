@@ -17,6 +17,7 @@ import {
   Sparkles,
   Sun,
   TriangleAlert,
+  Wallet,
   X,
   Zap,
 } from 'lucide-react';
@@ -61,6 +62,9 @@ import {
 import { cn } from '../../lib/utils';
 import { isPaidPlan } from '../../lib/entitlements.js';
 import { ACCENT_TEMPLATES } from '../../lib/accentTemplates.js';
+import { WalletTopUpDialog } from '../app/WalletTopUpDialog';
+import { FloatingDockNavigation } from '../ui/FloatingDockNavigation';
+import { formatCurrency } from '../../lib/tradeUtils';
 
 
 // Minimum gap between automatic broker syncs for the same account.
@@ -79,6 +83,10 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
     return saved !== 'false'; // default to true
   });
   const [isRightSidebarExpanded, setIsRightSidebarExpanded] = useState(false);
+  // Owned by the layout, not by renderProfileMenu: that helper runs twice (the
+  // sidebar footer and the mobile header), and a dialog per copy would mount
+  // two of them.
+  const [walletTopUpOpen, setWalletTopUpOpen] = useState(false);
 
   const displayName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Trader';
 
@@ -308,7 +316,13 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
   const isLogRoute = location.pathname === '/app' || location.pathname === '/app/';
   const activeNavigationItem = navigation.find(isNavItemActive) ?? navigation[0];
   const ActiveNavigationIcon = activeNavigationItem.icon;
-  const mobileNavigation = navigation.filter((item) => ['', 'history', 'calendar', 'analytics', 'journal'].includes(item.id));
+  const mobileNavigation = navigation
+    .filter((item) => ['', 'history', 'calendar', 'analytics', 'journal', 'settings'].includes(item.id))
+    .map((item) => ({
+      ...item,
+      to: `/app/${item.id}`,
+      active: item.id === '' ? isLogRoute : location.pathname.startsWith(`/app/${item.id}`),
+    }));
 
   // Broker sync status, encoded by form (StatusSquare), never by pulse or glow.
   const brokerStatus = (() => {
@@ -349,26 +363,42 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
           </>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} className="w-56">
+      <DropdownMenuContent align={align} className="w-64">
+        {/* Identity. Not a heading over the menu — it is the reason the menu
+            exists, so it carries the avatar and the plan the account is on. */}
         <DropdownMenuGroup>
-          <DropdownMenuLabel>
-            <span className="block truncate text-sm font-medium capitalize text-foreground">{displayName}</span>
-            <span className="block truncate text-xs font-normal text-muted-foreground">{auth.currentUser?.email}</span>
+          <DropdownMenuLabel className="flex items-center gap-2.5 py-2">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-sm font-medium text-foreground">
+              {userInitial}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium capitalize text-foreground">{displayName}</span>
+              <span className="truncate text-xs font-normal text-muted-foreground">{auth.currentUser?.email}</span>
+              <span className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
+                {planBadgeLabel}
+              </span>
+            </span>
           </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        {/* Wallet. Account state with no home in the nav, which is exactly what
+            this menu is for — and the balance is the figure most worth seeing
+            without navigating anywhere. */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex items-baseline justify-between gap-3 py-1.5 font-normal">
+            <span className="text-xs text-muted-foreground">Wallet balance</span>
+            <span className="figure text-sm text-foreground">{formatCurrency(walletBalance || 0)}</span>
+          </DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => setWalletTopUpOpen(true)}>
+            <Wallet aria-hidden="true" />
+            Top up wallet
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => openPortal()}>
             <CreditCard aria-hidden="true" />
             Manage subscription
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/app/sync')}>
-            <RefreshCcw aria-hidden="true" />
-            Broker sync
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/app/settings')}>
-            <Settings aria-hidden="true" />
-            Settings
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -738,36 +768,9 @@ export function DashboardLayout({ user, analytics, plan, expiry, isTrial, isTria
       )}
 
       {/* MOBILE BOTTOM NAV */}
-      <nav
-        className={cn(
-          'fixed bottom-0 left-0 right-0 z-30 px-4 pb-safe pt-2 transition-transform duration-200 md:hidden',
-          isVisible ? 'translate-y-0' : 'translate-y-full'
-        )}
-        aria-label="Dashboard"
-      >
-        <div className="dashboard-mobile-nav safe-bottom mb-4 grid min-h-16 grid-cols-5 items-center rounded-2xl border border-border bg-card p-1.5">
-          {mobileNavigation.map((item) => {
-            const active = item.id === '' ? isLogRoute : location.pathname.startsWith(`/app/${item.id}`);
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.name}
-                to={`/app/${item.id}`}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'dashboard-mobile-nav-item flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors',
-                  active
-                    ? 'bg-primary/12 text-primary'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <Icon aria-hidden="true" />
-                <span className="w-full truncate text-center text-[10px] font-medium">{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-      </nav>
+      <FloatingDockNavigation items={mobileNavigation} visible={isVisible} />
+
+      <WalletTopUpDialog open={walletTopUpOpen} onOpenChange={setWalletTopUpOpen} />
 
       {/* ACCENT PICKER */}
       <AppDialog

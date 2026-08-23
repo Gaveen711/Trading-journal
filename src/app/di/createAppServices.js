@@ -17,6 +17,10 @@ export function createAppServices(overrides = {}) {
     subscriptionRepository: overrides.subscriptionRepository ?? new FirebaseSubscriptionRepository(),
     tradeRepository,
     walletRepository: overrides.walletRepository ?? new FirebaseWalletRepository(),
+    // Optional: useSetups reaches Firestore directly when this is null (see the
+    // adapter in that hook). Only an override — today the dev-only showcase —
+    // supplies one.
+    setupRepository: overrides.setupRepository ?? null,
     logTradeUseCase: overrides.logTradeUseCase ?? new LogTradeUseCase(tradeRepository),
     resetTradesUseCase: overrides.resetTradesUseCase ?? new ResetTradesUseCase(tradeRepository),
   });
