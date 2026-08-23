@@ -4,7 +4,9 @@
 // src/data/repositories. The repository layer is outside this slice's scope,
 // so a FirebaseSetupRepository + a createAppServices entry is the natural
 // follow-up; nothing in this file assumes the direct import beyond the five
-// call sites below.
+// call sites below, which all go through `firestoreCatalog`. An optional
+// `setupRepository` on the app services (see createAppServices) replaces that
+// adapter wholesale — today only the dev-only showcase supplies one.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
@@ -17,6 +19,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { useAppServices } from '../app/di/AppServicesContext.jsx';
 import { slugifySetupName } from '../lib/tradeAnalytics.js';
 
 /** firestore.rules bounds `name` at 1–64 characters; reject before the write, not after. */
@@ -127,6 +130,27 @@ function validateName(name) {
 }
 
 /**
+ * Today's storage, behind the five calls the hook makes. `subscribe` hands the
+ * listener a Firestore QuerySnapshot — `docs[].id/.data()`, `empty`,
+ * `metadata.fromCache` — and a replacement repository must deliver the same
+ * surface, exactly as the injected user-doc listeners already do elsewhere.
+ * Timestamps are this adapter's business: the hook never sees a sentinel.
+ */
+const firestoreCatalog = {
+  subscribe: (userId, onNext, onError) =>
+    onSnapshot(collection(db, 'users', userId, 'setups'), onNext, onError),
+  create: async (userId, data) => {
+    const ref = doc(collection(db, 'users', userId, 'setups'));
+    await setDoc(ref, { ...data, id: ref.id, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return ref.id;
+  },
+  update: (userId, setupId, patch) =>
+    updateDoc(doc(db, 'users', userId, 'setups', setupId), { ...patch, updatedAt: serverTimestamp() }),
+  remove: (userId, setupId) => deleteDoc(doc(db, 'users', userId, 'setups', setupId)),
+  seedDefaults: (userId) => seedDefaults(userId),
+};
+
+/**
  * The setup catalog for the signed-in user.
  *
  * `setups` is EVERY doc in catalog order, archived and merged ones included —
@@ -147,6 +171,9 @@ export function useSetups(user) {
   const [setups, setSetups] = useState([]);
   const [loading, setLoading] = useState(() => Boolean(user));
   const userId = user?.uid || null;
+  // Both are stable for the life of the app: the services object is frozen
+  // once by the provider and the Firestore adapter is a module constant.
+  const catalog = useAppServices().setupRepository ?? firestoreCatalog;
   // Seeding is guarded per uid and the guard is set BEFORE the batch commits:
   // the write loop this prevents is not hypothetical, since the batch's own
   // local snapshot arrives before the server ack.
@@ -160,8 +187,7 @@ export function useSetups(user) {
     }
 
     setLoading(true);
-    const catalog = collection(db, 'users', userId, 'setups');
-    return onSnapshot(catalog, (snapshot) => {
+    return catalog.subscribe(userId, (snapshot) => {
       setSetups(snapshot.docs.map((item) => ({ ...item.data(), id: item.id })).sort(compareSetups));
       setLoading(false);
 
@@ -173,7 +199,7 @@ export function useSetups(user) {
       if (!snapshot.empty || snapshot.metadata.fromCache) return;
       if (seededForRef.current === userId) return;
       seededForRef.current = userId;
-      seedDefaults(userId).catch((error) => {
+      catalog.seedDefaults(userId).catch((error) => {
         // Deliberately not retried: an empty catalog degrades to legacy
         // `strategy` strings and an empty picker, while a retry loop against a
         // failing write is a billing event.
@@ -183,7 +209,7 @@ export function useSetups(user) {
       console.error('[useSetups] catalog listener error:', error);
       setLoading(false);
     });
-  }, [userId]);
+  }, [catalog, userId]);
 
   const setupsById = useMemo(() => {
     const map = {};
@@ -220,23 +246,19 @@ export function useSetups(user) {
     const { name, slug } = validateName(rawName);
     const owner = findSlugOwner(setups, slug, null);
     if (owner) throw new Error(`"${owner.name}" already uses that name.`);
-    const ref = doc(collection(db, 'users', uid, 'setups'));
-    await setDoc(ref, {
-      id: ref.id,
+    const id = await catalog.create(uid, {
       name,
       slug,
       isDefault: false,
       archived: false,
       mergedInto: null,
       sortOrder: nextSortOrder(setups),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
     });
     // The written timestamps are server sentinels, so only the fields the
     // caller can act on come back — enough to select the new setup in the
     // combobox before the snapshot lands.
-    return { id: ref.id, name, slug };
-  }, [requireUser, setups]);
+    return { id, name, slug };
+  }, [catalog, requireUser, setups]);
 
   /**
    * Renames the display name only. The slug is immutable by design: it is the
@@ -251,8 +273,8 @@ export function useSetups(user) {
     if (name === setup.name) return;
     const owner = findSlugOwner(setups, slug, setup.id);
     if (owner) throw new Error(`"${owner.name}" already uses that name.`);
-    await updateDoc(doc(db, 'users', uid, 'setups', setup.id), { name, updatedAt: serverTimestamp() });
-  }, [requireSetup, requireUser, setups]);
+    await catalog.update(uid, setup.id, { name });
+  }, [catalog, requireSetup, requireUser, setups]);
 
   /**
    * Points `sourceId` at `targetId`. No trade document is touched — every
@@ -275,21 +297,15 @@ export function useSetups(user) {
     if (finalTargetId === source.id) throw new Error('A setup cannot be merged into itself.');
     const finalTarget = lookup(setupsById, finalTargetId);
     if (finalTarget?.archived) throw new Error('Restore that setup before merging into it.');
-    await updateDoc(doc(db, 'users', uid, 'setups', source.id), {
-      mergedInto: finalTargetId,
-      updatedAt: serverTimestamp(),
-    });
-  }, [requireSetup, requireUser, setupsById]);
+    await catalog.update(uid, source.id, { mergedInto: finalTargetId });
+  }, [catalog, requireSetup, requireUser, setupsById]);
 
   /** Archive, or restore with `archived: false`. Trades keep their `setupId` either way. */
   const archiveSetup = useCallback(async (setupId, archived = true) => {
     const uid = requireUser();
     const setup = requireSetup(setupId);
-    await updateDoc(doc(db, 'users', uid, 'setups', setup.id), {
-      archived: Boolean(archived),
-      updatedAt: serverTimestamp(),
-    });
-  }, [requireSetup, requireUser]);
+    await catalog.update(uid, setup.id, { archived: Boolean(archived) });
+  }, [catalog, requireSetup, requireUser]);
 
   /**
    * Hard delete, for custom setups only — a deleted seed would re-seed as a
@@ -303,8 +319,8 @@ export function useSetups(user) {
     const uid = requireUser();
     const setup = requireSetup(setupId);
     if (setup.isDefault) throw new Error('Default setups can be archived, not deleted.');
-    await deleteDoc(doc(db, 'users', uid, 'setups', setup.id));
-  }, [requireSetup, requireUser]);
+    await catalog.remove(uid, setup.id);
+  }, [catalog, requireSetup, requireUser]);
 
   return {
     setups,

@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 const PrivacyPolicyPage = lazy(() => import('../../pages/PrivacyPolicyPage.jsx').then((m) => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('../../pages/TermsOfServicePage.jsx').then((m) => ({ default: m.TermsOfServicePage })));
@@ -12,6 +12,18 @@ const LandingPage = lazy(() => import('../../pages/LandingPage.jsx').then((m) =>
 const Login = lazy(() => import('../../Login.jsx'));
 const AuthenticatedApp = lazy(() => import('../AuthenticatedApp.jsx').then((m) => ({ default: m.AuthenticatedApp })));
 const NotFoundPage = lazy(() => import('../../pages/NotFoundPage.jsx').then((m) => ({ default: m.NotFoundPage })));
+
+// Dev-only: the real dashboard on an in-memory demo dataset (src/showcase), for
+// `npm run shots` and for eyeballing /app without an account. Vite folds
+// `import.meta.env.DEV` to a literal, so the chunk never reaches production.
+const ShowcaseApp = import.meta.env.DEV
+  ? lazy(() => import('../../showcase/ShowcaseApp.jsx').then((m) => ({ default: m.ShowcaseApp })))
+  : null;
+
+/** `/app?showcase=1` opts the tab in; ShowcaseApp then keeps the session flag set across client-side navigation. */
+const isShowcaseRequested = (search) => import.meta.env.DEV && (
+  new URLSearchParams(search).has('showcase') || window.sessionStorage.getItem('xau-showcase') === '1'
+);
 
 // Route metadata is colocated with route definitions to keep loading policy consistent.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -30,6 +42,7 @@ export function isPublicNavbarPath(pathname) {
 
 /** URL policy is centralized here so adding a route does not grow the app shell. */
 export function AppRoutes({ user }) {
+  const location = useLocation();
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to="/app" /> : <LandingPage />} />
@@ -42,7 +55,12 @@ export function AppRoutes({ user }) {
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms-and-conditions" element={<TermsOfServicePage />} />
       <Route path="/refund-policy" element={<RefundPolicyPage />} />
-      <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login?mode=signin" />} />
+      <Route
+        path="/app/*"
+        element={user
+          ? <AuthenticatedApp user={user} />
+          : isShowcaseRequested(location.search) ? <ShowcaseApp /> : <Navigate to="/login?mode=signin" />}
+      />
       {/* Renders a real not-found page rather than silently serving the
           homepage at an unknown URL, which Google indexes as a soft 404. */}
       <Route path="*" element={<NotFoundPage />} />

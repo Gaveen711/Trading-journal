@@ -1,0 +1,539 @@
+/* ————————————————————————————————————————————————————————————————
+   Blog — "Study notes": an editorial hub under glass.
+
+   xbh- prefixes the hub (/blogs), xba- the article (/blogs/:slug).
+   Tokens, type and the glass recipe come from PublicSite.css (.xj-*);
+   this sheet only adds the notes' own anatomy. One motif runs through
+   both pages: takeaways sit on a ruled pane — the notebook page under
+   the glass — and the single amber mark on either page reports state
+   (the filter that is on, the section being read). Nothing else is amber.
+   ———————————————————————————————————————————————————————————————— */
+
+/* ——————————————————————— mono meta rows ——————————————————————— */
+
+.xbh-meta,
+.xba-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  margin: 0;
+  color: var(--xj-mute);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+/* Middle dots trail each item, so a wrapped row never opens with one.
+   The item pushed to the far edge, and the item before it, go without. */
+.xbh-meta > *:not(:last-child):not(:has(+ .xbh-meta-end))::after,
+.xba-meta > *:not(:last-child)::after {
+  content: '·';
+  margin: 0 10px;
+  color: var(--xj-faint);
+}
+
+.xbh-meta-end { margin-left: auto; }
+
+/* Article head: category chip beside the mono row, each wrapping on its own. */
+.xba-head-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+}
+
+/* ——————————————————————— ruled pane ———————————————————————
+   The notebook page: 24px rules, text sitting just above each line.
+   Every list item is a whole number of 24px lines tall, so the rules
+   and the text never drift apart. */
+
+.xbh-ruled {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background-image: linear-gradient(to top, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 100% 24px;
+  background-position: 0 0;
+}
+
+.xbh-ruled li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 10px;
+  margin: 0;
+  color: var(--xj-ink);
+  font-family: var(--xj-mono);
+  font-size: 0.78rem;
+  line-height: 24px;
+}
+
+.xbh-ruled li::before {
+  content: '—';
+  color: var(--xj-faint);
+}
+
+/* ——————————————————————— hub: cover ——————————————————————— */
+
+.xbh-index {
+  margin: 26px 0 0;
+  color: var(--xj-faint);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ——————————————————————— hub: featured plate ——————————————————————— */
+
+.xbh-feature-section { padding-block: 0 clamp(40px, 5vw, 64px); }
+
+.xbh-feature { overflow: hidden; }
+
+.xbh-feature-body {
+  display: grid;
+  gap: 28px;
+  padding: clamp(22px, 3vw, 36px);
+}
+
+@media (min-width: 900px) {
+  .xbh-feature-body {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 44px;
+    align-items: stretch;
+  }
+}
+
+.xbh-feature-main { display: flex; flex-direction: column; align-items: flex-start; }
+
+.xj .xbh-feature-title {
+  margin: 18px 0 0;
+  max-width: 24ch;
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.75rem, 3.1vw, 2.55rem) !important;
+  line-height: 1.1 !important;
+}
+
+.xbh-feature-title a { transition: color 150ms ease; }
+.xbh-feature-title a:hover { color: var(--xj-mute); }
+
+.xbh-feature-summary {
+  margin: 16px 0 0;
+  max-width: 52ch;
+  color: var(--xj-mute);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.xbh-feature-main .xj-cta { margin-top: 30px; }
+
+/* Inner core of the plate: the page of notes set into the glass tray. */
+.xbh-notes-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--xj-glass-line);
+  border-radius: calc(var(--xj-glass-radius) - 6px);
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.xbh-notes-pane .xj-label { margin-bottom: 14px; color: var(--xj-mute); }
+
+.xbh-notes-more {
+  margin: auto 0 0;
+  padding-top: 16px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ——————————————————————— hub: filter + grid ——————————————————————— */
+
+.xbh-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 32px;
+}
+
+.xj .xbh-h2 {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem) !important;
+  line-height: 1.1 !important;
+}
+
+.xbh-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.xbh-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+  background: transparent;
+  color: var(--xj-mute);
+  font-family: var(--xj-sans);
+  font-size: 0.88rem;
+  font-weight: 450;
+  letter-spacing: -0.008em;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+
+@media (min-width: 720px) {
+  .xbh-chip { min-height: 40px; }
+}
+
+.xbh-chip .xj-num { color: var(--xj-faint); font-size: 0.68rem; transition: color 150ms ease; }
+.xbh-chip:hover { border-color: var(--xj-bone); color: var(--xj-bone); }
+
+/* The filter that is on — amber reports it, nothing else on the page does. */
+.xbh-chip[aria-pressed='true'] {
+  border-color: var(--xj-signal-line);
+  background: var(--xj-signal-soft);
+  color: var(--xj-bone);
+}
+
+.xbh-chip[aria-pressed='true'] .xj-num { color: var(--xj-signal); }
+
+.xbh-grid {
+  list-style: none;
+  margin: clamp(28px, 3.5vw, 40px) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .xbh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+  .xbh-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+}
+
+/* Each cell is a grid so the card stretches to the row's tallest neighbour. */
+.xbh-grid > li { display: grid; min-width: 0; }
+
+/* One note card. The whole card is the link; nothing interactive sits inside it. */
+.xbh-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 20px 22px 18px;
+  color: var(--xj-ink);
+  transition: border-color 180ms ease, transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.xbh-card:hover { border-color: rgba(255, 255, 255, 0.22); transform: translateY(-3px); }
+
+.xbh-card .xbh-meta { padding-bottom: 14px; border-bottom: 1px solid var(--xj-glass-line); }
+
+.xj .xbh-card-title {
+  margin: 16px 0 10px;
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: 1.3rem !important;
+  line-height: 1.22 !important;
+}
+
+.xbh-card-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.xbh-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: auto 0 0;
+  padding-top: 20px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.xbh-card-foot svg {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  color: var(--xj-mute);
+  transition: color 150ms ease, transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.xbh-card:hover .xbh-card-foot svg { color: var(--xj-bone); transform: translateX(3px); }
+
+/* Empty state — direction, not mood. */
+.xbh-empty {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: clamp(28px, 3.5vw, 40px);
+  padding: clamp(26px, 3.5vw, 40px);
+}
+
+.xbh-empty strong { font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; }
+.xbh-empty p { margin: 0; color: var(--xj-mute); font-size: 0.93rem; line-height: 1.6; }
+.xbh-empty .xj-cta { margin-top: 14px; }
+
+/* Sources note — quiet, under the grid. */
+.xbh-sources {
+  display: grid;
+  gap: 10px 24px;
+  margin: clamp(36px, 4.5vw, 56px) 0 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--xj-line);
+}
+
+@media (min-width: 640px) {
+  .xbh-sources { grid-template-columns: 120px minmax(0, 1fr); align-items: baseline; }
+}
+
+.xbh-sources p {
+  margin: 0;
+  max-width: 66ch;
+  color: var(--xj-mute);
+  font-size: 0.9rem;
+  line-height: 1.62;
+}
+
+/* ——————————————————————— article: head ——————————————————————— */
+
+/* Category chip: the way back to the hub with this shelf already selected. */
+.xba-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: var(--xj-radius);
+  color: var(--xj-bone);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  transition: border-color 150ms ease;
+}
+
+.xba-cat svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  color: var(--xj-mute);
+  transform: scaleX(-1);
+  transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1), color 150ms ease;
+}
+
+.xba-cat:hover { border-color: var(--xj-bone); }
+.xba-cat:hover svg { color: var(--xj-bone); transform: scaleX(-1) translateX(3px); }
+
+/* Data titles run long; the display size steps down from the marketing h1. */
+.xj .xba-title.xj-h1 {
+  margin-top: 26px;
+  max-width: 30ch;
+  font-size: clamp(2.1rem, 4.6vw, 3.6rem) !important;
+  line-height: 1.06 !important;
+}
+
+.xba-head .xj-lede { max-width: 62ch; }
+
+/* ——————————————————————— article: layout ——————————————————————— */
+
+.xba-body { padding-bottom: clamp(56px, 7vw, 96px); }
+
+.xba-layout { display: grid; gap: 36px 64px; align-items: start; }
+
+@media (min-width: 960px) {
+  .xba-layout { grid-template-columns: 232px minmax(0, 1fr); }
+  .xba-rail { position: sticky; top: 96px; max-height: calc(100vh - 120px); overflow-y: auto; }
+}
+
+/* ——————————————————————— article: table of contents ——————————————————————— */
+
+.xba-toc .xj-label { margin-bottom: 12px; }
+
+.xba-toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  border-left: 1px solid var(--xj-line);
+}
+
+.xba-toc a {
+  position: relative;
+  display: block;
+  padding: 7px 0 7px 16px;
+  color: var(--xj-mute);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  transition: color 150ms ease;
+}
+
+/* The marker sits on the rail's hairline; only the current entry lights it. */
+.xba-toc a::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -1px;
+  width: 1px;
+  background: transparent;
+  transition: background-color 150ms ease;
+}
+
+.xba-toc a:hover { color: var(--xj-bone); }
+.xba-toc a.is-current { color: var(--xj-bone); }
+.xba-toc a.is-current::before { background: var(--xj-signal); }
+
+/* Below the rail breakpoint the contents fold into a disclosure. */
+.xba-toc details { padding: 0 18px; }
+
+.xba-toc summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 50px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--xj-bone);
+  font-size: 0.95rem;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+
+.xba-toc summary::-webkit-details-marker { display: none; }
+.xba-toc summary svg { width: 16px; height: 16px; color: var(--xj-faint); transition: transform 200ms ease; }
+.xba-toc details[open] summary svg { transform: rotate(180deg); }
+.xba-toc details ol { margin: 2px 0 16px; }
+
+/* ——————————————————————— article: prose ——————————————————————— */
+
+.xba-prose { max-width: 68ch; }
+
+.xba-prose section { scroll-margin-top: 96px; }
+.xba-prose section + section { margin-top: clamp(36px, 4.5vw, 52px); }
+
+.xj .xba-prose h2 {
+  margin: 0 0 14px;
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.45rem, 2.2vw, 1.8rem) !important;
+  line-height: 1.18 !important;
+}
+
+.xba-prose p {
+  margin: 0 0 18px;
+  color: rgba(236, 234, 228, 0.84);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.xba-prose p:last-child { margin-bottom: 0; }
+
+/* ——————————————————————— article: takeaways + sources ——————————————————————— */
+
+.xba-takeaways { margin-top: clamp(40px, 5vw, 60px); overflow: hidden; }
+.xba-takeaways .xbh-ruled { padding: 12px 22px 20px; }
+.xba-takeaways .xbh-ruled li { font-size: 0.82rem; }
+
+.xba-sources {
+  margin-top: clamp(40px, 5vw, 60px);
+  padding-top: 26px;
+  border-top: 1px solid var(--xj-line);
+}
+
+.xj .xba-sources h2 { font-size: 1.05rem !important; letter-spacing: -0.012em; }
+.xba-sources > p { margin: 8px 0 0; max-width: 60ch; color: var(--xj-mute); font-size: 0.9rem; line-height: 1.6; }
+.xba-sources ul { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 12px; }
+.xba-sources li { font-size: 0.92rem; line-height: 1.5; }
+
+/* ——————————————————————— article: pager + close ——————————————————————— */
+
+.xba-after { display: grid; gap: 16px; padding-bottom: clamp(72px, 9vw, 128px); }
+
+.xba-pager { display: grid; gap: 14px; }
+
+@media (min-width: 640px) {
+  .xba-pager { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.xba-pager a {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+  color: var(--xj-mute);
+  transition: border-color 180ms ease, color 150ms ease;
+}
+
+.xba-pager a:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--xj-bone); }
+
+.xba-pager a strong {
+  font-family: var(--xj-serif);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-size: 1.18rem;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.xba-pager a.is-next { text-align: right; align-items: flex-end; }
+
+.xba-cta {
+  display: grid;
+  gap: 22px 32px;
+  align-items: center;
+  padding: clamp(24px, 3.5vw, 40px);
+}
+
+@media (min-width: 760px) {
+  .xba-cta { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
+.xj .xba-cta h2 {
+  font-family: var(--xj-serif) !important;
+  font-optical-sizing: auto;
+  font-weight: 500 !important;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem) !important;
+  line-height: 1.12 !important;
+}
+
+.xba-cta p { margin: 10px 0 0; max-width: 52ch; color: var(--xj-mute); font-size: 0.95rem; line-height: 1.65; }
+.xba-cta .xj-actions { margin-top: 0; }
+
+/* ——————————————————————— 404 inside the site chrome ——————————————————————— */
+
+.xba-missing { padding-top: 66px; }

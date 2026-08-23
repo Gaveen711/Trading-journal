@@ -1,7 +1,7 @@
 import { AppDialog } from './app/AppDialog';
 import { Button } from './ui/button';
 
-export function ProTermsModal({ onAccept, onClose }) {
+export function ProTermsModal({ onAccept, onClose, renderAcceptAction }) {
   return (
     <AppDialog
       open
@@ -12,9 +12,13 @@ export function ProTermsModal({ onAccept, onClose }) {
       description="Review and accept before continuing to payment."
       size="lg"
       footer={
-        <Button className="w-full" onClick={onAccept}>
-          I accept the terms &amp; proceed to payment
-        </Button>
+        renderAcceptAction
+          ? renderAcceptAction(onAccept)
+          : (
+              <Button className="w-full" onClick={onAccept}>
+                I accept the terms &amp; proceed to payment
+              </Button>
+            )
       }
     >
       <div className="flex flex-col gap-4 text-xs leading-relaxed">
@@ -35,7 +39,7 @@ export function ProTermsModal({ onAccept, onClose }) {
         <div className="flex flex-col gap-1 border-t border-border pt-4">
           <p className="font-medium text-foreground">3. Subscription &amp; refund policy</p>
           <p className="text-muted-foreground">
-            You agree that all payments for the Pro version are non-refundable. Once digital access to Pro features (unlimited trades, analytics) is granted, the service is considered fully rendered. No refunds will be issued for partial months or unused periods.
+            Your first Pro payment is covered by a 7-day money-back guarantee: if Pro is not for you, email info@xaujournal.com within 7 days of that first purchase for a full refund. Renewal charges are non-refundable, and no refunds are issued for partial months or unused periods. Cancel at any time from the billing portal; Pro stays active until the end of the paid period. Full details: www.xaujournal.com/refund-policy.
           </p>
         </div>
 

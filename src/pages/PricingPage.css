@@ -1,0 +1,457 @@
+/* ————————————————————————————————————————————————————————————————
+   Pricing page — the rate card. Prefix: xpr-
+
+   Sits on the Vitrine system (PublicSite.css) and adds only what a rate
+   card needs: a billing switch, two plates whose rows line up, the price
+   crossfade, the "what Pro adds" captures, a ledger comparison.
+
+   Amber on this page reports exactly two things: which billing interval
+   is live, and the saving that applies when it is. Everything else is
+   bone, ink-2 or hairline.
+   ———————————————————————————————————————————————————————————————— */
+
+/* ————————————————————————— cover ————————————————————————— */
+
+/* The switch has to sit close to the plates it drives, so the cover gives
+   back most of its bottom padding and the plates section starts flush. */
+.xj-cover.xpr-cover { padding-bottom: clamp(36px, 4vw, 52px); }
+
+.xpr-cover-grid { display: grid; gap: 28px 64px; align-items: end; }
+
+@media (min-width: 960px) {
+  .xpr-cover-grid { grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr); }
+  .xpr-cover-grid .xj-lede { margin-top: 0; }
+}
+
+/* ————————————————————————— billing switch ————————————————————————— */
+
+.xpr-billing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-top: 30px;
+}
+
+.xpr-billing > .xj-label { color: var(--xj-mute); }
+
+.xpr-seg {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  width: 100%;
+  padding: 3px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: 999px;
+  background: var(--xj-ground-2);
+  isolation: isolate;
+}
+
+@media (min-width: 560px) {
+  .xpr-seg { display: inline-grid; width: auto; }
+}
+
+/* The thumb is one pane of glass sliding between the two options. Width is
+   half the padding box minus the inset, so translateX(100%) lands it exactly
+   under the second option. */
+.xpr-seg-thumb {
+  position: absolute;
+  z-index: 0;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border: 1px solid var(--xj-glass-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 var(--xj-glass-highlight);
+  transition: transform 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.xpr-seg[data-billing='yearly'] .xpr-seg-thumb { transform: translateX(100%); }
+
+.xpr-seg-opt {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+}
+
+/* The native radio keeps keyboard and screen-reader behaviour; it is drawn
+   off-canvas, not display:none, so it still takes focus. */
+.xpr-seg-opt input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.xpr-seg-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  color: var(--xj-mute);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  user-select: none;
+  transition: color 180ms ease;
+}
+
+@media (min-width: 560px) {
+  .xpr-seg-face { padding: 0 22px; }
+}
+
+.xpr-seg-opt:hover .xpr-seg-face { color: var(--xj-bone); }
+
+/* Lit = live. The selected interval is the one amber word in the cover. */
+.xpr-seg-opt input:checked + .xpr-seg-face { color: var(--xj-signal); }
+
+.xpr-seg-opt input:focus-visible + .xpr-seg-face {
+  outline: 2px solid var(--xj-signal);
+  outline-offset: 2px;
+}
+
+/* The saving is a figure, so it is mono; it only lights when it applies. */
+.xpr-seg-save {
+  padding: 3px 7px;
+  border: 1px solid var(--xj-line-2);
+  border-radius: 999px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.xpr-seg-opt input:checked + .xpr-seg-face .xpr-seg-save {
+  color: var(--xj-signal);
+  border-color: var(--xj-signal-line);
+}
+
+/* ————————————————————————— plates ————————————————————————— */
+
+.xj-section.xpr-plates-section { padding-top: 0; }
+
+.xpr-plates { display: grid; gap: 16px; }
+
+/* Side by side, the two plates share one set of rows (subgrid), so name,
+   price, ledger and button sit on the same lines in both. Browsers without
+   subgrid lay each plate out on its own, which still reads fine. */
+@media (min-width: 860px) {
+  .xpr-plates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(6, auto);
+  }
+  .xpr-plate {
+    grid-row: span 6;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+}
+
+.xpr-plate {
+  --xpr-pad: clamp(22px, 3vw, 34px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--xj-glass-radius);
+  overflow: hidden;
+}
+
+.xpr-plate--free {
+  border: 1px solid var(--xj-line);
+  background: var(--xj-ground-2);
+}
+
+/* .xpr-plate--lead takes the museum glass from .xj-glass unchanged. */
+
+.xpr-plate-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 var(--xpr-pad);
+  border-bottom: 1px solid var(--xj-line);
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.xpr-plate-bar > span:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.xpr-plate--lead .xpr-plate-bar {
+  border-bottom-color: var(--xj-glass-line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--xj-mute);
+}
+
+.xpr-tag {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--xj-glass-line);
+  border-radius: 3px;
+  color: var(--xj-bone);
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+/* Narrow plates: the silkscreen and the tag share the strip on two lines
+   rather than truncating the plan name. */
+@media (max-width: 479px) {
+  .xpr-plate-bar { flex-wrap: wrap; padding-block: 12px; row-gap: 8px; }
+  .xpr-plate-bar > span:first-child { white-space: normal; overflow: visible; }
+}
+
+.xpr-plate-head { padding: 26px var(--xpr-pad) 0; }
+
+/* index.css sets h2 size with !important; the tie has to be broken here. */
+.xpr-plate h2 {
+  font-size: 1.3rem !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em;
+}
+
+/* ————————————————————————— price ————————————————————————— */
+
+/* Both intervals are laid out in the same cell; the switch only changes
+   which one is visible. Nothing reflows, the numerals are tabular, so the
+   decimal point holds still while the digits change. */
+.xpr-price { display: grid; margin-top: 14px; }
+
+.xpr-price-layer {
+  grid-area: 1 / 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 10px;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 320ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    transform 320ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    visibility 0s linear 320ms;
+}
+
+.xpr-price-layer.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 0s, 0s, 0s;
+}
+
+.xpr-amount {
+  color: var(--xj-bone);
+  font-family: var(--xj-serif);
+  font-optical-sizing: auto;
+  font-size: clamp(3rem, 4.8vw, 4.25rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.xpr-unit {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.xpr-bill {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  color: var(--xj-mute);
+  font-family: var(--xj-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ————————————————————————— plate body ————————————————————————— */
+
+.xpr-plate-desc {
+  margin: 0;
+  padding: 18px var(--xpr-pad) 0;
+  color: var(--xj-mute);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.xpr-plate-ledger { padding: 26px var(--xpr-pad) 0; }
+
+.xpr-plate .xj-ledger { margin: 0; }
+
+/* The ticks are silkscreen, not signal: nothing in a feature list is live. */
+.xpr-plate .xj-ledger svg { color: var(--xj-bone); }
+.xpr-plate .xj-ledger li.is-out svg { color: var(--xj-line-2); }
+
+.xpr-plate-cta { padding: 30px var(--xpr-pad) 0; }
+.xpr-plate-cta .xj-cta { width: 100%; }
+
+.xpr-terms-action,
+.xpr-terms-action .xj-cta { width: 100%; }
+
+.xpr-plate-foot {
+  margin: 0;
+  padding: 14px var(--xpr-pad) var(--xpr-pad);
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+  line-height: 1.75;
+}
+
+/* On the stacked layout the button keeps its place after the ledger; on the
+   subgrid the row order does that already. */
+@media (max-width: 859px) {
+  .xpr-plate-foot { margin-top: auto; }
+}
+
+/* ————————————————————————— what Pro adds ————————————————————————— */
+
+.xpr-adds { display: grid; gap: 52px 32px; }
+
+@media (min-width: 860px) {
+  .xpr-adds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.xpr-add { min-width: 0; }
+
+.xpr-notes {
+  margin: 22px 0 0;
+  border-top: 1px solid var(--xj-line);
+}
+
+.xpr-notes > div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 6px 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--xj-line);
+}
+
+.xpr-notes dt {
+  padding-top: 4px;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.xpr-notes dd {
+  margin: 0;
+  color: var(--xj-mute);
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.xpr-notes dd strong { color: var(--xj-bone); font-weight: 500; }
+
+/* ————————————————————————— comparison ledger ————————————————————————— */
+
+.xpr-compare { border-top: 1px solid var(--xj-line); }
+
+/* Header row only exists where there are columns to head. */
+.xpr-compare-head { display: none; }
+
+.xpr-compare-row {
+  display: grid;
+  gap: 10px 32px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--xj-line);
+  color: var(--xj-mute);
+  font-size: 0.93rem;
+  line-height: 1.5;
+}
+
+.xpr-compare-row > strong {
+  color: var(--xj-bone);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Stacked: each value carries its plan name in front of it. */
+.xpr-compare-row > span {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.xpr-compare-row > span[data-plan='Pro'] { color: var(--xj-bone); }
+
+.xpr-compare-plan {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 800px) {
+  .xpr-compare-head,
+  .xpr-compare-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 0 32px;
+    align-items: baseline;
+  }
+  .xpr-compare-head {
+    padding: 0 0 14px;
+    border-bottom: 1px solid var(--xj-line);
+    color: var(--xj-faint);
+    font-family: var(--xj-mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .xpr-compare-row > span { display: block; }
+  .xpr-compare-plan { display: none; }
+}
+
+/* ————————————————————————— FAQ extras ————————————————————————— */
+
+.xpr-faq-aside { margin-top: 22px; }
+
+/* ————————————————————————— reduced motion ————————————————————————— */
+
+/* PublicSite.css already collapses every transition under reduced motion;
+   the price layers just need to land without the slide. */
+@media (prefers-reduced-motion: reduce) {
+  .xpr-price-layer { transform: none; transition: none; }
+  .xpr-seg-thumb { transition: none; }
+}

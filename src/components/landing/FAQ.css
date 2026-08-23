@@ -1,0 +1,14 @@
+/* ————————————————————————————————————————————————————————————————
+   FAQ (xf-). The shared .xj-faq / .xj-faq-list furniture does the work;
+   this only seats the section head inside the left column.
+   ———————————————————————————————————————————————————————————————— */
+
+.xf-head .xj-head { margin-bottom: 0; }
+
+.xf-head .xj-lede { max-width: 34ch; }
+
+.xf-more { margin: 24px 0 0; }
+
+@media (min-width: 900px) {
+  .xf-head { position: sticky; top: 96px; }
+}

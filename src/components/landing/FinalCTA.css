@@ -1,0 +1,147 @@
+/* ————————————————————————————————————————————————————————————————
+   Closing panel (xe-). Glass pane with the gold day ruled along its
+   top edge. The open desk and the needle are the only amber — live.
+   ———————————————————————————————————————————————————————————————— */
+
+.xe-panel { overflow: hidden; }
+
+/* ————————————————————————— the day rule ————————————————————————— */
+
+.xe-day {
+  position: relative;
+  padding: 22px clamp(20px, 3.5vw, 44px) 16px;
+  border-bottom: 1px solid var(--xj-glass-line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.xe-lanes {
+  position: relative;
+  height: 27px; /* four 3px lanes on a 6px pitch, plus the needle's reach */
+}
+
+/* One span of one desk. `--from` / `--to` are UTC hours on a 0–24 rule. */
+.xe-lane {
+  position: absolute;
+  top: calc(var(--i) * 7px);
+  left: calc(var(--from) / 24 * 100%);
+  width: calc((var(--to) - var(--from)) / 24 * 100%);
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.xe-lane.is-open { background: var(--xj-signal); }
+
+.xe-needle {
+  position: absolute;
+  top: -6px;
+  bottom: -2px;
+  left: calc(var(--t) / 24 * 100%);
+  width: 1px;
+  background: var(--xj-signal);
+  box-shadow: 0 0 8px rgba(226, 166, 61, 0.6);
+}
+
+.xe-needle::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -2.5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--xj-signal);
+}
+
+.xe-ticks {
+  position: relative;
+  height: 14px;
+  margin-top: 6px;
+  color: var(--xj-faint);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+
+.xe-ticks span {
+  position: absolute;
+  left: calc(var(--h) / 24 * 100%);
+  transform: translateX(-50%);
+}
+
+.xe-ticks span:first-child { transform: none; }
+.xe-ticks span:last-child { transform: translateX(-100%); }
+
+.xe-cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.xe-cities li { display: inline-flex; align-items: center; gap: 8px; }
+
+.xe-cities li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.xe-cities li.is-open { color: var(--xj-signal); }
+.xe-cities li.is-open::before { background: var(--xj-signal); }
+
+/* ————————————————————————— the body ————————————————————————— */
+
+.xe-body {
+  display: grid;
+  gap: 28px 48px;
+  align-items: end;
+  padding: clamp(30px, 4.5vw, 56px) clamp(20px, 3.5vw, 44px) clamp(32px, 4.5vw, 52px);
+}
+
+@media (min-width: 900px) {
+  .xe-body { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
+/* The action column: primary first, then the reading link, then the
+   silkscreen note — right-aligned under the title's baseline on wide
+   screens, a plain row on narrow ones. */
+.xe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+@media (min-width: 900px) {
+  .xe-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 18px;
+    padding-bottom: 6px;
+  }
+}
+
+.xe-actions small {
+  color: var(--xj-faint);
+  font-family: var(--xj-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.xe-body .xj-eyebrow { flex-wrap: wrap; gap: 10px 16px; }
+
+.xe-clock { color: var(--xj-faint); letter-spacing: 0.04em; }
+
+.xj .xe-title { max-width: 18ch; }
+
+.xe-body .xj-lede { max-width: 50ch; }

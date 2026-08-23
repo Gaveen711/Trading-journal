@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowUp } from 'lucide-react';
 import { formatUtc, useUtcClock } from '../lib/goldSessions';
-import { Arrow, Wordmark } from './PublicSite';
+import { CTAButton, Wordmark } from './PublicSite';
 
 const NAV_LINKS = [
   { to: '/', label: 'Product', index: '01' },
@@ -95,10 +95,7 @@ export function PublicNavbar() {
 
             <div className='xj-nav-cta'>
               <NavLink className='xj-nav-signin' to='/login?mode=signin'>Sign in</NavLink>
-              <button className='xj-cta' type='button' onClick={() => navigate('/login?mode=signup')}>
-                Start free
-                <Arrow />
-              </button>
+              <CTAButton onClick={() => navigate('/login?mode=signup')}>Start free</CTAButton>
               <button
                 className='xj-burger'
                 type='button'
@@ -143,9 +140,7 @@ export function PublicNavbar() {
             </NavLink>
           </nav>
 
-          <button
-            className='xj-cta'
-            type='button'
+          <CTAButton
             tabIndex={menuOpen ? 0 : -1}
             onClick={() => {
               setMenuOpen(false);
@@ -153,8 +148,7 @@ export function PublicNavbar() {
             }}
           >
             Start free
-            <Arrow />
-          </button>
+          </CTAButton>
 
           <div className='xj-menu-foot'>
             <span>XAU/USD</span>

@@ -95,7 +95,7 @@ function setCanonical(href) {
 
 /** Full head treatment shared by the route-table path and the article path. */
 function applyHeadTags({ title, description, url, ogType = 'website' }) {
-  const ogImage = `${SITE_URL}/favicon.png`;
+  const ogImage = `${SITE_URL}/og.png`;
 
   document.title = title;
   setMeta('name', 'description', description);

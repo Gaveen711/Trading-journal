@@ -13,6 +13,8 @@ const clearUxState = (element) => {
   element.style.removeProperty('--ux-index');
 };
 
+const HEADING_SELECTOR = 'main h1, main h2, main h3, main h4, main h5, main h6, [role="main"] h1, [role="main"] h2, [role="main"] h3, [role="main"] h4, [role="main"] h5, [role="main"] h6';
+
 /** Owns telemetry, scroll, focus and progressive-reveal behavior shared by routes. */
 export function useRouteExperience(pathname) {
   useEffect(() => { initGA(); }, []);
@@ -24,6 +26,81 @@ export function useRouteExperience(pathname) {
     // The dashboard manages its own scroll positions (dense layout, persistent
     // shell); resetting on every /app navigation fights it.
     if (!pathname.startsWith('/app')) window.scrollTo(0, 0);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tracked = new Set();
+    let observer;
+    let mutationObserver;
+    let frameId = 0;
+
+    const positionState = (heading) => {
+      const rect = heading.getBoundingClientRect();
+      if (rect.bottom < 0) return 'above';
+      if (rect.top > window.innerHeight) return 'below';
+      return 'enter';
+    };
+
+    const register = (root) => {
+      const candidates = [];
+      if (root instanceof Element && root.matches(HEADING_SELECTOR)) candidates.push(root);
+      if (root.querySelectorAll) candidates.push(...root.querySelectorAll(HEADING_SELECTOR));
+
+      candidates.forEach((heading) => {
+        if (tracked.has(heading) || heading.closest('[aria-hidden="true"]')) return;
+        tracked.add(heading);
+
+        if (reducedMotion || typeof IntersectionObserver === 'undefined') {
+          heading.dataset.headingMotion = 'visible';
+          return;
+        }
+
+        heading.dataset.headingMotion = positionState(heading);
+        observer.observe(heading);
+      });
+    };
+
+    if (!reducedMotion && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.dataset.headingMotion = 'visible';
+            return;
+          }
+          entry.target.dataset.headingMotion = entry.boundingClientRect.bottom <= 0 ? 'above' : 'below';
+        });
+      }, { threshold: 0.12, rootMargin: '-4% 0px -4% 0px' });
+    }
+
+    frameId = window.requestAnimationFrame(() => {
+      register(document);
+      // Lazy routes resolve after the app shell effect. Keep the observer live
+      // so every subsequently mounted page heading receives the same motion.
+      mutationObserver = new MutationObserver((records) => {
+        records.forEach((record) => record.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) register(node);
+        }));
+      });
+      mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+      if (!reducedMotion) {
+        window.requestAnimationFrame(() => {
+          tracked.forEach((heading) => {
+            if (heading.dataset.headingMotion === 'enter') heading.dataset.headingMotion = 'visible';
+          });
+        });
+      }
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer?.disconnect();
+      mutationObserver?.disconnect();
+      tracked.forEach((heading) => delete heading.dataset.headingMotion);
+    };
   }, [pathname]);
 
   useEffect(() => {

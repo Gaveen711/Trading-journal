@@ -9,11 +9,10 @@ import {
 import { Eye, EyeSlash } from 'react-bootstrap-icons';
 import { auth } from '../firebase';
 import { useToast } from '../components/ToastContext';
-import { useSessionBrokerAccounts, useSessionWallet } from '../app/di/AuthenticatedSessionContext.jsx';
+import { useSessionBrokerAccounts } from '../app/di/AuthenticatedSessionContext.jsx';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { isPaidPlan } from '../lib/entitlements.js';
 import { accentTemplateName } from '../lib/accentTemplates.js';
-import { formatCurrency } from '../lib/tradeUtils';
 import { DEFAULT_DISCIPLINE_RULES, RULE_BOUNDS, RULE_IDS } from '../lib/disciplineRules.js';
 import { SectionCard } from '../components/app/SectionCard';
 import { StatusSquare } from '../components/app/StatusSquare';
@@ -55,16 +54,11 @@ export function SettingsPage() {
   // values through the outlet: the provider already owns the single broker
   // list every dashboard surface shares.
   const { accounts: brokerAccounts, removeAccount: removeBrokerAccount } = useSessionBrokerAccounts();
-  // The TRUE balance, not the outlet's `walletBalance` — that one is masked to
-  // 0 when the account-balance sync permission is off, and a top-up computed
-  // from a masked 0 would overwrite the real deposit with just the top-up.
-  const { walletBalance, updateBalance } = useSessionWallet();
   const { isLightMode, toggleTheme, currentTemplate } = useAppTheme();
   const user = auth.currentUser;
 
   const usernameId = useId();
   const darkModeId = useId();
-  const topUpId = useId();
 
   const providerIds = useMemo(
     () => user?.providerData?.map((provider) => provider.providerId) || [],
@@ -82,8 +76,6 @@ export function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [toppingUp, setToppingUp] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resettingTerminal, setResettingTerminal] = useState(false);
 
@@ -179,32 +171,6 @@ export function SettingsPage() {
       toast('Discipline rules saved.', 'success');
     } catch (error) {
       toast(error?.message || 'Could not save your discipline rules.', 'error');
-    }
-  };
-
-  /**
-   * Deposits are additive: the stored field is an absolute balance, so a
-   * top-up is read-add-write. The amount is parsed defensively because the
-   * input is free text — a blank or unparseable entry must not write NaN into
-   * the balance every downstream metric divides by.
-   */
-  const handleTopUp = async (event) => {
-    event.preventDefault();
-    const amount = Number(topUpAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast('Enter an amount greater than zero.', 'error');
-      return;
-    }
-    setToppingUp(true);
-    try {
-      const next = Number(((walletBalance || 0) + amount).toFixed(2));
-      await updateBalance(next);
-      setTopUpAmount('');
-      toast(`Wallet topped up. New balance ${formatCurrency(next)}.`, 'success');
-    } catch (error) {
-      toast(error?.message || 'Could not update your wallet balance.', 'error');
-    } finally {
-      setToppingUp(false);
     }
   };
 
@@ -434,44 +400,6 @@ export function SettingsPage() {
                 </Button>
               </div>
             </form>
-          </SectionCard>
-
-          <SectionCard
-            surface
-            title="Wallet"
-            description="Your starting capital. Trade P&L is applied on top of this figure."
-          >
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs text-muted-foreground">Current balance</span>
-                <span className="figure text-sm text-foreground">{formatCurrency(walletBalance || 0)}</span>
-              </div>
-
-              <form onSubmit={handleTopUp} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <label htmlFor={topUpId} className="text-xs font-medium text-muted-foreground">
-                    Add funds
-                  </label>
-                  <Input
-                    id={topUpId}
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    placeholder="0.00"
-                    value={topUpAmount}
-                    onChange={(event) => setTopUpAmount(event.target.value)}
-                  />
-                </div>
-                <Button type="submit" disabled={toppingUp} className="shrink-0">
-                  {toppingUp ? 'Adding…' : 'Top up'}
-                </Button>
-              </form>
-
-              <p className="text-xs text-muted-foreground">
-                Adds to the balance rather than replacing it. To correct a mistake, reset the
-                terminal or top up by the difference.
-              </p>
-            </div>
           </SectionCard>
 
           <SectionCard
