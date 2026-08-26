@@ -59,14 +59,14 @@ beforeEach(() => { document.body.innerHTML = ''; });
 
 describe('EditTradeModal — field alignment', () => {
   it('gives every labelled control in the form the same height', () => {
-    const { container } = renderModal();
+    const { baseElement } = renderModal();
 
     // The controls that sit in the aligned grid rows.
     const controls = [
-      container.querySelector('#modal-lots'),
-      container.querySelector('#modal-entry'),
-      container.querySelector('#modal-exit'),
-      container.querySelector('#modal-setup'),
+      baseElement.querySelector('#modal-lots'),
+      baseElement.querySelector('#modal-entry'),
+      baseElement.querySelector('#modal-exit'),
+      baseElement.querySelector('#modal-setup'),
     ].filter(Boolean);
 
     expect(controls).toHaveLength(4);
@@ -86,8 +86,8 @@ describe('EditTradeModal — field alignment', () => {
   });
 
   it('puts exactly one field in each cell of the three-column row', () => {
-    const { container } = renderModal();
-    const row = container.querySelector('.sm\\:grid-cols-3');
+    const { baseElement } = renderModal();
+    const row = baseElement.querySelector('.sm\\:grid-cols-3');
     expect(row).not.toBeNull();
 
     const cells = [...row.children];
@@ -99,8 +99,8 @@ describe('EditTradeModal — field alignment', () => {
   });
 
   it('gives the date picker and session select the same height as the rest', () => {
-    const { container } = renderModal();
-    const row = container.querySelector('.sm\\:grid-cols-3');
+    const { baseElement } = renderModal();
+    const row = baseElement.querySelector('.sm\\:grid-cols-3');
     const triggers = [...row.children].map((cell) =>
       cell.querySelector('button, [role="combobox"], div.input-premium')
     );
@@ -113,9 +113,15 @@ describe('EditTradeModal — field alignment', () => {
   });
 
   it('labels carry no indent that would break them off the field edge', () => {
-    const { container } = renderModal();
-    for (const label of container.querySelectorAll('label')) {
+    const { baseElement } = renderModal();
+    for (const label of baseElement.querySelectorAll('label')) {
       expect(label.className).not.toMatch(/(^|\s)ml-1(\s|$)/);
     }
+  });
+
+  it('uses the accessible application dialog shell', () => {
+    renderModal();
+    expect(screen.getByRole('dialog', { name: /modify operation/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
   });
 });

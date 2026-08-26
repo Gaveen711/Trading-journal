@@ -5,8 +5,8 @@ import './BrokerWall.css';
 /* ————————————————————————————————————————————————————————————————
    Broker wall — "Syncs with the brokers you already use."
 
-   Two rows of brand marks drift past in opposite directions, monochrome
-   until the pointer rests on one. Every tile is derived from the sync
+   Two rows of brand marks drift past in opposite directions, with each
+   broker's own colors visible. Every tile is derived from the sync
    catalog (brokerWallData.js), so the wall can never list a broker the
    product cannot connect. The second copy of each row exists only to
    close the loop and is hidden from assistive tech; under reduced

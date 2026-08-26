@@ -1,5 +1,6 @@
 import { XLg, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 
 export function CheckoutCancel() {
   const navigate = useNavigate();
@@ -20,12 +21,14 @@ export function CheckoutCancel() {
           </p>
         </div>
         
-        <button 
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full rounded-2xl"
           onClick={() => navigate('/')}
-          className="w-full h-14 rounded-2xl bg-muted/50 border border-border/40 text-[11px] font-black uppercase tracking-[0.2em] shadow-inner flex items-center justify-center gap-2 hover:bg-muted transition-all active:scale-95"
         >
           <ArrowLeft className="w-4 h-4" /> Go Back
-        </button>
+        </Button>
       </div>
     </div>
   );

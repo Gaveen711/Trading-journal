@@ -16,7 +16,7 @@ import {
   sessionAnalyticsDeltaForTrades,
   tradePnlValue,
 } from '../lib/tradeAnalytics.js';
-import { PRIMARY_SESSIONS, primarySessionForCode } from '../lib/sessionEngine.js';
+import { PRIMARY_SESSIONS, SESSION_LABELS, primarySessionForCode } from '../lib/sessionEngine.js';
 import { resolveChartTheme, seriesColor } from '../lib/chartTheme.js';
 import { cn } from '../lib/utils';
 import { costOfBrokenRules } from '../lib/disciplineRules.js';
@@ -400,7 +400,7 @@ export function AnalyticsPage() {
     const sessionRows = SESSION_BUCKETS
       .map((bucket) => ({
         key: bucket,
-        name: bucket,
+        name: SESSION_LABELS[bucket] ?? bucket,
         catchAll: CATCH_ALL_SESSIONS.includes(bucket),
         ...deriveSessionStats(sessionBuckets[bucket]),
       }))
@@ -412,7 +412,7 @@ export function AnalyticsPage() {
 
     const sessionTradeCount = sessionRows.reduce((sum, row) => sum + row.tradeCount, 0);
     const sessionTaggedCount = sessionRows.reduce(
-      (sum, row) => (row.name === 'Unknown' ? sum : sum + row.tradeCount),
+      (sum, row) => (row.key === 'Unknown' ? sum : sum + row.tradeCount),
       0,
     );
 

@@ -76,18 +76,17 @@
   color: var(--xj-ink);
 }
 
-/* Real brand marks at one calm height, never stretched. Monochrome so the
-   wall reads as one material; the colour is the broker's, not ours, and
-   it appears only when a visitor asks for it. */
+/* Real brand marks at one calm height, never stretched. Keep each broker's
+   own brand colour visible while the surrounding tile stays restrained. */
 .xb-logo {
   width: 22px;
   height: 22px;
   flex: 0 0 22px;
   border-radius: 5px;
   object-fit: contain;
-  filter: grayscale(1) brightness(1.6);
-  opacity: 0.72;
-  transition: filter 240ms ease, opacity 240ms ease, background-color 240ms ease;
+  filter: none;
+  opacity: 1;
+  transition: transform 240ms ease, opacity 240ms ease, background-color 240ms ease;
 }
 
 /* Near-black marks get a bone chip so they survive the grayscale. */
@@ -122,7 +121,7 @@
 }
 
 .xb-tile:hover .xb-logo,
-.xb-tile:focus-within .xb-logo { filter: none; opacity: 1; }
+.xb-tile:focus-within .xb-logo { opacity: 1; transform: scale(1.06); }
 
 .xb-tile:hover .xb-badge,
 .xb-tile:focus-within .xb-badge { color: var(--xj-ink-2); border-color: rgba(255, 255, 255, 0.22); }
