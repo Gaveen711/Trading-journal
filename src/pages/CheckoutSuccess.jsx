@@ -1,5 +1,6 @@
 import { CheckCircleFill, ArrowRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 
 export function CheckoutSuccess() {
   const navigate = useNavigate();
@@ -23,12 +24,13 @@ export function CheckoutSuccess() {
         </div>
 
         <div className="space-y-3">
-          <button 
+          <Button
+            size="lg"
+            className="group w-full rounded-2xl"
             onClick={() => navigate('/')}
-            className="btn-primary w-full h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 flex items-center justify-center gap-2 group"
           >
             Return to Terminal <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

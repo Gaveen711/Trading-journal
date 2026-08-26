@@ -62,13 +62,13 @@ function BrokerLogo({ preset, className = 'w-10 h-10 rounded-2xl', imageClassNam
         <img
           src={logoUrl}
           alt={`${preset.name} logo`}
-          className={`${imageClassName} object-contain`}
+          className={`${imageClassName} object-contain opacity-100 saturate-150 contrast-105 mix-blend-normal`}
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setHasImageError(true)}
         />
       ) : (
-        <span className="text-[11px] font-black">{preset.iconText}</span>
+        <span className={`text-[11px] font-black ${preset.accentColor}`}>{preset.iconText}</span>
       )}
     </div>
   );

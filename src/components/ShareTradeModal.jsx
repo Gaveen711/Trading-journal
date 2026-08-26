@@ -1,7 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import { Download, Copy, XLg, Check2 } from 'react-bootstrap-icons';
+import { Check, Copy, Download } from 'lucide-react';
 import { TradeShareCard } from './TradeShareCard';
+import { AppDialog } from './app/AppDialog';
+import { Button } from './ui/button';
+import { Spinner } from './ui/spinner';
 
 export function ShareTradeModal({ trade, onClose }) {
   const cardRef = useRef(null);
@@ -65,58 +68,44 @@ export function ShareTradeModal({ trade, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 backdrop-blur-sm p-4 sm:py-8 animate-in fade-in duration-200">
-
+    <AppDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title="Share trade"
+      size="xl"
+      footer={(
+        <>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={handleCopy} disabled={!imageUrl || copied}>
+            {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
+            {copied ? 'Copied' : 'Copy image'}
+          </Button>
+          <Button onClick={handleDownload} disabled={!imageUrl}>
+            <Download data-icon="inline-start" />
+            Download HD
+          </Button>
+        </>
+      )}
+    >
       {/* Hidden container for rendering the high-res card off-screen */}
       <div className="fixed top-[-9999px] left-[-9999px]">
         <TradeShareCard ref={cardRef} trade={trade} />
       </div>
 
-      <div className="w-full max-w-4xl max-h-[calc(100dvh-2rem)] apple-glass-panel rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-top-3 duration-300">
-        <div className="flex items-center justify-between p-4 border-b border-border/10 bg-muted/20">
-          <div>
-            <h3 className="text-lg font-black tracking-tight text-foreground">Share Trade</h3>
+      <div className="flex min-h-[280px] items-center justify-center overflow-auto rounded-lg bg-muted/40 p-4 sm:min-h-[400px] sm:p-6">
+        {isGenerating ? (
+          <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
+            <Spinner className="size-8" />
+            <p className="text-xs font-medium text-muted-foreground">Rendering high-resolution card…</p>
           </div>
-          <button onClick={onClose} aria-label="Close share trade modal" className="w-11 h-11 flex items-center justify-center rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-            <XLg className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-4 sm:p-6 bg-black/40 flex items-center justify-center min-h-[280px] sm:min-h-[400px] overflow-auto">
-          {isGenerating ? (
-            <div className="flex flex-col items-center space-y-4 animate-pulse">
-              <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-xs font-black uppercase tracking-widest text-primary">Rendering High-Res Card...</p>
-            </div>
-          ) : imageUrl ? (
-            <img src={imageUrl} alt="Trade Share Card" className="w-full h-auto max-h-[500px] object-contain rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-white/5" />
-          ) : (
-            <p className="text-red-500 text-sm font-bold">Failed to generate image.</p>
-          )}
-        </div>
-
-        <div className="p-4 bg-muted/10 border-t border-border/10 flex flex-wrap items-center justify-end gap-3">
-          <button onClick={onClose} className="min-h-11 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-            Cancel
-          </button>
-
-          <button
-            onClick={handleCopy}
-            disabled={!imageUrl || copied}
-            className={`min-h-11 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${copied ? 'bg-green-500/20 text-green-500 border border-green-500/30' : 'bg-muted border border-border/40 hover:bg-muted/80 text-foreground'}`}
-          >
-            {copied ? <><Check2 className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Image</>}
-          </button>
-
-          <button
-            onClick={handleDownload}
-            disabled={!imageUrl}
-            className="min-h-11 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" /> Download HD
-          </button>
-        </div>
+        ) : imageUrl ? (
+          <img src={imageUrl} alt="Trade share card" className="max-h-[500px] w-full rounded-lg border border-border object-contain shadow-xl" />
+        ) : (
+          <p className="text-sm font-medium text-destructive" role="alert">Failed to generate image.</p>
+        )}
       </div>
-    </div>
+    </AppDialog>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { XLg, Check2Circle, CloudArrowUp, Trash, LockFill } from 'react-bootstrap-icons';
+import { Check2Circle, CloudArrowUp, Trash, LockFill } from 'react-bootstrap-icons';
 import { AnimatePresence } from 'framer-motion';
 import { CustomSelect } from './ui/CustomSelect';
 import { DatePicker } from './ui/DatePicker';
@@ -12,6 +12,7 @@ import { useToast } from './ToastContext';
 import { ImageViewerModal } from './ImageViewerModal';
 import { requireProFeature } from '../services/featureGate';
 import { isPaidPlan } from '../lib/entitlements.js';
+import { AppDialog } from './app/AppDialog';
 
 /**
  * The form's two alignment tokens.
@@ -222,20 +223,15 @@ export function EditTradeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] overflow-y-auto flex items-start sm:items-center justify-center p-4">
-      <div className="fixed inset-0 bg-background/60 backdrop-blur-xl animate-in fade-in duration-500" onClick={onClose} />
-
-      <div className="relative w-full max-w-2xl my-8 card-premium p-6 sm:p-10 space-y-8 animate-in zoom-in-95 slide-in-from-bottom-8 duration-700 z-10">
-        <div className="flex justify-between items-center text-left">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Modify Operation</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-all active:scale-90">
-            <XLg className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <AppDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      title="Modify operation"
+      size="lg"
+    >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className={FIELD_LABEL}>Date</label>
@@ -457,15 +453,14 @@ export function EditTradeModal({
             Update Operation Log
           </button>
         </form>
-      </div>
 
-      {/* Lightbox for zooming screenshots */}
-      <AnimatePresence>
-        {activeImageUrl && (
-          <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
-        )}
-      </AnimatePresence>
-    </div>
+        {/* Lightbox for zooming screenshots */}
+        <AnimatePresence>
+          {activeImageUrl && (
+            <ImageViewerModal imageUrl={activeImageUrl} onClose={() => setActiveImageUrl(null)} />
+          )}
+        </AnimatePresence>
+    </AppDialog>
   );
 }
 

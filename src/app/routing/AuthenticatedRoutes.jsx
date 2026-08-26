@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout.jsx';
 
 const LogTradePage = lazy(() => import('../../pages/LogTradePage.jsx').then((m) => ({ default: m.LogTradePage })));
@@ -40,6 +40,7 @@ export function AuthenticatedRoutes({ user, subscription, actions }) {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="checkout-success" element={<CheckoutSuccess />} />
         <Route path="checkout-cancel" element={<CheckoutCancel />} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
     </Routes>
   );

@@ -198,6 +198,26 @@
 .xbh-chip .xj-num { color: var(--xj-faint); font-size: 0.68rem; transition: color 150ms ease; }
 .xbh-chip:hover { border-color: var(--xj-bone); color: var(--xj-bone); }
 
+/* Filter controls follow the public yellow/black action language at every size. */
+.xbh-chip {
+  border: 3px solid #000;
+  border-radius: 0.4em;
+  background: #fbca1f;
+  color: #000;
+  font-weight: 900;
+  box-shadow: 0.1em 0.1em 0 #000;
+}
+.xbh-chip:hover,
+.xbh-chip:focus-visible,
+.xbh-chip[aria-pressed='true'] {
+  border-color: #000;
+  background: #c8ff00;
+  color: #000;
+  transform: translate(-0.05em, -0.05em);
+  box-shadow: 0.15em 0.15em 0 #000;
+}
+.xbh-chip:active { transform: translate(0.05em, 0.05em); box-shadow: 0.05em 0.05em 0 #000; }
+
 /* The filter that is on — amber reports it, nothing else on the page does. */
 .xbh-chip[aria-pressed='true'] {
   border-color: var(--xj-signal-line);
@@ -206,6 +226,46 @@
 }
 
 .xbh-chip[aria-pressed='true'] .xj-num { color: var(--xj-signal); }
+
+/* Editorial layer: preserve the star field and keep the study hub neutral,
+   with a clear visual rhythm between cover, feature and shelf. */
+.xbh-feature-section {
+  position: relative;
+}
+.xbh-feature {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+.xbh-feature-title a { color: #fffbe8; }
+.xbh-feature-summary,
+.xbh-card-summary { color: rgba(246, 246, 232, 0.78); }
+.xbh-notes-pane { background: rgba(0, 0, 0, 0.32); border-color: rgba(255, 255, 255, 0.14); }
+.xbh-ruled li { color: rgba(246, 246, 232, 0.86); }
+
+.xbh-chip[aria-pressed='true'] { border-color: #000; background: #c8ff00; color: #000; }
+.xbh-chip .xj-num { color: inherit; opacity: 0.72; }
+
+.xbh-card {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+}
+.xbh-card:hover,
+.xbh-card:focus-visible {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.25);
+}
+.xbh-card-title { color: #fffbe8; }
+.xbh-card-foot { color: rgba(246, 246, 232, 0.62); }
+
+@media (prefers-reduced-motion: reduce) {
+  .xbh-card:hover,
+  .xbh-card:focus-visible,
+  .xbh-chip:hover,
+  .xbh-chip:focus-visible { transform: none; }
+}
 
 .xbh-grid {
   list-style: none;

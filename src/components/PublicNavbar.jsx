@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowUp } from 'lucide-react';
 import { formatUtc, useUtcClock } from '../lib/goldSessions';
@@ -22,6 +22,8 @@ export function PublicNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const burgerRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     let frameId = 0;
@@ -44,10 +46,59 @@ export function PublicNavbar() {
   }, []);
 
   useEffect(() => {
+    if (!menuOpen) return undefined;
+
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    const backgroundElements = [...document.querySelectorAll('main, footer')];
+    const backgroundState = backgroundElements.map((element) => ({
+      element,
+      hadInert: element.hasAttribute('inert'),
+      ariaHidden: element.getAttribute('aria-hidden'),
+    }));
+
+    document.body.style.overflow = 'hidden';
+    backgroundElements.forEach((element) => {
+      element.setAttribute('inert', '');
+      element.setAttribute('aria-hidden', 'true');
+    });
+
+    const focusMenuStart = window.requestAnimationFrame(() => {
+      menuRef.current?.querySelector('a[href], button:not([disabled])')?.focus();
+    });
+
+    const handleMenuKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMenuOpen(false);
+        burgerRef.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const menuControls = menuRef.current
+        ? [...menuRef.current.querySelectorAll('a[href], button:not([disabled])')]
+        : [];
+      const focusable = menuControls;
+      if (focusable.length === 0) return;
+
+      const currentIndex = focusable.indexOf(document.activeElement);
+      const nextIndex = event.shiftKey
+        ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+        : (currentIndex === focusable.length - 1 ? 0 : currentIndex + 1);
+      event.preventDefault();
+      focusable[nextIndex].focus();
+    };
+
+    document.addEventListener('keydown', handleMenuKeyDown);
     return () => {
+      window.cancelAnimationFrame(focusMenuStart);
+      document.removeEventListener('keydown', handleMenuKeyDown);
       document.body.style.overflow = previousOverflow;
+      backgroundState.forEach(({ element, hadInert, ariaHidden }) => {
+        if (!hadInert) element.removeAttribute('inert');
+        if (ariaHidden == null) element.removeAttribute('aria-hidden');
+        else element.setAttribute('aria-hidden', ariaHidden);
+      });
     };
   }, [menuOpen]);
 
@@ -97,6 +148,7 @@ export function PublicNavbar() {
               <NavLink className='xj-nav-signin' to='/login?mode=signin'>Sign in</NavLink>
               <CTAButton onClick={() => navigate('/login?mode=signup')}>Start free</CTAButton>
               <button
+                ref={burgerRef}
                 className='xj-burger'
                 type='button'
                 onClick={() => setMenuOpen((open) => !open)}
@@ -112,7 +164,15 @@ export function PublicNavbar() {
           </div>
         </nav>
 
-        <div id='xj-mobile-menu' className={menuOpen ? 'xj-menu is-open' : 'xj-menu'} aria-hidden={!menuOpen}>
+        <div
+          ref={menuRef}
+          id='xj-mobile-menu'
+          className={menuOpen ? 'xj-menu is-open' : 'xj-menu'}
+          role='dialog'
+          aria-modal={menuOpen ? 'true' : undefined}
+          aria-label='Site menu'
+          aria-hidden={!menuOpen}
+        >
           <nav aria-label='Mobile'>
             {NAV_LINKS.map(({ to, label, index }) => (
               <NavLink
@@ -126,7 +186,7 @@ export function PublicNavbar() {
                 }}
                 className={({ isActive }) => (isActive ? 'is-active' : undefined)}
               >
-                <small>{index}</small>
+                <small aria-hidden="true">{index}</small>
                 {label}
               </NavLink>
             ))}
@@ -135,7 +195,7 @@ export function PublicNavbar() {
               tabIndex={menuOpen ? 0 : -1}
               onClick={() => setMenuOpen(false)}
             >
-              <small>05</small>
+              <small aria-hidden="true">05</small>
               Sign in
             </NavLink>
           </nav>
@@ -162,8 +222,8 @@ export function PublicNavbar() {
         className={showScrollTop ? 'xj-top is-visible' : 'xj-top'}
         onClick={scrollToTop}
         aria-label='Scroll to top'
-        aria-hidden={!showScrollTop}
-        tabIndex={showScrollTop ? 0 : -1}
+        aria-hidden={!showScrollTop || menuOpen}
+        tabIndex={showScrollTop && !menuOpen ? 0 : -1}
       >
         <ArrowUp aria-hidden='true' />
       </button>
