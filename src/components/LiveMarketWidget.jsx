@@ -46,7 +46,7 @@ const HISTORY_LIMIT = 12;
 
 /**
  * `/spot-price` answers with `Cache-Control: public, s-maxage=10` (see
- * api/[[...route]].ts), so for ten seconds after any request the CDN hands back a
+ * api/[...route].ts), so for ten seconds after any request the CDN hands back a
  * byte-identical body without touching the origin. Polling faster than that TTL
  * buys exactly zero freshness — it just spends requests and churns React state
  * with values that did not change. 12s is the first cadence that clears the TTL

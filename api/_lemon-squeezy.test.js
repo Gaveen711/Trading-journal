@@ -56,7 +56,7 @@ vi.mock('./_resend.js', () => {
   };
 });
 
-import { app } from './[[...route]].ts';
+import { app } from './[...route].ts';
 import { db } from './_firebase.js';
 
 describe('Lemon Squeezy Webhook', () => {

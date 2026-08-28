@@ -11,7 +11,7 @@ import './PublicSite.css';
 import './ContactPage.css';
 
 /* ——————————————————————————— constants ———————————————————————————
-   The contact endpoint (api/[[...route]].ts → POST /contact) reads exactly
+   The contact endpoint (api/[...route].ts → POST /contact) reads exactly
    four fields: name, email, subject, message. It caps `message` at 5000
    characters and drops anything else, so the topic and the broker-request
    fields below are folded INTO subject/message rather than sent alongside. */

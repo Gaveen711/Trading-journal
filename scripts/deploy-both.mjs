@@ -111,13 +111,13 @@ if (args.has('--help') || args.has('-h')) {
         const adminEnv = { ...process.env };
         const adminProjectId = adminEnv.VERCEL_ADMIN_PROJECT_ID;
         const adminOrgId = adminEnv.VERCEL_ADMIN_ORG_ID || adminEnv.VERCEL_ORG_ID;
-        const adminProjectFile = resolve(adminDir, '.vercel', 'project.json');
         if (adminProjectId) {
           adminEnv.VERCEL_PROJECT_ID = adminProjectId;
           if (adminOrgId) adminEnv.VERCEL_ORG_ID = adminOrgId;
-        } else if (!existsSync(adminProjectFile)) {
-          throw new Error('Admin Vercel project is not linked. Run `vercel link` from admin-dashboard/ or set VERCEL_ADMIN_PROJECT_ID.');
         }
+        // Vercel CLI 58+ may record a Git-aware project link outside the
+        // legacy .vercel/project.json file. Let the CLI resolve that link when
+        // an explicit admin project ID is not supplied.
         run(vercelCommand, vercelArgs, adminDir, adminEnv);
       }
 

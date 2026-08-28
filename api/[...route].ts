@@ -1252,10 +1252,7 @@ app.post('/vitals', async (c) => {
   return c.body(null, 204)
 })
 
-// Export handlers for Vercel
-export const GET = handle(app)
-export const POST = handle(app)
-export const PUT = handle(app)
-export const PATCH = handle(app)
-export const DELETE = handle(app)
-export const OPTIONS = handle(app)
+// Vercel's generic Function runtime dispatches the default Web handler for
+// catch-all files. This preserves every HTTP method (including CORS OPTIONS)
+// and avoids route-level method discovery preventing /api/* from reaching Hono.
+export default handle(app)

@@ -202,7 +202,7 @@ import {
   requireProUser,
   assertPro,
 } from './_entitlementMiddleware.ts';
-import { app } from './[[...route]].ts';
+import { app } from './[...route].ts';
 import { emptyTradeAnalytics, emptySessionAnalytics } from '../src/lib/tradeAnalytics.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────

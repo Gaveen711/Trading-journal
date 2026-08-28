@@ -148,7 +148,7 @@ Add a one-time migration on app boot that strips the `password` field from any e
 ## H-01 — Cron routes authenticate successfully against `"Bearer undefined"` when `CRON_SECRET` is unset
 
 **Severity:** High · **CWE-1188 / CWE-287** (Insecure Default / Improper Authentication)
-**Location:** [`api/[[...route]].ts:1049-1058`](api/[[...route]].ts#L1049) (`remind-expiry`), [`api/[[...route]].ts:1108-1117`](api/[[...route]].ts#L1108) (`revoke-expired`)
+**Location:** [`api/[...route].ts:1049-1058`](api/[...route].ts#L1049) (`remind-expiry`), [`api/[...route].ts:1108-1117`](api/[...route].ts#L1108) (`revoke-expired`)
 
 ```ts
 const providedAuth = c.req.header('Authorization') || ''
@@ -160,7 +160,7 @@ if (!crypto.timingSafeEqual(providedHash, expectedHash)) return c.json({ error: 
 
 The comparison itself is correct — hashing first equalises length, so `timingSafeEqual` is used properly. The defect is the **absent-secret case**. With `CRON_SECRET` missing, `expectedAuth` is the literal string `"Bearer undefined"`, and any attacker sending that exact header authenticates.
 
-The third cron handler gets this right (`api/[[...route]].ts:969`: `if (!expectedSecret) return c.json({ error: 'Cron secret is not configured' }, 503)`). The other two simply missed the guard — which is what makes this a latent bug rather than a deliberate trade-off.
+The third cron handler gets this right (`api/[...route].ts:969`: `if (!expectedSecret) return c.json({ error: 'Cron secret is not configured' }, 503)`). The other two simply missed the guard — which is what makes this a latent bug rather than a deliberate trade-off.
 
 ### Attack scenario
 
@@ -171,7 +171,7 @@ curl -X POST https://<deployment>.vercel.app/api/cron/revoke-expired \
   -H "Authorization: Bearer undefined"
 ```
 
-`revoke-expired` deletes every matching user's API keys and force-downgrades them to `plan: 'free'` (`api/[[...route]].ts:1133-1150`). Repeated against `remind-expiry`, it blasts email to your entire Pro user base from your verified domain — a deliverability and reputation incident on top of the data damage.
+`revoke-expired` deletes every matching user's API keys and force-downgrades them to `plan: 'free'` (`api/[...route].ts:1133-1150`). Repeated against `remind-expiry`, it blasts email to your entire Pro user base from your verified domain — a deliverability and reputation incident on top of the data damage.
 
 ### Fix
 
@@ -216,7 +216,7 @@ exports.connectBroker = onCall({ secrets: [metaApiTokenSecret], timeoutSeconds: 
     const count = await transientSyncTrades(uid, server, accountId, password, platform);
 ```
 
-The Vercel route enforces the paywall correctly (`api/[[...route]].ts:496`: `if (!isSyncAllowed(userData)) return 403`). These callables are the **older duplicate of the same capability** and enforce only "is signed in". The client no longer calls them — there is no `httpsCallable` anywhere in `src/`; `src/lib/brokerSync.js` posts to `/api/*` instead. Dead client code does **not** make a deployed callable unreachable: Firebase callables are plain HTTPS endpoints invokable by any authenticated user with a Firebase ID token.
+The Vercel route enforces the paywall correctly (`api/[...route].ts:496`: `if (!isSyncAllowed(userData)) return 403`). These callables are the **older duplicate of the same capability** and enforce only "is signed in". The client no longer calls them — there is no `httpsCallable` anywhere in `src/`; `src/lib/brokerSync.js` posts to `/api/*` instead. Dead client code does **not** make a deployed callable unreachable: Firebase callables are plain HTTPS endpoints invokable by any authenticated user with a Firebase ID token.
 
 Each invocation calls `provisioningApi.createAccount()` → `deploy()` → `waitConnected()`, provisioning a **billable cloud MT5 instance** on MetaApi.
 
@@ -327,7 +327,7 @@ Additionally, key authenticated endpoints on `uid` rather than IP — IP is the 
 ## H-04 — Unauthenticated `/api/contact` writes to Firestore, sends email, and injects raw HTML into the ops inbox
 
 **Severity:** High · **CWE-80 / CWE-770** (HTML Injection / Unbounded Resource Allocation)
-**Location:** [`api/[[...route]].ts:177-225`](api/[[...route]].ts#L177)
+**Location:** [`api/[...route].ts:177-225`](api/[...route].ts#L177)
 
 ```ts
 const { name, email, subject, message } = body
@@ -411,7 +411,7 @@ Add a dedicated rate-limit scope for `/contact` (e.g. 5/hour) in `_middleware.ts
 ## H-05 — Unauthenticated reCAPTCHA proxy burns billable assessment quota
 
 **Severity:** High · **CWE-770**
-**Location:** [`api/[[...route]].ts:134-172`](api/[[...route]].ts#L134)
+**Location:** [`api/[...route].ts:134-172`](api/[...route].ts#L134)
 
 The `action: 'recaptcha'` branch of `/api/auth-utils` takes an **arbitrary caller-supplied `token`**, requires no authentication, and forwards it to reCAPTCHA Enterprise using your server-side `RECAPTCHA_API_KEY`. Every call is a billed assessment above the free tier. Chained with `H-03` it is an unbounded, anonymous charge on your Google Cloud account.
 
@@ -453,7 +453,7 @@ Then **delete the `action === 'recaptcha'` branch entirely** and call `verifyRec
 ## H-06 — No bot protection on signup or login; the reCAPTCHA integration is never invoked
 
 **Severity:** High · **CWE-307** (Improper Restriction of Excessive Authentication Attempts)
-**Location:** [`src/Login.jsx`](src/Login.jsx) (entire file), [`api/[[...route]].ts:134`](api/[[...route]].ts#L134)
+**Location:** [`src/Login.jsx`](src/Login.jsx) (entire file), [`api/[...route].ts:134`](api/[...route].ts#L134)
 
 A grep across `src/` for `recaptcha`, `reCAPTCHA`, and `grecaptcha` returns **zero matches**. The server-side verification path in `H-05` exists but no client ever calls it. `handleEmailAuth` and `handleGoogle` call Firebase Auth directly with no challenge of any kind.
 
@@ -549,7 +549,7 @@ Drop `'unsafe-eval'` first — it is the easier win and rarely needed by this st
 ## M-02 — API keys stored unhashed as Firestore document IDs
 
 **Severity:** Medium · **CWE-256** (Plaintext Storage of a Password)
-**Location:** [`api/[[...route]].ts:547-552`](api/[[...route]].ts#L547), [`api/_tradeService.ts:22`](api/_tradeService.ts#L22)
+**Location:** [`api/[...route].ts:547-552`](api/[...route].ts#L547), [`api/_tradeService.ts:22`](api/_tradeService.ts#L22)
 
 ```ts
 const apiKey = 'xau_' + crypto.randomBytes(24).toString('hex')
@@ -591,7 +591,7 @@ Note both `/api/generate-api-key` and `/api/revoke-api-key` are currently unrefe
 ## M-03 — Lemon Squeezy webhook: non-constant-time signature check, no replay protection
 
 **Severity:** Medium · **CWE-208 / CWE-294** (Observable Timing Discrepancy / Replay)
-**Location:** [`api/[[...route]].ts:663-675`](api/[[...route]].ts#L663)
+**Location:** [`api/[...route].ts:663-675`](api/[...route].ts#L663)
 
 ```ts
 const digest = hmac.update(rawBody).digest('hex')
@@ -635,7 +635,7 @@ Give `webhookEvents` a 90-day Firestore TTL policy. Also validate that `body.met
 ## M-04 — Firestore document-path injection via unvalidated `positionId`
 
 **Severity:** Medium · **CWE-22** (Path Traversal)
-**Location:** [`api/[[...route]].ts:855`](api/[[...route]].ts#L855) and [`:943`](api/[[...route]].ts#L943)
+**Location:** [`api/[...route].ts:855`](api/[...route].ts#L855) and [`:943`](api/[...route].ts#L943)
 
 ```ts
 const tradeRef = db.collection('users').doc(uid).collection('trades').doc(`pos_${positionId}`)
@@ -796,7 +796,7 @@ Move `totalTradesLogged` and `analytics.*` to server-computed values — either 
 ## M-08 — Login-alert endpoint is an authenticated mail amplifier with HTML injection
 
 **Severity:** Medium · **CWE-770 / CWE-80**
-**Location:** [`api/[[...route]].ts:77-132`](api/[[...route]].ts#L77)
+**Location:** [`api/[...route].ts:77-132`](api/[...route].ts#L77)
 
 ```ts
 const userAgent = body.userAgent || c.req.header('user-agent') || 'Unknown'
@@ -844,9 +844,9 @@ Unused code is code nobody reviews, tests, or thinks about during a design chang
 
 **L-03 — `reports` collection accepts unvalidated documents.** `firestore.rules:106`: `allow create: if signedIn() && request.resource.data.userId == request.auth.uid` with no schema, size, or rate constraint. Any authenticated user can write arbitrary ~1 MiB documents. Add a `hasOnly()` allowlist and a `size()` cap, matching the good pattern already used for `trades`.
 
-**L-04 — Unbounded collection scans in cron.** `api/[[...route]].ts:1064` reads every `plan == 'pro'` user with no `limit()` or pagination, and `:1123` does the same for grace-period users. At scale this is a slow, costly, timeout-prone job. Paginate with `.limit(500)` and a cursor.
+**L-04 — Unbounded collection scans in cron.** `api/[...route].ts:1064` reads every `plan == 'pro'` user with no `limit()` or pagination, and `:1123` does the same for grace-period users. At scale this is a slow, costly, timeout-prone job. Paginate with `.limit(500)` and a cursor.
 
-**L-05 — Log injection via `/api/vitals`.** `api/[[...route]].ts:1214-1224` accepts an unauthenticated `body.name` of unbounded length and writes it into structured logs. `route` is capped at 120 chars; `name` and `rating` are not. Cap both and reject `name` values outside a known metric allowlist (`CLS`, `LCP`, `INP`, `FCP`, `TTFB`).
+**L-05 — Log injection via `/api/vitals`.** `api/[...route].ts:1214-1224` accepts an unauthenticated `body.name` of unbounded length and writes it into structured logs. `route` is capped at 120 chars; `name` and `rating` are not. Cap both and reject `name` values outside a known metric allowlist (`CLS`, `LCP`, `INP`, `FCP`, `TTFB`).
 
 **L-06 — Realtime Database configured with no rules under version control.** `api/_firebase.js:47` sets a `databaseURL` for `asia-southeast1`, but there is no `database.rules.json` in the repo and no `database` block in `firebase.json`. If RTDB was ever enabled on this project, its rules are unmanaged and may still be in test mode (world-readable). Verify in the console; if RTDB is unused, remove the `databaseURL` and disable the instance.
 
@@ -863,21 +863,21 @@ Unused code is code nobody reviews, tests, or thinks about during a design chang
 | Finding | Status | Where |
 |---|---|---|
 | C-01 broker credentials | **Fixed** — session-scoped store, sign-out purge, legacy strip, privacy policy corrected | `src/lib/brokerCredentials.js`, `src/firebase.js`, `src/hooks/useBrokerAccounts.js` |
-| H-01 cron auth bypass | **Fixed** — `assertCron()` on all three handlers, refuses secrets <32 chars | `api/_security.ts`, `api/[[...route]].ts` |
+| H-01 cron auth bypass | **Fixed** — `assertCron()` on all three handlers, refuses secrets <32 chars | `api/_security.ts`, `api/[...route].ts` |
 | H-02 unpaywalled callables | **Fixed** — codebase deleted | `functions/` removed, `firebase.json` |
 | H-03 IP spoofing | **Fixed** — `x-vercel-forwarded-for`, rightmost XFF, no loopback default | `api/_ipUtils.ts` |
-| H-04 contact endpoint | **Fixed** — field caps, email validation, HTML escaping, `text:` part, 5/hour scope | `api/[[...route]].ts`, `api/_middleware.ts` |
+| H-04 contact endpoint | **Fixed** — field caps, email validation, HTML escaping, `text:` part, 5/hour scope | `api/[...route].ts`, `api/_middleware.ts` |
 | H-05 reCAPTCHA proxy | **Fixed** — endpoint removed, replaced by a fail-closed server helper with action pinning | `api/_security.ts` |
 | H-06 no bot protection | **Partial** — email verification + 12-char policy shipped; App Check is console config | `src/Login.jsx`, `docs/SECRETS.md` |
 | H-07 dependencies | **Fixed** — 0 vulnerabilities; react-router 7.18.2, hono 4.13.2 | `package.json` |
 | M-01 CSP | **Fixed** — `unsafe-eval` removed, wildcards narrowed, `object-src`/`base-uri`/`form-action` added, strict policy in Report-Only | `vercel.json` |
-| M-02 API key storage | **Fixed** — SHA-256 document ids, prefix for display, hash-keyed cache | `api/[[...route]].ts`, `api/_tradeService.ts` |
-| M-03 webhook | **Fixed** — constant-time compare, event-id dedupe, UID validation | `api/[[...route]].ts` |
+| M-02 API key storage | **Fixed** — SHA-256 document ids, prefix for display, hash-keyed cache | `api/[...route].ts`, `api/_tradeService.ts` |
+| M-03 webhook | **Fixed** — constant-time compare, event-id dedupe, UID validation | `api/[...route].ts` |
 | M-04 path injection | **Fixed** — type-strict validator, one shared handler, recursive delete | `api/_security.ts` |
 | M-05 email verification | **Fixed** — sent on signup; server enforcement behind `REQUIRE_EMAIL_VERIFICATION` | `src/Login.jsx`, `api/_auth.ts` |
 | M-06 hardcoded admin | **Fixed** — custom claim only; grant command documented | `firestore.rules`, `docs/SECRETS.md` |
 | M-07 client entitlements | **Fixed** — allowlist rules; counter migration noted inline | `firestore.rules` |
-| M-08 mail amplifier | **Fixed** — escaping, server timestamp, 15-min per-UID cooldown | `api/[[...route]].ts` |
+| M-08 mail amplifier | **Fixed** — escaping, server timestamp, 15-min per-UID cooldown | `api/[...route].ts` |
 | M-09 dead endpoints | **Fixed** — `/save-trade` and `functions/` removed; key routes retained (webhooks depend on them) | — |
 | L-01…L-08 | **Fixed** — CORS gating, ipapi removed, `reports` schema, cron pagination, vitals allowlist, RTDB URL removed, CORP added | various |
 

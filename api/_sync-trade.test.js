@@ -71,7 +71,7 @@ vi.mock('@vercel/kv', () => {
   };
 });
 
-import { app } from './[[...route]].ts';
+import { app } from './[...route].ts';
 
 // Mock the firebase admin module
 vi.mock('./_firebase.js', () => {

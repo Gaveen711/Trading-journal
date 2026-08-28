@@ -389,7 +389,7 @@ All endpoints require Firebase authentication:
 ```
 api/
   ├── _metaapi-broker.js         # Broker connection logic
-  ├── [[...route]].ts            # Hono API endpoints (connect, sync, success, etc.)
+  ├── [...route].ts            # Hono API endpoints (connect, sync, success, etc.)
   └── cron/
       └── broker-sync-poller.js  # Periodic sync job (mapped via vercel.json)
 

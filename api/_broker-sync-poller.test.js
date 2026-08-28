@@ -164,7 +164,7 @@ vi.mock('./_metaapi-broker.js', () => {
 
 import { db } from './_firebase.js';
 import { fetchBrokerTrades } from './_metaapi-broker.js';
-import { app } from './[[...route]].ts';
+import { app } from './[...route].ts';
 
 describe('Broker Sync Poller Cron Job', () => {
   // assertCron() refuses to run on a secret shorter than 32 chars, so the

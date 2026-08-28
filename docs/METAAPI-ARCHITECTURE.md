@@ -120,4 +120,4 @@ VITE_FIREBASE_PROJECT_ID=xaujournal-0429
 | MetaApi logic | `api/metaapi-broker.js` |
 | Connect API | `api/connect-broker.js` |
 | Ongoing sync | `api/broker-login-sync.js` |
-| Vercel route | `api/[[...route]].ts` — `/connect-broker`, `/broker-login-sync` |
+| Vercel route | `api/[...route].ts` — `/connect-broker`, `/broker-login-sync` |
