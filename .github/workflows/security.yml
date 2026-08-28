@@ -21,9 +21,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix admin-dashboard
       # Fails the build on high or critical advisories in shipped dependencies.
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+      - name: Audit admin production dependencies
+        run: npm audit --prefix admin-dashboard --omit=dev --audit-level=high
 
   regression:
     name: Security regression tests

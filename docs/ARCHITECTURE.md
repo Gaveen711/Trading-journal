@@ -45,6 +45,22 @@ functions/  # Firebase Cloud Functions backend, kept for optional/legacy broker 
 
 The app currently calls `/api/...` routes from the frontend. Keep `functions/` until production deployment is audited, because Firebase still declares it as a deployable Cloud Functions source and the broker-sync docs reference it. Treat it as an optional broker backend, not as random unused code.
 
+## Internal admin console
+
+The internal console lives in `admin-dashboard/` in this repository but is a separate
+Vite application and Vercel deployment served from `admin.xaujournal.com`. It
+is intentionally absent from the public application's route and module graphs.
+
+The admin browser never reads or writes Firestore directly. It sends a Firebase
+ID token to `/api/admin/...`; the server verifies the token, requires the exact UID
+`rbGsMM2A2EdhgKLKLf9y0dGJ7RY2`, verified email `admin@xaujournal.com`, and the
+`admin: true` custom claim, applies
+field-level validation, performs the operation with the Admin SDK, and appends
+an immutable `adminAuditLogs` record for privileged mutations.
+
+`firestore.rules` in this repository is the only production rules source. The
+retired standalone admin repository must never deploy its copied ruleset.
+
 Broker credentials are client-managed by policy. The browser may keep broker login/password in per-user localStorage for explicit user-initiated sync, but Firestore and serverless routes must not persist broker passwords, broker logins, credential-derived identifiers, or provider account tokens. Credentials travel to the sync route over HTTPS/TLS, exist only for the request, and are used with a temporary provider account that is removed in a finally cleanup. Only normalized trade records and non-sensitive account metadata are persisted. Scheduled server-side sync is intentionally disabled for client-managed accounts because it would require retained credentials or a retained provider token.
 
 Before deploying this policy to an existing environment, run npm run migrate:broker-privacy to audit legacy fields, then run npm run migrate:broker-privacy:apply with Firebase Admin credentials to remove them. The migration logs counts only and never prints credential values.

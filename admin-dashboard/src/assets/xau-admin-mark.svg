@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">XAU Journal admin mark</title>
+  <desc id="desc">A gold assay stamp with the letters Au and atomic number 79.</desc>
+  <rect width="64" height="64" rx="14" fill="#13171c"/>
+  <path d="M4 20h56M4 44h56" stroke="#2d333b"/>
+  <path d="M12 6v52" stroke="#c6a45b" stroke-width="2"/>
+  <path d="M8 16h8M8 24h5M8 32h8M8 40h5M8 48h8" stroke="#c6a45b" stroke-width="1"/>
+  <text x="23" y="39" fill="#f1f4f7" font-family="Georgia,serif" font-size="27">Au</text>
+  <text x="47" y="20" fill="#9aa4af" font-family="monospace" font-size="8">79</text>
+</svg>
+

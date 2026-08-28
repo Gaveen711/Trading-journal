@@ -1,0 +1,79 @@
+:root {
+  color-scheme: dark;
+  --admin-font-sans: 'Geist', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --admin-font-display: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --admin-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --admin-bg: #090b0e;
+  --admin-sidebar: #0c0f13;
+  --admin-surface: #101419;
+  --admin-surface-raised: #151a20;
+  --admin-surface-hover: #191f26;
+  --admin-surface-active: #1d232b;
+  --admin-line-soft: #1c2229;
+  --admin-line: #29313a;
+  --admin-line-strong: #3a444f;
+  --admin-text: #edf1f5;
+  --admin-text-cool: #c7d0d9;
+  --admin-text-muted: #929eaa;
+  --admin-text-faint: #66717c;
+  --admin-gold: #c6a45b;
+  --admin-gold-bright: #dfc37e;
+  --admin-gold-muted: #7c683e;
+  --admin-gold-wash: rgb(198 164 91 / 10%);
+  --admin-green: #5eb68a;
+  --admin-green-wash: rgb(94 182 138 / 11%);
+  --admin-amber: #d3a55d;
+  --admin-amber-wash: rgb(211 165 93 / 11%);
+  --admin-red: #df7379;
+  --admin-red-bright: #ef8b90;
+  --admin-red-wash: rgb(223 115 121 / 10%);
+  --admin-focus: #e4c77e;
+  --admin-shadow-dialog: 0 24px 80px rgb(0 0 0 / 55%);
+  --admin-sidebar-width: 16.5rem;
+  --admin-command-height: 4rem;
+  --admin-content-max: 100rem;
+  --admin-radius-sm: 0.375rem;
+  --admin-radius: 0.625rem;
+  --admin-radius-lg: 0.875rem;
+  --admin-ease: cubic-bezier(0.2, 0, 0, 1);
+  --admin-duration: 180ms;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 20rem; background: var(--admin-bg); }
+body {
+  margin: 0;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: var(--admin-font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+a { color: inherit; }
+::selection { background: rgb(198 164 91 / 28%); color: var(--admin-text); }
+:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+
+.admin-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

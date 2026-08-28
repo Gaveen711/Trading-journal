@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4ead3d9e`
+- Built from commit: `49ba3641`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -61,7 +61,7 @@
 - createAppServices.js
 - check-bundle-budget.mjs
 - vite.config.js
-- sheet.tsx
+- sticky-footer.tsx
 - demoData.js
 - vercel.json
 - firebase.d.ts
@@ -90,7 +90,7 @@
 - @vercel/analytics
 - @vercel/kv
 - @vercel/speed-insights
-- bento-grid.tsx
+- sheet.tsx
 - HIGH
 - compilerOptions
 - migrate-performance-data.mjs
@@ -102,7 +102,7 @@
 - 🚀 Project Scope
 - XAU Journal Architecture
 - BrokerRepository
-- FirebaseTradeRepository
+- bento-grid.tsx
 - marketData.js
 - _tradeService.ts
 - AnalyticsPage.jsx
@@ -128,7 +128,7 @@
 - SettingsPage.jsx
 - LogTradePage
 - useBrokerAccounts.adopt.test.jsx
-- StatusSquare.jsx
+- FirebaseTradeRepository
 - HistoryPage.jsx
 - BlogArticlePage.jsx
 - DashboardLayout.sidebarWiring.test.js
@@ -137,12 +137,12 @@
 - eslint-plugin-react-hooks
 - ShowcaseApp.jsx
 - badge.tsx
-- interactive-hover-button.jsx
+- StatusSquare.jsx
 - postcss
 - PublicSite.jsx
 - @testing-library/jest-dom
 - EditTradeModal.submit.test.jsx
-- sticky-footer.tsx
+- interactive-hover-button.jsx
 - @types/react-dom
 - @vitejs/plugin-react
 - build-og.mjs
@@ -174,12 +174,12 @@
   api/_brokerTradePersistence.ts → src/lib/tradeAnalytics.js
 - `persistBrokerTrades()` --calls--> `tradeAnalyticsDelta()`  [EXTRACTED]
   api/_brokerTradePersistence.ts → src/lib/tradeAnalytics.js
-- `handleCloseTradeSync()` --calls--> `computePips()`  [EXTRACTED]
-  api/_tradeService.ts → src/lib/goldContract.js
-- `handleCloseTradeSync()` --calls--> `outcomeForPnl()`  [EXTRACTED]
-  api/_tradeService.ts → src/lib/goldContract.js
-- `handleCloseTradeSync()` --calls--> `resolveSessionAt()`  [EXTRACTED]
-  api/_tradeService.ts → src/lib/sessionEngine.js
+- `deletionPatch()` --calls--> `deletionPatch()`  [EXTRACTED]
+  scripts/migrate-broker-credential-privacy.mjs → api/_credentialFields.js
+- `migrateBrokerJobs()` --calls--> `deletionPatch()`  [EXTRACTED]
+  scripts/migrate-performance-data.mjs → api/_credentialFields.js
+- `isSyncAllowed()` --calls--> `hasPaidAccess()`  [EXTRACTED]
+  api/_auth.ts → src/lib/entitlements.js
 
 ## Import Cycles
 - None detected.
@@ -354,9 +354,9 @@ Nodes (8): budgets, directory, eager, eagerKb, files, gzipKb(), html, htmlPath
 Cohesion: 0.28
 Nodes (7): CHART_VENDOR, __dirname, EAGER_FORBIDDEN, manualChunks(), normalizeId(), packageOf(), REACT_VENDOR
 
-### Community 46 - "sheet.tsx"
-Cohesion: 0.18
-Nodes (7): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle()
+### Community 46 - "sticky-footer.tsx"
+Cohesion: 0.17
+Nodes (8): AnimatedContainerProps, FooterLink, FooterLinkGroup, footerLinkGroups, socialLinks, StickyFooter(), StickyFooterProps, mocks
 
 ### Community 47 - "demoData.js"
 Cohesion: 0.10
@@ -394,9 +394,9 @@ Nodes (11): Backend (Firebase Cloud Functions), Code map, Deploy checklist, Envi
 Cohesion: 0.40
 Nodes (5): Alert(), AlertAction(), AlertDescription(), AlertTitle(), alertVariants
 
-### Community 83 - "bento-grid.tsx"
-Cohesion: 0.40
-Nodes (3): BentoCard(), BentoGrid(), BentoIcon
+### Community 83 - "sheet.tsx"
+Cohesion: 0.18
+Nodes (7): Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle()
 
 ### Community 84 - "HIGH"
 Cohesion: 0.18
@@ -437,6 +437,10 @@ Nodes (8): 1. Performance Terminal (The Execution Engine), 2. Cognitive Briefs (
 ### Community 93 - "XAU Journal Architecture"
 Cohesion: 0.25
 Nodes (7): Backend structure, Dependency rule, Extension rules, Frontend structure, Product map, Safe migration path, XAU Journal Architecture
+
+### Community 95 - "bento-grid.tsx"
+Cohesion: 0.40
+Nodes (3): BentoCard(), BentoGrid(), BentoIcon
 
 ### Community 96 - "marketData.js"
 Cohesion: 0.06
@@ -518,10 +522,6 @@ Nodes (11): PLAN_LINES, PricingBridge(), ArrowOut(), CTALink(), Panel(), Section
 Cohesion: 0.21
 Nodes (10): affectedKeys(), postMerge(), renderModal(), RULES, rulesTradeAllowlist(), SERVER_OWNED, stripComments(), submitEdit() (+2 more)
 
-### Community 135 - "sticky-footer.tsx"
-Cohesion: 0.17
-Nodes (8): AnimatedContainerProps, FooterLink, FooterLinkGroup, footerLinkGroups, socialLinks, StickyFooter(), StickyFooterProps, mocks
-
 ### Community 141 - "build-og.mjs"
 Cohesion: 0.40
 Nodes (3): out, root, shot
@@ -534,11 +534,11 @@ Nodes (3): out, root, shot
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `cn` to `badge.tsx`, `button.tsx`, `interactive-hover-button.jsx`, `DashboardLayout.jsx`, `sticky-footer.tsx`, `ManageSetupsDialog.jsx`, `FloatingDockNavigation.jsx`, `goldSessions.js`, `useSetups.js`, `DataTable.jsx`, `tradeUtils.js`, `dropdown-menu.tsx`, `LogTradePage.jsx`, `EmptyState.jsx`, `utils.ts`, `sheet.tsx`, `alert.tsx`, `bento-grid.tsx`, `DashboardRightSidebar.jsx`, `AnalyticsPage.jsx`, `SettingsPage.jsx`, `StatusSquare.jsx`, `HistoryPage.jsx`?**
-  _High betweenness centrality (0.101) - this node is a cross-community bridge._
-- **Why does `auth` connect `firebase.js` to `DashboardLayout.jsx`, `createAppServices.js`, `PricingPage.jsx`, `FirebaseBrokerRepository.js`, `DashboardRightSidebar.jsx`, `SettingsPage.jsx`, `App.jsx`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Why does `cn()` connect `cn` to `badge.tsx`, `button.tsx`, `StatusSquare.jsx`, `DashboardLayout.jsx`, `interactive-hover-button.jsx`, `ManageSetupsDialog.jsx`, `FloatingDockNavigation.jsx`, `goldSessions.js`, `useSetups.js`, `DataTable.jsx`, `tradeUtils.js`, `dropdown-menu.tsx`, `LogTradePage.jsx`, `EmptyState.jsx`, `utils.ts`, `sticky-footer.tsx`, `alert.tsx`, `sheet.tsx`, `DashboardRightSidebar.jsx`, `bento-grid.tsx`, `AnalyticsPage.jsx`, `SettingsPage.jsx`, `HistoryPage.jsx`?**
+  _High betweenness centrality (0.099) - this node is a cross-community bridge._
 - **Why does `resolveSessionAt()` connect `sessionEngine.js` to `_tradeService.ts`, `_metaapi-broker.js`, `tradeAnalytics.js`, `demoData.js`, `goldSessions.js`, `DashboardRightSidebar.jsx`, `goldContract.js`?**
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `auth` connect `firebase.js` to `DashboardLayout.jsx`, `createAppServices.js`, `PricingPage.jsx`, `FirebaseBrokerRepository.js`, `DashboardRightSidebar.jsx`, `SettingsPage.jsx`, `App.jsx`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **What connects `NAV_LINKS`, `TRADE`, `PLATFORMS` to the rest of the system?**
   _572 weakly-connected nodes found - possible documentation gaps or missing edges._

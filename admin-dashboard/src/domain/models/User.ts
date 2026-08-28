@@ -1,0 +1,62 @@
+import type { IsoDateString, PaginationParams } from './common';
+
+export type UserPlan = 'FREE' | 'PRO' | 'GRACE';
+export type UserStatus = 'ACTIVE' | 'SUSPENDED';
+
+export interface SubscriptionDetails {
+  stripeCustomerId?: string;
+  subscriptionId?: string;
+  autoRenew: boolean;
+  expiresAt?: IsoDateString;
+  startedAt?: IsoDateString;
+}
+
+export interface LoginHistoryEntry {
+  date: IsoDateString;
+  ip?: string;
+  device?: string;
+}
+
+export interface User {
+  id: string;
+  uid: string;
+  email?: string;
+  name?: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  plan: UserPlan;
+  status: UserStatus;
+  disabled: boolean;
+  emailVerified?: boolean;
+  country?: string;
+  joinedDate?: IsoDateString;
+  createdAt?: IsoDateString;
+  updatedAt?: IsoDateString;
+  lastLogin?: IsoDateString;
+  lastSignInAt?: IsoDateString;
+  device?: string;
+  loginHistory: LoginHistoryEntry[];
+  subscription?: SubscriptionDetails;
+  journalCount?: number;
+  tradeCount?: number;
+  totalJournalsLogged?: number;
+  totalTradesLogged?: number;
+}
+
+export interface UserListParams extends PaginationParams {
+  search?: string;
+  plan?: UserPlan;
+  status?: UserStatus;
+}
+
+export type UserUpdate = Partial<Pick<User,
+  | 'plan'
+  | 'status'
+>> & {
+  planExpiry?: IsoDateString | null;
+  graceUntil?: IsoDateString | null;
+  graceReason?: string | null;
+  isTrial?: boolean;
+  mt5SyncEnabled?: boolean;
+};

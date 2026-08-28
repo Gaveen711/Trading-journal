@@ -2,14 +2,13 @@
 /**
  * Grants or revokes the `admin` custom claim.
  *
- *   node scripts/grant-admin.mjs <uid>            # grant
- *   node scripts/grant-admin.mjs <uid> --revoke   # revoke
+ *   node scripts/grant-admin.mjs <uid-or-email>            # grant
+ *   node scripts/grant-admin.mjs <uid-or-email> --revoke   # revoke
  *   node scripts/grant-admin.mjs --list           # who currently has it
  *
- * firestore.rules trusts `request.auth.token.admin == true` and nothing else.
- * It used to also trust a hardcoded UID, which meant admin access could not be
- * withdrawn without editing and redeploying the rules — no off-switch during an
- * incident. A claim is revoked by rerunning this with --revoke.
+ * The server-side admin API requires this claim in addition to the exact,
+ * verified admin email. Firestore rules deliberately grant no direct browser
+ * admin access, so API validation and audit logging cannot be bypassed.
  *
  * The claim reaches the client on the next ID-token refresh (within an hour, or
  * immediately after signing out and back in).
@@ -34,7 +33,9 @@ const { admin, isDbReady } = await import('../api/_firebase.js');
 const args = process.argv.slice(2);
 const revoke = args.includes('--revoke');
 const list = args.includes('--list');
-const uid = args.find((a) => !a.startsWith('--'));
+const identity = args.find((a) => !a.startsWith('--'));
+const ADMIN_EMAIL = 'admin@xaujournal.com';
+const ADMIN_UID = 'rbGsMM2A2EdhgKLKLf9y0dGJ7RY2';
 
 if (!isDbReady()) {
   console.error('Firebase Admin failed to initialise. Check FIREBASE_SERVICE_ACCOUNT in .env.local.');
@@ -56,7 +57,7 @@ async function main() {
 
     if (!admins.length) {
       console.log('No account currently holds the admin claim.');
-      console.log('Grant one with: node scripts/grant-admin.mjs <uid>');
+      console.log(`Grant the designated admin account with: node scripts/grant-admin.mjs ${ADMIN_UID}`);
     } else {
       console.log(`${admins.length} admin account(s):`);
       admins.forEach((entry) => console.log('  ' + entry));
@@ -64,17 +65,30 @@ async function main() {
     return;
   }
 
-  if (!uid) {
-    console.error('Usage: node scripts/grant-admin.mjs <uid> [--revoke]');
+  if (!identity) {
+    console.error('Usage: node scripts/grant-admin.mjs <uid-or-email> [--revoke]');
     console.error('       node scripts/grant-admin.mjs --list');
     process.exitCode = 1;
     return;
   }
 
-  const user = await admin.auth().getUser(uid);
-  await admin.auth().setCustomUserClaims(uid, revoke ? { admin: false } : { admin: true });
+  const user = identity.includes('@')
+    ? await admin.auth().getUserByEmail(identity)
+    : await admin.auth().getUser(identity);
 
-  console.log(`${revoke ? 'Revoked' : 'Granted'} admin for ${user.email || uid}.`);
+  if (user.uid !== ADMIN_UID) {
+    throw new Error(`Admin access may only be changed for UID ${ADMIN_UID}.`);
+  }
+  if (!revoke && user.email?.toLowerCase() !== ADMIN_EMAIL) {
+    throw new Error(`Admin access may only be granted to ${ADMIN_EMAIL} (${ADMIN_UID}).`);
+  }
+  if (!revoke && user.emailVerified !== true) {
+    throw new Error(`Verify ${ADMIN_EMAIL} in Firebase Auth before granting admin access.`);
+  }
+
+  await admin.auth().setCustomUserClaims(user.uid, revoke ? { admin: false } : { admin: true });
+
+  console.log(`${revoke ? 'Revoked' : 'Granted'} admin for ${user.email || user.uid}.`);
   console.log('Takes effect on the next ID-token refresh — sign out and back in to apply now.');
   if (!revoke) {
     console.log('\nEnable multi-factor authentication on this account: it can read every user record.');

@@ -3,25 +3,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
 
-    // Admin is a custom claim only. The previous rule also hardcoded a UID,
-    // which meant admin access could not be granted or revoked without a rules
-    // deploy — no fast off-switch during an incident. Set the claim with the
-    // Admin SDK:
-    //   admin.auth().setCustomUserClaims(uid, { admin: true })
-    // and enforce MFA on any account that holds it.
-    function isAdmin() {
-      return signedIn() && request.auth.token.admin == true;
-    }
-
     function isOwner(userId) {
       return signedIn() && request.auth.uid == userId;
     }
 
     match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId);
-
-      // Trusted administrators may manage account state.
-      allow write: if isAdmin();
+      // The internal admin console uses authenticated server endpoints. Even an
+      // administrator token does not receive direct browser access to customer
+      // documents; this keeps validation and audit logging unavoidable.
+      allow read: if isOwner(userId);
 
       // Client-writable profile fields, as an ALLOWLIST.
       //
@@ -73,7 +63,7 @@ service cloud.firestore {
 
       // Account deletion is a server-side operation; the client must not be
       // able to drop the document that carries its own subscription state.
-      allow delete: if isAdmin();
+      allow delete: if false;
 
       match /auditLogs/{logId} {
         allow read: if isOwner(userId);
@@ -345,16 +335,21 @@ service cloud.firestore {
         && request.resource.data.get('subject', '').size() <= 200
         && request.resource.data.get('body', '') is string
         && request.resource.data.get('body', '').size() <= 5000;
-      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
     match /announcements/{id} {
       allow read: if signedIn();
-      allow write: if isAdmin();
+      allow write: if false;
     }
-    match /coupons/{code} { allow read, write: if isAdmin(); }
-    match /payments/{id} { allow read, write: if isAdmin(); }
-    match /settings/{id} { allow read, write: if isAdmin(); }
+    match /coupons/{code} { allow read, write: if false; }
+    match /payments/{id} { allow read, write: if false; }
+    match /settings/{id} { allow read, write: if false; }
+    // Immutable administrative audit trail. Only the server-side Admin SDK may
+    // append or read these records.
+    match /adminAuditLogs/{logId} {
+      allow read, write: if false;
+    }
     // Secure API keys (server-only write/read). Document ids are SHA-256
     // hashes of the key, never the key itself.
     match /apiKeys/{keyId} {

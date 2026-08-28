@@ -4,56 +4,17 @@
   "graph": {},
   "nodes": [
     {
-      "label": "AnimatedContainerProps",
+      "label": "FirebaseTradeRepository",
       "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L206",
+      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
+      "source_location": "L102",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_animatedcontainerprops",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "animatedcontainerprops"
-    },
-    {
-      "label": "FooterLink",
-      "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L23",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_footerlink",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "footerlink"
-    },
-    {
-      "label": "FooterLinkGroup",
-      "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L29",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_footerlinkgroup",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "footerlinkgroup"
-    },
-    {
-      "label": "StickyFooterProps",
-      "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L34",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_stickyfooterprops",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "stickyfooterprops"
+      "community": 121,
+      "community_name": "FirebaseTradeRepository",
+      "norm_label": "firebasetraderepository",
+      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository"
     },
     {
       "label": "FirebaseBrokerRepository",
@@ -197,6 +158,58 @@
       "community_name": "createAppServices.js",
       "norm_label": "firebasewalletrepository",
       "id": "src_data_repositories_firebasewalletrepository_firebasewalletrepository"
+    },
+    {
+      "label": "AnimatedContainerProps",
+      "file_type": "code",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L206",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_animatedcontainerprops",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "animatedcontainerprops"
+    },
+    {
+      "label": "FooterLink",
+      "file_type": "code",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L23",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_footerlink",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "footerlink"
+    },
+    {
+      "label": "FooterLinkGroup",
+      "file_type": "code",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L29",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_footerlinkgroup",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "footerlinkgroup"
+    },
+    {
+      "label": "StickyFooterProps",
+      "file_type": "code",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L34",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_stickyfooterprops",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "stickyfooterprops"
     },
     {
       "label": "ProGateOptions",
@@ -394,19 +407,6 @@
       "id": "src_showcase_inmemoryrepositories_inmemorywalletrepository"
     },
     {
-      "label": "BentoIcon",
-      "file_type": "code",
-      "source_file": "src/components/ui/bento-grid.tsx",
-      "source_location": "L7",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 83,
-      "community_name": "bento-grid.tsx",
-      "norm_label": "bentoicon",
-      "id": "src_components_ui_bento_grid_bentoicon"
-    },
-    {
       "label": "BrokerRepository",
       "file_type": "code",
       "source_file": "src/core/domain/repositories/BrokerRepository.js",
@@ -420,17 +420,17 @@
       "id": "src_core_domain_repositories_brokerrepository_brokerrepository"
     },
     {
-      "label": "FirebaseTradeRepository",
+      "label": "BentoIcon",
       "file_type": "code",
-      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
-      "source_location": "L102",
+      "source_file": "src/components/ui/bento-grid.tsx",
+      "source_location": "L7",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 95,
-      "community_name": "FirebaseTradeRepository",
-      "norm_label": "firebasetraderepository",
-      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository"
+      "community_name": "bento-grid.tsx",
+      "norm_label": "bentoicon",
+      "id": "src_components_ui_bento_grid_bentoicon"
     },
     {
       "label": "sameRules()",
@@ -2617,16 +2617,52 @@
       "id": "src_hooks_tests_usebrokeraccounts_adopt_test_serverdoc"
     },
     {
-      "label": "StatusSquare()",
+      "label": ".getTradesPage()",
       "file_type": "code",
-      "source_file": "src/components/app/StatusSquare.jsx",
-      "source_location": "L23",
+      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
+      "source_location": "L117",
       "_callable": true,
       "_origin": "ast",
       "community": 121,
-      "community_name": "StatusSquare.jsx",
-      "norm_label": "statussquare()",
-      "id": "src_components_app_statussquare_statussquare"
+      "community_name": "FirebaseTradeRepository",
+      "norm_label": ".gettradespage()",
+      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_gettradespage"
+    },
+    {
+      "label": ".resetTrades()",
+      "file_type": "code",
+      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
+      "source_location": "L233",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 121,
+      "community_name": "FirebaseTradeRepository",
+      "norm_label": ".resettrades()",
+      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_resettrades"
+    },
+    {
+      "label": ".subscribeToTrades()",
+      "file_type": "code",
+      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
+      "source_location": "L103",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 121,
+      "community_name": "FirebaseTradeRepository",
+      "norm_label": ".subscribetotrades()",
+      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_subscribetotrades"
+    },
+    {
+      "label": ".subscribeToTradesInRange()",
+      "file_type": "code",
+      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
+      "source_location": "L134",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 121,
+      "community_name": "FirebaseTradeRepository",
+      "norm_label": ".subscribetotradesinrange()",
+      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_subscribetotradesinrange"
     },
     {
       "label": "DirectionCell()",
@@ -3337,6 +3373,18 @@
       "id": "src_pages_journalpage_journalpage"
     },
     {
+      "label": "StatusSquare()",
+      "file_type": "code",
+      "source_file": "src/components/app/StatusSquare.jsx",
+      "source_location": "L23",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "StatusSquare.jsx",
+      "norm_label": "statussquare()",
+      "id": "src_components_app_statussquare_statussquare"
+    },
+    {
       "label": "Lines()",
       "file_type": "code",
       "source_file": "src/components/landing/PricingBridge.jsx",
@@ -3539,42 +3587,6 @@
       "community_name": "EditTradeModal.submit.test.jsx",
       "norm_label": "withrepositorysessionstamp()",
       "id": "src_components_tests_edittrademodal_submit_test_withrepositorysessionstamp"
-    },
-    {
-      "label": "AnimatedContainer()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L211",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_animatedcontainer",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "animatedcontainer()"
-    },
-    {
-      "label": "BrandIcon()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L44",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_brandicon",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "brandicon()"
-    },
-    {
-      "label": "StickyFooter()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L85",
-      "_callable": true,
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_stickyfooter",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "stickyfooter()"
     },
     {
       "label": "addEventListener()",
@@ -7585,124 +7597,40 @@
       "id": "vite_config_packageof"
     },
     {
-      "label": "Sheet()",
+      "label": "AnimatedContainer()",
       "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L8",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L211",
       "_callable": true,
       "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_animatedcontainer",
       "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheet()",
-      "id": "src_components_ui_sheet_sheet"
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "animatedcontainer()"
     },
     {
-      "label": "SheetClose()",
+      "label": "BrandIcon()",
       "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L16",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L44",
       "_callable": true,
       "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_brandicon",
       "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetclose()",
-      "id": "src_components_ui_sheet_sheetclose"
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "brandicon()"
     },
     {
-      "label": "SheetContent()",
+      "label": "StickyFooter()",
       "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L37",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L85",
       "_callable": true,
       "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_stickyfooter",
       "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetcontent()",
-      "id": "src_components_ui_sheet_sheetcontent"
-    },
-    {
-      "label": "SheetDescription()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L114",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetdescription()",
-      "id": "src_components_ui_sheet_sheetdescription"
-    },
-    {
-      "label": "SheetFooter()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L91",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetfooter()",
-      "id": "src_components_ui_sheet_sheetfooter"
-    },
-    {
-      "label": "SheetHeader()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L81",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetheader()",
-      "id": "src_components_ui_sheet_sheetheader"
-    },
-    {
-      "label": "SheetOverlay()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L24",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetoverlay()",
-      "id": "src_components_ui_sheet_sheetoverlay"
-    },
-    {
-      "label": "SheetPortal()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L20",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheetportal()",
-      "id": "src_components_ui_sheet_sheetportal"
-    },
-    {
-      "label": "SheetTitle()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L101",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheettitle()",
-      "id": "src_components_ui_sheet_sheettitle"
-    },
-    {
-      "label": "SheetTrigger()",
-      "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
-      "source_location": "L12",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheettrigger()",
-      "id": "src_components_ui_sheet_sheettrigger"
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "stickyfooter()"
     },
     {
       "label": "buildTrade()",
@@ -9781,40 +9709,124 @@
       "id": "src_components_app_tests_managesetupsdialog_test_rowfor"
     },
     {
-      "label": "BentoBackground()",
+      "label": "Sheet()",
       "file_type": "code",
-      "source_file": "src/components/ui/bento-grid.tsx",
-      "source_location": "L29",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L8",
       "_callable": true,
       "_origin": "ast",
       "community": 83,
-      "community_name": "bento-grid.tsx",
-      "norm_label": "bentobackground()",
-      "id": "src_components_ui_bento_grid_bentobackground"
+      "community_name": "sheet.tsx",
+      "norm_label": "sheet()",
+      "id": "src_components_ui_sheet_sheet"
     },
     {
-      "label": "BentoCard()",
+      "label": "SheetClose()",
       "file_type": "code",
-      "source_file": "src/components/ui/bento-grid.tsx",
-      "source_location": "L55",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L16",
       "_callable": true,
       "_origin": "ast",
       "community": 83,
-      "community_name": "bento-grid.tsx",
-      "norm_label": "bentocard()",
-      "id": "src_components_ui_bento_grid_bentocard"
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetclose()",
+      "id": "src_components_ui_sheet_sheetclose"
     },
     {
-      "label": "BentoGrid()",
+      "label": "SheetContent()",
       "file_type": "code",
-      "source_file": "src/components/ui/bento-grid.tsx",
-      "source_location": "L9",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L37",
       "_callable": true,
       "_origin": "ast",
       "community": 83,
-      "community_name": "bento-grid.tsx",
-      "norm_label": "bentogrid()",
-      "id": "src_components_ui_bento_grid_bentogrid"
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetcontent()",
+      "id": "src_components_ui_sheet_sheetcontent"
+    },
+    {
+      "label": "SheetDescription()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L114",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetdescription()",
+      "id": "src_components_ui_sheet_sheetdescription"
+    },
+    {
+      "label": "SheetFooter()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L91",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetfooter()",
+      "id": "src_components_ui_sheet_sheetfooter"
+    },
+    {
+      "label": "SheetHeader()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L81",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetheader()",
+      "id": "src_components_ui_sheet_sheetheader"
+    },
+    {
+      "label": "SheetOverlay()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L24",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetoverlay()",
+      "id": "src_components_ui_sheet_sheetoverlay"
+    },
+    {
+      "label": "SheetPortal()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L20",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheetportal()",
+      "id": "src_components_ui_sheet_sheetportal"
+    },
+    {
+      "label": "SheetTitle()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L101",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheettitle()",
+      "id": "src_components_ui_sheet_sheettitle"
+    },
+    {
+      "label": "SheetTrigger()",
+      "file_type": "code",
+      "source_file": "src/components/ui/sheet.tsx",
+      "source_location": "L12",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 83,
+      "community_name": "sheet.tsx",
+      "norm_label": "sheettrigger()",
+      "id": "src_components_ui_sheet_sheettrigger"
     },
     {
       "label": "initAdmin()",
@@ -10165,52 +10177,40 @@
       "id": "src_core_domain_repositories_brokerrepository_brokerrepository_syncbrokertrades"
     },
     {
-      "label": ".getTradesPage()",
+      "label": "BentoBackground()",
       "file_type": "code",
-      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
-      "source_location": "L117",
+      "source_file": "src/components/ui/bento-grid.tsx",
+      "source_location": "L29",
       "_callable": true,
       "_origin": "ast",
       "community": 95,
-      "community_name": "FirebaseTradeRepository",
-      "norm_label": ".gettradespage()",
-      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_gettradespage"
+      "community_name": "bento-grid.tsx",
+      "norm_label": "bentobackground()",
+      "id": "src_components_ui_bento_grid_bentobackground"
     },
     {
-      "label": ".resetTrades()",
+      "label": "BentoCard()",
       "file_type": "code",
-      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
-      "source_location": "L233",
+      "source_file": "src/components/ui/bento-grid.tsx",
+      "source_location": "L55",
       "_callable": true,
       "_origin": "ast",
       "community": 95,
-      "community_name": "FirebaseTradeRepository",
-      "norm_label": ".resettrades()",
-      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_resettrades"
+      "community_name": "bento-grid.tsx",
+      "norm_label": "bentocard()",
+      "id": "src_components_ui_bento_grid_bentocard"
     },
     {
-      "label": ".subscribeToTrades()",
+      "label": "BentoGrid()",
       "file_type": "code",
-      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
-      "source_location": "L103",
+      "source_file": "src/components/ui/bento-grid.tsx",
+      "source_location": "L9",
       "_callable": true,
       "_origin": "ast",
       "community": 95,
-      "community_name": "FirebaseTradeRepository",
-      "norm_label": ".subscribetotrades()",
-      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_subscribetotrades"
-    },
-    {
-      "label": ".subscribeToTradesInRange()",
-      "file_type": "code",
-      "source_file": "src/data/repositories/FirebaseTradeRepository.js",
-      "source_location": "L134",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 95,
-      "community_name": "FirebaseTradeRepository",
-      "norm_label": ".subscribetotradesinrange()",
-      "id": "src_data_repositories_firebasetraderepository_firebasetraderepository_subscribetotradesinrange"
+      "community_name": "bento-grid.tsx",
+      "norm_label": "bentogrid()",
+      "id": "src_components_ui_bento_grid_bentogrid"
     },
     {
       "label": "applyRealPrice()",
@@ -13231,39 +13231,6 @@
       "id": "src_hooks_tests_usebrokeraccounts_adopt_test_user"
     },
     {
-      "label": "StatusSquare.jsx",
-      "file_type": "code",
-      "source_file": "src/components/app/StatusSquare.jsx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 121,
-      "community_name": "StatusSquare.jsx",
-      "norm_label": "statussquare.jsx",
-      "id": "src_components_app_statussquare"
-    },
-    {
-      "label": "SQUARE_STATE",
-      "file_type": "code",
-      "source_file": "src/components/app/StatusSquare.jsx",
-      "source_location": "L3",
-      "_origin": "ast",
-      "community": 121,
-      "community_name": "StatusSquare.jsx",
-      "norm_label": "square_state",
-      "id": "src_components_app_statussquare_square_state"
-    },
-    {
-      "label": "StatusSquare.test.jsx",
-      "file_type": "code",
-      "source_file": "src/components/app/__tests__/StatusSquare.test.jsx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 121,
-      "community_name": "StatusSquare.jsx",
-      "norm_label": "statussquare.test.jsx",
-      "id": "src_components_app_tests_statussquare_test"
-    },
-    {
       "label": "DirectionCell.jsx",
       "file_type": "code",
       "source_file": "src/components/app/DirectionCell.jsx",
@@ -13814,37 +13781,37 @@
       "id": "src_pages_journalpage_moods"
     },
     {
-      "label": "interactive-hover-button.jsx",
+      "label": "StatusSquare.jsx",
       "file_type": "code",
-      "source_file": "src/components/ui/interactive-hover-button.jsx",
+      "source_file": "src/components/app/StatusSquare.jsx",
       "source_location": "L1",
       "_origin": "ast",
       "community": 130,
-      "community_name": "interactive-hover-button.jsx",
-      "norm_label": "interactive-hover-button.jsx",
-      "id": "src_components_ui_interactive_hover_button"
+      "community_name": "StatusSquare.jsx",
+      "norm_label": "statussquare.jsx",
+      "id": "src_components_app_statussquare"
     },
     {
-      "label": "InteractiveHoverButton",
+      "label": "SQUARE_STATE",
       "file_type": "code",
-      "source_file": "src/components/ui/interactive-hover-button.jsx",
-      "source_location": "L5",
+      "source_file": "src/components/app/StatusSquare.jsx",
+      "source_location": "L3",
       "_origin": "ast",
       "community": 130,
-      "community_name": "interactive-hover-button.jsx",
-      "norm_label": "interactivehoverbutton",
-      "id": "src_components_ui_interactive_hover_button_interactivehoverbutton"
+      "community_name": "StatusSquare.jsx",
+      "norm_label": "square_state",
+      "id": "src_components_app_statussquare_square_state"
     },
     {
-      "label": "InteractiveHoverButton.test.jsx",
+      "label": "StatusSquare.test.jsx",
       "file_type": "code",
-      "source_file": "src/components/ui/__tests__/InteractiveHoverButton.test.jsx",
+      "source_file": "src/components/app/__tests__/StatusSquare.test.jsx",
       "source_location": "L1",
       "_origin": "ast",
       "community": 130,
-      "community_name": "interactive-hover-button.jsx",
-      "norm_label": "interactivehoverbutton.test.jsx",
-      "id": "src_components_ui_tests_interactivehoverbutton_test"
+      "community_name": "StatusSquare.jsx",
+      "norm_label": "statussquare.test.jsx",
+      "id": "src_components_app_tests_statussquare_test"
     },
     {
       "label": "postcss",
@@ -14023,59 +13990,37 @@
       "id": "src_components_tests_edittrademodal_submit_test_syncedtrade"
     },
     {
-      "label": "sticky-footer.tsx",
+      "label": "interactive-hover-button.jsx",
       "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_file": "src/components/ui/interactive-hover-button.jsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "src_components_ui_sticky_footer",
       "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "sticky-footer.tsx"
+      "community_name": "interactive-hover-button.jsx",
+      "norm_label": "interactive-hover-button.jsx",
+      "id": "src_components_ui_interactive_hover_button"
     },
     {
-      "label": "footerLinkGroups",
+      "label": "InteractiveHoverButton",
       "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L58",
+      "source_file": "src/components/ui/interactive-hover-button.jsx",
+      "source_location": "L5",
       "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_footerlinkgroups",
       "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "footerlinkgroups"
+      "community_name": "interactive-hover-button.jsx",
+      "norm_label": "interactivehoverbutton",
+      "id": "src_components_ui_interactive_hover_button_interactivehoverbutton"
     },
     {
-      "label": "socialLinks",
+      "label": "InteractiveHoverButton.test.jsx",
       "file_type": "code",
-      "source_file": "src/components/ui/sticky-footer.tsx",
-      "source_location": "L36",
-      "_origin": "ast",
-      "id": "src_components_ui_sticky_footer_sociallinks",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "sociallinks"
-    },
-    {
-      "label": "StickyFooter.accessibility.test.jsx",
-      "file_type": "code",
-      "source_file": "src/components/ui/__tests__/StickyFooter.accessibility.test.jsx",
+      "source_file": "src/components/ui/__tests__/InteractiveHoverButton.test.jsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "src_components_ui_tests_stickyfooter_accessibility_test",
       "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "stickyfooter.accessibility.test.jsx"
-    },
-    {
-      "label": "mocks",
-      "file_type": "code",
-      "source_file": "src/components/ui/__tests__/StickyFooter.accessibility.test.jsx",
-      "source_location": "L6",
-      "_origin": "ast",
-      "id": "src_components_ui_tests_stickyfooter_accessibility_test_mocks",
-      "community": 135,
-      "community_name": "sticky-footer.tsx",
-      "norm_label": "mocks"
+      "community_name": "interactive-hover-button.jsx",
+      "norm_label": "interactivehoverbutton.test.jsx",
+      "id": "src_components_ui_tests_interactivehoverbutton_test"
     },
     {
       "label": "@types/react-dom",
@@ -18885,15 +18830,59 @@
       "id": "vite_config_react_vendor"
     },
     {
-      "label": "sheet.tsx",
+      "label": "sticky-footer.tsx",
       "file_type": "code",
-      "source_file": "src/components/ui/sheet.tsx",
+      "source_file": "src/components/ui/sticky-footer.tsx",
       "source_location": "L1",
       "_origin": "ast",
+      "id": "src_components_ui_sticky_footer",
       "community": 46,
-      "community_name": "sheet.tsx",
-      "norm_label": "sheet.tsx",
-      "id": "src_components_ui_sheet"
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "sticky-footer.tsx"
+    },
+    {
+      "label": "footerLinkGroups",
+      "file_type": "code",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_footerlinkgroups",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "footerlinkgroups"
+    },
+    {
+      "label": "socialLinks",
+      "file_type": "code",
+      "source_file": "src/components/ui/sticky-footer.tsx",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "src_components_ui_sticky_footer_sociallinks",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "sociallinks"
+    },
+    {
+      "label": "StickyFooter.accessibility.test.jsx",
+      "file_type": "code",
+      "source_file": "src/components/ui/__tests__/StickyFooter.accessibility.test.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_components_ui_tests_stickyfooter_accessibility_test",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "stickyfooter.accessibility.test.jsx"
+    },
+    {
+      "label": "mocks",
+      "file_type": "code",
+      "source_file": "src/components/ui/__tests__/StickyFooter.accessibility.test.jsx",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "src_components_ui_tests_stickyfooter_accessibility_test_mocks",
+      "community": 46,
+      "community_name": "sticky-footer.tsx",
+      "norm_label": "mocks"
     },
     {
       "label": "demoData.js",
@@ -21206,15 +21195,15 @@
       "id": "tailwind_config"
     },
     {
-      "label": "bento-grid.tsx",
+      "label": "sheet.tsx",
       "file_type": "code",
-      "source_file": "src/components/ui/bento-grid.tsx",
+      "source_file": "src/components/ui/sheet.tsx",
       "source_location": "L1",
       "_origin": "ast",
       "community": 83,
-      "community_name": "bento-grid.tsx",
-      "norm_label": "bento-grid.tsx",
-      "id": "src_components_ui_bento_grid"
+      "community_name": "sheet.tsx",
+      "norm_label": "sheet.tsx",
+      "id": "src_components_ui_sheet"
     },
     {
       "label": "Attack scenario",
@@ -22755,6 +22744,17 @@
       "community_name": "BrokerRepository",
       "norm_label": "brokerrepository.js",
       "id": "src_core_domain_repositories_brokerrepository"
+    },
+    {
+      "label": "bento-grid.tsx",
+      "file_type": "code",
+      "source_file": "src/components/ui/bento-grid.tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 95,
+      "community_name": "bento-grid.tsx",
+      "norm_label": "bento-grid.tsx",
+      "id": "src_components_ui_bento_grid"
     },
     {
       "label": "LiveMarketWidget.jsx",
@@ -72123,5 +72123,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4ead3d9e011ebe5fbddf91d23b459e4ab83ddc41"
+  "built_at_commit": "49ba3641219f78997f89cfc144818be5be7c8051"
 }

@@ -1,0 +1,17 @@
+@import './tokens.css';
+@import './shell.css';
+@import './content.css';
+@import './controls.css';
+@import './responsive.css';
+
+.admin-grid { display: grid; gap: 1rem; }
+.admin-grid--metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.admin-grid--split { grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr); }
+.admin-stack { display: grid; gap: 1rem; }
+.admin-page-section { margin-top: 1.5rem; }
+.admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+
+@media (max-width: 79.99rem) { .admin-grid--metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 59.99rem) { .admin-grid--split { grid-template-columns: 1fr; } }
+@media (max-width: 39.99rem) { .admin-grid--metrics, .admin-form-grid { grid-template-columns: 1fr; } }
+

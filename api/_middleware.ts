@@ -11,8 +11,19 @@ const allowedOrigins = [
   'https://www.xaujournal.com',
   'https://xaujournal.com',
 ]
+
+// The admin console is deployed separately and may call only /api/admin. Keep
+// its origin out of the general API allowlist so a compromise of the console
+// does not widen browser access to unrelated webhook and account routes.
+const adminAllowedOrigins = ['https://admin.xaujournal.com']
 if (process.env.VERCEL_ENV !== 'production' && process.env.NODE_ENV !== 'production') {
   allowedOrigins.push('http://localhost:5173')
+  adminAllowedOrigins.push(
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:4174',
+    'http://127.0.0.1:4174',
+  )
 }
 if (process.env.ALLOWED_ORIGIN) {
   allowedOrigins.push(process.env.ALLOWED_ORIGIN)
@@ -23,15 +34,23 @@ if (process.env.ALLOWED_ORIGIN) {
  */
 export async function corsMiddleware(c: Context, next: Next) {
   const origin = c.req.header('Origin')
-  if (origin && allowedOrigins.includes(origin)) {
+  const isAdminRoute = c.req.path === '/api/admin' || c.req.path.startsWith('/api/admin/')
+  const routeOrigins = isAdminRoute ? adminAllowedOrigins : allowedOrigins
+
+  // Every origin-dependent response must vary, including denied preflights.
+  c.header('Vary', 'Origin')
+  if (origin && routeOrigins.includes(origin)) {
     c.header('Access-Control-Allow-Origin', origin)
-    // Responses vary by request origin, so shared caches must not serve one
-    // origin's response to another.
-    c.header('Vary', 'Origin')
   }
-  c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Api-Key, x-api-key')
-  c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
+  c.header(
+    'Access-Control-Allow-Headers',
+    isAdminRoute ? 'Authorization, Content-Type' : 'Authorization, Content-Type, X-Api-Key, x-api-key',
+  )
+  c.header('Access-Control-Allow-Methods', isAdminRoute ? 'GET, POST, PATCH, DELETE, OPTIONS' : 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
   if (c.req.method === 'OPTIONS') {
+    if (isAdminRoute && origin && !routeOrigins.includes(origin)) {
+      return c.json({ error: 'Origin not allowed' }, 403 as any)
+    }
     return c.body(null, 204 as any)
   }
   await next()

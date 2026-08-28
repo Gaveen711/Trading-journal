@@ -35,6 +35,7 @@ import {
 import { getClientIp } from './_ipUtils.js'
 import { persistBrokerTrades } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
+import { createAdminApi } from './_admin.js'
 import { emptyTradeAnalytics, emptySessionAnalytics } from '../src/lib/tradeAnalytics.js'
 import { USER_CREDENTIAL_FIELDS, ACCOUNT_CREDENTIAL_FIELDS, deletionPatch } from './_credentialFields.js'
 
@@ -77,6 +78,17 @@ export const app = new Hono<{ Bindings: Env; Variables: Variables }>().basePath(
 app.use('*', secureHeadersMiddleware)
 app.use('*', corsMiddleware)
 app.use('*', rateLimitMiddleware)
+
+// Isolated privileged surface. The child router owns strict Firebase claim
+// checks, response allowlists, validation, and mutation audit logging.
+app.route('/admin', createAdminApi({
+  admin,
+  db,
+  now,
+  invalidateUserCache,
+  invalidateApiKeyCache,
+  recursiveDelete: (ref: any) => admin.firestore().recursiveDelete(ref),
+}))
 
 // ── 1. Authentication Utilities Route ────────────────────────────────────────
 app.post('/auth-utils', async (c) => {
@@ -1244,4 +1256,6 @@ app.post('/vitals', async (c) => {
 export const GET = handle(app)
 export const POST = handle(app)
 export const PUT = handle(app)
+export const PATCH = handle(app)
 export const DELETE = handle(app)
+export const OPTIONS = handle(app)
