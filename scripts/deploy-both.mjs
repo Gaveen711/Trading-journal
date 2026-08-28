@@ -32,7 +32,7 @@ Examples:
 
 Admin Vercel setup:
   Link the admin Vercel project once with 'vercel link' from admin-dashboard/, or set
-  VERCEL_ADMIN_PROJECT_ID and VERCEL_ORG_ID in the environment.`);
+  VERCEL_ADMIN_PROJECT_ID and VERCEL_ADMIN_ORG_ID in the environment.`);
 }
 
 function run(command, args, cwd, env = process.env) {
@@ -87,7 +87,14 @@ if (args.has('--help') || args.has('-h')) {
       if (production) vercelArgs.push('--prod');
 
       if (deployPublic) {
-        run(vercelCommand, vercelArgs, rootDir);
+        const publicEnv = { ...process.env };
+        // VERCEL_ORG_ID + VERCEL_PROJECT_ID is a global Vercel pair. When an
+        // admin-only project ID is provided, do not leak its org ID into the
+        // public deployment or Vercel rejects the incomplete public pair.
+        if (publicEnv.VERCEL_ADMIN_PROJECT_ID && !publicEnv.VERCEL_PROJECT_ID) {
+          delete publicEnv.VERCEL_ORG_ID;
+        }
+        run(vercelCommand, vercelArgs, rootDir, publicEnv);
       }
 
       if (args.has('--with-firebase')) {
@@ -103,9 +110,11 @@ if (args.has('--help') || args.has('-h')) {
       if (deployAdmin) {
         const adminEnv = { ...process.env };
         const adminProjectId = adminEnv.VERCEL_ADMIN_PROJECT_ID;
+        const adminOrgId = adminEnv.VERCEL_ADMIN_ORG_ID || adminEnv.VERCEL_ORG_ID;
         const adminProjectFile = resolve(adminDir, '.vercel', 'project.json');
         if (adminProjectId) {
           adminEnv.VERCEL_PROJECT_ID = adminProjectId;
+          if (adminOrgId) adminEnv.VERCEL_ORG_ID = adminOrgId;
         } else if (!existsSync(adminProjectFile)) {
           throw new Error('Admin Vercel project is not linked. Run `vercel link` from admin-dashboard/ or set VERCEL_ADMIN_PROJECT_ID.');
         }

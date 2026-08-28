@@ -66,7 +66,7 @@ npm run deploy:all -- --prod --with-firebase
 ```
 
 The admin Vercel project must be linked once from `admin-dashboard/`, or the deployment
-shell must have `VERCEL_ADMIN_PROJECT_ID` and `VERCEL_ORG_ID` set. Use
+shell must have `VERCEL_ADMIN_PROJECT_ID` and `VERCEL_ADMIN_ORG_ID` set. Use
 `--with-firebase` when the public API, Cloud Functions, Firestore rules, and
 Storage rules also need deployment. Do not use `--with-firebase` until the
 Firebase project and credentials are confirmed.
