@@ -37,7 +37,15 @@ Admin Vercel setup:
 
 function run(command, args, cwd, env = process.env) {
   console.log(`\n> ${command} ${args.join(' ')}`);
-  const result = spawnSync(command, args, { cwd, env, stdio: 'inherit' });
+  // Windows .cmd shims (npm, npx, and the local Vercel CLI) cannot be
+  // spawned directly by Node. Running them through cmd.exe keeps the same
+  // argument contract as Unix while avoiding spawnSync EINVAL on Windows.
+  const result = spawnSync(command, args, {
+    cwd,
+    env,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`Command failed with exit code ${result.status ?? 'unknown'}.`);
 }
