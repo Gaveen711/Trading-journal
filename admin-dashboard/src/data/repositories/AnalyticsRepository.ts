@@ -1,10 +1,7 @@
-import type { Analytics } from '../../domain/models';
+import type { Analytics, AnalyticsParams } from '../../domain/models';
 import { buildAdminQuery, decodeAnalytics, requestData } from '../api';
 
-export interface AnalyticsParams {
-  from?: string;
-  to?: string;
-}
+export type { AnalyticsParams } from '../../domain/models';
 
 export const AnalyticsRepository = {
   get(params: AnalyticsParams = {}, signal?: AbortSignal): Promise<Analytics> {

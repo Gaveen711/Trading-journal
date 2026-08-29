@@ -13,7 +13,9 @@ const vercelCommand = process.platform === 'win32'
   : resolve(rootDir, 'node_modules', '.bin', 'vercel');
 
 function usage() {
-  console.log(`Usage: npm run deploy:all -- [options]
+  console.log(`Usage:
+  npm run deploy                  Deploy both Vercel projects to production.
+  npm run deploy:all -- [options] Advanced/preview deployment control.
 
 Options:
   --prod             Deploy both projects to production.
@@ -25,6 +27,7 @@ Options:
   --help              Show this help.
 
 Examples:
+  npm run deploy
   npm run deploy:all -- --preview
   npm run deploy:all -- --prod
   npm run deploy:all -- --prod --with-firebase

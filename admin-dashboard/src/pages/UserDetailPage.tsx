@@ -1,68 +1,163 @@
-import { useState } from 'react';
-import { ArrowLeft, BadgeCheck, CalendarDays, CreditCard, Mail, MapPin, ShieldAlert, Trash2, UserRound, WalletCards } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, BadgeCheck, CalendarDays, CreditCard, KeyRound, Mail, MapPin, ShieldAlert, Trash2, UserRound, WalletCards } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { usePayments, useUser, useUsers } from '../hooks';
-import { EmptyState, ErrorState, LoadingState, Metric, Notice, PageShell, Panel, ReasonDialog, StatusBadge, formatDate, formatMoney, type LooseRecord } from './_shared';
+import { UserAccessEditor } from '../components/users/UserAccessEditor';
+import { UserAnalyticsSection } from '../components/users/UserAnalyticsSection';
+import { canonicalUserId, describeAdminError, displayUserName } from '../components/users/adminUserUi';
+import '../components/users/users.css';
+import type { UserUpdate } from '../domain/models';
+import { useAdminHealth, usePayments, useUser, useUserActions, useUserAnalytics } from '../hooks';
+import { EmptyState, ErrorState, LoadingState, Metric, Notice, PageShell, Panel, ReasonDialog, StatusBadge, formatDate, formatMoney } from './_shared';
+
+type PendingMutation = {
+  kind: 'update';
+  updates: UserUpdate;
+  title: string;
+  description: string;
+  success: string;
+} | {
+  kind: 'delete';
+  title: string;
+  description: string;
+};
+
+interface PageNotice {
+  tone: 'danger' | 'success';
+  message: string;
+}
 
 export function UserDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const state = useUser(id) as LooseRecord;
-  const actions = useUsers({ pageSize: 1 }) as LooseRecord;
-  const paymentState = usePayments({ userId: id, pageSize: 10 }) as LooseRecord;
-  const user = (state.user ?? state.data ?? null) as LooseRecord | null;
-  const [notice, setNotice] = useState('');
-  const [deleting, setDeleting] = useState(false);
-  const pending = Boolean(actions.isPending ?? actions.pending);
+  const state = useUser(id);
+  const user = state.data;
+  const uid = user ? canonicalUserId(user) : '';
+  const actions = useUserActions();
+  const health = useAdminHealth();
+  const paymentState = usePayments({ userId: uid || id, pageSize: 10 });
+  const analyticsState = useUserAnalytics(uid, { pageSize: 10 });
+  const [notice, setNotice] = useState<PageNotice | null>(null);
+  const [pendingMutation, setPendingMutation] = useState<PendingMutation | null>(null);
+  const pending = actions.isPending;
+  const requestFailed = Boolean(state.error || actions.mutationError || paymentState.error || analyticsState.error);
+  const degraded = Boolean(requestFailed || health.isDegraded || health.availability === 'UNAVAILABLE');
+  const apiBlocksMutation = requestFailed || !health.canMutate;
+  const requiredRequestRefreshing = state.isFetching || paymentState.isFetching || analyticsState.isFetching;
+  const mutationsDisabled = pending || requiredRequestRefreshing || apiBlocksMutation;
+
+  useEffect(() => {
+    if (apiBlocksMutation) setPendingMutation(null);
+  }, [apiBlocksMutation]);
 
   if (state.isLoading) return <PageShell title="User detail"><LoadingState label="Loading user profile" /></PageShell>;
-  if (state.error || !user) return <PageShell title="User detail"><ErrorState title="User unavailable" message="The account may have been deleted, or the admin API denied access." onRetry={state.refresh} /><Link className="button mt-4" to="/users"><ArrowLeft size={16} />Back to users</Link></PageShell>;
+  if (state.error || !user) {
+    const failure = state.error
+      ? describeAdminError(state.error, 'user lookup')
+      : { title: 'User not found', message: 'No account was returned for this canonical UID.' };
+    return <PageShell title="User detail"><ErrorState title={failure.title} message={failure.message} onRetry={() => void state.refresh()} /><Link className="button mt-4" to="/users"><ArrowLeft size={16} />Back to users</Link></PageShell>;
+  }
 
-  const name = String(user.displayName ?? user.name ?? [user.firstName, user.lastName].filter(Boolean).join(' ') ?? '').trim() || 'Unnamed user';
-  const payments = ((paymentState.payments ?? paymentState.data ?? []) as LooseRecord[]).filter((payment) => payment.userId === user.id || payment.userId === user.uid);
-  const paid = payments.filter((payment) => payment.status === 'SUCCESS').reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
-  const update = async (updates: LooseRecord, success: string) => {
-    setNotice('');
-    try { await actions.updateUser({ userId: String(user.id ?? id), updates, reason: success }); await state.refresh?.(); setNotice(success); }
-    catch { setNotice('The account update failed. No changes were confirmed.'); }
+  const name = displayUserName(user);
+  const payments = paymentState.payments.filter((payment) => payment.userId === uid);
+  const paid = payments.filter((payment) => payment.status === 'SUCCESS').reduce((sum, payment) => sum + payment.amount, 0);
+  const paymentError = paymentState.error ? describeAdminError(paymentState.error, 'payment-history request') : null;
+
+  const reviewUpdate = (updates: UserUpdate, summary: string) => {
+    actions.resetMutation();
+    setNotice(null);
+    setPendingMutation({
+      kind: 'update',
+      updates,
+      title: `Confirm changes to ${name}`,
+      description: `The following protected account controls will change: ${summary}. Enter the operator reason for the audit log. High-impact authorization, MFA, and recent-reauthentication policy must be enforced by the backend.`,
+      success: `${name}'s account controls were updated.`,
+    });
   };
-  const remove = async (reason: string) => {
-    try { await actions.deleteUser({ userId: String(user.id ?? id), reason }); navigate('/users', { replace: true }); }
-    catch { setNotice('The account could not be deleted.'); setDeleting(false); }
+
+  const reviewDelete = () => {
+    actions.resetMutation();
+    setNotice(null);
+    setPendingMutation({
+      kind: 'delete',
+      title: `Request deletion for ${name}?`,
+      description: 'This recoverable request immediately suspends access and revokes API keys. Customer records remain retained until a separate reviewed deletion workflow completes. Enter the incident, policy, or customer-request reason for the audit log.',
+    });
   };
-  return <PageShell title={name} eyebrow="Customer record" description={String(user.uid ?? user.id ?? id)} actions={<>
-    <Link className="button" to="/users"><ArrowLeft size={16} />Users</Link>
-    <button className="button" disabled={pending} onClick={() => void update({ status: user.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED' }, `Account ${user.status === 'SUSPENDED' ? 'activated' : 'suspended'}.`)}><ShieldAlert size={16} />{user.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}</button>
-    <button className="button button--danger" disabled={pending} onClick={() => setDeleting(true)}><Trash2 size={16} />Delete</button>
-  </>}>
-    {notice && <Notice tone={notice.includes('failed') || notice.includes('could not') ? 'danger' : 'success'}>{notice}</Notice>}
-    <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
-      <Metric label="Plan" value={String(user.plan ?? 'FREE')} icon={<BadgeCheck size={18} />} />
-      <Metric label="Status" value={String(user.status ?? 'ACTIVE')} icon={<ShieldAlert size={18} />} />
-      <Metric label="Trades" value={Number(user.totalTradesLogged ?? user.tradeCount ?? 0).toLocaleString()} icon={<WalletCards size={18} />} />
-      <Metric label="Revenue" value={formatMoney(paid)} icon={<CreditCard size={18} />} />
+
+  const confirmMutation = async (reason: string) => {
+    if (!pendingMutation || apiBlocksMutation) return;
+    try {
+      if (pendingMutation.kind === 'delete') {
+        await actions.deleteUser({ userId: uid, reason });
+        navigate('/users', { replace: true });
+        return;
+      }
+      await actions.updateUser({ userId: uid, updates: pendingMutation.updates, reason });
+      await Promise.all([state.refresh(), analyticsState.refresh()]);
+      setNotice({ tone: 'success', message: pendingMutation.success });
+      setPendingMutation(null);
+    } catch (error) {
+      const failure = describeAdminError(error, pendingMutation.kind === 'delete' ? 'account deletion' : 'account update');
+      setNotice({ tone: 'danger', message: `${failure.title}: ${failure.message}` });
+    }
+  };
+
+  return <PageShell
+    title={name}
+    eyebrow="Customer record"
+    description={uid}
+    actions={<>
+      <Link className="button" to="/users"><ArrowLeft size={16} />Users</Link>
+      <button className="button button--danger" type="button" disabled={mutationsDisabled} title={mutationsDisabled ? 'Unavailable until the admin API health check is available' : 'Suspend access and request reviewed deletion'} onClick={reviewDelete}><Trash2 size={16} />Request deletion</button>
+    </>}
+  >
+    {health.availability === 'CHECKING' && <Notice>Verifying admin API health. Account mutations remain disabled until the check succeeds.</Notice>}
+    {degraded && !health.error && <Notice tone="danger">The admin API is degraded or a required request failed. Existing data may be stale, and account mutations are disabled until all required services recover.</Notice>}
+    {health.error && <Notice tone="danger">{describeAdminError(health.error, 'health check').message} Account mutations remain disabled.</Notice>}
+    {notice && <Notice tone={notice.tone}>{notice.message}</Notice>}
+
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-4" aria-label="Account summary">
+      <Metric label="Plan" value={user.plan} icon={<BadgeCheck size={18} />} />
+      <Metric label="Status" value={user.status} icon={<ShieldAlert size={18} />} />
+      <Metric label="Trades" value={(user.totalTradesLogged ?? user.tradeCount ?? 0).toLocaleString()} icon={<WalletCards size={18} />} />
+      <Metric label="Revenue" value={formatMoney(paid)} detail="Loaded successful payments" icon={<CreditCard size={18} />} />
     </section>
 
     <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-      <Panel className="xl:col-span-2" title="Account details" meta={<StatusBadge tone="success">Live</StatusBadge>}>
+      <Panel className="xl:col-span-2" title="Account details" meta={<StatusBadge tone={degraded ? 'warning' : 'success'}>{degraded ? 'Stale' : 'Current'}</StatusBadge>}>
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {[["Email", user.email, <Mail size={17} />], ["Country", user.country, <MapPin size={17} />], ["Joined", formatDate(user.createdAt ?? user.joinedDate, true), <CalendarDays size={17} />], ["Last login", formatDate(user.lastLogin, true), <UserRound size={17} />]].map(([label, value, icon]) => <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4" key={String(label)}><span className="text-primary-500">{icon}</span><div><dt className="eyebrow">{label}</dt><dd className="mt-1 break-all text-sm text-white">{String(value || 'Not recorded')}</dd></div></div>)}
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><KeyRound size={17} /></span><div><dt className="eyebrow">Canonical UID</dt><dd className="mt-1 break-all font-mono text-sm text-white">{uid}</dd></div></div>
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><Mail size={17} /></span><div><dt className="eyebrow">Email</dt><dd className="mt-1 break-all text-sm text-white">{user.email ?? 'Not recorded'}{user.emailVerified === undefined ? '' : user.emailVerified ? ' · verified' : ' · unverified'}</dd></div></div>
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><MapPin size={17} /></span><div><dt className="eyebrow">Country</dt><dd className="mt-1 break-all text-sm text-white">{user.country ?? 'Not recorded'}</dd></div></div>
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><CalendarDays size={17} /></span><div><dt className="eyebrow">Joined</dt><dd className="mt-1 break-all text-sm text-white">{formatDate(user.createdAt ?? user.joinedDate, true)}</dd></div></div>
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><UserRound size={17} /></span><div><dt className="eyebrow">Last login</dt><dd className="mt-1 break-all text-sm text-white">{formatDate(user.lastLogin ?? user.lastSignInAt, true)}</dd></div></div>
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><WalletCards size={17} /></span><div><dt className="eyebrow">Plan expiry</dt><dd className="mt-1 break-all text-sm text-white">{formatDate(user.planExpiry ?? user.subscription?.expiresAt, true)}</dd></div></div>
+          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><Trash2 size={17} /></span><div><dt className="eyebrow">Deletion workflow</dt><dd className="mt-1 break-all text-sm text-white">{user.deletionState === 'PENDING' ? `Pending since ${formatDate(user.deletionRequestedAt, true)}` : 'Not requested'}</dd></div></div>
         </dl>
       </Panel>
-      <Panel title="Access controls">
-        <div className="space-y-4">
-          <label className="field"><span>Plan</span><select value={String(user.plan ?? 'FREE')} disabled={pending} onChange={(event) => void update({ plan: event.target.value }, `Plan changed to ${event.target.value}.`)}><option value="FREE">Free</option><option value="PRO">Pro</option></select></label>
-          <label className="field"><span>Account status</span><select value={String(user.status ?? 'ACTIVE')} disabled={pending} onChange={(event) => void update({ status: event.target.value }, `Status changed to ${event.target.value}.`)}><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option></select></label>
-        </div>
-      </Panel>
-      <Panel className="xl:col-span-2" title="Payment history">
-        {paymentState.isLoading ? <LoadingState label="Loading payments" /> : payments.length === 0 ? <EmptyState icon={<CreditCard />} title="No payment records" message="Verified billing events for this customer will appear here." /> : <div className="space-y-2">{payments.slice(0, 10).map((payment) => <div className="activity-row" key={String(payment.id)}><span className="activity-row__icon"><CreditCard size={15} /></span><div className="flex-1"><strong>{String(payment.invoiceId ?? payment.stripeInvoiceId ?? payment.id)}</strong><small>{formatDate(payment.date ?? payment.createdAt, true)}</small></div><b>{formatMoney(payment.amount, String(payment.currency ?? 'USD'))}</b><StatusBadge tone={payment.status === 'SUCCESS' ? 'success' : payment.status === 'FAILED' ? 'danger' : 'warning'}>{String(payment.status ?? 'UNKNOWN')}</StatusBadge></div>)}</div>}
-      </Panel>
+
       <Panel title="Login history">
-        {Array.isArray(user.loginHistory) && user.loginHistory.length ? <div className="space-y-2">{(user.loginHistory as LooseRecord[]).slice(0, 8).map((entry, index) => <div className="rounded-xl border border-dark-border bg-white/5 p-3" key={`${String(entry.date)}-${index}`}><strong className="block text-sm text-white">{String(entry.device ?? 'Unknown device')}</strong><small className="block text-dark-text-muted">{formatDate(entry.date, true)}</small><small className="font-mono text-dark-text-muted">{String(entry.ip ?? 'IP not recorded')}</small></div>)}</div> : <EmptyState icon={<UserRound />} title="No login history" message="Recorded device sessions will appear here." />}
+        {user.loginHistory.length ? <div className="space-y-2">{user.loginHistory.slice(0, 8).map((entry, index) => <div className="rounded-xl border border-dark-border bg-white/5 p-3" key={`${entry.date}-${index}`}><strong className="block text-sm text-white">{entry.device ?? 'Unknown device'}</strong><small className="block text-dark-text-muted">{formatDate(entry.date, true)}</small><small className="font-mono text-dark-text-muted">{entry.ip ?? 'IP not recorded'}</small></div>)}</div> : <EmptyState icon={<UserRound />} title="No login history" message="Recorded device sessions will appear here." />}
+      </Panel>
+
+      <Panel className="xl:col-span-2" title="Access controls" meta={<StatusBadge tone={degraded ? 'danger' : 'warning'}>{degraded ? 'Locked' : 'Reason required'}</StatusBadge>}>
+        <UserAccessEditor user={user} disabled={apiBlocksMutation} pending={pending} onReview={reviewUpdate} />
+      </Panel>
+
+      <Panel title="Payment history">
+        {paymentState.isLoading
+          ? <LoadingState label="Loading payments" />
+          : paymentError
+            ? <ErrorState title={paymentError.title} message={paymentError.message} onRetry={() => void paymentState.refresh()} />
+            : payments.length === 0
+              ? <EmptyState icon={<CreditCard />} title="No payment records" message="Verified billing events for this customer will appear here." />
+              : <div className="space-y-2">{payments.slice(0, 10).map((payment) => <div className="activity-row" key={payment.id}><span className="activity-row__icon"><CreditCard size={15} /></span><div className="flex-1"><strong>{payment.stripeInvoiceId ?? payment.orderId ?? payment.id}</strong><small>{formatDate(payment.date ?? payment.createdAt, true)}</small></div><b>{formatMoney(payment.amount, payment.currency)}</b><StatusBadge tone={payment.status === 'SUCCESS' ? 'success' : payment.status === 'FAILED' ? 'danger' : 'warning'}>{payment.status}</StatusBadge></div>)}</div>}
       </Panel>
     </div>
-    <ReasonDialog open={deleting} title={`Delete ${name}?`} description="This permanently removes the account record and can disconnect related journal and billing data." confirmLabel="Delete account" pending={pending} onClose={() => setDeleting(false)} onConfirm={remove} />
+
+    <UserAnalyticsSection data={analyticsState.data} error={analyticsState.error} isLoading={analyticsState.isLoading} isFetching={analyticsState.isFetching} page={analyticsState.page} canPreviousPage={analyticsState.canPreviousPage} onPreviousPage={analyticsState.previousPage} onNextPage={analyticsState.nextPage} onRetry={() => void analyticsState.refresh()} />
+
+    <ReasonDialog open={Boolean(pendingMutation)} title={pendingMutation?.title ?? 'Confirm account action'} description={pendingMutation?.description ?? ''} confirmLabel={pendingMutation?.kind === 'delete' ? 'Request deletion' : 'Apply changes'} pending={pending} onClose={() => setPendingMutation(null)} onConfirm={confirmMutation} />
   </PageShell>;
 }
 

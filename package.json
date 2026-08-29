@@ -7,6 +7,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:admin": "node scripts/dev-admin.mjs",
+    "dev:api": "node scripts/dev-admin-api.mjs",
     "build": "vite build",
     "build:budget": "vite build && node scripts/check-bundle-budget.mjs",
     "migrate:performance": "node scripts/migrate-performance-data.mjs",
@@ -17,6 +19,7 @@
     "admin:list": "node scripts/grant-admin.mjs --list",
     "admin:dev": "npm --prefix admin-dashboard run dev",
     "admin:build": "npm --prefix admin-dashboard run build",
+    "deploy": "node scripts/deploy-both.mjs --prod",
     "deploy:all": "node scripts/deploy-both.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc -p api --noEmit",

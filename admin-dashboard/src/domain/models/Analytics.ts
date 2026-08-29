@@ -1,3 +1,23 @@
+import type { AdminDataFreshness, IsoDateString } from './common';
+
+export interface AnalyticsDateRange {
+  from?: IsoDateString;
+  to?: IsoDateString;
+  timezone?: string;
+  field?: string;
+}
+
+export interface AnalyticsTimeSeriesPoint {
+  date: IsoDateString;
+  newUsers: number;
+  payments: number;
+  settledPayments: number;
+  failedPayments: number;
+  revenue: number;
+  openedReports: number;
+  resolvedReports: number;
+}
+
 export interface Analytics {
   users: {
     total: number;
@@ -15,5 +35,10 @@ export interface Analytics {
     open: number;
     resolved: number;
   };
-  generatedAt: string;
+  range: AnalyticsDateRange;
+  timeSeries: AnalyticsTimeSeriesPoint[];
+  generatedAt: IsoDateString;
+  freshness: AdminDataFreshness;
 }
+
+export interface AnalyticsParams extends AnalyticsDateRange {}

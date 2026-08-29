@@ -1,4 +1,13 @@
 import { Hono, type Context, type MiddlewareHandler } from 'hono'
+import { getPlatformAnalytics, getUserAnalytics } from './_adminAnalytics.js'
+import {
+  AdminHttpError,
+  adminErrorResponse,
+  categoryForStatus,
+  requestIdMiddleware,
+} from './_adminErrors.js'
+import { listAdminUsers } from './_adminUsers.js'
+import { isSettledPaymentStatus, normalizedPaymentStatus } from './_adminPolicy.js'
 
 const ADMIN_EMAIL = 'admin@xaujournal.com'
 const ADMIN_UID = 'rbGsMM2A2EdhgKLKLf9y0dGJ7RY2'
@@ -8,24 +17,20 @@ const DEFAULT_PAGE_SIZE = 50
 const MAX_PAGE_SIZE = 100
 const MAX_BODY_BYTES = 32 * 1024
 
-type AdminActor = { uid: string; email: string }
+type AdminActor = { uid: string; email: string; authTime: number; secondFactor?: string }
 
-type AdminDependencies = {
+export type AdminDependencies = {
   admin: any
   db: any
   now: () => any
   invalidateUserCache?: (uid: string) => Promise<void>
   invalidateApiKeyCache?: (keyId: string, uid: string) => Promise<void>
-  recursiveDelete?: (ref: any) => Promise<void>
-}
-
-class AdminHttpError extends Error {
-  status: number
-
-  constructor(status: number, message: string) {
-    super(message)
-    this.status = status
-  }
+  consumeAdminRateLimit?: (
+    scope: string,
+    actorUid: string,
+    limit: number,
+    windowSeconds: number,
+  ) => Promise<{ available: boolean; allowed: boolean; remaining: number; retryAfter: number }>
 }
 
 const USER_FIELDS = [
@@ -34,6 +39,7 @@ const USER_FIELDS = [
   'totalTradesLogged', 'totalJournalsLogged', 'analyticsBackfillState',
   'requiresEmailVerification', 'lemonSqueezySubscriptionId',
   'lemonSqueezyStatus', 'createdAt', 'updatedAt', 'lastTradeTime',
+  'deletionState', 'deletionRequestedAt',
 ] as const
 
 const SUBSCRIPTION_FIELDS = [
@@ -196,8 +202,9 @@ function assertOnlyFields(body: Record<string, any>, allowed: readonly string[])
 function requiredReason(body: Record<string, any>): string {
   if (typeof body.reason !== 'string') throw new AdminHttpError(400, 'reason is required')
   const reason = body.reason.trim().replace(/[\r\n]+/g, ' ')
-  if (reason.length < 3 || reason.length > 500) {
-    throw new AdminHttpError(400, 'reason must be between 3 and 500 characters')
+  const meaningfulWords = reason.match(/[\p{L}\p{N}]{2,}/gu) || []
+  if (reason.length < 10 || reason.length > 500 || meaningfulWords.length < 2) {
+    throw new AdminHttpError(400, 'reason must be a specific explanation between 10 and 500 characters', 'INVALID_REASON')
   }
   return reason
 }
@@ -249,14 +256,65 @@ function auditData(
   targetId: string,
   reason: string,
   status = 'completed',
+  requestId?: string,
 ): Record<string, any> {
   return {
-    actor,
+    actor: {
+      uid: actor.uid,
+      email: actor.email,
+      authTime: actor.authTime,
+      ...(actor.secondFactor ? { secondFactor: actor.secondFactor } : {}),
+    },
     action,
     target: { type: targetType, id: targetId },
     reason,
     timestamp: deps.now(),
     status,
+    ...(requestId ? { requestId } : {}),
+  }
+}
+
+function auditDataFor(
+  c: Context,
+  deps: AdminDependencies,
+  actor: AdminActor,
+  action: string,
+  targetType: string,
+  targetId: string,
+  reason: string,
+  status = 'completed',
+): Record<string, any> {
+  return auditData(deps, actor, action, targetType, targetId, reason, status, c.get('requestId'))
+}
+
+async function auditSensitiveRead(
+  c: Context,
+  deps: AdminDependencies,
+  action: string,
+  targetType: string,
+  targetId: string,
+): Promise<void> {
+  await deps.db.collection(AUDIT_COLLECTION).doc().set(auditDataFor(
+    c,
+    deps,
+    actorFrom(c),
+    action,
+    targetType,
+    targetId,
+    'Sensitive administrative data viewed',
+  ))
+}
+
+function requireRecentAdminAuthentication(c: Context, maxAgeSeconds = 10 * 60): void {
+  const authTime = actorFrom(c).authTime
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const ageSeconds = nowSeconds - authTime
+  if (!Number.isFinite(authTime) || authTime <= 0 || ageSeconds < -300 || ageSeconds > maxAgeSeconds) {
+    throw new AdminHttpError(
+      403,
+      'Recent administrator authentication is required for this action',
+      'RECENT_AUTH_REQUIRED',
+    )
   }
 }
 
@@ -264,21 +322,24 @@ function requireAdmin(deps: AdminDependencies): MiddlewareHandler {
   return async (c, next) => {
     const authHeader = c.req.header('Authorization') || ''
     const match = /^Bearer ([^\s]+)$/.exec(authHeader)
-    if (!match) return c.json({ error: 'Authentication required' }, 401)
+    if (!match) return adminErrorResponse(c, 401, 'AUTHENTICATION_REQUIRED', 'Authentication required', 'session')
 
     let decoded: any
     try {
       // checkRevoked=true also detects disabled/revoked admin sessions.
       decoded = await deps.admin.auth().verifyIdToken(match[1], true)
     } catch (error: any) {
-      console.warn('[admin-auth] Token verification failed', { code: error?.code })
-      return c.json({ error: 'Invalid or expired token' }, 401)
+      console.warn('[admin-auth] Token verification failed', {
+        requestId: c.get('requestId'),
+        code: error?.code,
+      })
+      return adminErrorResponse(c, 401, 'INVALID_SESSION', 'Invalid or expired token', 'session')
     }
 
-    if (decoded.uid !== ADMIN_UID) return c.json({ error: 'Admin access denied' }, 403)
-    if (decoded.email_verified !== true) return c.json({ error: 'Verified admin email required' }, 403)
-    if (decoded.email !== ADMIN_EMAIL) return c.json({ error: 'Admin access denied' }, 403)
-    if (decoded.admin !== true) return c.json({ error: 'Admin access denied' }, 403)
+    if (decoded.uid !== ADMIN_UID) return adminErrorResponse(c, 403, 'ADMIN_ACCESS_DENIED', 'Admin access denied', 'authorization')
+    if (decoded.email_verified !== true) return adminErrorResponse(c, 403, 'ADMIN_EMAIL_UNVERIFIED', 'Verified admin email required', 'authorization')
+    if (decoded.email !== ADMIN_EMAIL) return adminErrorResponse(c, 403, 'ADMIN_ACCESS_DENIED', 'Admin access denied', 'authorization')
+    if (decoded.admin !== true) return adminErrorResponse(c, 403, 'ADMIN_ACCESS_DENIED', 'Admin access denied', 'authorization')
 
     // A valid ID token can remain usable briefly after an email, verification,
     // disabled-state, or custom-claim change. With one administrator, the
@@ -287,8 +348,11 @@ function requireAdmin(deps: AdminDependencies): MiddlewareHandler {
     try {
       currentUser = await deps.admin.auth().getUser(String(decoded.uid))
     } catch (error: any) {
-      console.warn('[admin-auth] Current user lookup failed', { code: error?.code })
-      return c.json({ error: 'Admin access denied' }, 403)
+      console.warn('[admin-auth] Current user lookup failed', {
+        requestId: c.get('requestId'),
+        code: error?.code,
+      })
+      return adminErrorResponse(c, 403, 'ADMIN_ACCESS_DENIED', 'Admin access denied', 'authorization')
     }
     if (
       currentUser.disabled === true
@@ -297,25 +361,72 @@ function requireAdmin(deps: AdminDependencies): MiddlewareHandler {
       || String(currentUser.email || '').trim().toLowerCase() !== ADMIN_EMAIL
       || currentUser.customClaims?.admin !== true
     ) {
-      return c.json({ error: 'Admin access denied' }, 403)
+      return adminErrorResponse(c, 403, 'ADMIN_ACCESS_DENIED', 'Admin access denied', 'authorization')
     }
 
-    c.set('adminActor', { uid: currentUser.uid, email: ADMIN_EMAIL })
+    const authTime = Number(decoded.auth_time)
+    const secondFactor = typeof decoded.firebase?.sign_in_second_factor === 'string'
+      ? decoded.firebase.sign_in_second_factor
+      : undefined
+    c.set('adminActor', {
+      uid: currentUser.uid,
+      email: ADMIN_EMAIL,
+      authTime: Number.isFinite(authTime) ? authTime : 0,
+      ...(secondFactor ? { secondFactor } : {}),
+    })
     await next()
+  }
+}
+
+function adminActorRateLimit(deps: AdminDependencies): MiddlewareHandler {
+  return async (c, next) => {
+    if (!deps.consumeAdminRateLimit) return next()
+    const method = c.req.method.toUpperCase()
+    const path = c.req.path
+    const mutation = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS'
+    const analytics = /\/analytics(?:\/|$)/.test(path)
+    const policy = mutation
+      ? { scope: 'mutation', limit: 30, windowSeconds: 60 }
+      : analytics
+        ? { scope: 'analytics', limit: 60, windowSeconds: 60 }
+        : { scope: 'read', limit: 120, windowSeconds: 60 }
+    const result = await deps.consumeAdminRateLimit(
+      policy.scope,
+      actorFrom(c).uid,
+      policy.limit,
+      policy.windowSeconds,
+    )
+    c.header('X-Admin-RateLimit-Limit', String(policy.limit))
+    c.header('X-Admin-RateLimit-Remaining', String(Math.max(0, result.remaining)))
+    if (!result.available) {
+      if (mutation) {
+        throw new AdminHttpError(503, 'Admin mutation safety service is unavailable', 'RATE_LIMIT_UNAVAILABLE')
+      }
+      c.header('X-Admin-RateLimit-Status', 'unavailable')
+      return next()
+    }
+    if (!result.allowed) {
+      c.header('Retry-After', String(Math.max(1, result.retryAfter)))
+      throw new AdminHttpError(429, 'Too many admin requests. Try again later.', 'RATE_LIMITED')
+    }
+    return next()
+  }
+}
+
+async function authUserOr404(deps: AdminDependencies, uid: string): Promise<any> {
+  try {
+    return await deps.admin.auth().getUser(uid)
+  } catch (error: any) {
+    if (error?.code === 'auth/user-not-found') {
+      throw new AdminHttpError(404, 'User not found', 'USER_NOT_FOUND')
+    }
+    throw error
   }
 }
 
 async function countOf(query: any): Promise<number> {
   const snapshot = await query.count().get()
   return Number(snapshot.data().count || 0)
-}
-
-async function sumOf(deps: AdminDependencies, query: any, field: string): Promise<number | null> {
-  const aggregateField = deps.admin.firestore.AggregateField
-  if (!aggregateField?.sum || typeof query.aggregate !== 'function') return null
-  const snapshot = await query.aggregate({ total: aggregateField.sum(field) }).get()
-  const value = snapshot.data().total
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
 async function deleteQueryInBatches(deps: AdminDependencies, query: any): Promise<string[]> {
@@ -343,7 +454,14 @@ function userPatch(body: Record<string, any>): { firestore: Record<string, any>;
   if ('graceReason' in body) firestore.graceReason = body.graceReason === null ? null : boundedString(body.graceReason, 'graceReason', 300)
   if ('isTrial' in body) firestore.isTrial = booleanValue(body.isTrial, 'isTrial')
   if ('mt5SyncEnabled' in body) firestore.mt5SyncEnabled = booleanValue(body.mt5SyncEnabled, 'mt5SyncEnabled')
-  if ('disabled' in body) auth.disabled = booleanValue(body.disabled, 'disabled')
+  if ('disabled' in body) {
+    auth.disabled = booleanValue(body.disabled, 'disabled')
+    if (auth.disabled === false) {
+      firestore.deletionState = null
+      firestore.deletionRequestedAt = null
+      firestore.deletionRequestedBy = null
+    }
+  }
   if (Object.keys(firestore).length + Object.keys(auth).length === 0) throw new AdminHttpError(400, 'No mutable fields supplied')
   return { firestore, auth }
 }
@@ -448,8 +566,9 @@ function settingsPatch(body: Record<string, any>): Record<string, any> {
  * are allowlists; adding a Firestore field never exposes or makes it writable.
  */
 export function createAdminApi(deps: AdminDependencies) {
-  const app = new Hono<{ Variables: { adminActor: AdminActor } }>()
+  const app = new Hono<{ Variables: { adminActor: AdminActor; requestId: string } }>()
 
+  app.use('*', requestIdMiddleware)
   app.use('*', async (c, next) => {
     c.header('Cache-Control', 'private, no-store, max-age=0')
     c.header('Pragma', 'no-cache')
@@ -457,6 +576,34 @@ export function createAdminApi(deps: AdminDependencies) {
     await next()
   })
   app.use('*', requireAdmin(deps))
+  app.use('*', adminActorRateLimit(deps))
+
+  app.get('/health', async (c) => {
+    const serverTime = new Date().toISOString()
+    let databaseStatus: 'available' | 'unavailable' = 'available'
+    try {
+      // A single fixed-document read verifies the Admin SDK/Firestore path
+      // without returning settings or scanning customer data.
+      await deps.db.collection('settings').doc(SETTINGS_DOCUMENT).get()
+    } catch (error: any) {
+      databaseStatus = 'unavailable'
+      console.error('[admin-health] Database check failed', {
+        requestId: c.get('requestId'),
+        code: error?.code,
+      })
+    }
+    return c.json({ data: {
+      available: databaseStatus === 'available',
+      availability: databaseStatus === 'available' ? 'available' : 'degraded',
+      status: databaseStatus === 'available' ? 'ok' : 'degraded',
+      serverTime,
+      generatedAt: serverTime,
+      checks: [
+        { name: 'authentication', status: 'available' },
+        { name: 'database', status: databaseStatus },
+      ],
+    } })
+  })
 
   app.get('/overview', async (c) => {
     const users = deps.db.collection('users')
@@ -473,25 +620,41 @@ export function createAdminApi(deps: AdminDependencies) {
 
   app.get('/users', async (c) => {
     const limit = pageSize(c)
-    const pageToken = c.req.query('pageToken')
-    if (pageToken && (pageToken.length > 2048 || /[\u0000-\u001f]/.test(pageToken))) throw new AdminHttpError(400, 'Invalid pageToken')
-    const page = await deps.admin.auth().listUsers(limit, pageToken)
-    const refs = page.users.map((user: any) => deps.db.collection('users').doc(user.uid))
-    const docs = refs.length > 0 ? await deps.db.getAll(...refs) : []
-    const byUid = new Map(docs.filter((doc: any) => doc.exists).map((doc: any) => [doc.id, doc.data() || {}]))
-    const response: { data: Record<string, any>[]; nextPageToken?: string } = {
-      data: page.users.map((user: any) => publicAuthUser(user, byUid.get(user.uid) || {})),
-    }
-    if (page.pageToken) response.nextPageToken = page.pageToken
+    const rawSearch = c.req.query('search')
+    const search = rawSearch?.trim().toLowerCase()
+    if (search && search.length > 128) throw new AdminHttpError(400, 'search is too long', 'INVALID_SEARCH')
+    const rawPlan = c.req.query('plan')
+    const rawStatus = c.req.query('status')
+    const plan = rawPlan
+      ? enumValue(rawPlan.toUpperCase(), 'plan', ['FREE', 'PRO', 'GRACE']).toLowerCase() as 'free' | 'pro' | 'grace'
+      : undefined
+    const status = rawStatus
+      ? enumValue(rawStatus.toUpperCase(), 'status', ['ACTIVE', 'SUSPENDED']).toLowerCase() as 'active' | 'suspended'
+      : undefined
+    const response = await listAdminUsers(deps, {
+      limit,
+      pageToken: c.req.query('pageToken'),
+      search: search || undefined,
+      plan,
+      status,
+    }, publicAuthUser)
+    await auditSensitiveRead(c, deps, 'users.directory.read', 'directory', 'users')
     return c.json(response)
   })
 
-  app.get('/users/:id', async (c) => {
-    const id = assertIdentifier(c.req.param('id'), 'user id')
-    const [user, doc] = await Promise.all([
-      deps.admin.auth().getUser(id),
-      deps.db.collection('users').doc(id).get(),
-    ])
+  app.get('/users/:uid/analytics', async (c) => {
+    const uid = assertIdentifier(c.req.param('uid'), 'user uid')
+    await authUserOr404(deps, uid)
+    const response = await getUserAnalytics(c, deps, uid, pageSize(c))
+    await auditSensitiveRead(c, deps, 'user.analytics.read', 'user', uid)
+    return c.json(response)
+  })
+
+  app.get('/users/:uid', async (c) => {
+    const uid = assertIdentifier(c.req.param('uid'), 'user uid')
+    const user = await authUserOr404(deps, uid)
+    const doc = await deps.db.collection('users').doc(user.uid).get()
+    await auditSensitiveRead(c, deps, 'user.detail.read', 'user', uid)
     return c.json({ data: publicAuthUser(user, doc.exists ? doc.data() || {} : {}) })
   })
 
@@ -501,11 +664,12 @@ export function createAdminApi(deps: AdminDependencies) {
     const reason = requiredReason(body)
     const patch = userPatch(body)
     const actor = actorFrom(c)
-    const target = await deps.admin.auth().getUser(id)
+    requireRecentAdminAuthentication(c)
+    const target = await authUserOr404(deps, id)
     if (patch.auth.disabled === true && id === actor.uid) throw new AdminHttpError(409, 'You cannot disable your own admin account')
 
     const auditRef = deps.db.collection(AUDIT_COLLECTION).doc()
-    await auditRef.set(auditData(deps, actor, 'user.update', 'user', id, reason, 'started'))
+    await auditRef.set(auditDataFor(c, deps, actor, 'user.update', 'user', id, reason, 'started'))
     try {
       if (Object.keys(patch.auth).length > 0) await deps.admin.auth().updateUser(id, patch.auth)
       if (Object.keys(patch.firestore).length > 0) {
@@ -533,21 +697,25 @@ export function createAdminApi(deps: AdminDependencies) {
     assertOnlyFields(body, ['reason'])
     const reason = requiredReason(body)
     const actor = actorFrom(c)
+    requireRecentAdminAuthentication(c)
     if (id === actor.uid) throw new AdminHttpError(409, 'You cannot delete your own admin account')
 
-    const target = await deps.admin.auth().getUser(id)
+    const target = await authUserOr404(deps, id)
     if (target.customClaims?.admin === true || target.email === ADMIN_EMAIL) {
       throw new AdminHttpError(409, 'Admin accounts cannot be deleted through this endpoint')
     }
 
     const auditRef = deps.db.collection(AUDIT_COLLECTION).doc()
-    await auditRef.set(auditData(deps, actor, 'user.delete', 'user', id, reason, 'started'))
+    await auditRef.set(auditDataFor(c, deps, actor, 'user.deletion.request', 'user', id, reason, 'started'))
     try {
+      await deps.admin.auth().updateUser(id, { disabled: true })
       const keyIds = await deleteQueryInBatches(deps, deps.db.collection('apiKeys').where('uid', '==', id))
-      await deleteQueryInBatches(deps, deps.db.collection('reports').where('userId', '==', id))
-      if (!deps.recursiveDelete) throw new Error('recursiveDelete dependency is unavailable')
-      await deps.recursiveDelete(deps.db.collection('users').doc(id))
-      await deps.admin.auth().deleteUser(id)
+      await deps.db.collection('users').doc(id).set({
+        deletionState: 'pending',
+        deletionRequestedAt: deps.now(),
+        deletionRequestedBy: actor.uid,
+        updatedAt: deps.now(),
+      }, { merge: true })
       await Promise.all(keyIds.map((keyId) => deps.invalidateApiKeyCache?.(keyId, id)))
       await deps.invalidateUserCache?.(id)
       await auditRef.update({ status: 'completed', completedAt: deps.now() })
@@ -555,7 +723,7 @@ export function createAdminApi(deps: AdminDependencies) {
       await auditRef.update({ status: 'failed', completedAt: deps.now() }).catch(() => undefined)
       throw error
     }
-    return c.json({ data: { id, deleted: true } })
+    return c.json({ data: { id, deleted: false, deletionState: 'pending', disabled: true } })
   })
 
   app.get('/subscriptions', async (c) => {
@@ -575,22 +743,9 @@ export function createAdminApi(deps: AdminDependencies) {
   })
 
   app.get('/analytics', async (c) => {
-    const users = deps.db.collection('users')
-    const payments = deps.db.collection('payments')
-    const reports = deps.db.collection('reports')
-    const settledPayments = payments.where('status', 'in', ['paid', 'completed', 'succeeded'])
-    const [usersTotal, free, pro, grace, paymentsTotal, paymentsSettled, paymentsFailed, reportsOpen, reportsResolved, revenue] = await Promise.all([
-      countOf(users), countOf(users.where('plan', '==', 'free')), countOf(users.where('plan', '==', 'pro')),
-      countOf(users.where('plan', '==', 'grace')), countOf(payments), countOf(settledPayments),
-      countOf(payments.where('status', '==', 'failed')), countOf(reports.where('status', '==', 'open')),
-      countOf(reports.where('status', '==', 'resolved')), sumOf(deps, settledPayments, 'amount'),
-    ])
-    return c.json({ data: {
-      users: { total: usersTotal, free, pro, grace },
-      payments: { total: paymentsTotal, settled: paymentsSettled, failed: paymentsFailed, revenue },
-      reports: { open: reportsOpen, resolved: reportsResolved },
-      generatedAt: new Date().toISOString(),
-    } })
+    const response = await getPlatformAnalytics(c, deps)
+    await auditSensitiveRead(c, deps, 'analytics.platform.read', 'analytics', 'platform')
+    return c.json(response)
   })
 
   app.get('/payments', async (c) => {
@@ -610,12 +765,13 @@ export function createAdminApi(deps: AdminDependencies) {
     const ref = deps.db.collection('payments').doc(id)
     const snapshot = await ref.get()
     if (!snapshot.exists) throw new AdminHttpError(404, 'Payment not found')
-    if (['paid', 'completed', 'succeeded', 'refunded'].includes(String(snapshot.get('status')))) {
+    const paymentStatus = normalizedPaymentStatus(snapshot.get('status'))
+    if (isSettledPaymentStatus(paymentStatus) || paymentStatus === 'refunded') {
       throw new AdminHttpError(409, 'Settled payment records cannot be deleted')
     }
     const batch = deps.db.batch()
     batch.delete(ref)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'payment.delete', 'payment', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'payment.delete', 'payment', id, reason))
     await batch.commit()
     return c.json({ data: { id, deleted: true } })
   })
@@ -638,7 +794,7 @@ export function createAdminApi(deps: AdminDependencies) {
     const updated = { ...patch, updatedAt: deps.now(), ...(patch.status === 'resolved' ? { resolvedAt: deps.now() } : {}) }
     const batch = deps.db.batch()
     batch.update(ref, updated)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'report.update', 'report', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'report.update', 'report', id, reason))
     await batch.commit()
     const result = await ref.get()
     return c.json({ data: publicDocument(result, REPORT_FIELDS) })
@@ -653,7 +809,7 @@ export function createAdminApi(deps: AdminDependencies) {
     if (!(await ref.get()).exists) throw new AdminHttpError(404, 'Report not found')
     const batch = deps.db.batch()
     batch.delete(ref)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'report.delete', 'report', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'report.delete', 'report', id, reason))
     await batch.commit()
     return c.json({ data: { id, deleted: true } })
   })
@@ -671,7 +827,7 @@ export function createAdminApi(deps: AdminDependencies) {
     const data = { ...patch, redeemedCount: 0, createdAt: deps.now(), updatedAt: deps.now() }
     const batch = deps.db.batch()
     batch.create(ref, data)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'coupon.create', 'coupon', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'coupon.create', 'coupon', id, reason))
     await batch.commit()
     const result = await ref.get()
     return c.json({ data: publicDocument(result, COUPON_FIELDS) }, 201)
@@ -688,7 +844,7 @@ export function createAdminApi(deps: AdminDependencies) {
     validateCouponDiscount(patch, snapshot.data() || {})
     const batch = deps.db.batch()
     batch.update(ref, { ...patch, updatedAt: deps.now() })
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'coupon.update', 'coupon', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'coupon.update', 'coupon', id, reason))
     await batch.commit()
     return c.json({ data: publicDocument(await ref.get(), COUPON_FIELDS) })
   })
@@ -704,7 +860,7 @@ export function createAdminApi(deps: AdminDependencies) {
     if (Number(snapshot.get('redeemedCount') || 0) > 0) throw new AdminHttpError(409, 'Redeemed coupons must be deactivated, not deleted')
     const batch = deps.db.batch()
     batch.delete(ref)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'coupon.delete', 'coupon', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'coupon.delete', 'coupon', id, reason))
     await batch.commit()
     return c.json({ data: { id, deleted: true } })
   })
@@ -721,7 +877,7 @@ export function createAdminApi(deps: AdminDependencies) {
     const data = { ...patch, status, createdAt: deps.now(), updatedAt: deps.now(), ...(status === 'published' ? { publishedAt: deps.now() } : {}) }
     const batch = deps.db.batch()
     batch.create(ref, data)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'announcement.create', 'announcement', ref.id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'announcement.create', 'announcement', ref.id, reason))
     await batch.commit()
     return c.json({ data: publicDocument(await ref.get(), ANNOUNCEMENT_FIELDS) }, 201)
   })
@@ -738,7 +894,7 @@ export function createAdminApi(deps: AdminDependencies) {
     const updated = { ...patch, updatedAt: deps.now(), ...(patch.status === 'published' && snapshot.get('status') !== 'published' ? { publishedAt: deps.now() } : {}) }
     const batch = deps.db.batch()
     batch.update(ref, updated)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'announcement.update', 'announcement', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'announcement.update', 'announcement', id, reason))
     await batch.commit()
     return c.json({ data: publicDocument(await ref.get(), ANNOUNCEMENT_FIELDS) })
   })
@@ -752,7 +908,7 @@ export function createAdminApi(deps: AdminDependencies) {
     if (!(await ref.get()).exists) throw new AdminHttpError(404, 'Announcement not found')
     const batch = deps.db.batch()
     batch.delete(ref)
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'announcement.delete', 'announcement', id, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'announcement.delete', 'announcement', id, reason))
     await batch.commit()
     return c.json({ data: { id, deleted: true } })
   })
@@ -769,18 +925,26 @@ export function createAdminApi(deps: AdminDependencies) {
     const ref = deps.db.collection('settings').doc(SETTINGS_DOCUMENT)
     const batch = deps.db.batch()
     batch.set(ref, { ...patch, updatedAt: deps.now() }, { merge: true })
-    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditData(deps, actorFrom(c), 'settings.update', 'settings', SETTINGS_DOCUMENT, reason))
+    batch.set(deps.db.collection(AUDIT_COLLECTION).doc(), auditDataFor(c, deps, actorFrom(c), 'settings.update', 'settings', SETTINGS_DOCUMENT, reason))
     await batch.commit()
     const result = await ref.get()
     return c.json({ data: pickFields(result.data() || {}, SETTINGS_FIELDS) })
   })
 
-  app.notFound((c) => c.json({ error: 'Admin endpoint not found' }, 404))
+  app.notFound((c) => adminErrorResponse(c, 404, 'ADMIN_ENDPOINT_NOT_FOUND', 'Admin endpoint not found', 'not_found'))
   app.onError((error, c) => {
-    if (error instanceof AdminHttpError) return c.json({ error: error.message }, error.status as any)
-    if ((error as any)?.code === 'auth/user-not-found') return c.json({ error: 'User not found' }, 404)
-    console.error('[admin-api] Request failed', { name: error?.constructor?.name, code: (error as any)?.code })
-    return c.json({ error: 'Internal Server Error' }, 500)
+    if (error instanceof AdminHttpError) {
+      return adminErrorResponse(c, error.status, error.code, error.message, categoryForStatus(error.status))
+    }
+    if ((error as any)?.code === 'auth/user-not-found') {
+      return adminErrorResponse(c, 404, 'USER_NOT_FOUND', 'User not found', 'not_found')
+    }
+    console.error('[admin-api] Request failed', {
+      requestId: c.get('requestId'),
+      name: error?.constructor?.name,
+      code: (error as any)?.code,
+    })
+    return adminErrorResponse(c, 500, 'BACKEND_ERROR', 'The admin API could not complete the request.', 'backend')
   })
 
   return app

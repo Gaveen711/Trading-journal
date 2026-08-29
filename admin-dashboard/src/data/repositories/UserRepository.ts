@@ -12,7 +12,10 @@ function userPatch(updates: UserUpdate): Record<string, unknown> {
 
 export const UserRepository = {
   list(params: UserListParams = {}, signal?: AbortSignal): Promise<Paginated<User>> {
-    return requestCollection('/users', decodeUser, { ...params }, signal);
+    return requestCollection('/users', decodeUser, {
+      ...params,
+      search: params.search?.trim() || undefined,
+    }, signal);
   },
 
   getById(userId: string, signal?: AbortSignal): Promise<User> {

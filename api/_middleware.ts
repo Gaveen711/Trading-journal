@@ -2,6 +2,8 @@ import { Context, Next } from 'hono'
 import { secureHeaders } from 'hono/secure-headers'
 import { kv } from '@vercel/kv'
 import { getClientIp } from './_ipUtils.js'
+import { adminErrorResponse, requestIdMiddleware } from './_adminErrors.js'
+export { requestIdMiddleware }
 
 // Production origins only. localhost is added for non-production deployments
 // below: shipping a dev origin in the production allowlist widens CORS for no
@@ -44,12 +46,13 @@ export async function corsMiddleware(c: Context, next: Next) {
   }
   c.header(
     'Access-Control-Allow-Headers',
-    isAdminRoute ? 'Authorization, Content-Type' : 'Authorization, Content-Type, X-Api-Key, x-api-key',
+    isAdminRoute ? 'Authorization, Content-Type, X-Request-Id' : 'Authorization, Content-Type, X-Api-Key, x-api-key',
   )
+  if (isAdminRoute) c.header('Access-Control-Expose-Headers', 'X-Request-Id, Retry-After')
   c.header('Access-Control-Allow-Methods', isAdminRoute ? 'GET, POST, PATCH, DELETE, OPTIONS' : 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
   if (c.req.method === 'OPTIONS') {
     if (isAdminRoute && origin && !routeOrigins.includes(origin)) {
-      return c.json({ error: 'Origin not allowed' }, 403 as any)
+      return adminErrorResponse(c, 403, 'ORIGIN_NOT_ALLOWED', 'Origin not allowed', 'authorization')
     }
     return c.body(null, 204 as any)
   }
@@ -129,6 +132,9 @@ export async function rateLimitMiddleware(c: Context, next: Next) {
       // ignore TTL error
     }
     c.header('Retry-After', ttl.toString())
+    if (path === '/api/admin' || path.startsWith('/api/admin/')) {
+      return adminErrorResponse(c, 429, 'RATE_LIMITED', 'Rate limit exceeded. Please try again later.', 'rate_limit')
+    }
     return c.json({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' }, 429)
   }
 

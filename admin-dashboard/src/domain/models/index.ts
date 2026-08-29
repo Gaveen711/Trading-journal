@@ -8,4 +8,6 @@ export * from './Announcement';
 export * from './Settings';
 export * from './Overview';
 export * from './Analytics';
+export * from './AdminHealth';
+export * from './UserAnalytics';
 

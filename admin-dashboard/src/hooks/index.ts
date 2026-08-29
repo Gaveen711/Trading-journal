@@ -11,4 +11,6 @@ export * from './useReports';
 export * from './useCoupons';
 export * from './useAnnouncements';
 export * from './useSettings';
+export * from './useAdminHealth';
+export * from './useUserAnalytics';
 

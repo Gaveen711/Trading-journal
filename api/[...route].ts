@@ -8,7 +8,7 @@ const db: any = _db
 import resend from './_resend.js'
 
 import { kv } from '@vercel/kv'
-import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware } from './_middleware.js'
+import { corsMiddleware, secureHeadersMiddleware, rateLimitMiddleware, requestIdMiddleware } from './_middleware.js'
 import { getUidFromContext, verifyIdToken } from './_auth.js'
 import { requireAuth, withUserDoc, requireEmailVerified, requirePro, requireProUser, assertPro } from './_entitlementMiddleware.js'
 import {
@@ -36,6 +36,7 @@ import { getClientIp } from './_ipUtils.js'
 import { persistBrokerTrades } from './_brokerTradePersistence.js'
 import { cachedJson, withAccountLock, withRetryBudget } from './_resilience.js'
 import { createAdminApi } from './_admin.js'
+import { localAdminRateLimitFallbackAllowed, ProcessLocalAdminRateLimiter } from './_adminRateLimit.js'
 import { emptyTradeAnalytics, emptySessionAnalytics } from '../src/lib/tradeAnalytics.js'
 import { USER_CREDENTIAL_FIELDS, ACCOUNT_CREDENTIAL_FIELDS, deletionPatch } from './_credentialFields.js'
 
@@ -72,9 +73,12 @@ async function scrubLegacyBrokerCredentials(uid: string) {
 type Env = {}
 type Variables = Record<string, unknown>
 
+const processLocalAdminRateLimiter = new ProcessLocalAdminRateLimiter()
+
 export const app = new Hono<{ Bindings: Env; Variables: Variables }>().basePath('/api')
 
 // ── Middleware Registrations ────────────────────────────────────────────────
+app.use('*', requestIdMiddleware)
 app.use('*', secureHeadersMiddleware)
 app.use('*', corsMiddleware)
 app.use('*', rateLimitMiddleware)
@@ -87,7 +91,32 @@ app.route('/admin', createAdminApi({
   now,
   invalidateUserCache,
   invalidateApiKeyCache,
-  recursiveDelete: (ref: any) => admin.firestore().recursiveDelete(ref),
+  consumeAdminRateLimit: async (scope, actorUid, limit, windowSeconds) => {
+    const key = `rl:admin:${scope}:${actorUid}`
+    try {
+      const pipeline = kv.pipeline()
+      pipeline.incr(key)
+      pipeline.ttl(key)
+      const [current, currentTtl] = await pipeline.exec() as [number, number]
+      if (currentTtl === -1) await kv.expire(key, windowSeconds)
+      const retryAfter = currentTtl > 0 ? currentTtl : windowSeconds
+      return {
+        available: true,
+        allowed: current <= limit,
+        remaining: Math.max(0, limit - current),
+        retryAfter,
+      }
+    } catch (error: any) {
+      console.error('[admin-rate-limit] KV unavailable', { code: error?.code })
+      if (localAdminRateLimitFallbackAllowed(
+        process.env.XAU_ADMIN_LOCAL_API_RUNTIME,
+        process.env.VERCEL_ENV,
+      )) {
+        return processLocalAdminRateLimiter.consume(key, limit, windowSeconds)
+      }
+      return { available: false, allowed: false, remaining: 0, retryAfter: windowSeconds }
+    }
+  },
 }))
 
 // ── 1. Authentication Utilities Route ────────────────────────────────────────

@@ -2,6 +2,7 @@ import type { IsoDateString, PaginationParams } from './common';
 
 export type UserPlan = 'FREE' | 'PRO' | 'GRACE';
 export type UserStatus = 'ACTIVE' | 'SUSPENDED';
+export type UserDeletionState = 'PENDING';
 
 export interface SubscriptionDetails {
   stripeCustomerId?: string;
@@ -42,6 +43,13 @@ export interface User {
   tradeCount?: number;
   totalJournalsLogged?: number;
   totalTradesLogged?: number;
+  planExpiry?: IsoDateString | null;
+  graceUntil?: IsoDateString | null;
+  graceReason?: string | null;
+  isTrial?: boolean;
+  mt5SyncEnabled?: boolean;
+  deletionState?: UserDeletionState;
+  deletionRequestedAt?: IsoDateString;
 }
 
 export interface UserListParams extends PaginationParams {

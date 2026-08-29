@@ -12,6 +12,7 @@ import {
   StatusBadge as SharedStatusBadge,
   TextareaField,
 } from '../components';
+import { mutationReasonError } from '../domain/models';
 import './pages.css';
 
 export function PageShell({ title, eyebrow, description, actions, children }: {
@@ -147,7 +148,8 @@ export function ReasonDialog({ open, title, description, confirmLabel, pending, 
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (reason.trim().length < 6) { setError('Enter at least 6 characters so this action is auditable.'); return; }
+    const validationError = mutationReasonError(reason);
+    if (validationError) { setError(validationError); return; }
     setError('');
     await onConfirm(reason.trim());
   };

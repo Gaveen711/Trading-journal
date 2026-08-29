@@ -8,6 +8,7 @@ const VALID_CLAIMS = {
   email: 'admin@xaujournal.com',
   email_verified: true,
   admin: true,
+  auth_time: Math.floor(Date.now() / 1000),
 }
 
 function createStore(initial = {}) {
@@ -95,12 +96,31 @@ function createHarness({ claims = VALID_CLAIMS, currentUser = {}, initial = {} }
 
 const authHeaders = { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' }
 
+async function expectAdminError(response, { status, message, category, code }) {
+  expect(response.status).toBe(status)
+  const requestId = response.headers.get('x-request-id')
+  expect(requestId).toEqual(expect.any(String))
+  const body = await response.json()
+  expect(body).toEqual({
+    error: {
+      code: code ?? expect.any(String),
+      message,
+      category,
+      requestId,
+    },
+  })
+}
+
 describe('admin authorization', () => {
   it('requires a bearer token', async () => {
     const { app, verifyIdToken } = createHarness()
     const response = await app.request('/settings')
-    expect(response.status).toBe(401)
-    expect(await response.json()).toEqual({ error: 'Authentication required' })
+    await expectAdminError(response, {
+      status: 401,
+      message: 'Authentication required',
+      category: 'session',
+      code: 'AUTHENTICATION_REQUIRED',
+    })
     expect(verifyIdToken).not.toHaveBeenCalled()
   })
 
@@ -134,8 +154,12 @@ describe('admin authorization', () => {
   ])('rejects a token whose live Firebase user is %s', async (currentUser) => {
     const { app } = createHarness({ currentUser })
     const response = await app.request('/settings', { headers: authHeaders })
-    expect(response.status).toBe(403)
-    expect(await response.json()).toEqual({ error: 'Admin access denied' })
+    await expectAdminError(response, {
+      status: 403,
+      message: 'Admin access denied',
+      category: 'authorization',
+      code: 'ADMIN_ACCESS_DENIED',
+    })
   })
 
   it('preserves the contract when mounted at /api/admin', async () => {
@@ -161,8 +185,11 @@ describe('admin mutations', () => {
       headers: authHeaders,
       body: JSON.stringify({ reason: 'Enable maintenance', maintenanceMode: true, serviceAccount: 'secret' }),
     })
-    expect(response.status).toBe(400)
-    expect(await response.json()).toEqual({ error: 'Unsupported field: serviceAccount' })
+    await expectAdminError(response, {
+      status: 400,
+      message: 'Unsupported field: serviceAccount',
+      category: 'validation',
+    })
     expect([...harness.docs.keys()]).toEqual([])
   })
 
@@ -192,8 +219,11 @@ describe('admin mutations', () => {
       headers: authHeaders,
       body: JSON.stringify({ reason: 'Duplicate provider record' }),
     })
-    expect(response.status).toBe(409)
-    expect(await response.json()).toEqual({ error: 'Settled payment records cannot be deleted' })
+    await expectAdminError(response, {
+      status: 409,
+      message: 'Settled payment records cannot be deleted',
+      category: 'validation',
+    })
     expect(harness.docs.has('payments/pay-1')).toBe(true)
   })
 
@@ -213,8 +243,11 @@ describe('admin mutations', () => {
       headers: authHeaders,
       body: JSON.stringify({ reason: 'Adjust schedule', startsAt: '2026-09-01T13:00:00.000Z' }),
     })
-    expect(response.status).toBe(400)
-    expect(await response.json()).toEqual({ error: 'endsAt must be after startsAt' })
+    await expectAdminError(response, {
+      status: 400,
+      message: 'endsAt must be after startsAt',
+      category: 'validation',
+    })
     expect([...harness.docs.keys()].some((path) => path.startsWith('adminAuditLogs/'))).toBe(false)
   })
 })
@@ -234,7 +267,8 @@ describe('admin CORS boundary', () => {
     })
     expect(response.status).toBe(204)
     expect(response.headers.get('access-control-allow-origin')).toBe('https://admin.xaujournal.com')
-    expect(response.headers.get('access-control-allow-headers')).toBe('Authorization, Content-Type')
+    expect(response.headers.get('access-control-allow-headers')).toBe('Authorization, Content-Type, X-Request-Id')
+    expect(response.headers.get('access-control-expose-headers')).toContain('X-Request-Id')
     expect(response.headers.get('access-control-allow-methods')).toContain('PATCH')
   })
 
@@ -247,7 +281,11 @@ describe('admin CORS boundary', () => {
     const foreignOriginOnAdmin = await corsApp().request('/api/admin/settings', {
       method: 'OPTIONS', headers: { Origin: 'https://evil.example' },
     })
-    expect(foreignOriginOnAdmin.status).toBe(403)
-    expect(await foreignOriginOnAdmin.json()).toEqual({ error: 'Origin not allowed' })
+    await expectAdminError(foreignOriginOnAdmin, {
+      status: 403,
+      message: 'Origin not allowed',
+      category: 'authorization',
+      code: 'ORIGIN_NOT_ALLOWED',
+    })
   })
 })

@@ -117,6 +117,12 @@ export default defineConfig(({ mode }) => {
     base: '/',
     plugins: [react(), bundleInvariants()],
     server: {
+      watch: {
+        // The admin project is developed and built independently. Ignoring its
+        // generated output prevents Vercel's root dev runtime from crashing on
+        // Windows when an admin production build replaces locked dist assets.
+        ignored: ['**/admin-dashboard/dist/**', '**/graphify-out/**'],
+      },
       proxy: {
         '/api': {
           target: env.VITE_API_TARGET || 'https://xaujournal.vercel.app',

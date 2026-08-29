@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { AdminMutationConfirmation } from '../domain/models';
-import { assertMutationReason } from '../domain/models';
+import { assertMutationReason, mutationReasonError } from '../domain/models';
 
 type ConfirmationAction = (reason: string) => Promise<unknown>;
 
@@ -69,7 +69,7 @@ export function useMutationConfirmation(): MutationConfirmationState {
     confirm,
     isPending,
     error,
-    canConfirm: reason.trim().length >= 3 && !isPending,
+    canConfirm: mutationReasonError(reason) === null && !isPending,
   }), [cancelConfirmation, confirm, error, isPending, pending, reason, requestConfirmation]);
 }
 

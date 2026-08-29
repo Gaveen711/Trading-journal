@@ -16,6 +16,25 @@ export interface DeleteUserInput {
   reason: string;
 }
 
+export function useUserActions(onSuccess?: () => void | Promise<void>) {
+  const updateAction = useCallback((input: UpdateUserInput, signal: AbortSignal) => (
+    UserRepository.update(input.userId, input.updates, input.reason, signal)
+  ), []);
+  const deleteAction = useCallback((input: DeleteUserInput, signal: AbortSignal) => (
+    UserRepository.delete(input.userId, input.reason, signal)
+  ), []);
+  const update = useAdminMutation(updateAction, onSuccess);
+  const remove = useAdminMutation(deleteAction, onSuccess);
+
+  return {
+    updateUser: update.mutate,
+    deleteUser: remove.mutate,
+    isPending: update.isPending || remove.isPending,
+    mutationError: update.error ?? remove.error,
+    resetMutation: () => { update.reset(); remove.reset(); },
+  };
+}
+
 export function useUsers(params: UserListParams = {}) {
   const { search, plan, status, pageSize } = params;
   const key = JSON.stringify({ search: search ?? '', plan: plan ?? '', status: status ?? '', pageSize: pageSize ?? null });
@@ -25,23 +44,12 @@ export function useUsers(params: UserListParams = {}) {
   const collection = useAdminCollection(key, fetchPage);
   const { refresh } = collection;
   const afterMutation = useCallback(() => refresh(), [refresh]);
-  const updateAction = useCallback((input: UpdateUserInput, signal: AbortSignal) => (
-    UserRepository.update(input.userId, input.updates, input.reason, signal)
-  ), []);
-  const deleteAction = useCallback((input: DeleteUserInput, signal: AbortSignal) => (
-    UserRepository.delete(input.userId, input.reason, signal)
-  ), []);
-  const update = useAdminMutation(updateAction, afterMutation);
-  const remove = useAdminMutation(deleteAction, afterMutation);
+  const actions = useUserActions(afterMutation);
 
   return {
     ...collection,
     users: collection.data,
-    updateUser: update.mutate,
-    deleteUser: remove.mutate,
-    isPending: update.isPending || remove.isPending,
-    mutationError: update.error ?? remove.error,
-    resetMutation: () => { update.reset(); remove.reset(); },
+    ...actions,
   };
 }
 
@@ -51,5 +59,10 @@ export function useUser(userId: string) {
     return UserRepository.getById(userId, signal);
   }, [userId]);
   const query = useAdminQuery(loader);
-  return { ...query, isLoading: Boolean(userId) && query.isLoading };
+  const data = query.data && query.data.uid === userId ? query.data : undefined;
+  return {
+    ...query,
+    data,
+    isLoading: Boolean(userId) && (query.isLoading || Boolean(query.data && !data)),
+  };
 }

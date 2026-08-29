@@ -75,7 +75,7 @@ export function enumValue<const T extends readonly string[]>(
 }
 
 export function dateString(value: unknown, path: string): string {
-  if (typeof value === 'string' && value.trim()) return value;
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Date.parse(value))) return value;
   if (typeof value === 'number' && Number.isFinite(value)) return new Date(value).toISOString();
   if (typeof value === 'object' && value !== null) {
     const source = value as UnknownRecord;
