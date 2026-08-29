@@ -38,6 +38,9 @@
 .admin-sidebar__status-dot {
   width: .375rem; height: .375rem; border-radius: 999px; background: var(--admin-green); box-shadow: 0 0 0 3px var(--admin-green-wash);
 }
+.admin-sidebar__environment[data-state='checking'] .admin-sidebar__status-dot { background: var(--admin-amber); box-shadow: 0 0 0 3px var(--admin-amber-wash); }
+.admin-sidebar__environment[data-state='degraded'] .admin-sidebar__status-dot,
+.admin-sidebar__environment[data-state='unavailable'] .admin-sidebar__status-dot { background: var(--admin-red); box-shadow: 0 0 0 3px var(--admin-red-wash); }
 .admin-sidebar__verified {
   display: inline-flex; margin-left: auto; align-items: center; gap: .25rem; color: var(--admin-text-faint);
   font-family: var(--admin-font-mono); font-size: .5625rem; letter-spacing: .04em; text-transform: uppercase;

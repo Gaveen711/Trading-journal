@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite';
 
 const ADMIN_HOST = '127.0.0.1';
@@ -144,7 +145,12 @@ export default defineConfig(({ command, mode }) => {
   }
 
   return {
-    plugins: [react(), topologyNotice(topology)],
+    plugins: [tailwindcss(), react(), topologyNotice(topology)],
+    resolve: {
+      alias: {
+        '@': new URL('./src', import.meta.url).pathname,
+      },
+    },
     server: {
       host: ADMIN_HOST,
       port: ADMIN_PORT,

@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 import { AdminShell, LoadingState } from './components';
 import { AdminLogin, AuthProvider, RequireAdmin, useAuth } from './auth';
+import { useAdminHealth } from './hooks';
 
 const OverviewPage = lazy(async () => ({ default: (await import('./pages')).OverviewPage }));
 const UsersPage = lazy(async () => ({ default: (await import('./pages')).UsersPage }));
@@ -26,6 +27,7 @@ function AuthenticatedLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOutSecurely } = useAuth();
+  const health = useAdminHealth();
   const operatorName = user?.displayName || user?.email || 'Admin operator';
   const initials = operatorName
     .split(/\s|@/)
@@ -57,8 +59,18 @@ function AuthenticatedLayout() {
       <AdminShell
         activePath={location.pathname}
         onNavigate={(href) => navigate(href)}
+        onCommandSubmit={(query) => navigate(`/users?search=${encodeURIComponent(query)}`)}
+        commandPlaceholder="Search a customer by name, email, or UID…"
         operatorName={operatorName}
         operatorInitials={initials}
+        environmentLabel={health.availability === 'AVAILABLE'
+          ? 'Admin API connected'
+          : health.availability === 'DEGRADED'
+            ? 'Admin API degraded'
+            : health.availability === 'UNAVAILABLE'
+              ? 'Admin API unavailable'
+              : 'Checking admin API'}
+        environmentState={health.availability.toLowerCase() as 'checking' | 'available' | 'degraded' | 'unavailable'}
         footer={signOutControl}
       >
         <Suspense fallback={<LoadingState />}>
@@ -78,7 +90,7 @@ export default function App() {
           <Route element={<AuthenticatedLayout />}>
             <Route index element={<OverviewPage />} />
             <Route path="users" element={<UsersPage />} />
-            <Route path="users/:id" element={<UserDetailPage />} />
+            <Route path="users/:uid" element={<UserDetailPage />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="payments" element={<PaymentsPage />} />

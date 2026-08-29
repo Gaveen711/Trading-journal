@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowLeft, BadgeCheck, CalendarDays, CreditCard, KeyRound, Mail, MapPin, ShieldAlert, Trash2, UserRound, WalletCards } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { UserAccessEditor } from '../components/users/UserAccessEditor';
@@ -26,15 +26,22 @@ interface PageNotice {
   message: string;
 }
 
+function RecordField({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
+  return <div className="admin-record-field">
+    <span className="admin-record-field__icon" aria-hidden="true">{icon}</span>
+    <div><dt>{label}</dt><dd>{children}</dd></div>
+  </div>;
+}
+
 export function UserDetailPage() {
-  const { id = '' } = useParams();
+  const { uid: routeUid = '' } = useParams();
   const navigate = useNavigate();
-  const state = useUser(id);
+  const state = useUser(routeUid);
   const user = state.data;
   const uid = user ? canonicalUserId(user) : '';
   const actions = useUserActions();
   const health = useAdminHealth();
-  const paymentState = usePayments({ userId: uid || id, pageSize: 10 });
+  const paymentState = usePayments({ userId: uid || routeUid, pageSize: 10 });
   const analyticsState = useUserAnalytics(uid, { pageSize: 10 });
   const [notice, setNotice] = useState<PageNotice | null>(null);
   const [pendingMutation, setPendingMutation] = useState<PendingMutation | null>(null);
@@ -125,14 +132,14 @@ export function UserDetailPage() {
 
     <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
       <Panel className="xl:col-span-2" title="Account details" meta={<StatusBadge tone={degraded ? 'warning' : 'success'}>{degraded ? 'Stale' : 'Current'}</StatusBadge>}>
-        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><KeyRound size={17} /></span><div><dt className="eyebrow">Canonical UID</dt><dd className="mt-1 break-all font-mono text-sm text-white">{uid}</dd></div></div>
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><Mail size={17} /></span><div><dt className="eyebrow">Email</dt><dd className="mt-1 break-all text-sm text-white">{user.email ?? 'Not recorded'}{user.emailVerified === undefined ? '' : user.emailVerified ? ' · verified' : ' · unverified'}</dd></div></div>
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><MapPin size={17} /></span><div><dt className="eyebrow">Country</dt><dd className="mt-1 break-all text-sm text-white">{user.country ?? 'Not recorded'}</dd></div></div>
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><CalendarDays size={17} /></span><div><dt className="eyebrow">Joined</dt><dd className="mt-1 break-all text-sm text-white">{formatDate(user.createdAt ?? user.joinedDate, true)}</dd></div></div>
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><UserRound size={17} /></span><div><dt className="eyebrow">Last login</dt><dd className="mt-1 break-all text-sm text-white">{formatDate(user.lastLogin ?? user.lastSignInAt, true)}</dd></div></div>
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><WalletCards size={17} /></span><div><dt className="eyebrow">Plan expiry</dt><dd className="mt-1 break-all text-sm text-white">{formatDate(user.planExpiry ?? user.subscription?.expiresAt, true)}</dd></div></div>
-          <div className="flex gap-3 rounded-xl border border-dark-border bg-white/5 p-4"><span className="text-primary-500"><Trash2 size={17} /></span><div><dt className="eyebrow">Deletion workflow</dt><dd className="mt-1 break-all text-sm text-white">{user.deletionState === 'PENDING' ? `Pending since ${formatDate(user.deletionRequestedAt, true)}` : 'Not requested'}</dd></div></div>
+        <dl className="admin-record-grid">
+          <RecordField icon={<KeyRound />} label="Canonical UID"><code>{uid}</code></RecordField>
+          <RecordField icon={<Mail />} label="Email">{user.email ?? 'Not recorded'}{user.emailVerified === undefined ? '' : user.emailVerified ? ' · verified' : ' · unverified'}</RecordField>
+          <RecordField icon={<MapPin />} label="Country">{user.country ?? 'Not recorded'}</RecordField>
+          <RecordField icon={<CalendarDays />} label="Joined">{formatDate(user.createdAt ?? user.joinedDate, true)}</RecordField>
+          <RecordField icon={<UserRound />} label="Last login">{formatDate(user.lastLogin ?? user.lastSignInAt, true)}</RecordField>
+          <RecordField icon={<WalletCards />} label="Plan expiry">{formatDate(user.planExpiry ?? user.subscription?.expiresAt, true)}</RecordField>
+          <RecordField icon={<Trash2 />} label="Deletion workflow">{user.deletionState === 'PENDING' ? `Pending since ${formatDate(user.deletionRequestedAt, true)}` : 'Not requested'}</RecordField>
         </dl>
       </Panel>
 

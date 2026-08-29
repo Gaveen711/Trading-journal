@@ -12,6 +12,14 @@
 .user-access-editor__error { margin: 0; color: var(--admin-red-bright); font-size: .75rem; }
 .user-access-editor__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 
+.admin-record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 0; }
+.admin-record-field { display: flex; min-width: 0; align-items: flex-start; gap: .75rem; padding: .875rem; border: 1px solid var(--admin-line-soft); border-radius: var(--admin-radius); background: rgb(255 255 255 / 2%); }
+.admin-record-field__icon { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; border: 1px solid var(--admin-line); border-radius: var(--admin-radius-sm); background: var(--admin-surface-raised); color: var(--admin-gold); }
+.admin-record-field__icon svg { width: .9rem; height: .9rem; }
+.admin-record-field dt { color: var(--admin-text-faint); font-family: var(--admin-font-mono); font-size: .625rem; font-weight: 620; letter-spacing: .08em; text-transform: uppercase; }
+.admin-record-field dd { min-width: 0; margin: .3rem 0 0; overflow-wrap: anywhere; color: var(--admin-text); font-size: .8125rem; }
+.admin-record-field code { color: var(--admin-gold-bright); font-family: var(--admin-font-mono); font-size: .75rem; }
+
 .user-analytics-section { display: grid; gap: 1rem; }
 .user-analytics-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .user-analytics-heading h2 { margin: .2rem 0 0; color: var(--admin-text); font-size: 1.125rem; }
@@ -29,4 +37,5 @@
   .user-access-editor__actions .button { flex: 1; }
   .user-analytics-heading { align-items: stretch; flex-direction: column; }
   .user-analytics-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-record-grid { grid-template-columns: 1fr; }
 }

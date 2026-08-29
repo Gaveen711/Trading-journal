@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RotateCcw, Save, ShieldCheck } from 'lucide-react';
+import { Button, CheckboxField, SelectField, TextField, TextareaField } from '..';
 import type { User, UserPlan, UserStatus, UserUpdate } from '../../domain/models';
 
 interface AccessDraft {
@@ -102,19 +103,19 @@ export function UserAccessEditor({ user, disabled, pending, onReview }: UserAcce
 
   return <div className="user-access-editor">
     <div className="user-access-editor__grid">
-      <label className="field"><span>Plan</span><select value={draft.plan} disabled={controlsDisabled} onChange={(event) => updateField('plan', event.target.value as UserPlan)}><option value="FREE">Free</option><option value="PRO">Pro</option><option value="GRACE">Grace</option></select></label>
-      <label className="field"><span>Account status</span><select value={draft.status} disabled={controlsDisabled} onChange={(event) => updateField('status', event.target.value as UserStatus)}><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option></select></label>
-      <label className="field"><span>Plan expiry</span><input type="datetime-local" value={draft.planExpiry} disabled={controlsDisabled} onChange={(event) => updateField('planExpiry', event.target.value)} /></label>
-      <label className="field"><span>Grace deadline</span><input type="datetime-local" value={draft.graceUntil} disabled={controlsDisabled} onChange={(event) => updateField('graceUntil', event.target.value)} /></label>
-      <label className="field user-access-editor__wide"><span>Grace reason</span><textarea rows={3} value={draft.graceReason} disabled={controlsDisabled} onChange={(event) => updateField('graceReason', event.target.value)} placeholder="Customer request, billing incident, or policy reference" /></label>
-      <label className="user-toggle"><input type="checkbox" checked={draft.isTrial} disabled={controlsDisabled} onChange={(event) => updateField('isTrial', event.target.checked)} /><span><strong>Trial account</strong><small>Controls trial-specific access only.</small></span></label>
-      <label className="user-toggle"><input type="checkbox" checked={draft.mt5SyncEnabled} disabled={controlsDisabled} onChange={(event) => updateField('mt5SyncEnabled', event.target.checked)} /><span><strong>Broker sync</strong><small>Allows supported broker data synchronization.</small></span></label>
+      <SelectField label="Plan" value={draft.plan} disabled={controlsDisabled} onChange={(event) => updateField('plan', event.target.value as UserPlan)} options={[{ value: 'FREE', label: 'Free' }, { value: 'PRO', label: 'Pro' }, { value: 'GRACE', label: 'Grace' }]} />
+      <SelectField label="Account status" value={draft.status} disabled={controlsDisabled} onChange={(event) => updateField('status', event.target.value as UserStatus)} options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'SUSPENDED', label: 'Suspended' }]} />
+      <TextField label="Plan expiry" type="datetime-local" value={draft.planExpiry} disabled={controlsDisabled} onChange={(event) => updateField('planExpiry', event.target.value)} />
+      <TextField label="Grace deadline" type="datetime-local" value={draft.graceUntil} disabled={controlsDisabled} onChange={(event) => updateField('graceUntil', event.target.value)} />
+      <TextareaField label="Grace reason" rows={3} value={draft.graceReason} disabled={controlsDisabled} onChange={(event) => updateField('graceReason', event.target.value)} placeholder="Customer request, billing incident, or policy reference" containerClassName="user-access-editor__wide" />
+      <CheckboxField label="Trial account" hint="Controls trial-specific access only." checked={draft.isTrial} disabled={controlsDisabled} onChange={(event) => updateField('isTrial', event.target.checked)} />
+      <CheckboxField label="Broker sync" hint="Allows supported broker data synchronization." checked={draft.mt5SyncEnabled} disabled={controlsDisabled} onChange={(event) => updateField('mt5SyncEnabled', event.target.checked)} />
     </div>
     {validationError && <p className="user-access-editor__error" role="alert">{validationError}</p>}
     <div className="user-access-editor__policy"><ShieldCheck size={17} aria-hidden="true" /><p><strong>Protected fields stay read-only.</strong> Email, UID, credentials, API keys, tokens, and security claims cannot be changed here. MFA or recent reauthentication for high-impact actions must be enforced by the backend.</p></div>
     <div className="user-access-editor__actions">
-      <button className="button" type="button" disabled={controlsDisabled || dirtyFields.size === 0} onClick={reset}><RotateCcw size={16} />Reset</button>
-      <button className="button button--primary" type="button" disabled={controlsDisabled || dirtyFields.size === 0} onClick={review}><Save size={16} />Review and save</button>
+      <Button variant="ghost" disabled={controlsDisabled || dirtyFields.size === 0} onClick={reset} leadingIcon={<RotateCcw />}>Reset</Button>
+      <Button variant="primary" disabled={controlsDisabled || dirtyFields.size === 0} onClick={review} leadingIcon={<Save />}>Review changes</Button>
     </div>
   </div>;
 }

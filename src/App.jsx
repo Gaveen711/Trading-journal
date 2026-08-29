@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AuthSyncFailure } from './app/components/AuthSyncFailure.jsx';
 import { LinkPeek } from './app/experience/LinkPeek.jsx';
@@ -8,6 +8,7 @@ import { AppRoutes, isPublicNavbarPath } from './app/routing/AppRoutes.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { PageLoader } from './components/PageLoader.jsx';
 import { PageSEO } from './components/PageSEO.jsx';
+import { MaintenanceNotice } from './components/MaintenanceNotice.jsx';
 import { PublicNavSkeleton } from './components/PublicNavSkeleton.jsx';
 import { BackgroundPixelStars } from './components/ui/BackgroundPixelStars.jsx';
 import { hasPersistedAuthHint, useAuthSession } from './features/auth/hooks/useAuthSession.js';
@@ -22,6 +23,24 @@ function starfieldModeForPath(pathname) {
 function App() {
   const location = useLocation();
   const { user, isLoading, hasError } = useAuthSession();
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadStatus = async () => {
+      try {
+        const response = await fetch('/api/status', { signal: controller.signal, cache: 'no-store' });
+        if (!response.ok) return;
+        const status = await response.json();
+        setMaintenanceMode(status?.maintenanceMode === true);
+      } catch (error) {
+        if (error?.name !== 'AbortError') console.warn('Public availability status could not refresh.');
+      }
+    };
+    void loadStatus();
+    const interval = window.setInterval(loadStatus, 30_000);
+    return () => { controller.abort(); window.clearInterval(interval); };
+  }, []);
   const isPublicRoute = isPublicNavbarPath(location.pathname);
   const starfieldMode = starfieldModeForPath(location.pathname);
   useRouteExperience(location.pathname);
@@ -36,6 +55,8 @@ function App() {
   else if (isLoading && !isPublicRoute) {
     content = hasPersistedAuthHint() ? <PageLoader text="Restoring Secure Session" /> : <PageLoader />;
   }
+
+  if (maintenanceMode) return <MaintenanceNotice />;
 
   return (
     <div className={`app-starfield app-starfield--${starfieldMode}`}>

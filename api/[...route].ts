@@ -83,6 +83,20 @@ app.use('*', secureHeadersMiddleware)
 app.use('*', corsMiddleware)
 app.use('*', rateLimitMiddleware)
 
+// Public availability signal. The settings document remains server-only; this
+// route reveals only the boolean required to render the maintenance notice.
+app.get('/status', async (c) => {
+  try {
+    const snapshot = await db.collection('settings').doc('platform').get()
+    c.header('Cache-Control', 'no-store')
+    return c.json({ maintenanceMode: snapshot.get('maintenanceMode') === true })
+  } catch (error: any) {
+    console.error('[status] Settings lookup failed', { code: error?.code })
+    c.header('Cache-Control', 'no-store')
+    return c.json({ maintenanceMode: false, available: false }, 503)
+  }
+})
+
 // Isolated privileged surface. The child router owns strict Firebase claim
 // checks, response allowlists, validation, and mutation audit logging.
 app.route('/admin', createAdminApi({

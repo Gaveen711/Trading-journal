@@ -1,10 +1,11 @@
 import { useDeferredValue, useEffect, useState } from 'react';
-import { BadgeCheck, Eye, ShieldAlert, Trash2, Users } from 'lucide-react';
+import { BadgeCheck, Eye, Search, ShieldAlert, Trash2, Users } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Button, DataTable, SelectField, TextField, type DataColumn } from '../components';
 import { canonicalUserId, describeAdminError, displayUserName } from '../components/users/adminUserUi';
 import type { User, UserPlan, UserStatus, UserUpdate } from '../domain/models';
 import { useAdminHealth, useUsers } from '../hooks';
-import { CursorPager, EmptyState, ErrorState, FilterSelect, LoadingState, Metric, Notice, PageShell, ReasonDialog, SearchField, StatusBadge, TableFrame, formatDate } from './_shared';
+import { CursorPager, EmptyState, ErrorState, LoadingState, Metric, Notice, PageShell, Panel, ReasonDialog, StatusBadge, TableFrame, formatDate } from './_shared';
 
 type DirectoryAction = {
   kind: 'update';
@@ -101,6 +102,57 @@ export function UsersPage() {
     state.resetPagination();
   };
 
+  const columns: DataColumn<User>[] = [
+    {
+      key: 'user',
+      header: 'User',
+      width: '34%',
+      cell: (user) => {
+        const name = displayUserName(user);
+        const uid = canonicalUserId(user);
+        return <button className="admin-user-cell" type="button" onClick={() => openUser(user)}>
+          <span className="admin-card__avatar" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
+          <span className="admin-user-cell__copy"><strong>{name}</strong><small>{user.email ?? 'No email address'}</small><code>{uid}</code></span>
+        </button>;
+      },
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      cell: (user) => <StatusBadge tone={user.plan === 'FREE' ? 'neutral' : 'warning'}>{user.plan}</StatusBadge>,
+    },
+    {
+      key: 'usage',
+      header: 'Usage',
+      hideBelow: 'md',
+      cell: (user) => <span className="admin-table__muted">{(user.totalTradesLogged ?? user.tradeCount ?? 0).toLocaleString()} trades · {(user.totalJournalsLogged ?? user.journalCount ?? 0).toLocaleString()} journals</span>,
+    },
+    {
+      key: 'joined',
+      header: 'Joined',
+      hideBelow: 'lg',
+      cell: (user) => <span className="admin-table__muted">{formatDate(user.createdAt ?? user.joinedDate)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (user) => <span className="admin-status-stack"><StatusBadge tone={user.status === 'SUSPENDED' ? 'danger' : 'success'}>{user.status}</StatusBadge>{user.deletionState === 'PENDING' && <StatusBadge tone="warning">Deletion pending</StatusBadge>}</span>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'end',
+      cell: (user) => {
+        const name = displayUserName(user);
+        return <span className="admin-row-actions">
+          <Button size="icon" variant="ghost" onClick={() => openUser(user)} aria-label={`View ${name}`}><Eye aria-hidden="true" /></Button>
+          <Button size="icon" variant="ghost" disabled={mutationsDisabled} title={mutationsDisabled ? 'Unavailable until the admin API health check is available' : undefined} onClick={() => reviewStatusChange(user)} aria-label={`${user.status === 'SUSPENDED' ? 'Activate' : 'Suspend'} ${name}`}><ShieldAlert aria-hidden="true" /></Button>
+          <Button size="icon" variant="danger" disabled={mutationsDisabled} title={mutationsDisabled ? 'Unavailable until the admin API health check is available' : 'Suspend access and request reviewed deletion'} onClick={() => reviewDelete(user)} aria-label={`Request deletion for ${name}`}><Trash2 aria-hidden="true" /></Button>
+        </span>;
+      },
+    },
+  ];
+
   return <PageShell
     title="Users"
     eyebrow="Customer directory"
@@ -117,15 +169,16 @@ export function UsersPage() {
       <Metric label="Visible suspended" value={state.isLoading ? '—' : users.filter((user) => user.status === 'SUSPENDED').length.toLocaleString()} detail="Current server page" icon={<ShieldAlert size={18} />} />
     </section>
 
-    <section className="panel my-4" aria-label="Directory filters">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <SearchField value={search} onChange={setSearch} label="Search users" placeholder="Search name, email, or canonical UID" />
-        <div className="flex flex-wrap gap-2">
-          <FilterSelect label="Plan" value={plan} onChange={(value) => setPlan(value as UserPlan | 'ALL')}><option value="ALL">All plans</option><option value="FREE">Free</option><option value="PRO">Pro</option><option value="GRACE">Grace</option></FilterSelect>
-          <FilterSelect label="Status" value={status} onChange={(value) => setStatus(value as UserStatus | 'ALL')}><option value="ALL">All statuses</option><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option></FilterSelect>
-        </div>
+    <Panel
+      title="Find an account"
+      meta={<Button variant="ghost" size="sm" disabled={!search && plan === 'ALL' && status === 'ALL'} onClick={clearFilters}>Clear filters</Button>}
+    >
+      <div className="admin-directory-filter-grid">
+        <TextField label="Search by name, email, or UID" leadingIcon={<Search />} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Paste a canonical Firebase UID or search a customer" />
+        <SelectField label="Plan" value={plan} onChange={(event) => setPlan(event.target.value as UserPlan | 'ALL')} options={[{ value: 'ALL', label: 'All plans' }, { value: 'FREE', label: 'Free' }, { value: 'PRO', label: 'Pro' }, { value: 'GRACE', label: 'Grace' }]} />
+        <SelectField label="Account status" value={status} onChange={(event) => setStatus(event.target.value as UserStatus | 'ALL')} options={[{ value: 'ALL', label: 'All statuses' }, { value: 'ACTIVE', label: 'Active' }, { value: 'SUSPENDED', label: 'Suspended' }]} />
       </div>
-    </section>
+    </Panel>
 
     <TableFrame title="User directory" count={users.length}>
       {state.isLoading
@@ -133,25 +186,9 @@ export function UsersPage() {
         : directoryError && users.length === 0
           ? <EmptyState icon={<Users />} title="Directory unavailable" message="No user page is cached. Retry the admin API before relying on this view." />
           : users.length === 0
-            ? <><EmptyState icon={<Users />} title="No matching users on this scan page" message={deferredSearch || plan !== 'ALL' || status !== 'ALL' ? (state.canNextPage ? 'No match was found in this bounded server scan. Continue to the next scan page or clear the filters.' : 'No server-side results matched the current filters.') : 'New customer accounts will appear here.'} action={deferredSearch || plan !== 'ALL' || status !== 'ALL' ? <button className="button" type="button" onClick={clearFilters}>Clear filters</button> : undefined} /><CursorPager page={state.page} canPrevious={state.canPreviousPage && !state.isFetching} canNext={state.canNextPage && !state.isFetching} onPrevious={state.previousPage} onNext={state.nextPage} /></>
+            ? <><EmptyState icon={<Users />} title="No matching users on this scan page" message={deferredSearch || plan !== 'ALL' || status !== 'ALL' ? (state.canNextPage ? 'No match was found in this bounded server scan. Continue to the next scan page or clear the filters.' : 'No server-side results matched the current filters.') : 'New customer accounts will appear here.'} action={deferredSearch || plan !== 'ALL' || status !== 'ALL' ? <Button onClick={clearFilters}>Clear filters</Button> : undefined} /><CursorPager page={state.page} canPrevious={state.canPreviousPage && !state.isFetching} canNext={state.canNextPage && !state.isFetching} onPrevious={state.previousPage} onNext={state.nextPage} /></>
             : <>
-              <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead><tr className="border-b border-dark-border text-xs text-dark-text-muted"><th className="p-4">User</th><th className="p-4">Plan</th><th className="p-4">Usage</th><th className="p-4">Joined</th><th className="p-4">Status</th><th className="p-4 text-right">Actions</th></tr></thead>
-                <tbody className="divide-y divide-dark-border">{users.map((user) => {
-                  const name = displayUserName(user);
-                  const uid = canonicalUserId(user);
-                  return <tr key={uid} className="hover:bg-white/5">
-                    <td className="p-4"><button className="flex min-h-11 items-center gap-3 text-left" type="button" onClick={() => openUser(user)}><span className="admin-card__avatar" aria-hidden="true">{name.charAt(0).toUpperCase()}</span><span><strong className="block text-white">{name}</strong><small className="block text-dark-text-muted">{user.email ?? 'No email'}</small><small className="font-mono text-[10px] text-primary-400">{uid}</small></span></button></td>
-                    <td className="p-4"><StatusBadge tone={user.plan === 'FREE' ? 'neutral' : 'warning'}>{user.plan}</StatusBadge></td>
-                    <td className="p-4 text-dark-text-muted">{(user.totalTradesLogged ?? user.tradeCount ?? 0).toLocaleString()} trades · {(user.totalJournalsLogged ?? user.journalCount ?? 0).toLocaleString()} journals</td>
-                    <td className="p-4 text-dark-text-muted">{formatDate(user.createdAt ?? user.joinedDate)}</td>
-                    <td className="p-4"><div className="flex flex-wrap gap-1"><StatusBadge tone={user.status === 'SUSPENDED' ? 'danger' : 'success'}>{user.status}</StatusBadge>{user.deletionState === 'PENDING' && <StatusBadge tone="warning">Deletion pending</StatusBadge>}</div></td>
-                    <td className="p-4"><div className="flex justify-end gap-1">
-                      <button className="icon-button" type="button" onClick={() => openUser(user)} aria-label={`View ${name}`}><Eye size={16} /></button>
-                      <button className="icon-button" type="button" disabled={mutationsDisabled} title={mutationsDisabled ? 'Unavailable until the admin API health check is available' : undefined} onClick={() => reviewStatusChange(user)} aria-label={`${user.status === 'SUSPENDED' ? 'Activate' : 'Suspend'} ${name}`}><ShieldAlert size={16} /></button>
-                      <button className="icon-button text-red-400" type="button" disabled={mutationsDisabled} title={mutationsDisabled ? 'Unavailable until the admin API health check is available' : 'Suspend access and request reviewed deletion'} onClick={() => reviewDelete(user)} aria-label={`Request deletion for ${name}`}><Trash2 size={16} /></button>
-                    </div></td>
-                  </tr>;
-                })}</tbody></table></div>
+              <DataTable columns={columns} rows={users} getRowKey={(user) => canonicalUserId(user)} caption="User directory" />
               <CursorPager page={state.page} canPrevious={state.canPreviousPage && !state.isFetching} canNext={state.canNextPage && !state.isFetching} onPrevious={state.previousPage} onNext={state.nextPage} />
             </>}
     </TableFrame>

@@ -38,15 +38,15 @@ export interface AdminNavItem {
 }
 
 export const defaultAdminNavigation: AdminNavItem[] = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard, group: 'Control center', exact: true },
-  { label: 'Users', href: '/users', icon: Users, group: 'Operations' },
-  { label: 'Subscriptions', href: '/subscriptions', icon: WalletCards, group: 'Operations' },
-  { label: 'Payments', href: '/payments', icon: CircleDollarSign, group: 'Finance' },
-  { label: 'Coupons', href: '/coupons', icon: TicketPercent, group: 'Finance' },
-  { label: 'Analytics', href: '/analytics', icon: BarChart3, group: 'Intelligence' },
-  { label: 'Reports', href: '/reports', icon: FileChartColumn, group: 'Intelligence' },
-  { label: 'Announcements', href: '/announcements', icon: Megaphone, group: 'Workspace' },
-  { label: 'Settings', href: '/settings', icon: Settings, group: 'Workspace' },
+  { label: 'Overview', href: '/', icon: LayoutDashboard, group: 'Operate', exact: true },
+  { label: 'Users', href: '/users', icon: Users, group: 'Operate' },
+  { label: 'Analytics', href: '/analytics', icon: BarChart3, group: 'Operate' },
+  { label: 'Subscriptions', href: '/subscriptions', icon: WalletCards, group: 'Billing' },
+  { label: 'Payments', href: '/payments', icon: CircleDollarSign, group: 'Billing' },
+  { label: 'Coupons', href: '/coupons', icon: TicketPercent, group: 'Billing' },
+  { label: 'Reports', href: '/reports', icon: FileChartColumn, group: 'Support' },
+  { label: 'Announcements', href: '/announcements', icon: Megaphone, group: 'Support' },
+  { label: 'Settings', href: '/settings', icon: Settings, group: 'System' },
 ]
 
 export interface AdminShellProps {
@@ -57,6 +57,7 @@ export interface AdminShellProps {
   commandPlaceholder?: string
   onCommandSubmit?: (query: string) => void
   environmentLabel?: string
+  environmentState?: 'checking' | 'available' | 'degraded' | 'unavailable'
   operatorName?: string
   operatorRole?: string
   operatorInitials?: string
@@ -85,9 +86,10 @@ export function AdminShell({
   navigation = defaultAdminNavigation,
   activePath,
   onNavigate,
-  commandPlaceholder = 'Search users, payments, reports…',
+  commandPlaceholder = 'Search a customer by name, email, or UID…',
   onCommandSubmit,
   environmentLabel = 'Production',
+  environmentState = 'available',
   operatorName = 'Admin operator',
   operatorRole = 'System administrator',
   operatorInitials = 'AO',
@@ -181,7 +183,7 @@ export function AdminShell({
     event.preventDefault()
     const trimmed = query.trim()
     if (trimmed) onCommandSubmit?.(trimmed)
-    if (isMobile) setCommandOpen(false)
+    setCommandOpen(false)
   }
 
   const navigate = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -229,10 +231,10 @@ export function AdminShell({
           </button>
         </div>
 
-        <div className="admin-sidebar__environment">
+        <div className="admin-sidebar__environment" data-state={environmentState}>
           <span className="admin-sidebar__status-dot" aria-hidden="true" />
           <span>{environmentLabel}</span>
-          <span className="admin-sidebar__verified"><ShieldCheck aria-hidden="true" /> verified</span>
+          <span className="admin-sidebar__verified"><ShieldCheck aria-hidden="true" /> secure</span>
         </div>
 
         <nav className="admin-sidebar__nav">
